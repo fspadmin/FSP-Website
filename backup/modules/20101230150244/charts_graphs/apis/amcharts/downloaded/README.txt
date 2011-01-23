@@ -1,0 +1,1 @@
+This is where AmCharts downloaded swf files go into.

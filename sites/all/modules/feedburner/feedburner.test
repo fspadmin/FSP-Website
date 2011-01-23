@@ -1,0 +1,191 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Unit tests for the feedburner module.
+ */
+
+/**
+ * Test basic functionality.
+ */
+class FeedBurnerTestCase extends DrupalWebTestCase {
+  function getInfo() {
+    return array(
+      'name' => t('FeedBurner functionality'),
+      'description' => t('Test basic FeedBurner module functionality.'),
+      'group' => t('FeedBurner'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp('feedburner', 'blog', 'path');
+
+    // Create a test node that will be shown on the RSS feed.
+    $this->drupalCreateNode(array('type' => 'blog', 'promote' => 1, 'title' => 'Local feed'));
+  }
+
+  /**
+   * Test basic feed redirection and user agent matching.
+   */
+  function testFeedRedirection() {
+    // Save redirection and test that path is redirected.
+    feedburner_save(array('path' => 'rss.xml', 'feedburner' => 'example-feed'));
+    $this->assertRedirected('rss.xml', t('Feed was redirected.'));
+    $this->assertText('FeedBurner feed');
+    // $this->assertText('This feed was created for testing the Drupal FeedBurner module.');
+
+    // Set a path alias and test that alias is redirected.
+    path_set_alias('rss.xml', 'feed');
+    $this->assertRedirected('feed', t('Feed was redirected on path alias.'));
+
+    // Test redirection with a useragent that should not be redirected.
+    variable_set('feedburner_useragents', '/simpletest/i');
+    $this->assertNotRedirected('rss.xml', t('Feed was not directed with matching user agent.'));
+    $this->assertText('Local feed');
+
+    // Remove redirection and test that path is not redirected.
+    feedburner_delete(array('path' => 'rss.xml'));
+    $this->assertNotRedirected('rss.xml', t('Feed was not directed.'));
+
+    // Unset the path alias (causes test errors later).
+    path_set_alias('rss.xml');
+  }
+
+  /**
+   * Test redirection with cache enabled.
+   */
+  function testFeedCachedRedirection() {
+    // Enable normal caching and request the page to get it cached.
+    variable_set('cache', CACHE_NORMAL);
+    $this->drupalGet('rss.xml');
+    $this->assertTrue(cache_get(url('rss.xml', array('absolute' => TRUE)), 'cache_page'), t('Page has been cached.'));
+
+    // Enable redirection for feed.
+    feedburner_save(array('path' => 'rss.xml', 'feedburner' => 'example-feed'));
+
+    // Test redirection with normal caching.
+    $this->assertRedirected('rss.xml', t('Feed was redirected with normal caching enabled.'));
+
+    // Enable aggressive caching.
+    variable_set('cache', CACHE_AGGRESSIVE);
+
+    // Test redirection with aggressive caching.
+    // @todo Switch to assertRedirected if I ever get aggressive caching redirection enabled.
+    $this->assertNotRedirected('rss.xml', t('Feed was not redirected with aggressive caching enabled.'));
+  }
+
+  /**
+   * Test user blog feed redirection.
+   */
+  function testBlogFeedRedirection() {
+    $blog_user = $this->drupalCreateUser(array('create blog entries', 'add FeedBurner feed to own blog'));
+    $blog_user_feed = 'blog/'. $blog_user->uid . '/feed';
+    $blog_user_edit = 'user/'. $blog_user->uid . '/edit';
+
+    $this->drupalLogin($blog_user);
+
+    // Add an invalid blog feed redirection.
+    $values = array('feedburner_feedburner' => 'invalid_feed!');
+    $this->drupalPost($blog_user_edit, $values, t('Save'));
+    $this->assertText(t('Invalid FeedBurner feed name.'), t('Invalid FeedBurner feed name caught.'));
+
+    // Add a valid blog feed redirection.
+    $values = array('feedburner_feedburner' => 'example-feed');
+    $this->drupalPost($blog_user_edit, $values, t('Save'));
+    $this->assertText(t('The changes have been saved.'), t('Blog feed updated.'));
+
+    // Test that the blog feed is now redirected.
+    $this->assertTrue(feedburner_load(array('path' => $blog_user_feed)), t('Record removed from database.'));
+    $this->assertRedirected($blog_user_feed, t('Blog feed redirected.'));
+
+    // Remove the blog feed redirection.
+    $values = array('feedburner_feedburner' => '');
+    $this->drupalPost($blog_user_edit, $values, t('Save'));
+    $this->assertText(t('The changes have been saved.'), t('Blog feed updated to blank value.'));
+
+    // Test that the blog feed is no longer redirected.
+    $this->assertFalse(feedburner_load(array('path' => $blog_user_feed)), t('Record removed from database.'));
+    $this->assertNotRedirected($blog_user_feed, t('Blog feed not redirected.'));
+
+    // Test that a user without permission cannot access the form field.
+    $no_blog_user = $this->drupalCreateUser(array('add FeedBurner feed to own blog'));
+    $this->drupalLogin($no_blog_user);
+    $this->drupalGet('user/'. $no_blog_user->uid . '/edit');
+    $this->assertNoFieldByName('feedburner_feedburner');
+  }
+
+  /**
+   * Test replacing internal feed links in HTML to FeedBurner feed links.
+   */
+  function testFeedHTMLReplacement() {
+    $original_url = url('rss.xml');
+    $feedburner_url = _feedburner_construct_url('example-feed');
+    
+    // Enable a FeedBurner feed and check the proper original HTML is found.
+    feedburner_save(array('path' => 'rss.xml', 'feedburner' => 'example-feed'));
+    $this->drupalGet('');
+    $this->assertRaw($original_url, t('Original feed URL found.'));
+    $this->assertNoRaw($feedburner_url, t('FeedBurner feed URL not found.'));
+
+    // Turn on feed HTML replacement and caching.
+    variable_set('feedburner_replace_html', 1);
+    variable_set('cache', CACHE_NORMAL);
+    $this->drupalGet('');
+    $this->assertNoRaw($original_url, t('Original feed URL not found.'));
+    $this->assertRaw($feedburner_url, t('FeedBurner feed URL found.'));
+
+    // Check that the cached page has the replacements.
+    $this->assertTrue(cache_get(url('', array('absolute' => TRUE)), 'cache_page'), t('Page has been cached.'));
+    $this->drupalGet('');
+    $this->assertNoRaw($original_url, t('Original feed URL not found.'));
+    $this->assertRaw($feedburner_url, t('FeedBurner feed URL found.'));
+  }
+
+  /* function testFeedFlare() {
+
+  }*/
+
+  private function assertRedirected($url, $message, $feedburner = 'example-feed') {
+    $this->drupalGet($url);
+    $this->assertEqual($this->getUrl(), _feedburner_construct_url($feedburner), $message);
+  }
+
+  private function assertNotRedirected($url, $message) {
+    $this->drupalGet($url);
+    $this->assertEqual($this->getUrl(), url($url, array('absolute' => TRUE)), $message);
+  }
+}
+
+/**
+ * Test administration functionality.
+ */
+class FeedBurnerAdminTestCase extends DrupalWebTestCase {
+  function getInfo() {
+    return array(
+      'name' => t('FeedBurner administration'),
+      'description' => t('Test FeedBurner module administration.'),
+      'group' => t('FeedBurner'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp('feedburner');
+  }
+
+  /* function testViewsIntegration() {
+
+  }*/
+
+  /* function testBlocks() {
+
+  }*/
+
+  /* function testBuildInterface() {
+
+  }*/
+
+  /* function testSettingsInterface() {
+
+  }*/
+}

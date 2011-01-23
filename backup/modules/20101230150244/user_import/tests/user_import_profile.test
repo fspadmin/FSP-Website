@@ -1,0 +1,137 @@
+<?php 
+/**
+ *  Test import of user data into Profile module
+ */
+
+class UserImportProfile extends UserImportTest {
+
+  function get_info() {
+    return array(
+      'name' => t('Import Users (Profile)'),
+      'desc' => t('Test import of user data into Profile module.'),
+      'group' => t('User Import'),
+    );
+  }
+
+  /**
+   *  User with right permissions creates import (with new settings)
+   *  - test import of user data into Profile module 
+   */
+  function testCreateImport() {
+    $this->drupalModuleEnable('profile');
+    $this->drupalLoginUser($this->admin_user);
+    $this->profileFieldsCreate();
+      
+    // Prepare a user to do testing 
+    $this->get('logout'); // log out first
+    $this->drupalLoginUser($this->user_importer);
+
+    // Select CSV file (the included example file)
+    $this->settingsFileSelect();
+    
+    // import settings 
+    $this->importID($this->getUrl()); // store import ID for later
+    $settings = array();
+    $this->settingsEmailMatch($settings);
+    $this->settingsProfileMatch($settings);
+    $this->settingsIgnoreFirstLine($settings);
+    $this->drupalPostRequest($this->getUrl(), $settings, 'Import');
+
+    // check if users have been imported
+    $this->checkProfileExist();
+    
+    
+  }
+
+  /**
+   *  create profile fields
+   */
+  function profileFieldsCreate() {  
+    
+    // Textfield
+    $edit = array('category' => 'Name', 'title' => 'First Name', 'name' => 'profile_first_name'); 
+    $this->drupalPostRequest('admin/user/profile/add/textfield', $edit, t('Save field'));
+  
+    // Textfield 
+    $edit = array('category' => 'Name', 'title' => 'Last Name', 'name' => 'profile_last_name'); 
+    $this->drupalPostRequest('admin/user/profile/add/textfield', $edit, t('Save field'));
+
+    // Textarea
+    $edit = array('category' => 'Biography', 'title' => 'CV', 'name' => 'profile_cv'); 
+    $this->drupalPostRequest('admin/user/profile/add/textarea', $edit, t('Save field'));
+
+    // Checkbox
+    $edit = array('category' => 'Contact Details', 'title' => 'Can Be Contacted', 'name' => 'profile_contact_permission'); 
+    $this->drupalPostRequest('admin/user/profile/add/checkbox', $edit, t('Save field'));
+
+    // List
+    $edit = array('category' => 'Contact Details', 'title' => 'Contact Preference', 'name' => 'profile_contact_preference', 'options' => 'email,telephone,post'); 
+    $this->drupalPostRequest('admin/user/profile/add/selection', $edit, t('Save field'));
+
+    // Freeform List
+    $edit = array('category' => 'Biography', 'title' => 'Interests', 'name' => 'profile_interests'); 
+    $this->drupalPostRequest('admin/user/profile/add/list', $edit, t('Save field'));  
+
+    // URL
+    $edit = array('category' => 'Biography', 'title' => 'Blog', 'name' => 'profile_blog'); 
+    $this->drupalPostRequest('admin/user/profile/add/url', $edit, t('Save field')); 
+
+    // Date
+    $edit = array('category' => 'Biography', 'title' => 'Birthday', 'name' => 'profile_birthday'); 
+    $this->drupalPostRequest('admin/user/profile/add/date', $edit, t('Save field'));
+  }
+
+  /**
+   *  Match CSV columns to Profile fields
+   */
+  function settingsProfileMatch(&$edit) {
+    $edit['field_match[0][field_match]'] = 'profile-1'; // First Name
+    $edit['field_match[1][field_match]'] = 'profile-2'; // Last Name 
+    $edit['field_match[10][field_match]'] = 'profile-3'; // CV 
+    $edit['field_match[7][field_match]'] = 'profile-4'; // Contact Permision  
+    $edit['field_match[8][field_match]'] = 'profile-5'; // Contact Preference
+    $edit['field_match[9][field_match]'] = 'profile-6'; // Interests        
+    $edit['field_match[6][field_match]'] = 'profile-7'; // Blog
+    $edit['field_match[11][field_match]'] = 'profile-8'; // Birthday
+  }
+
+  /**
+   *  Check data in CSV file matches data in profiles
+   */
+  function checkProfileExist() {
+
+    $file_path = drupal_get_path('module', 'user_import') . '/sample.txt';
+    $handle = @fopen($file_path, "r");
+    $row = 0;
+
+    while ($csv = fgetcsv($handle, 1000, ',')) { 
+      
+      if ($row > 0) {
+        $user = user_load(array('mail' => $csv[5])); 
+        // test each data cell against Profile field content 
+
+        $this->assertEqual($user->profile_first_name, $csv[0], "[Compare CSV data to Profile data] Row: $row Field: First Name");
+        $this->assertEqual($user->profile_last_name, $csv[1], "[Compare CSV data to Profile data] Row: $row Field: Last Name");
+        $this->assertEqual($user->profile_blog, $csv[6], "[Compare CSV data to Profile data] Row: $row Field: Blog");
+        $this->assertEqual($user->profile_contact_permission, $csv[7], "[Compare CSV data to Profile data] Row: $row Field: Contact Permission");
+        $this->assertEqual($user->profile_contact_preference, $csv[8], "[Compare CSV data to Profile data] Row: $row Field: Contact Preference");
+        $this->assertEqual($user->profile_interests, $csv[9], "[Compare CSV data to Profile data] Row: $row Field: Profile Interests");
+        $this->assertEqual($user->profile_cv, $csv[10], "[Compare CSV data to Profile data] Row: $row Field: CV");
+        $this->assertEqual($user->profile_birthday, $csv[11], "[Compare CSV data to Profile data] Row: $row Field: Birthday");
+        
+        //test interests link on profile page
+        if (!empty($user->profile_interests)) {
+          $interests = explode(',', $user->profile_interests);
+          $this->drupalGet('profile/profile_interests/' . $interests[0]);
+          $this->assertWantedRaw('<a title="View user profile." href="/' . url('user/' . $user->uid) . '">' . $user->name . '</a>' , '[Freeform List] User is listed on page about item in list');
+        }  
+        
+      }
+      
+      $row++;
+    }
+    
+  }
+
+}
+?>

@@ -1,0 +1,43 @@
+<?php
+// $Id: system_module.install,v 1.1.4.1.2.1 2009/12/29 16:04:57 nancyw Exp $
+
+/**
+ * @file
+ * Customize System Modules fieldsets
+ */
+
+function system_module_install() {
+  drupal_install_schema('system_module');
+}
+
+function system_module_uninstall() {
+  drupal_uninstall_schema('system_module');
+}
+
+function system_module_schema() {
+  // This is not used very much yet.
+  // Settings are still saved in user.data field.
+  // In next update this module will move away from using user.data and instead use
+  // its own configuration table
+
+  $schema['system_module_users'] = array(
+    'description' => t('Tracks users of this module to enable proper cleanup when module is disabled'),
+    'fields' => array(
+      'uid' => array(
+        'description' => t('User\'s ID'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'data' => array(
+        'description' => t('Stores serialized array informing of the kind of customizations made by the user'),
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+  return $schema;
+}
+

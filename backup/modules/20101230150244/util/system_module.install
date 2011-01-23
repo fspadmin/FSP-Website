@@ -1,0 +1,57 @@
+<?php
+// $Id: system_module.install,v 1.3 2008/05/30 19:23:46 litwol Exp $
+
+/**
+ * @file
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function system_module_install() {
+  drupal_install_schema('system_module');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function system_module_uninstall() {
+  drupal_uninstall_schema('system_module');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function system_module_schema() {
+  //this is not used very much yet.
+  //settings are still saved in user.data field.
+  //in next update this module will move away from using user.data and instead use
+  //its own configuration table
+
+  $schema['system_module_users'] = array(
+    'description' => t('Tracks users of this module to enable proper cleanup when module is disabled'),
+    'fields' => array(
+      'uid' => array(
+        'description' => t('User\'s ID'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'data' => array(
+        'description' => t('Stores serialized array informing of the kind of customizations made by the user'),
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_disable().
+ */
+function system_module_disable() {
+  drupal_rebuild_theme_registry();
+}

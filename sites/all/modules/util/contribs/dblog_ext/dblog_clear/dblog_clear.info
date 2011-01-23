@@ -1,0 +1,20 @@
+; $Id: dblog_clear.info,v 1.1.2.1 2009/10/09 19:45:26 nancyw Exp $
+
+name = Log clearance
+description = Provides clearing function for filtered "Recent log" report.
+core = 6.x
+version = 0.1
+package = Util
+
+dependencies[] = dblog
+; optionally integrated with dblog_ext (extended for filters support)
+;dependencies[] = dblog_ext
+; alternative confirm_form/JavaScript/none
+dependencies[] = dblog_common
+
+; Information added by drupal.org packaging script on 2010-10-28
+version = "6.x-3.0"
+core = "6.x"
+project = "util"
+datestamp = "1288295149"
+

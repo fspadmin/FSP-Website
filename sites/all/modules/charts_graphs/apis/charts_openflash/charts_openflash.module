@@ -1,0 +1,75 @@
+<?php
+// $Id: charts_openflash.module,v 1.1.2.4 2010/06/29 21:20:28 rsevero Exp $
+
+/**
+* @file drupal module file implementing openflash charting.
+*/
+
+/**
+ * Implementation of hook_charts_graphs_provider().
+ **/
+function charts_openflash_chartgraph_provider() {
+  $provider =  array(
+    'path' => dirname(__FILE__) . '/charts_openflash.class.inc', //must be full path
+    'clazz' => 'ChartsOpenFlash', //implementation class' name
+    'name' => 'open-flash', //name used when invoking through a factroy method
+    'nice_name' => 'Open Flash Charts 2',
+    'chart_types' => array(
+      'line' => t('Line'),
+      'bar' => t('Bar'),
+      'bar_3d' => t('3D Bar'),
+      'bar_cylinder' => t('Cylinder Bar'),
+      'bar_cylinder_outline' => t('Outlined Cylinder Bar'),
+      'bar_dome' => t('Dome Bar'),
+      'bar_filled' => t('Filled Bar'),
+      'bar_glass' => t('Glass Bar'),
+      'bar_round' => t('Glass Bar with rounded tops and bottoms'),
+      'bar_round_glass' => t('Glass Bar with rounded tops'),
+      'bar_sketch' => t('Sketched Bar'),
+      'pie' => t('Pie'),
+    ),
+  );
+
+  return (object) $provider;
+}
+
+function charts_openflash_menu() {
+  $items = array();
+
+  $items['charts_openflash/data'] = array(
+    'page callback' => 'charts_openflash_data',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * @param $cid
+ *   cache_id from which cache to retrieve the data
+ */
+function charts_openflash_data($cid = NULL) {
+  $cache = cache_get($cid);
+  if (!$cache) {
+    drupal_not_found();
+    exit();
+  }
+  $canvas = $cache->data;
+    
+  $chart = chart_graphs_get_graph('open-flash');
+  
+  $chart->get_data_from_cache($cid);
+
+  /*$chart = <<<JSON
+  { "elements": [ { "type": "pie", "colours": [ "#77CC6D", "#FF5973", "#6D86CC" ], "border": 2, "animate": true, "label-colour": "#432BAF", "alpha": 0.75, "tip": "#label#
+$#val# (#percent#)", "on-click": "pie_slice_clicked", "values": [ { "value": 120, "label": "X" }, { "value": 99, "label": "Y" }, { "value": 21, "label": "Z", "on-click": "http:\/\/example.com" } ] } ] }';
+
+JSON;*/
+
+  //drupal_set_header('Content-Type: text/javascript; charset=utf-8');
+  //echo $chart;
+
+  drupal_json($chart);
+  exit();
+}

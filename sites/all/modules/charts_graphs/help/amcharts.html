@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- $Id: amcharts.html,v 1.1.2.6 2010/06/29 21:29:54 rsevero Exp $ -->
+<html>
+  <head>
+    <title>Charts and Graphs - amCharts</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  </head>
+  <body>
+    <h3>Library pages</h3>
+    <p>For definitive info about amCharts library please see it's
+      <a href="http://www.amcharts.com/">home page</a> and it's
+      <a href="http://www.amcharts.com/docs/">reference page</a>.</p>
+    <h3>Instalation</h3>
+    <p>You need to download <a href="http://www.amcharts.com/download">amCharts</a>
+      files. Specifically	Column & Bar, Line & Area, Pie & Donut zip files.</p>
+    <p>Unfortunately amCharts ships as several zips with sophisticated folder
+      structure in each one of them. You need to hunt down the following
+      files:</p>
+    <ul>
+      <li>amcolumn.swf</li>
+      <li>amline.swf</li>
+      <li>ampie.swf</li>
+    </ul>
+    <p>Download and place them in the <i>downloaded</i> folder of the module,
+      directly, without any folder structure inside the <i>downloaded</i> folder.</p>
+    <h4>Dependency</h4>
+    <p>amCharts implementation for Charts and Graphs dependends on the
+      <a href="http://drupal.org/project/swftools">SWFTools</a> module.</p>
+    <p>At this point, you should be able to start using AmCharts, but it is
+      highly recommended that you complete following three steps as well:</p>
+    <ol>
+      <li>download: http://code.google.com/p/swfobject zip file, extract it and
+        copy the swfobject.js file to <i>sites/all/modules/swftools/shared/swfobject2/swfobject.js</i></li>
+      <li>enable SWFObject2 module</li>
+      <li>go to SWFTools embeding configuration located at:
+        http://yourdomain.com/admin/settings/swftools/embed and under <i>Embedding
+        Methods</i> make <i>SWFObject 2 - JavaScript</i> the default method</li>
+    </ol>
+    <h3>Usage</h3>
+    <p>The quickest code to get something graphed using AmCharts:</p>
+    <pre>
+&lt;?php
+function charts_graphs_test() {
+  $canvas = chart_graphs_get_graph('amcharts');
+
+  $canvas->title = 'AmCharts Chart';
+  $canvas->type = 'line';
+  $canvas->y_legend = 'Y Legend';
+  $canvas->colour = '#808000';
+  $canvas->theme = 'keynote';
+  $canvas->series = array(
+    'Some Value' => array(9,6,7,9,5,7,6,9,7),
+    'Page Views' => array(6,7,9,5,7,6,9,7,3),
+  );
+  $canvas->x_labels = array('one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine');
+
+  $out = $canvas->get_chart();
+
+  return $out;
+}
+</pre>
+    <h3>Graph types supported</h3>
+    <p>amCharts supports all <a href="general_reference#type">main</a> and
+      <a href="general_reference#other_standardized_types">standardized graph</a>
+      types. It also supports the following graph types:</p>
+    <dl>
+      <dt>100_stacked_bar</dt>
+        <dd>Stacked bar where columns equalized at the same height and values
+          take up a percentage of each column.</dd>
+      <dt>bar_3d</dt>
+        <dd>Columns are 3D and are positioned one behind another.</dd>
+      <dt>100_stacked_side_bar</dt>
+        <dd>Stacked side bar where columns equalized at the same width and
+          values take up a percentage of each column.</dd>
+      <dt>side_bar_3d</dt>
+        <dd>3D side bars positioned one behind another.</dd>
+    </dl>
+    <h3>Examples</h3>
+    <p>The examples below will only work if you have the amCharts submodule
+      configured correctly.</p>
+    <ul>
+      <li><a href="/charts_graphs/test/amcharts/line/amCharts - Line example">Line example</a></li>
+      <li><a href="/charts_graphs/test/amcharts/bar/amCharts - Bar example">Bar example</a></li>
+      <li><a href="/charts_graphs/test/amcharts/pie/amCharts - Pie example">Pie example</a></li>
+    </ul>
+  </body>
+</html>

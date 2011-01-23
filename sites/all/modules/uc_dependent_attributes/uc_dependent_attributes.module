@@ -1,0 +1,268 @@
+<?php
+// $Id: uc_dependent_attributes.module,v 1.3 2009/12/15 19:58:53 antoinesolutions Exp $
+
+/**
+ * @file
+ * Dependent Attributes module.
+ * 
+ * Allows a store administrator to specify which attribute/option combinations
+ * to enable/disable on a per product basis.
+ */
+
+
+/******************************************************************************
+ * Drupal Hooks
+ *****************************************************************************/
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_dependent_attributes_form_alter(&$form, $form_state, $form_id) {
+  // Add an enabled checkbox to the product adjustments form
+  if ($form_id == 'uc_product_adjustments_form') {
+    // Retrieve disabled combinations from the database
+    $result = db_query("SELECT combination FROM {uc_dependent_attributes} WHERE nid = %d", $form['nid']['#value']);
+    $combos = array();
+    while ($combo = db_result($result)) {
+      $combos[] = $combo;
+    }
+
+    // Update the table header
+    $form['table']['head']['#value'] = '<th>Enabled</th>'. $form['table']['head']['#value'];
+
+    // Loop through each form element adding an enabled checkbox
+    foreach (element_children($form['table']['body']) as $key) {
+      $form['table']['body'][$key]['enabled'] = array(
+        '#type' => 'checkbox',
+        '#default_value' => !in_array($form['table']['body'][$key]['combo_array']['#value'], $combos),
+        '#prefix' => '<td>',
+        '#suffix' => '</td>',
+        '#weight' => -1,
+      );
+    }
+
+    // Add an additional form submit handler
+    $form['#submit'][] = 'uc_dependent_attributes_uc_product_adjustments_form_submit';
+  }
+  // Filter attribute/option conbinations on the product add_to_cart form if
+  // submitted via ajaxSubmit
+  if (strstr($form_id, 'uc_product_add_to_cart_form_') && !empty($_POST)) {
+    // Only attempt to adjust attributes if they exist
+    if (isset($form['attributes'])) {
+      // Build a 2-dimensional array of possible attribute and option ids
+      foreach (element_children($form['attributes']) as $aid) {
+        // Only Select and Radio attributes effect adjustments
+        if ($form['attributes'][$aid]['#type'] == 'select' || $form['attributes'][$aid]['#type'] == 'radios') {
+          foreach($form['attributes'][$aid]['#options'] as $oid => $option) {
+            // Ignore additional required option
+            if (!empty($oid)) {
+              $possible[$aid][$oid] = array();
+            }
+          }
+        }
+      }
+  
+      // Build a hierarchy array of all possible attribute option combinations
+      $possible = array_hierarchy($possible);
+  
+      $disabled = array();
+      // Retrieve all disabled attribute option combinations
+      $result = db_query("SELECT combination FROM {uc_dependent_attributes} WHERE nid = %d AND enabled = 0", $form['nid']['#value']);
+      while ($data = db_result($result)) {
+        $combo = array();
+        $combo_ordered = array();
+  
+        // Build a 2-dimensional array of disabled attribute and option ids
+        foreach (unserialize($data) as $key => $value) {
+          $combo[$key][$value] = array();
+        }
+  
+        // Reorder 2-dimensional array to match form
+        foreach (element_children($form['attributes']) as $aid) {
+          // Only Select and Radio attributes effect adjustments
+          if ($form['attributes'][$aid]['#type'] == 'select' || $form['attributes'][$aid]['#type'] == 'radios') {
+            $combo_ordered[$aid] = $combo[$aid];
+          }
+        }
+  
+        // Build an array hierarchy and merge with other combos
+        $disabled = array_merge_recursive_preserve($disabled, array_hierarchy($combo_ordered));
+      }
+  
+      // Filter out all disabled combinations from the possible combinations
+      $filtered = array_diff_assoc_recursive($possible, $disabled);
+  
+      // Update the form attributes
+      _uc_dependent_attributes_filter($filtered, $_POST['attributes'], $form['#parameters'][2]->attributes);
+    }
+  }
+}
+
+/**
+ * Additional submit handler for uc_product_adjustments_form.
+ */
+function uc_dependent_attributes_uc_product_adjustments_form_submit(&$form, &$form_state) {
+  foreach ($form_state['values']['body'] as $value) {
+    if (!$value['enabled']) {
+      db_query("UPDATE {uc_dependent_attributes} SET enabled = 0 WHERE nid = %d AND combination = '%s'", $form_state['values']['nid'], $value['combo_array']);
+      if (!db_affected_rows()) {
+        db_query("INSERT INTO {uc_dependent_attributes} (nid, combination, enabled) VALUES (%d, '%s', 0)", $form_state['values']['nid'], $value['combo_array']);
+      }
+    }
+    else {
+      db_query("DELETE FROM {uc_dependent_attributes} WHERE nid = %d AND combination = '%s'", $form_state['values']['nid'], $value['combo_array']);
+    }
+  }
+}
+
+
+/******************************************************************************
+ * Module Functions
+ *****************************************************************************/
+
+/**
+ * Filter disabled product attribute options.
+ *
+ * @param $combos:
+ *   Hierarchy array of all enabled attribute option combinations.
+ * @param $selected
+ *   Reference to the $_POST['attributes'] array.
+ * @param $attributes:
+ *   Reference to the $product->attributes object.
+ */
+function _uc_dependent_attributes_filter($combos, &$selected, &$attributes) {
+  $aid = key($combos);
+  $oid = $selected[$aid];
+
+  if (!empty($combos[$aid][$oid])) {
+    _uc_dependent_attributes_filter($combos[$aid][$oid], $selected, $attributes);
+  }
+
+  // Remove disabled attribute options from the form
+  foreach ($attributes[$aid]->options as $oid => $option) {
+    // If this option does not exist in $combos
+    if (!isset($combos[$aid][$oid])) {
+      // Remove the option from the form
+      unset($attributes[$aid]->options[$oid]);
+    }
+  }
+
+  // If the default option is not available
+  if (!isset($attributes[$aid]->options[$selected[$aid]])) {
+    // Get a new default option
+    reset($attributes[$aid]->options);
+    $default_oid = key($attributes[$aid]->options);
+    // Set the new default for both $product->attributes and $_POST['attributes']
+    $attributes[$aid]->default_option = $default_oid;
+    $selected[$aid] = $default_oid;
+  }
+}
+
+
+/******************************************************************************
+ * Utility Functions
+ *****************************************************************************/
+
+/**
+ * Recursivly build a hierarchy array from a 2-dimensional array.
+ *
+ * @param $array
+ *   2-dimensional array to build a hierarchy from.
+ * @return array
+ *   Returns a hierarchy array of the 2-dimensional array.
+ */
+function array_hierarchy($array) {
+  // Get the first element from the array
+  $return = array_slice($array, 0, 1, true);
+  // Remove the first element from the array
+  unset($array[key($return)]);
+
+  // If the array is not empty
+  if (!empty($array)) {
+    // Recursivley call the array_hierarchy function
+    $child = array_hierarchy($array);
+    // Add the child to all parent elements
+    foreach ($return as $pkey => $pvalue) {
+      foreach ($pvalue as $ckey => $cvalue) {
+        $return[$pkey][$ckey] = $child;
+      }
+    }
+  }
+
+  // Return child array
+  return $return;
+}
+
+/**
+ * Recursively merge arrays while preserving numeric keys.
+ *
+ * @return array
+ *   Returns an array containg all merged keys => values from all passed in
+ *   arrays.
+ */
+function array_merge_recursive_preserve() {
+  // Holds all the arrays passed
+  $params = &func_get_args();
+
+  // First array is used as the base, everything else overwrites on it
+  $return = array_shift($params);
+
+  // Merge all arrays on the first array
+  foreach ($params as $array) {
+    foreach ($array as $key => $value) {
+      // Numeric keyed values are added (unless already there)
+      if (is_numeric($key)) {
+        if (is_array($value) && !empty($value)) {
+          $return[$key] = array_merge_recursive_preserve($return[$key], $value);
+        }
+        else {
+          $return[$key] = $value;
+        }
+      }
+      // String keyed values are replaced
+      else {
+        if (isset($return[$key]) && is_array($value) && is_array($return[$key])) {
+          $return[$key] = array_merge_recursive_preserve($return[$key], $value);
+        }
+        else {
+          $return[$key] = $value;
+        }
+      }
+    }
+  }
+
+  return $return;
+}
+
+/**
+ * Recursivley compares arrays and returns the difference.
+ *
+ * @return array
+ *   Returns an array containg all the values from the first array that are not
+ *   present in any subsequent array.
+ */
+function array_diff_assoc_recursive() {
+  // Holds all the arrays passed
+  $params = &func_get_args();
+
+  // First array is used as the base, everything else overwrites on it
+  $array1 = array_shift($params);
+
+  foreach ($array1 as $key => $value) {
+    if (is_array($value)) {
+      if (!isset($params[0][$key]) || !is_array($params[0][$key])) {
+        $diff[$key] = $value;
+      }
+      else {
+        $new = array_diff_assoc_recursive($value, $params[0][$key]);
+        if ($new != false) {
+          $diff[$key] = $new;
+        }
+      }
+    }
+    elseif (!isset($params[0][$key]) || $params[0][$key] != $value) {
+      $diff[$key] = $value;
+    }
+  }
+  return !isset($diff) ? false : $diff;
+}

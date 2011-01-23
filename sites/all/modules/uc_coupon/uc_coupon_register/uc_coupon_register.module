@@ -1,0 +1,104 @@
+<?php
+// $Id: uc_coupon_register.module,v 1.1 2010/12/18 07:37:30 longwave Exp $
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function uc_coupon_register_form_user_admin_settings_alter(&$form, &$form_state) {
+  $coupons = array(0 => t('None'));
+  $result = db_query("SELECT cid, name, code FROM {uc_coupons} WHERE status = 1 ORDER BY name ASC");
+  while ($coupon = db_fetch_object($result)) {
+    $coupons[$coupon->cid] = $coupon->name .' ('. $coupon->code .')';
+  }
+
+  $form['uc_coupon_register'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Coupons'),
+  );
+  $form['uc_coupon_register']['uc_coupon_register_cid'] = array(
+    '#type' => 'select',
+    '#title' => t('Coupon to issue upon registration'),
+    '#description' => t('If enabled, the new user will be added to the user restrictions for the selected coupon, and the code will be sent to them by email.'),
+    '#default_value' => variable_get('uc_coupon_register_cid', 0),
+    '#options' => $coupons,
+  );
+  $form['uc_coupon_register']['uc_coupon_register_mail_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email subject'),
+    '#default_value' => variable_get('uc_coupon_register_mail_subject', t('Coupon code at !site')),
+    '#maxlength' => 180,
+  );
+  $form['uc_coupon_register']['uc_coupon_register_mail_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Email body'),
+    '#description' => t('Available variables are:') .' !username, !site, !password, !uri, !uri_brief, !mailto, !date, !login_uri, !edit_uri, !login_url, !coupon_code, !coupon_name.',
+    '#default_value' => variable_get('uc_coupon_register_mail_body', t("!username,\n\nThank you for registering at !site.\n\nYou may use the following coupon during checkout: !coupon_code\n\nPlease ensure you are logged in to your account, or you will not be able to use the coupon.\n\n\n--  !site team")),
+    '#rows' => 10,
+  );
+  $form['buttons']['#weight']++;
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function uc_coupon_register_form_user_register_alter(&$form, &$form_state) {
+  if ($coupon = uc_coupon_load(variable_get('uc_coupon_register_cid', 0))) {
+    if ($form['account']) {
+      $use_form = &$form['account'];
+    }
+    else {
+      $use_form = &$form;
+    }
+
+    if (user_access('administer users')) {
+      // Administrators can select whether to allow coupon usage.
+      $use_form['uc_coupon_register'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Grant access to coupon %name', array('%name' => $coupon->name)),
+        '#default_value' => TRUE,
+      );
+    }
+    else {
+      // Users always get access.
+      $use_form['uc_coupon_register'] = array(
+        '#type' => 'value',
+        '#value' => TRUE,
+      );
+    }
+  }
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function uc_coupon_register_user($type, &$edit, &$account, $category = NULL) {
+  if ($type == 'insert') {
+    if (isset($edit['uc_coupon_register']) && $edit['uc_coupon_register']) {
+      $uid = $edit['uid'];
+
+      // Grant access to the coupon.
+      $coupon = uc_coupon_load(variable_get('uc_coupon_register_cid', 0));
+      $coupon->data['users'][$uid] = $uid;
+      uc_coupon_save($coupon);
+
+      // Send the email.
+      $params['account'] = $account;
+      $params['coupon'] = $coupon;
+      drupal_mail('uc_coupon_register', 'coupon', $account->mail, user_preferred_language($account), $params);
+    }
+
+    $edit['uc_coupon_register'] = NULL;
+  }
+}
+
+/**
+ * Implementation of hook_mail().
+ */
+function uc_coupon_register_mail($key, &$message, $params) {
+  $language = $message['language'];
+  $variables = user_mail_tokens($params['account'], $language);
+  $variables['!coupon_name'] = $params['coupon']->name;
+  $variables['!coupon_code'] = $params['coupon']->code;
+  $message['subject'] .= strtr(variable_get('uc_coupon_register_mail_subject', ''), $variables);
+  $message['body'][] = strtr(variable_get('uc_coupon_register_mail_body', ''), $variables);
+}

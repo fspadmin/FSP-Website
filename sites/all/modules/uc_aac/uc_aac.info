@@ -1,0 +1,13 @@
+; $Id: uc_aac.info,v 1.5 2009/11/04 19:04:50 antoinesolutions Exp $
+name = Ajax Attribute Calculations
+description = Allows product information on the product screens to be updated via Ajax.
+dependencies[] = uc_attribute
+package = Ubercart - extra
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-11-13
+version = "6.x-2.1"
+core = "6.x"
+project = "uc_aac"
+datestamp = "1289672474"
+

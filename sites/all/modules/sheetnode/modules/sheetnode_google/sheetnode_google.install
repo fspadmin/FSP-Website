@@ -1,0 +1,10 @@
+<?php
+// $Id: sheetnode_google.install,v 1.1.2.1 2010/11/22 09:29:36 kratib Exp $
+
+/**
+ * Implementation of hook_update_N().
+ */
+function sheetnode_google_update_6001() {
+  drupal_set_message(t('Please make sure to delete the sheetnode_google.* files in the root sheetnode directory.'), 'warning');
+}
+

@@ -1,0 +1,795 @@
+# Japanese translation of User Import (6.x-2.3)
+# Copyright (c) 2010 by the Japanese translation team
+# Generated from files:
+#  user_import.module,v 1.26 2009/09/20 11:58:10 MegaGrunt
+#  watchdog.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt
+#  user_import.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt
+#  user.inc,v 1.8 2009/09/20 11:58:10 MegaGrunt
+#  subscribed.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt
+#  user_import.info,v 1.8 2009/09/20 01:59:29 MegaGrunt
+#  profile.inc,v 1.6 2009/04/04 16:24:18 MegaGrunt
+#  nodeprofile.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt
+#  user_import.install,v 1.12 2009/09/20 01:59:29 MegaGrunt
+#  content_profile.inc,v 1.1 2009/10/24 21:10:47 MegaGrunt
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: User Import (6.x-2.3)\n"
+"POT-Creation-Date: 2010-03-01 08:38+0000\n"
+"PO-Revision-Date: 2010-03-02 13:16+0900\n"
+"Language-Team: Japanese\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"Last-Translator: PineRay <matsudaterutaka@gmail.com>\n"
+
+#: user_import.module:286
+msgid "Next"
+msgstr "次へ"
+
+#: supported/watchdog.inc:15
+msgid "user"
+msgstr "ユーザ"
+
+#: user_import.module:773
+msgid "Delete"
+msgstr "削除"
+
+#: user_import.module:862,1000
+msgid "Username"
+msgstr "ユーザ名"
+
+#: user_import.module:418
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: supported/user_import.inc:309,316
+msgid "Unsubscribe"
+msgstr "登録解除"
+
+#: supported/user.inc:207,214
+msgid "Available variables are:"
+msgstr ""
+"<br>\n"
+"利用可能な変数:"
+
+#: user_import.module:403
+msgid "Test"
+msgstr "テスト"
+
+#: supported/user.inc:212
+msgid "Message"
+msgstr "メッセージ"
+
+#: supported/user.inc:15,38
+msgid "Password"
+msgstr "パスワード"
+
+#: user_import.module:961
+msgid "none"
+msgstr "なし"
+
+#: user_import.module:772
+msgid "Settings"
+msgstr "環境設定"
+
+#: supported/watchdog.inc:15
+msgid "edit"
+msgstr "編集"
+
+#: user_import.module:411,775,72,85
+msgid "Import"
+msgstr "インポート"
+
+#: user_import.module:205;
+#: supported/user_import.inc:175
+msgid "Save"
+msgstr "保存"
+
+#: user_import.module:788
+msgid "username"
+msgstr "ユーザ名"
+
+#: supported/user_import.inc:196,202
+msgid "Update"
+msgstr "更新"
+
+#: supported/subscribed.inc:16
+msgid "Subscriptions"
+msgstr "配信登録"
+
+#: user_import.module:60
+msgid "User Imports"
+msgstr "ユーザーインポート"
+
+#: user_import.module:66
+msgid "List Imports"
+msgstr "インポートのリスト"
+
+#: user_import.module:79
+msgid "Continue"
+msgstr "継続"
+
+#: user_import.module:91
+msgid "Delete Import"
+msgstr "インポートを削除"
+
+#: user_import.module:97
+msgid "Configure"
+msgstr "設定"
+
+#: user_import.module:862
+msgid "Email"
+msgstr "メール"
+
+#: user_import.module:151
+msgid "Maximum Users/Process"
+msgstr "最大ユーザー/プロセス数"
+
+#: user_import.module:155
+msgid "Maximum number of users to import each time the file is processed, useful for controling the rate at which emails are sent out."
+msgstr "1度のファイル処理でインポートする最大ユーザー数で、送信するメールの量を制御するのに役立ちます。"
+
+#: user_import.module:160
+msgid "Maximum length of line"
+msgstr "1行あたりの最大文字数"
+
+#: user_import.module:164
+msgid "The default is set at 1,000 characters, if a line in your csv is longer than this you should set a higher maximum here. Setting higher maximums will slow down imports."
+msgstr "デフォルトは1,000文字です。もしCSVに含まれる文字数がこれより多くなるなら、より大きな文字数を指定してください。大きな文字数を指定すると、インポートの処理速度が遅くなります。"
+
+#: user_import.module:174
+msgid "Settings Templates"
+msgstr "設定テンプレート"
+
+#: user_import.module:188
+msgid "Default Settings"
+msgstr "デフォルト設定"
+
+#: user_import.module:189
+msgid "Select if you want to use a previously saved set of settings as default for all imports."
+msgstr "これまでに保存した設定を、インポートの際のデフォルト設定として使用する場合に選択してください。"
+
+#: user_import.module:197
+msgid "Delete Templates"
+msgstr "テンプレートを削除"
+
+#: user_import.module:860
+msgid "All usernames are OK."
+msgstr "すべてのユーザー名がチェックを通りました。"
+
+#: user_import.module:214
+msgid "Value should be at least 10."
+msgstr "10以上の値を入力してください。"
+
+#: user_import.module:217,225
+msgid "Value must be a number."
+msgstr "値を数字で指定してください。"
+
+#: user_import.module:221
+msgid "Value must be higher than 1000."
+msgstr "1000 より大きな値を指定してください。"
+
+#: user_import.module:222
+msgid "Value must be lower than 1,000,000."
+msgstr "1,000,000 より小さい値を指定してください。"
+
+#: user_import.module:253
+msgid "Settings templates deleted: @deleted"
+msgstr "設定テンプレートを削除しました: @deleted"
+
+#: user_import.module:255
+msgid "Configuration settings have been saved."
+msgstr "設定を保存しました。"
+
+#: user_import.module:547
+msgid "Browser Upload"
+msgstr "ブラウザーアップロード"
+
+#: user_import.module:549
+msgid "Upload a CSV file."
+msgstr "CSVファイルをアップロード"
+
+#: user_import.module:552
+msgid "Maximum file size: !size MB."
+msgstr "最大ファイルサイズ: !size MB。"
+
+#: user_import.module:556
+msgid "CSV File"
+msgstr "CSVファイル"
+
+#: user_import.module:558
+msgid "Select the CSV file to be imported. "
+msgstr "インポートするCSVファイルを選択してください。"
+
+#: user_import.module:565
+msgid "FTP Upload"
+msgstr "FTPアップロード"
+
+#: user_import.module:568
+msgid "Any files uploaded to the 'user_import' directory using FTP can be selected for import here. Useful if the import file is too large for upload via the browser."
+msgstr "FTPで「user_import」ディレクトリにアップロードされたファイルを、ここで選択してインポートすることができます。ブラウザーでアップロードするには容量が大きすぎるファイルをインポートするのに役立ちます。"
+
+#: user_import.module:573
+msgid "Files"
+msgstr "ファイル"
+
+#: user_import.module:269
+msgid "-- none --"
+msgstr "-- なし --"
+
+#: user_import.module:276;
+#: supported/user_import.inc:185
+msgid "Saved Settings"
+msgstr "保存している設定"
+
+#: user_import.module:277
+msgid "Select if you want to use a previously saved set of settings."
+msgstr "これまでに保存した設定を使用する場合は選択してください。"
+
+#: user_import.module:300
+msgid "A file must be uploaded or selected from FTP updates."
+msgstr "ファイルをアップロードするか、またはFTPアップデートから選択してください。"
+
+#: supported/user_import.inc:268
+msgid "Remove file"
+msgstr "ファイルを除去"
+
+#: supported/user_import.inc:215,223
+msgid "Save As New"
+msgstr "新規保存"
+
+#: supported/user_import.inc:237
+msgid "A name needs to be set to save this settings template."
+msgstr "この設定テンプレートを保存するのに必要な名前。"
+
+#: user_import.module:445
+msgid "Database fields can only be matched to one column of the csv file."
+msgstr "データベースの各フィールドは、それぞれCSVファイルのひとつのカラムにだけ照合することができます。"
+
+#: user_import.module:454
+msgid "One column of the csv file must be set as the email address."
+msgstr "CSVファイルのカラムをひとつ、メールアドレスに指定してください。"
+
+#: user_import.module:460
+msgid "Name of saved settings must be 25 characters or less."
+msgstr "設定名は25文字以下で指定してください。"
+
+#: user_import.module:480
+msgid "'%name' was saved as a settings template."
+msgstr "「%name」設定テンプレートを保存しました。"
+
+#: user_import.module:504
+msgid "'%name' settings template was updated."
+msgstr "「%name」設定テンプレートを更新しました。"
+
+#: user_import.module:516
+msgid "Tested"
+msgstr "テスト済"
+
+#: user_import.module:524,1538
+msgid "Imported"
+msgstr "インポート済"
+
+#: user_import.module:753
+msgid "importable"
+msgstr "インポート可"
+
+#: user_import.module:753
+msgid "imported"
+msgstr "インポート済"
+
+#: user_import.module:754
+msgid "file"
+msgstr "ファイル"
+
+#: user_import.module:754
+msgid "started"
+msgstr "スタート日時"
+
+#: user_import.module:754
+msgid "processed"
+msgstr "処理済"
+
+#: user_import.module:754
+msgid "errors"
+msgstr "エラー"
+
+#: user_import.module:754
+msgid "status"
+msgstr "状態"
+
+#: user_import.module:774
+msgid "Continue Processing"
+msgstr "処理の続行"
+
+#: user_import.module:788
+msgid "csv column"
+msgstr "CSVのカラム"
+
+#: user_import.module:788
+msgid "Drupal fields"
+msgstr "Drupalのフィールド"
+
+#: user_import.module:788
+msgid "abbreviate"
+msgstr "省略"
+
+#: user_import.module:110
+msgid "Import Errors"
+msgstr "インポートエラー"
+
+#: user_import.module:849
+msgid "<strong>CSV File:</strong> %file"
+msgstr "<strong>CSVファイル:</strong> %file"
+
+#: user_import.module:813
+msgid "Email Address"
+msgstr "メールアドレス"
+
+#: user_import.module:862
+msgid "User ID"
+msgstr "ユーザID"
+
+#: user_import.module:862
+msgid "Error"
+msgstr "エラー"
+
+#: supported/user_import.inc:253
+msgid "Use Different CSV File"
+msgstr "別のCSVファイルを使用"
+
+#: supported/user_import.inc:254
+msgid "Remove file to use a different file. All settings on this page will be deleted."
+msgstr "ファイルを取り除いて別のファイルを使用します。このページのすべての設定は削除されます。"
+
+#: supported/user_import.inc:262
+msgid "Uploaded file"
+msgstr "アップロード済みファイル"
+
+#: supported/user_import.inc:103
+msgid "Options"
+msgstr "オプション"
+
+#: supported/user_import.inc:111
+msgid "Ignore First Line"
+msgstr "1行目を無視"
+
+#: supported/user_import.inc:113
+msgid "If the first line is the names of the data columns, set to ignore first line."
+msgstr "1行目がデータのカラム名ならば、1行名を無視するように設定してください。"
+
+#: supported/user.inc:39;
+#: supported/user_import.inc:120
+msgid "Contact"
+msgstr "コンタクト"
+
+#: supported/user_import.inc:122
+msgid "Set each user's personal contact form to 'allowed'."
+msgstr "各ユーザーのパーソナルコンタクトフォームを「許可」に設定。"
+
+#: supported/user_import.inc:127
+msgid "Send Email"
+msgstr "メールを送信"
+
+#: supported/user_import.inc:129
+msgid "Send email to users when their account is created."
+msgstr "アカウントが作成されると、そのユーザーへメールを送信します。"
+
+#: supported/user_import.inc:134
+msgid "Username Space"
+msgstr "ユーザー名のスペース"
+
+#: supported/user_import.inc:136
+msgid "Include spaces in usernames, e.g. 'John' + 'Smith' => 'John Smith'."
+msgstr "ユーザー名にスペースを挿入します。例） 「John」+「Smith」 => 「John Smith」"
+
+#: supported/user_import.inc:141
+msgid "Activate Accounts"
+msgstr "アカウントのアクティベート"
+
+#: supported/user.inc:169
+msgid "Role Assign"
+msgstr "ロール付与"
+
+#: supported/user.inc:197
+msgid "Email Message"
+msgstr "メールメッセージ"
+
+#: supported/user.inc:207
+msgid "Customize the subject of the welcome e-mail, which is sent to imported members."
+msgstr "インポートしたメンバーに送信する歓迎メールの件名をカスタマイズします。"
+
+#: supported/user.inc:214
+msgid "Customize the body of the welcome e-mail, which is sent to imported members."
+msgstr "インポートしたメンバーに送信する歓迎メールの本文をカスタマイズします。"
+
+#: supported/user_import.inc:158
+msgid "Save Settings"
+msgstr "設定を保存"
+
+#: supported/user_import.inc:159
+msgid "Save settings for re-use on other imports."
+msgstr "今後のインポートで使用するため設定を保存します。"
+
+#: supported/user_import.inc:167
+msgid "Settings Name"
+msgstr "設定名"
+
+#: supported/user_import.inc:170,218
+msgid "Name to identify these settings by."
+msgstr "これらの設定を区別するための名前。"
+
+#: supported/user_import.inc:186
+msgid "If changes have neen made to the settings since they where last saved you can update the saved template, or save them as a new template."
+msgstr "設定を最後に保存してから変更が加わった場合には、保存したテンプレートを更新することができます。あるいは、新しいテンプレートとして保存することもできます。"
+
+#: supported/user_import.inc:197
+msgid "Update '%name' settings template"
+msgstr "「%name」設定テンプレートを更新"
+
+#: supported/user_import.inc:209
+msgid "Create New"
+msgstr "新規作成"
+
+#: supported/user_import.inc:210
+msgid "Save as new settings template"
+msgstr "新しい設定テンプレートとして保存"
+
+#: user_import.module:1029
+msgid "no"
+msgstr "いいえ"
+
+#: user_import.module:999
+msgid "Match columns in CSV file to profile fields, leave as '----' if there is no match."
+msgstr "CSVファイルのカラムとプロフィールのフィールドを照合してください。照合させない場合は「---」のままにします。"
+
+#: user_import.module:1000
+msgid "The Username will be built from CSV columns in the order selected."
+msgstr "ユーザー名は、CSVのカラムを選択した順番通りに組み合わせて作成されます。"
+
+#: user_import.module:1001
+msgid "Abbreviate"
+msgstr "省略"
+
+#: user_import.module:1001
+msgid "Use the first letter of a field in uppercase for the Username, e.g. 'john' -> 'J'."
+msgstr "フィールドの最初の1文字を大文字にしてユーザー名に使用します。例） 「john」 -> 「J」"
+
+#: user_import.module:1002
+msgid "If no CSV fields are selected, the Username will be randomly generated."
+msgstr "CSVのフィールドが選択されていなければ、ユーザー名はランダムな文字列となります。"
+
+#: user_import.module:1006
+msgid "Field Match"
+msgstr "フィールドの照合"
+
+#: supported/watchdog.inc:15
+msgid "New user: %name %email."
+msgstr "新規ユーザ： %name（%email）"
+
+#: user_import.module:884
+msgid "File error: file '%old_filename' (%filename) could not be deleted."
+msgstr "ファイルエラー: 「%old_filename」（%filename）を削除できませんでした。"
+
+#: user_import.module:887
+msgid "File '%old_filename' was deleted."
+msgstr "ファイル「%old_filename」を削除しました。"
+
+#: user_import.module:1498
+msgid "File has already been imported"
+msgstr "インポート済みのファイルです"
+
+#: user_import.module:940
+msgid "Could not find the csv file '%filename'"
+msgstr "CSVファイル「%filename」が見つかりません"
+
+#: user_import.module:941
+msgid "Please add your file again."
+msgstr "ファイルを再度追加してください。"
+
+#: user_import.module:952
+msgid "Could not get data, the file '%filename' is either empty or has incompatible line endings."
+msgstr "データを取得できません。ファイル「%filename」は空か、もしくは処理できない改行方式です。"
+
+#: user_import.module:52
+msgid "import users"
+msgstr "ユーザーをインポート"
+
+#: user_import.info:0
+msgid "User Import"
+msgstr "ユーザーインポート"
+
+#: user_import.info:0
+msgid "Import users into Drupal from a CSV file."
+msgstr "CSVファイルからDrupalへユーザーをインポートします。"
+
+#: supported/user.inc:16,37
+msgid "Roles"
+msgstr "ロール"
+
+#: user_import.module:144
+msgid "Performance"
+msgstr "パフォーマンス"
+
+#: supported/user_import.inc:246
+msgid "'!name' is already in use by another settings template."
+msgstr "「!name」という名前の設定テンプレートはすでに存在します。"
+
+#: supported/user.inc:205
+msgid "Message Subject"
+msgstr "メッセージの件名"
+
+#: supported/user.inc:219
+msgid "Email Format"
+msgstr "メールの形式"
+
+#: supported/user.inc:221
+msgid "Plain Text"
+msgstr "プレーンテキスト"
+
+#: supported/user.inc:221
+msgid "HTML"
+msgstr "HTML"
+
+#: supported/user.inc:228
+msgid "Use if sending HTML formated email."
+msgstr "HTML形式のメールを送信する場合に使用。"
+
+#: supported/user.inc:226
+msgid "CSS"
+msgstr "CSS"
+
+#: supported/user_import.inc:309,315
+msgid "Update Preferences"
+msgstr "設定の変更"
+
+#: supported/subscribed.inc:40
+msgid "No Subscription"
+msgstr "配信登録なし"
+
+#: supported/profile.inc:18
+msgid "Profile"
+msgstr "プロフィール"
+
+#: user_import.module:711
+msgid "Return"
+msgstr "戻る"
+
+#: supported/nodeprofile.inc:54
+msgid "Node Profile"
+msgstr "Node Profile"
+
+#: supported/subscribed.inc:66
+msgid "Subscribed"
+msgstr "配信登録済"
+
+#: user_import.module:852
+msgid "Errors"
+msgstr "エラー"
+
+#: user_import.module:104
+msgid "Remove Info"
+msgstr "削除に関して"
+
+#: user_import.module:44
+msgid "Import or update users from a comma separated file (csv). Click 'Import' to start a new import."
+msgstr "カンマ区切りのファイル（CSV）からユーザーをインポートしたりアップデートします。新しくインポートを始めるには「インポート」をクリックしてください。"
+
+#: user_import.module:376
+msgid "Update Existing Users"
+msgstr "既存ユーザーをアップデート"
+
+#: user_import.module:384
+msgid "No Update"
+msgstr "アップデートなし"
+
+#: user_import.module:384
+msgid "Replace Data"
+msgstr "データを差し替え"
+
+#: user_import.module:384
+msgid "Add Data"
+msgstr "データを追加"
+
+#: user_import.module:581
+msgid "Check for new files"
+msgstr "新しいファイルをチェック"
+
+#: user_import.module:830
+msgid "Name %sort"
+msgstr "名前 @sort"
+
+#: user_import.module:850
+msgid "<strong>Errors:</strong> !total"
+msgstr "<strong>エラー:</strong> !total"
+
+#: user_import.module:875
+msgid "File '%filename' was uploaded using FTP and should be deleted manually once the import has been completed."
+msgstr "ファイル「%filename」はFTPでアップロードされています。インポートが完了した後に手作業で削除しなければなりません。"
+
+#: user_import.module:61
+msgid "Import or update users from a comma separated file (csv)."
+msgstr "カンマ区切りのファイル（CSV）からユーザーをインポートしたりアップデートします。"
+
+#: user_import.install:24
+msgid "Settings for each import, and import setting templates."
+msgstr "毎回のインポートの設定やインポートの設定テンプレート。"
+
+#: user_import.install:27,153
+msgid "ID key of import or template."
+msgstr "インポートまたはテンプレートのIDキー。"
+
+#: user_import.install:34
+msgid "Label of import template, only used if this is an import template."
+msgstr "インポートテンプレートのラベル。インポートテンプレートの場合にのみ使用。"
+
+#: user_import.install:41
+msgid "Name of file being used as source of data for import."
+msgstr "インポートするデータソースとして使用するファイル名。"
+
+#: user_import.install:48
+msgid "Original name of file being used as source of data for import."
+msgstr "インポートするデータのソースとして使用するファイルのオリジナル名。"
+
+#: user_import.install:55
+msgid "Path to file being used as source of data for import."
+msgstr "インポートするデータのソースとして使用するファイルのパス。"
+
+#: user_import.install:61
+msgid "Datestamp of when import was started."
+msgstr "インポート開始時点のタイムスタンプ。"
+
+#: user_import.install:68
+msgid "Pointer to where test/import last finished."
+msgstr "直近のテスト/インポートがどこで終了したかを示すポインター。"
+
+#: user_import.install:75
+msgid "Number of users processed by import."
+msgstr "インポートで処理したユーザー数。"
+
+#: user_import.install:82
+msgid "Number of users processed without errors."
+msgstr "エラーなしで処理したユーザー数。"
+
+#: user_import.install:89
+msgid "Ignore the first line of the CSV file, which are usually field headings."
+msgstr "フィールドのヘッダーによく用いられるCSVファイルの1行目を無視します。"
+
+#: user_import.install:96
+msgid "Enable the Contact preference of user accounts."
+msgstr "ユーザーアカウントのコンタクト機能を有効化。"
+
+#: user_import.install:103
+msgid "Add a space between elements of a user name."
+msgstr "ユーザー名のエレメントの間にスペースを挿入。"
+
+#: user_import.install:110
+msgid "Send welcome email to imported users."
+msgstr "インポートしたユーザーに歓迎メールを送信。"
+
+#: user_import.install:117
+msgid "Settings for how data matches to Drupal fields."
+msgstr "Drupalのフィールドとデータをどのように一致させるかについての設定。"
+
+#: user_import.install:124
+msgid "Roles to give imported users."
+msgstr "インポートしたユーザーに付与するロール。"
+
+#: user_import.install:132
+msgid "Store of all other options for import. Most of the other settings in this table will be moved into here in future."
+msgstr "インポートに関するその他すべてのオプションを格納。このテーブルにある他の設定の多くは、今後ここに移動します。"
+
+#: user_import.install:139
+msgid "Status of import, or whether it is an import template."
+msgstr "インポートのステータス、またはインポートテンプレートかどうか。"
+
+#: user_import.install:150
+msgid "Record of errors encountered during an import."
+msgstr "インポート中に発生したエラーの記録。"
+
+#: user_import.install:160
+msgid "Data (matched to fields) for user that failed to import due to error."
+msgstr "エラーのためインポートに失敗したユーザーのデータ（フィールドに照合されたもの）。"
+
+#: user_import.install:167
+msgid "Error(s) encountered for user that failed to import."
+msgstr "インポートに失敗したユーザーに関して発生したエラー。"
+
+#: supported/nodeprofile.inc:26
+msgid "Node Profile: !key (!type)"
+msgstr "Node Profile: !key (!type)"
+
+#: supported/nodeprofile.inc:43
+msgid "Category: !vocabulary"
+msgstr "カテゴリー: !vocabulary"
+
+#: supported/nodeprofile.inc:54
+msgid "Affected: fields in Node Profile nodes."
+msgstr "影響: Node Profileノードのフィールド。"
+
+#: supported/profile.inc:18
+msgid "Affected: Profile fields."
+msgstr "影響: プロフィールフィールド。"
+
+#: supported/subscribed.inc:66
+msgid "Affected: subscriptions."
+msgstr "影響: 配信登録."
+
+#: supported/user.inc:14
+msgid "Email Address*"
+msgstr "メールアドレス*"
+
+#: supported/user.inc:37
+msgid "Affected: roles assigned to user."
+msgstr "影響: ユーザーに割り当てたロール。"
+
+#: supported/user.inc:38
+msgid "Affected: password."
+msgstr "影響: パスワード。"
+
+#: supported/user.inc:39
+msgid "Affected: user contact option."
+msgstr "影響: ユーザー別のコンタクトフォーム。"
+
+#: supported/user.inc:198
+msgid "Welcome message to be sent to imported users. Leave blank to use the default !message. If an existing user account is updated no welcome email will be sent to that user. <strong>Note - if \"Activate Accounts\" option is enabled !login_url (one time login) will not work.</strong>"
+msgstr "インポートで追加したユーザーに送信する歓迎メッセージ。デフォルトの!messageを使用する場合は空欄にしてください。既存のユーザーアカウントを更新しても、そのユーザーには歓迎メールを送信しません。<strong>注意 - 「アカウントのアクティベート」オプションが有効であれば、!login_url（ワンタイムログイン）は動作しません。</strong>"
+
+#: supported/user.inc:237
+msgid "no email"
+msgstr "メールアドレスなし"
+
+#: supported/user.inc:240
+msgid "invalid email"
+msgstr "不正なメールアドレス"
+
+#: supported/user.inc:244
+msgid "duplicate email"
+msgstr "重複したメールアドレス"
+
+#: supported/user_import.inc:143
+msgid "User accounts will not be visible to other users until their owner logs in. Select this option to make all imported user accounts visible. <strong>Note - one time login links in welcome emails will no longer work if this option is enabled.</strong>"
+msgstr "インポートで追加したユーザーは、そのユーザーがログインするまで他のユーザーから閲覧することができません。このオプションを選択すると、インポートしたすべてのユーザーアカウントを閲覧可能にします。<strong>注意 - このオプションが有効であれば、歓迎メールに含まれているワンタイムログインのリンクは動作しなくなります。</strong>"
+
+#: supported/content_profile.inc:46
+msgid "Content Profile"
+msgstr "コンテンツプロフィール"
+
+#: supported/user.inc:176
+msgid "Assign Role(s) To All Users"
+msgstr "すべてのユーザーにロールを付与"
+
+#: supported/user.inc:180
+msgid "Select which role(s) all imported users should be assigned. The role 'authenticated user' is assigned automatically."
+msgstr "インポートしたユーザーに付与するロールを選択してください。「登録済みユーザー」のロールは自動的に付与されます。"
+
+#: supported/user.inc:185
+msgid "Add New Roles"
+msgstr "新しいロールを追加"
+
+#: supported/user.inc:187
+msgid "Create imported role(s) that are not found and assign it to the user, in addition to any role(s) selected above. Warning: incorrect roles will be created if the incoming data includes typos."
+msgstr "インポートした新しいロールを作成し、上記で選択したロールに加えてユーザーに付与します。警告: インポートするデータに打ち間違いが含まれていると、間違ったロールが作成されてしまいます。"
+
+#: supported/user.inc:275
+msgid "The following unrecognised roles were specified: "
+msgstr "以下の新しいロールが付与されました:"
+
+#: supported/content_profile.inc:27
+msgid "Content Profile: (!type) !key "
+msgstr "Content Profile: (!type) !key "
+
+#: supported/content_profile.inc:46
+msgid "Affected: fields in Content Profile nodes."
+msgstr "影響: Content Profileノードのフィールド。"
+
+#: supported/content_profile.inc:150
+msgid "Unknown error on saving the node: %node_data! Check watchdog logs for details."
+msgstr "ノード: %node_data の保存で不明なエラーが発生しました！詳細はwatchdogのログを確認してください。"
+
+#: supported/content_profile.inc:161
+msgid "Please enable %module module!"
+msgstr "%module モジュールを有効にしてください！"
+

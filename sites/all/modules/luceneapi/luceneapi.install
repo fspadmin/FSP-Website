@@ -1,0 +1,206 @@
+<?php
+// $Id: luceneapi.install,v 1.10.2.18 2010/01/18 01:59:53 cpliakas Exp $
+
+/**
+ * @file
+ * Installation functions for the Search Lucene API module.
+ *
+ * @ingroup luceneapi
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function luceneapi_schema() {
+  $schema['cache_luceneapi'] = array(
+    'description' => 'Cached Search Lucene API results.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'Primary Key: Unique cache ID.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'data' => array(
+        'description' => 'A collection of data to cache.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big'
+      ),
+      'expire' => array(
+        'description' => 'A Unix timestamp indicating when the cache entry should expire, or 0 for never.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0
+      ),
+      'created' => array(
+        'description' => 'A Unix timestamp indicating when the cache entry was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0
+      ),
+      'headers' => array(
+        'description' => 'Any custom HTTP headers to be added to cached data.',
+        'type' => 'text',
+        'not null' => FALSE
+      ),
+      'serialized' => array(
+        'description' => 'A flag to indicate whether content is serialized (1) or not (0).',
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0
+      ),
+    ),
+    'indexes' => array('expire' => array('expire')),
+    'primary key' => array('cid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function luceneapi_install() {
+  drupal_install_schema('luceneapi');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function luceneapi_uninstall() {
+  drupal_uninstall_schema('luceneapi');
+
+  // removes all variables that start with "luceneapi:"
+  $result = db_query("SELECT name FROM {variable} WHERE name LIKE 'luceneapi:%%'");
+  while ($row = db_fetch_object($result)) {
+    variable_del($row->name);
+  }
+}
+
+/**
+ * Implementation of hook_requirements().
+ */
+function luceneapi_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break at install time
+  $t = get_t();
+
+  // notifies user if ZF components are out of date
+  if ('runtime' == $phase) {
+    $requirements['luceneapi_lib'] = array(
+      'title' => $t('Search Lucene API: ZF components'),
+    );
+
+    // calls ZF version class, initializes requirements array
+    $file = dirname(__FILE__) .'/lib/LuceneAPI/Version.php';
+    if (is_file($file) && is_readable($file)) {
+      require_once $file;
+      $requirements['luceneapi_lib']['value'] = LuceneAPI_Version::VERSION;
+
+      // checks installed version against supported one
+      $expected_versions = array('6.x-2.0', '6.x-2.0-beta4');
+      if (in_array(LuceneAPI_Version::VERSION, $expected_versions)) {
+        $requirements['luceneapi_lib']['severity'] = REQUIREMENT_OK;
+      }
+      else {
+
+        // sets the warning, translates the error message
+        $requirements['luceneapi_lib']['severity'] = REQUIREMENT_ERROR;
+        $requirements['luceneapi_lib']['description'] = $t(
+          'The installed version of the Zend Framework components are not officially supported by <em>Search Lucene API</em>: Expecting version %version. Please check the <em>Search Lucene API Library</em> project at <em>SourceForge.net</em> to see if a new release is available for the version of <em>Search Lucene API</em> you are using.',
+          array('%version' => $expected_versions[0])
+        );
+      }
+    }
+    else {
+      $requirements['luceneapi_lib']['severity'] = REQUIREMENT_ERROR;
+      $requirements['luceneapi_lib']['description'] = $t('The Zend Framework components are not installed.');
+    }
+
+    // checks PHP version
+    $requirements['luceneapi_php'] = array(
+      'title' => $t('Search Lucene API: Recommended PHP version'),
+      'value' => PHP_VERSION,
+    );
+    if (version_compare(PHP_VERSION, '5.2.4', '>=')) {
+      $requirements['luceneapi_php']['severity'] = REQUIREMENT_OK;
+    }
+    else {
+      $requirements['luceneapi_php']['severity'] = REQUIREMENT_WARNING;
+      $requirements['luceneapi_php']['description'] = $t(
+        'Search Lucene API recommends PHP %version or later.',
+        array('%version' => '5.2.4')
+      );
+    }
+
+    // makes sure PCRE unicode support is enabled
+    $requirements['luceneapi_pcre'] = array(
+      'title' => $t('Search Lucene API: PCRE unicode support'),
+    );
+    if (1 == @preg_match('/\pL/u', 'a')) {
+      $requirements['luceneapi_pcre']['severity'] = REQUIREMENT_OK;
+      $requirements['luceneapi_pcre']['value'] = $t('Enabled');
+    }
+    else {
+      $requirements['luceneapi_pcre']['severity'] = REQUIREMENT_ERROR;
+      $requirements['luceneapi_pcre']['value'] = $t('Disabled');
+      $requirements['luceneapi_pcre']['description'] = $t('Search Lucene API requires PCRE unicode support to be enabled.');
+    }
+
+    // makes sure mbstring extension is installed
+    $requirements['luceneapi_mbstring'] = array(
+      'title' => $t('Search Lucene API: PHP Mbstring extension')
+    );
+    if (extension_loaded('mbstring')) {
+      $requirements['luceneapi_mbstring']['severity'] = REQUIREMENT_OK;
+      $requirements['luceneapi_mbstring']['value'] = $t('Installed');
+    }
+    else {
+      $requirements['luceneapi_mbstring']['severity'] = REQUIREMENT_ERROR;
+      $requirements['luceneapi_mbstring']['value'] = $t('Not installed');
+      $requirements['luceneapi_mbstring']['description'] = $t('Search Lucene API requires the <em>Mbstring</em> extension.');
+    }
+  }
+
+  // makes sure PHP is suitable for Zend framework
+  if ('install' == $phase) {
+
+    // bails if Drupal is in the process of being installed
+    if (!function_exists('db_query') || (function_exists('install_verify_drupal') && !install_verify_drupal())) {
+      return array();
+    }
+
+    // makes sure ZF components are installed
+    $requirements['luceneapi_lib'] = array(
+      'title' => $t('Zend Framework components'),
+    );
+    $lib_dir = sprintf('%s/lib', dirname(__FILE__));
+    if (is_dir("$lib_dir/Zend") && is_dir("$lib_dir/LuceneAPI")) {
+      $requirements['luceneapi_lib']['severity'] = REQUIREMENT_OK;
+      $requirements['luceneapi_lib']['description'] = $t('The required Zend Framework components of Search Lucene API are installed.');
+    }
+    else {
+      $requirements['luceneapi_lib']['severity'] = REQUIREMENT_ERROR;
+      $requirements['luceneapi_lib']['description'] = $t(
+        'The required Zend Framework components of Search Lucene API are not installed. Please review the installation section on the <a href="@project-page">Search Lucene API project page</a> for instructions on downloading the Zend Framework components.',
+        array('@project-page' => 'http://drupal.org/project/luceneapi')
+      );
+    }
+
+    // makes sure iconv extension is installed, we will get fatal errors otherwise
+    $requirements['luceneapi_iconv'] = array(
+      'title' => $t('PHP iconv extension'),
+    );
+    if (extension_loaded('iconv')) {
+      $requirements['luceneapi_iconv']['severity'] = REQUIREMENT_OK;
+    }
+    else {
+      $requirements['luceneapi_iconv']['severity'] = REQUIREMENT_ERROR;
+      $requirements['luceneapi_iconv']['description'] = $t('Search Lucene API requires the <em>iconv</em> extension.');
+    }
+
+  }
+  return $requirements;
+}

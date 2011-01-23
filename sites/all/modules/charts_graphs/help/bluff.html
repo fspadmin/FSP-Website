@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- $Id: bluff.html,v 1.1.2.8 2010/06/29 21:52:24 rsevero Exp $ -->
+<html>
+  <head>
+    <title>Charts and Graphs - Bluff</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  </head>
+  <body>
+    <h3>Library pages</h3>
+    <p>For definitive info about Bluff library please see it's
+      <a href="http://bluff.jcoglan.com">home page</a> and it's
+      <a href="http://bluff.jcoglan.com/api.html">reference page</a>.</p>
+    <h3>Installation</h3>
+    <p>You should download <a href="http://bluff.jcoglan.com/assets/">Bluff</a> library
+      and grab following three javascript files:</p>
+    <ul>
+      <li>bluff-min.js</li>
+      <li>excanvas.js</li>
+      <li>js-class.js</li>
+    </ul>
+    <p>and place them under
+      <i>sites/all/modules/charts_graphs/apis/charts_bluff/bluff</i> folder.</p>
+    <h3>Usage</h3>
+    <p>The quickest code to get something graphed using bluff:</p>
+    <pre>
+&lt;?php
+function charts_graphs_test() {
+  $canvas = chart_graphs_get_graph('bluff');
+
+  $canvas->title = "Bluff Chart";
+  $canvas->type = "line"; // a chart type supported by the charting engine. See further in the doc for the list.
+  $canvas->y_legend = "Y Legend";
+  $canvas->colour = '#D54C78';
+  $canvas->theme = 'keynote';
+  $canvas->series = array(
+    'Some Value' => array(9,6,7,9,5,7,6,9,7),
+    'Page Views' => array(6,7,9,5,7,6,9,7,3),
+  );
+  $canvas->x_labels = array('one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine');
+
+  $out = $canvas->get_chart();
+
+  return $out;
+}
+</pre>
+    <h3>Graph types supported</h3>
+    <p>Bluff supports all <a href="general_reference#type">main</a> and
+      <a href="general_reference#other_standardized_types">standardized graph</a>
+      types, except the donut graph type. It also supports the following graph types:</p>
+    <dl>
+      <dt>mini_bar</dt>
+        <dd>Bar graph suitable for small graphs.</dd>
+      <dt>mini_pie</dt>
+        <dd>Pie graph suitable for small graphs.</dd>
+      <dt>mini_side_bar</dt>
+        <dd>Side bar graph suitable for small graphs.</dd>
+    </dl>
+    <h3>Special parameters</h3>
+      <p>Charts and Graphs supports the following special parameters for Bluff:</p>
+      <dl>
+        <dt>transpose</dt>
+          <dd>the optional parameter <b>transpose</b>, if set to true, will cause
+            Bluff to pick the opposite data orientation to the one it would have
+            picked automatically. This orientation defines if each column or each
+            row is one data serie.</dd>
+      </dl>
+    <h3>Unsupported properties</h3>
+      <p>The Bluff charting library doesn't support the
+        <a href="general_reference#y_legend">y_legend</a> property.</p>
+    <h3>Examples</h3>
+    <p>The examples below will only work if you have the Bluff submodule
+      configured correctly.</p>
+    <ul>
+      <li><a href="/charts_graphs/test/bluff/line/Bluff - Line example">Line example</a></li>
+      <li><a href="/charts_graphs/test/bluff/bar/Bluff - Bar example">Bar example</a></li>
+      <li><a href="/charts_graphs/test/bluff/pie/Bluff - Pie example">Pie example</a></li>
+    </ul>
+  </body>
+</html>

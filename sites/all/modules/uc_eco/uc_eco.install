@@ -1,0 +1,27 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Install, update and uninstall functions for the ECO module
+ *
+ * @ingroup uc_eco
+ */
+
+
+/**
+ * Implementation of hook_install().
+ */
+function uc_eco_install() {
+  drupal_set_message(t('ECO module installed successfully.'), 'warning');
+}
+
+/**
+ * Implementations hook_uninstall().
+ */
+function uc_eco_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_eco_%'");
+  cache_clear_all('variables', 'cache');
+  drupal_set_message(t('ECO module uninstalled successfully.'), 'warning');
+}
+

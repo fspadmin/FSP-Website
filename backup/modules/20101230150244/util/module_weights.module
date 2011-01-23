@@ -1,0 +1,102 @@
+<?php
+
+
+/**
+ * Implementation of hook_help().
+ */
+function module_weights_help($path, $arg) {
+//  drupal_set_message('<pre>'. print_r($path, 1) .'</pre>');
+//  drupal_set_message('<pre>'. print_r($arg, 1) .'</pre>');
+  $output = '';
+  switch ($path) {
+    case 'admin/help#module_weights':
+      $output .= '<p>'. t('Drupal assigns each module a weight. For most operations involving any module that defines a particular hook, the modules are invoked in order first by weight, then by name.') .'</p>';
+      $output .= '<p>'. t('This module adds a weight column to the modules table at !modules, allowing weights to be viewed and edited. Once activated, a weight column appears on the modules table. To change a module weight, edit its value and press "Save configuration". Any user who can submit the !modules form will be able to change module weights.', array('!modules' => l('admin/build/modules', 'admin/build/modules'))) .'</p>';
+      break;
+  }
+  return $output;
+}
+
+function module_weights_system_module_headers_alter(&$header) {
+  //add weight header
+  array_unshift($header, 'Weight');
+}
+function module_weights_system_module_weights_alter(&$row, $module, &$form) {
+  array_unshift($row, drupal_render($form['weights'][$module]));  
+  //CLEANUP what we added in hook_form_alter()
+  unset($form['weights'][$module]);
+}
+
+/**
+ * Helper function to fetch and cache module weights
+ *
+ */
+function fetch_module_weights($name = NULL) {
+  static $module_weights = array();
+  if (empty($module_weights)) {
+    $query = "SELECT filename, name, type, owner, status, throttle, bootstrap, schema_version, weight FROM {system} WHERE type = 'module' AND status = 1 ORDER BY name";
+    $result = db_query($query);
+    while( $row = db_fetch_object($result)) {
+      $module_weights[$row->name] = $row->weight;
+    }
+  }
+  if ($name === NULL) {
+    return $module_weights;
+  }
+  else if (isset($module_weights[$name])) {
+    return $module_weights[$name];
+  }
+  else {
+    return NULL;
+  }
+}
+
+function module_weights_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'system_modules':
+      //do not alter system module form when in 'confirm' state
+      if (isset($form['confirm'])) {
+        return ;
+      }
+      $weights = fetch_module_weights();
+      $form['weights'] = array(
+        '#tree' => TRUE,
+      );
+      foreach ($weights as $name => $weight) {
+        $form['weights'][$name] = array(
+          '#type'             => 'textfield',
+          '#default_value'    => $weight,
+          '#size'             => 4,
+        );
+      }
+      // Do my #submit before system.module's so all the rebuilding
+      // operations in system_module_submit use the new weights.
+      array_unshift($form['#submit'],'module_weights_system_module_submit');
+      $form['#validate'][]  = 'module_weights_system_module_validate';
+      break;
+  }
+}
+function module_weights_system_module_validate($form, &$form_state) {
+  $weights = fetch_module_weights();
+  foreach ($weights as $name => $weight) {
+    //submitted weights must be numeric
+    if (!is_numeric($form_state['values']['weights'][$name])) {
+      form_set_error("weights][{$name}", t(
+        'The !module module weight must be a number.',
+        array('!module' => $name)
+      ));
+    }
+  }
+}
+
+function module_weights_system_module_submit($form, &$form_state) {
+  foreach ($form_state['values']['weights'] as $name => $weight) {
+    //extra step of optimization, update only weights that changed
+    //also skip on module names that dont match our record in fetch_module_weights()
+    $module_weight = fetch_module_weights($name);
+    if ($module_weight !== NULL && $module_weight != $weight) {
+      $query = "UPDATE {system} SET weight = %d WHERE name LIKE '%s'";
+      db_query($query, $weight, $name);
+    }
+  }
+}

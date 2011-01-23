@@ -1,0 +1,28 @@
+/* $Id: corner.css,v 1.2 2009/01/05 22:19:24 kirie Exp $ */
+.corner-module {
+  z-index: 10;  
+}
+.corner-module-absolute {
+  position: absolute;
+}
+.corner-module-fixed {
+  position: fixed;
+}
+
+.corner-module-top-left ,
+.corner-module-top-right {
+  top: 0;
+}
+.corner-module-bottom-left ,
+.corner-module-bottom-right {
+  bottom: 0;
+}
+
+.corner-module-top-left,
+.corner-module-bottom-left {
+  left: 0;
+}
+.corner-module-top-right,
+.corner-module-bottom-right {
+  right: 0;
+}

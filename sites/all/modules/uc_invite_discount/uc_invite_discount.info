@@ -1,0 +1,14 @@
+; $Id:
+name = Invite Discount
+description = Let users to get discounts for referred users purchases
+dependencies[] = uc_coupon
+dependencies[] = invite
+dependencies[] = token
+package = Ubercart - extra
+core = 6.x
+; Information added by drupal.org packaging script on 2010-04-01
+version = "6.x-1.2"
+core = "6.x"
+project = "uc_invite_discount"
+datestamp = "1270108509"
+

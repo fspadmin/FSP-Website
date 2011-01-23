@@ -1,0 +1,2337 @@
+<?php
+// $Id: luceneapi.module,v 1.61.2.135 2010/07/12 17:56:39 cpliakas Exp $
+
+/**
+ * @defgroup luceneapi Search Lucene API
+ * Provides an API and common functionality for modules that wish to use Lucene
+ * as the backend for their searches.
+ */
+
+/**
+ * @file
+ * Provides an API and common functionality for modules that wish to use Lucene
+ * as the backend for their searches.
+ *
+ * @ingroup luceneapi
+ */
+
+/**
+ * Major API version.
+ */
+define('LUCENEAPI_VERSION', '2.0');
+
+/**
+ * We encode everything as UTF-8, string recognized by both Zend and iconv.
+ */
+define('LUCENEAPI_ENCODING', 'UTF-8');
+
+/**
+ * A small positive float often passed to the $query->setBoost() method to make
+ * a query irrelevant in scoring.
+ */
+define('LUCENEAPI_IRRELEVANT', 2E-9);
+
+/**
+ * Table containing cached luceneapi search results.
+ */
+define('LUCENEAPI_CACHE_TABLE', 'cache_luceneapi');
+
+/**
+ * Autoload callback, modeled after the Zend_Loader::loadClass() method.
+ *
+ * @param $class
+ *   A string containing the class to be loaded.
+ * @return
+ *   NULL
+ */
+function luceneapi_autoload_callback($class) {
+  if (class_exists($class, FALSE) || interface_exists($class, FALSE)) {
+    return;
+  }
+  if (!preg_match('/[^a-z0-9\\/\\\\_.-]/i', $class)) {
+    $basename = str_replace('_', DIRECTORY_SEPARATOR, $class) .'.php';
+    $file = join(DIRECTORY_SEPARATOR, array(dirname(__FILE__), 'lib', $basename));
+    if (is_file($file)) {
+      include_once $file;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_luceneapi_analyzer().
+ */
+function luceneapi_luceneapi_analyzer() {
+  return array(
+    'LuceneAPI_Search_Lucene_Analysis_Analyzer_Drupal' => t('Drupal'),
+  );
+}
+
+/**
+ * Returns permissions from settings in octal notation.
+ *
+ * @return
+ *   Permissions in octal notation.
+ */
+function luceneapi_permissions_get() {
+  $mode = 0600;
+  switch (luceneapi_setting_get('permissions_group')) {
+    case 4:
+      $mode += 0040;
+      break;
+    case 6:
+      $mode += 0060;
+      break;
+  }
+  switch (luceneapi_setting_get('permissions_other')) {
+    case 4:
+      $mode += 0004;
+      break;
+    case 6:
+      $mode += 0006;
+      break;
+  }
+  return $mode;
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function luceneapi_init() {
+  try {
+
+    // adds Zend library to include path, registers autoload implementation
+    $paths = explode(PATH_SEPARATOR, get_include_path());
+    $lib_path = dirname(__FILE__) . DIRECTORY_SEPARATOR .'lib';
+    if (!in_array($lib_path, $paths)) {
+      if (FALSE !== ($pos = array_search('.', $paths))) {
+        $split_pos = $pos + 1;
+        set_include_path(join(PATH_SEPARATOR, array_merge(
+          array_slice($paths, 0, $split_pos),
+          array($lib_path),
+          array_slice($paths, $split_pos)
+        )));
+      }
+      else {
+        set_include_path(get_include_path() . PATH_SEPARATOR . $lib_path);
+      }
+    }
+    spl_autoload_register('luceneapi_autoload_callback');
+
+    // sets various defaults, makes sure library is available
+    if (class_exists('LuceneAPI_Exception')) {
+      Zend_Search_Lucene_Storage_Directory_Filesystem::setDefaultFilePermissions(
+        luceneapi_permissions_get()
+      );
+      $analyzer = luceneapi_setting_get('analyzer');
+
+      // @todo Remove from the 3.0 branch.
+      if (!class_exists($analyzer)) {
+        $analyzer = 'LuceneAPI_Search_Lucene_Analysis_Analyzer_Drupal';
+        drupal_set_message(t('Analyzer no longer valid, changing setting to default analyzer.'), 'warning');
+        variable_set('luceneapi:analyzer', $analyzer);
+      }
+
+      Zend_Search_Lucene_Analysis_Analyzer::setDefault(new $analyzer());
+      Zend_Search_Lucene_Search_Query_Wildcard::setMinPrefixLength(0);
+    }
+    else {
+      // makes sure we can still use LuceneAPI_Exception
+      module_load_include('inc', 'luceneapi', 'luceneapi.exception');
+    }
+  }
+  catch (Zend_Exception $e) {
+    luceneapi_throw_error($e);
+  }
+}
+
+/**
+ * Returns an associative array keyed by paths to page titles for administrative
+ * menu local tasks common to all Search Lucene API modules.
+ *
+ * @param $translate
+ *   A boolean flagging whether the returned titles have been run through t().
+ * @return
+ *   An array of menu local item paths.
+ */
+function luceneapi_menu_local_task_paths_get($translate = FALSE) {
+  if (!$translate) {
+    return array(
+      'general' => 'General settings',
+      'performance' => 'Performance',
+      'statistics' => 'Index statistics',
+    );
+  }
+  else {
+    // this mostly serves as dummy content to get the translatable strings
+    return array(
+      'general' => t('General settings'),
+      'performance' => t('Performance'),
+      'statistics' => t('Index statistics'),
+    );
+  }
+}
+
+/**
+ * Returns an associative array keyed by machine readable name to page titles
+ * for administrative tasks such as optimizing the index or clearing cache.
+ *
+ * @param $translate
+ *   A boolean flagging whether the returned titles have been run through t().
+ * @return
+ *   An array of tasks.
+ */
+function luceneapi_admin_tasks_get($translate = FALSE) {
+  if (!$translate) {
+    return array(
+      'optimize' => 'Optimize index',
+      'cache' => 'Clear search results cache',
+      'reindex' => 'Re-index',
+      'wipe' => 'Wipe index',
+    );
+  }
+  else {
+    return array(
+      'optimize' => t('Optimize index'),
+      'cache' => t('Clear search results cache'),
+      'reindex' => t('Re-index'),
+      'wipe' => t('Wipe index'),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_forms().
+ */
+function luceneapi_forms() {
+  $forms = array();
+  foreach (luceneapi_module_list() as $module) {
+    foreach (luceneapi_menu_local_task_paths_get() as $path => $title) {
+      $form_suffix = sprintf('admin_settings_%s_form', $path);
+      $forms[$module .'_'. $form_suffix] = array(
+        'callback' => 'luceneapi_'. $form_suffix,
+        'callback arguments' => array($module),
+      );
+    }
+  }
+  return $forms;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function luceneapi_menu() {
+  $items = array();
+
+  // administrative settings
+  $items['admin/settings/luceneapi'] = array(
+    'title' => '!name',
+    'title arguments' => array('!name' => 'Search Lucene API'),
+    'description' => 'Configure error handling, API behavior.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('luceneapi_admin_settings'),
+    'access arguments' => array('administer search'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'luceneapi.admin.inc',
+  );
+
+  // builds menu items for each Search Lucene API module
+  $files = module_rebuild_cache();
+  foreach (luceneapi_module_list() as $module) {
+    $items['admin/settings/'. $module] = array(
+      'title' => '!name',
+      'title arguments' => array('!name' => $files[$module]->info['name']),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array($module .'_admin_settings_general_form'),
+      'access arguments' => array('administer search'),
+      'description' => 'Configure search page settings, tune index performance, and view index statistics.',
+      'file' => 'luceneapi.admin.inc',
+    );
+    $weight = 0;
+    $menu_type = NULL;
+    foreach (luceneapi_menu_local_task_paths_get() as $path => $title) {
+      $menu_type = (NULL === $menu_type) ? MENU_DEFAULT_LOCAL_TASK : MENU_LOCAL_TASK;
+      $items['admin/settings/'. $module .'/'. $path] = array(
+        'title' => $title,
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array($module .'_admin_settings_'. $path .'_form'),
+        'access arguments' => array('administer search'),
+        'type' => $menu_type,
+        'file' => 'luceneapi.admin.inc',
+        'weight' => $weight,
+      );
+      $weight += 5;
+    }
+
+    // callbacks for buttons in the admin section that execute admin tasks
+    foreach (luceneapi_admin_tasks_get() as $task => $title) {
+      $items['admin/settings/'. $module .'/'. $task] = array(
+        'title' => $title,
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('luceneapi_admin_confirm', $module, $task),
+        'access arguments' => array('administer search'),
+        'type' => MENU_CALLBACK,
+        'file' => 'luceneapi.admin.inc',
+      );
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_menu_alter().
+ */
+function luceneapi_menu_alter(&$items) {
+  $items['search']['page callback'] = 'luceneapi_search_view';
+}
+
+/**
+ * Add a default $type before passing to search_view().
+ *
+ * @param $type
+ *   A string containing the module handling the search.
+ * @return
+ *   A string containing the themed search page.
+ * @see search_view()
+ */
+function luceneapi_search_view($type = '') {
+  if (empty($type) && ($default = luceneapi_setting_get('default_search'))) {
+    $type = $default;
+  }
+  return search_view($type);
+}
+
+/**
+ * Implementation of hook_flush_caches().
+ */
+function luceneapi_flush_caches() {
+  return array(LUCENEAPI_CACHE_TABLE);
+}
+
+/**
+ * Identical to the l() function, except the "active" class is not set.  This is
+ * useful for generating links that are displayed on the search page and link
+ * back to the search page.
+ *
+ * @param $text
+ *   A string containing the text to be enclosed with the anchor tag.
+ * @param $path
+ *   A string containing the Drupal path being linked to. Can be an external or
+ *   internal URL.
+ * @param $options
+ *   An associative array of additional options.
+ * @return
+ *   A string containing the anchor link.
+ * @see l()
+ */
+function luceneapi_l($text, $path, $options = array()) {
+  global $language;
+  $options += array(
+    'attributes' => array(),
+    'html' => FALSE,
+  );
+  if (isset($options['attributes']['title']) && FALSE !== strpos($options['attributes']['title'], '<')) {
+    $options['attributes']['title'] = strip_tags($options['attributes']['title']);
+  }
+  return sprintf(
+    '<a href="%s"%s>%s</a>',
+    check_url(url($path, $options)),
+    drupal_attributes($options['attributes']),
+    ($options['html'] ? $text : check_plain($text))
+  );
+}
+
+/**
+ * Returns variables set by common admin settings for modules that define a
+ * Lucene index.  Throws a luceneapi error if the passed setting is not valid.
+ *
+ * @param $module
+ *   A string containing the Search Lucene API module.
+ * @param $name
+ *   A string containing the variable name.
+ * @param $bypass_inheritence
+ *   A boolean flagging whether to bypass inherited values.  This should be TRUE
+ *   when setting the default value in the administrative setting form.
+ * @return
+ *   A mixed value containing the variable.
+ * @see luceneapi_common_settings_get()
+ */
+function luceneapi_variable_get($module, $name, $bypass_inheritence = FALSE) {
+  switch ($name) {
+    case 'cache_threshold':
+      $default = 5000;
+      break;
+    case 'caching_enabled':
+    case 'optimize_on_update':
+      $default = 1;
+      break;
+    case 'default_operator':
+      $default = Zend_Search_Lucene_Search_QueryParser::B_AND;
+      break;
+    case 'index_path':
+      $default = sprintf('%s/%s', file_directory_path(), $module);
+      break;
+    case 'max_buffered_docs':
+    case 'merge_factor':
+    case 'results_per_page':
+      $default = 10;
+      break;
+    case 'minimum_prefix':
+      $default = 3;
+      break;
+    case 'number_cached':
+    case 'resultset_limit':
+      $default = 0;
+      break;
+    case 'update_limit':
+      $default = 100;
+      break;
+    default:
+      luceneapi_throw_error(t(
+        'Search Lucene API variable %name not valid.',
+        array('%name' => $name)
+      ));
+      return NULL;
+  }
+
+  // formats variable name, gets value from variable_get()
+  $variable = sprintf('%s:%s', $module, $name);
+  $value = variable_get($variable, $default);
+
+  // gets inherited values
+  if (!$bypass_inheritence && -1 == $value) {
+    switch ($name) {
+      case 'update_limit':
+        $value = variable_get('search_cron_limit', 100);
+        break;
+
+      // NOTE: this is left over from when setting was a dropbox, and the value
+      // could be -1.  Although it is no longer needed, it doesn't hurt to keep
+      // it in because is could break someone's installation.
+      // @todo remove from the 3.0 branch
+      case 'resultset_limit':
+        $value = 0;
+        break;
+    }
+  }
+
+  return $value;
+}
+
+/**
+ * Wrapper around variable get for luceneapi admin settings.  Throws a luceneapi
+ * error if the passed setting is not valid.
+ *
+ * @param $name
+ *   A string containing the variable name.
+ * @param $bypass_inheritence
+ *   A boolean flagging whether to bypass inherited values.  This should be TRUE
+ *   when setting the default value in the administrative setting form.
+ * @return
+ *   A mixed value containing the setting.
+ */
+function luceneapi_setting_get($name, $bypass_inheritence = FALSE) {
+  switch ($name) {
+    case 'analyzer':
+      $default = 'LuceneAPI_Search_Lucene_Analysis_Analyzer_Drupal';
+      break;
+    case 'default_search':
+    case 'min_word_length':
+      $default = 0;
+      break;
+    case 'error_message':
+      $default = t('An error occurred in a Search Lucene API module.');
+      break;
+    case 'min_log_level':
+      $default = WATCHDOG_INFO;
+      break;
+    case 'permissions_group':
+      $default = 6;
+      break;
+    case 'permissions_other':
+      $default = 4;
+      break;
+    case 'stopwords':
+      $default = '';
+      break;
+    default:
+      luceneapi_throw_error(t(
+        'Search Lucene API setting %name not valid.',
+        array('%name' => $name)
+      ));
+      return NULL;
+  }
+
+  // formats variable name, gets value from variable_get()
+  $variable = sprintf('luceneapi:%s', $name);
+  $value = variable_get($variable, $default);
+
+  // gets inherited values
+  if (!$bypass_inheritence && -1 == $value) {
+    switch ($name) {
+      case 'min_word_length':
+        $value = variable_get('minimum_word_size', 3);
+        break;
+    }
+  }
+
+  return $value;
+}
+
+/**
+ * Compares the severity passed watchdog log level with the minimum log level
+ * setting. Returns TRUE if the log level is more severe than or has the same
+ * severity as the setting.
+ *
+ * @param $severity
+ *   An integer containing the severity being compared.
+ * @return
+ *   A boolean flagging whether the passed severity is within the level set in
+ *   the administrative interface.
+ */
+function luceneapi_log_level_compare($severity) {
+  return (luceneapi_setting_get('min_log_level') >= (int)$severity);
+}
+
+/**
+ * Sorts items by weight when used as a callback in usort().
+ *
+ * @param $a
+ *   An array containing a weight.
+ * @param $b
+ *   An arrray containing the weight being compared.
+ * @return
+ *   An integer determining the order.
+ */
+function luceneapi_weight_sort($a, $b) {
+  if (!isset($a['weight'])) {
+    $a['weight'] = 0;
+  }
+  if (!isset($b['weight'])) {
+    $b['weight'] = 0;
+  }
+  if ($a['weight'] == $b['weight']) {
+    return 0;
+  }
+  return ($a['weight'] < $b['weight']) ? -1 : 1;
+}
+
+/**
+ * Strips tags, but adds spaces before and after to maintain word boundaries.
+ * This snippet of code was forked from the core search module.
+ *
+ * @param $text
+ *   A string containing the text to be filtered.
+ * @return
+ *   A string containing the filtered text.
+ */
+function luceneapi_strip_tags($text) {
+  return strip_tags(
+    str_replace(array('<', '>'), array(' <', '> '), (string)$text)
+  );
+}
+
+/**
+ * Prepares HTML text for indexing.  Strips tags and maintains word boundaries.
+ * Decodes HTML entities so encoded characters don't break terms.
+ *
+ * @param $html
+ *   A string containing the HTML.
+ * @return
+ *   A string containing the prepared text.
+ * @see luceneapi_strip_tags
+ * @see http://drupal.org/node/658568
+ */
+function luceneapi_html_prepare($html) {
+  return html_entity_decode(luceneapi_strip_tags($html), ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Encodes search keys before submit to prevent plus signs from being converted
+ * to spaces.
+ *
+ * @param $keys
+ *   A string containing the search keys.
+ * @return
+ *   A string with special characters encoded.
+ */
+function luceneapi_keys_encode($keys) {
+  return str_replace('+', '%2B', (string)$keys);
+}
+
+/**
+ * Sets or returns semaphore that indicates a search has been done.  If a search
+ * has been executed, the module that executed the search will be returned. The
+ * idea was modified from the apachesolr project's apachesolr_has_searched()
+ * function.
+ *
+ * @param $module
+ *   A string indicating which module executed the search.  Pass NULL to return
+ *   the semaphore.
+ * @return
+ *   A string containing the module that executed the search, FALSE if no search
+ *   has been executed.
+ */
+function luceneapi_search_executed($module = NULL) {
+  static $_module = FALSE;
+  if (is_string($module)) {
+    if (in_array($module, luceneapi_module_list())) {
+      $_module = $module;
+    }
+    else {
+      module_load_include('inc', 'luceneapi', 'luceneapi.error');
+      luceneapi_throw_error(_luceneapi_hook_error_get($module));
+    }
+  }
+  return $_module;
+}
+
+/**
+ * Returns an array of modules that implement hook_luceneapi_index().  If TRUE
+ * is passed as the first parameter, an associative array of module names to
+ * index paths will be returned.
+ *
+ * @param $return_paths
+ *   A boolean flagging whether or not to return index paths.
+ * @param $rebuild
+ *   A boolean flagging whether or not to force a rebuild of the list.
+ * @return
+ *   An array of modules or an associative array of module names to index paths.
+ */
+function luceneapi_module_list($return_paths = FALSE, $rebuild = FALSE) {
+  static $modules;
+  if (NULL === $modules || $rebuild) {
+    $modules = array();
+    foreach (module_implements('luceneapi_index') as $module) {
+      if ($path = module_invoke($module, 'luceneapi_index', 'path')) {
+        $modules[$module] = $path;
+      }
+    }
+  }
+  return (!$return_paths) ? array_keys($modules) : $modules;
+}
+
+/**
+ * Returns modules that implement both hook_luceneapi_index() and
+ * hook_search('name').
+ *
+ * @return
+ *   An array keyed by module name to display names returned by
+ *   hook_search('name').
+ */
+function luceneapi_searchable_module_list() {
+  $modules = array();
+  foreach (luceneapi_module_list() as $module) {
+    if (NULL !== ($name = module_invoke($module, 'search', 'name'))) {
+      $modules[$module] = $name;
+    }
+  }
+  return $modules;
+}
+
+/**
+ * Parses an associative array that is keyed by fields names to sort flow, reads
+ * the sort type from hook_luceneapi_sortable_fields(), and builds and array
+ * that may be passed to luceneapi_find().
+ *
+ * @param $index
+ *   A LuceneAPI_Search_Lucene_Proxy object, such as the one returned by the
+ *   luceneapi_index_open() function.
+ * @param $array
+ *   An associative array keyed by field names to sort flow.  The flow value may
+ *   be "asc", "desc", or the SORT_ASC, SORT_DESC integers.
+ * @return
+ *   An array containing the sort arguments.
+ * @todo Replace $index parameter with $module in 3.0 API.
+ */
+function luceneapi_sort_arguments_get(LuceneAPI_Search_Lucene_Proxy $index, $array) {
+  $args = array();
+  if (is_array($array)) {
+    $sort = luceneapi_sortable_fields_get($index->getModule());
+    foreach ($array as $field => $order) {
+      if (isset($sort[$field]['type'])) {
+        $order = drupal_strtolower($order);
+        $args[] = $field;
+        $args[] = ('desc' == $order || SORT_DESC == $order) ? SORT_DESC : SORT_ASC;
+        $args[] = $sort[$field]['type'];
+      }
+    }
+  }
+  return $args;
+}
+
+/**
+ * Makes sure a directory exists and is writable.  This function also makes
+ * sure a .htaccess file exists that prevents index files from being accessed
+ * via the web.
+ *
+ * @param &$directory
+ *   A string containing the name of a directory path.
+ * @param $mode
+ *   A Boolean value to indicate if the directory should be created.
+ * @param $form_item
+ *   An optional string containing form item errors are attached to.
+ * @return
+ *   A boolean, FALSE when directory not found, or TRUE when directory exists.
+ * @see file_check_directory()
+ */
+function luceneapi_check_directory(&$directory, $mode = 0, $form_item = NULL) {
+  if (file_check_directory($directory, $mode, $form_item)) {
+    $htaccess_file = sprintf('%s/.htaccess', $directory);
+    if (!file_exists($htaccess_file)) {
+      $htaccess_lines = "deny from all\n";
+      if (@file_put_contents($htaccess_file, $htaccess_lines)) {
+        @chmod($htaccess_file, 0664);
+      }
+    }
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Opens a Lucene index, creates the index if it does not exist.
+ *
+ * @param $module
+ *   A string containing a module that implements hook_luceneapi_index().
+ * @param &$errstr
+ *   Returns translated error message, empty if no error.
+ * @return
+ *   A Zend_Search_Lucene_Interface object, FALSE on errors.
+ */
+function luceneapi_index_open($module, &$errstr = NULL) {
+  global $_luceneapi_indexes;
+  if (!is_array($_luceneapi_indexes)) {
+    $_luceneapi_indexes = array();
+  }
+
+  $errstr = '';
+  $module = (string)$module;
+  if (!isset($_luceneapi_indexes[$module])) {
+    try {
+      try {
+        // protects against fatal errors if the ZF components are removed
+        if (!class_exists('LuceneAPI_Search_Lucene')) {
+          // safety guard to prevent fatal errors on weird hook_update_N() bug.
+          // @see http://drupal.org/node/666826, http://drupal.org/node/666878
+          if (!class_exists('LuceneAPI_Exception')) {
+            module_load_include('inc', 'luceneapi', 'luceneapi.exception');
+          }
+          throw new LuceneAPI_Exception(t('The Zend Framework components are not installed.'));
+        }
+        $paths = luceneapi_module_list(TRUE);
+        if (isset($paths[$module])) {
+          // use luceneapi_check_directory() for consistent permissions
+          luceneapi_check_directory($paths[$module], FILE_CREATE_DIRECTORY);
+          $_luceneapi_indexes[$module] = LuceneAPI_Search_Lucene::open(
+            $paths[$module], $module
+          );
+        }
+        else {
+          module_load_include('inc', 'luceneapi', 'luceneapi.error');
+          throw new LuceneAPI_Exception(_luceneapi_hook_error_get($module));
+        }
+      }
+      catch (Zend_Search_Exception $e) {
+        try {
+          $_luceneapi_indexes[$module] = LuceneAPI_Search_Lucene::create(
+            $paths[$module], $module
+          );
+        }
+        catch (Zend_Search_Exception $e) {
+          throw new LuceneAPI_Exception($e->getMessage());
+        }
+      }
+    }
+    catch (LuceneAPI_Exception $e) {
+      $_luceneapi_indexes[$module] = FALSE;
+      $errstr = $e->getMessage();
+    }
+    if (!empty($_luceneapi_indexes[$module])) {
+      $_luceneapi_indexes[$module]->setMaxBufferedDocs(
+        luceneapi_variable_get($module, 'max_buffered_docs')
+      );
+      $_luceneapi_indexes[$module]->setMergeFactor(
+        luceneapi_variable_get($module, 'merge_factor')
+      );
+    }
+  }
+  return $_luceneapi_indexes[$module];
+}
+
+/**
+ * Closes a lucene index.
+ *
+ * @param $module
+ *   A string containing a module that implements hook_luceneapi_index().
+ * @return
+ *   NULL
+ */
+function luceneapi_index_close($module) {
+  global $_luceneapi_indexes;
+  if (!is_array($_luceneapi_indexes)) {
+    $_luceneapi_indexes = array();
+  }
+  $module = (string)$module;
+  unset($_luceneapi_indexes[$module]);
+}
+
+/**
+ * Gets the type of content indexed by $index.  This module caches all
+ * hook_luceneapi_index('type') implementations, because it is a very common
+ * operation.
+ *
+ * @param $module
+ *   A string containing the search Lucene API module.
+ * @param $rebuild
+ *   A boolean flagging whether or not to force a rebuild of the list.
+ * @return
+ *   A string containing the type of content indexed by $index or NULL.
+ */
+function luceneapi_index_type_get($module, $rebuild = FALSE) {
+  static $types = array();
+  if (!isset($types[$module]) || $rebuild) {
+    $types[$module] = module_invoke((string)$module, 'luceneapi_index', 'type');
+  }
+  return $types[$module];
+}
+
+/**
+ * Returns the module and type associated with an index.
+ *
+ * @param $index
+ *   A LuceneAPI_Search_Lucene_Proxy object, such as the one returned by the
+ *   luceneapi_index_open() function.
+ * @return
+ *   An array containing the module as the first element and type as the second.
+ */
+function luceneapi_index_module_type_get(LuceneAPI_Search_Lucene_Proxy $index) {
+  return array($index->getModule(), luceneapi_index_type_get($index->getModule()));
+}
+
+/**
+ * Commits changes to the index immediately as opposed to waiting until the end
+ * of the script execution.
+ *
+ * @param $index
+ *   A Zend_Search_Lucene_Interface object.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   A boolean flagging whether the changes were successfully committed.
+ * @throws Zend_Search_Exception
+ */
+function luceneapi_index_commit(Zend_Search_Lucene_Interface $index, $throw_exceptions = FALSE) {
+  try {
+    $index->commit();
+    return TRUE;
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Optimizes the index.
+ *
+ * @param $index
+ *   A Zend_Search_Lucene_Interface object.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   A boolean flagging whether the index was successfully optimized.
+ * @throws Zend_Search_Exception
+ */
+function luceneapi_index_optimize(Zend_Search_Lucene_Interface $index, $throw_exceptions = FALSE) {
+  try {
+    $index->optimize();
+    return TRUE;
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Deletes all of the documents in the index.  Clears search results cache.
+ *
+ * @param $index
+ *   A LuceneAPI_Search_Lucene_Proxy object, such as the one returned by the
+ *   luceneapi_index_open() function.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return boolean
+ *   Returns TRUE if all the documents were deleted.
+ * @throws Zend_Search_Exception
+ */
+function luceneapi_index_wipe(LuceneAPI_Search_Lucene_Proxy $index, $throw_exceptions = FALSE) {
+  try {
+    for ($count = 0; $count < $index->maxDoc(); $count++) {
+      $index->delete($count);
+    }
+    luceneapi_index_commit($index, FALSE);
+    $cid = sprintf('%s:', $index->getModule());
+    cache_clear_all($cid, LUCENEAPI_CACHE_TABLE, TRUE);
+    return TRUE;
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Returns the number of documents in the Lucene index.
+ *
+ * @param $index
+ *   A Zend_Search_Lucene_Interface object.
+ * @param $include_deleted
+ *   A boolean flagging whether documents set to be deleted should be included
+ *   in the tally.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An integer containing the number of documents, FALSE on errors.
+ * @throws Zend_Search_Exception
+ */
+function luceneapi_index_size_get(Zend_Search_Lucene_Interface $index, $include_deleted = FALSE, $throw_exceptions = FALSE) {
+  try {
+    return (!$include_deleted) ? $index->numDocs() : $index->count();
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Returns all of the terms in an index.
+ *
+ * @param $index
+ *   A Zend_Search_Lucene_Index_Interface object.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An array of terms in the index.
+ * @throws Zend_Search_Exception
+ */
+function luceneapi_index_terms_get(Zend_Search_Lucene_Interface $index, $throw_exceptions = FALSE) {
+  try {
+    return $index->terms();
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Returns all of the fields in the index.
+ *
+ * @param $index
+ *   A Zend_Search_Lucene_Index_Interface object.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An array of terms in the index.
+ * @throws Zend_Search_Exception
+ */
+function luceneapi_index_fields_get(Zend_Search_Lucene_Interface $index, $throw_exceptions = FALSE) {
+  try {
+    return $index->getFieldNames();
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_luceneapi_sortable_fields().
+ */
+function luceneapi_luceneapi_sortable_fields($module, $type = NULL) {
+  return array(
+    'score' => array(
+      'title' => t('Relevance'),
+      'type' => NULL,
+      'weight' => -10,
+    ),
+  );
+}
+
+/**
+ * Gets an index's sortable fields by invoking hook_luceneapi_sortable_fields()
+ * and hook_luceneapi_sortable_fields_alter().
+ *
+ * @param $module
+ *   A string containing the module handling the search.
+ * @param $rebuild
+ *   A boolean flagging whether or not to force a rebuild of the list.
+ * @return
+ *   An array of fields to info.
+ */
+function luceneapi_sortable_fields_get($module, $rebuild = FALSE) {
+  static $fields = array();
+  if (!isset($fields[$module]) || $rebuild) {
+    $type = luceneapi_index_type_get($module);
+    $fields[$module] = module_invoke_all('luceneapi_sortable_fields', $module, $type);
+    drupal_alter('luceneapi_sortable_fields', $fields[$module], $module, $type);
+    uasort($fields[$module], 'luceneapi_weight_sort');
+  }
+  return $fields[$module];
+}
+
+/**
+ * Returns a list of themed sort links based on what was passed through the
+ * query string.
+ *
+ * @param $module
+ *   A string containing the module handling the search.
+ * @return
+ *   An array of themed sort links.
+ * @see luceneapi_sortable_fields_get()
+ */
+function luceneapi_sort_links_get($module) {
+  // builds array of sort links
+  $links = array();
+  foreach (luceneapi_sortable_fields_get($module) as $field => $info) {
+    $options = array();
+    $query = array();
+    $order = '';
+
+    // if we have a sort type, gets sort params from query string and builds
+    // the query string for the sort link
+    if (NULL !== $info['type']) {
+      if (isset($_GET['lucenesort'][$field])) {
+        $value = $_GET['lucenesort'][$field];
+        $order = ('asc' == $value || SORT_ASC == $value) ? 'asc' : 'desc';
+        $options['attributes']['class'] = 'active';
+      }
+      $query[] = drupal_query_string_encode(array(
+        'lucenesort' => array(
+          $field => (!$order || $order != 'asc') ? 'asc' : 'desc'),
+        )
+      );
+    }
+
+    // gets the portion of the query string without pager information
+    $exclude = array_merge(array('q', 'page', 'lucenesort'), array_keys($_COOKIE));
+    if ($pager_query = drupal_query_string_encode($_GET, $exclude)) {
+      $query[] = $pager_query;
+    }
+
+    // adds query string to link options, themes the sort link
+    $title = (isset($info['title'])) ? $info['title'] : $field;
+    $options['query'] = join('&', $query);
+    $links[] = theme('luceneapi_sort_link', $title, $_GET['q'], $options, $order);
+  }
+
+  return $links;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function luceneapi_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $blocks = array();
+      $blocks['luceneapi_sort'] = array(
+        'info' => t('Search Lucene API Sorting'),
+        'cache' => BLOCK_CACHE_PER_PAGE,
+      );
+      return $blocks;
+
+    case 'view':
+      global $pager_total_items;
+      if (!($module = luceneapi_search_executed()) || empty($pager_total_items[0])) {
+        $content = '';
+      }
+      else {
+        $content = theme('luceneapi_sort_list', luceneapi_sort_links_get($module));
+      }
+      return array(
+        'subject' => t('Sort results by'),
+        'content' => $content,
+      );
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function luceneapi_theme() {
+  return array(
+    'luceneapi_sort_list' => array(
+      'arguments' => array(
+        'items' => array(),
+      ),
+    ),
+    'luceneapi_sort_link' => array(
+      'arguments' => array(
+        'text' => NULL,
+        'field' => NULL,
+      ),
+    ),
+  );
+}
+
+/**
+ * Themes the sort link list.
+ *
+ * @param $items
+ *   An array of sort links.
+ * @return
+ *   A string containing the themed list.
+ */
+function theme_luceneapi_sort_list($items) {
+  return theme('item_list', $items);
+}
+
+/**
+ * Themes a sort link in the sort block.
+ *
+ * @param $text
+ *   A string containing the text to be enclosed with the anchor tag.
+ * @param $path
+ *   A string containing the Drupal path being linked to.
+ * @param $options
+ *   An associative array of additional options.
+ * @param $order
+ *   A string containing the order of the sort.  May be 'asc', 'desc', or an
+ *   empty string.
+ * @return
+ *   A string containing the themed link.
+ * @see l()
+ */
+function theme_luceneapi_sort_link($text, $path, $options = array(), $order = '') {
+  $style = '';
+  if ($order) {
+    $style = ('desc' != $order) ? 'desc' : 'asc';
+  }
+  $icon = ($style) ? theme('tablesort_indicator', $style) : '';
+  return $icon . luceneapi_l($text, $path, $options);
+}
+
+/**
+ * Parses a search string into a query object.  If $module is passed, this
+ * function reads its default operator setting and uses it when parsing the
+ * string.
+ *
+ * @param $keys
+ *   A string containing the user generated search query.
+ * @param $module
+ *   A string containing the module handling the search, defaults to NULL.  If a
+ *   valid module is specified, the default operator passed in the module's
+ *   administrative settings page will be set.  If NULL is passed, the string
+ *   will be parsed using whatever default operator is currently set, usually
+ *   "OR".
+ * @param $element
+ *   A string containing the name of the form element the search string was
+ *   passed through, defaults to NULL.  If an element is passed, parsing errors
+ *   will be raised via form_set_error().  If NULL is passed, parsing errors
+ *   will be silently ignored.
+ * @return
+ *   A Zend_Search_Lucene_Search_Query object, FALSE on errors.
+ */
+function luceneapi_query_parse($keys, $module = NULL, $element = NULL) {
+  static $queries = array();
+  $default_operator = NULL;
+  try {
+
+    // If a module was passed, makes sure it is a valid SLAPI module.
+    if (NULL !== $module && !in_array($module, luceneapi_module_list())) {
+      module_load_include('inc', 'luceneapi', 'luceneapi.error');
+      luceneapi_throw_error(_luceneapi_hook_error_get($module), WATCHDOG_ERROR, $module);
+      return FALSE;
+    }
+
+    // Captures current default operator.
+    if (NULL !== $module) {
+      if (isset($queries[$module][$keys])) {
+        return $queries[$module][$keys];
+      }
+      $type = luceneapi_index_type_get($module);
+      $default_operator = Zend_Search_Lucene_Search_QueryParser::getDefaultOperator();
+      Zend_Search_Lucene_Search_QueryParser::setDefaultOperator(
+        luceneapi_variable_get($module, 'default_operator')
+      );
+    }
+
+    // Sets the default encoding, parses the string into a query object.
+    Zend_Search_Lucene_Search_QueryParser::setDefaultEncoding(LUCENEAPI_ENCODING);
+    $query = Zend_Search_Lucene_Search_QueryParser::parse($keys);
+
+    // Reverts the default operator.
+    if (NULL !== $module) {
+      Zend_Search_Lucene_Search_QueryParser::setDefaultOperator($default_operator);
+    }
+
+    // Determines if an empty string was passed or no terms meeting the minimum
+    // length requirement were passed.  Normalizes MultiTerm queries so they
+    // are structured the same as the others.
+    if ($query instanceof Zend_Search_Lucene_Search_Query_Boolean) {
+      $subqueries = $query->getSubqueries();
+      $valid_query = FALSE;
+      foreach ($subqueries as $subquery) {
+        if (!($subquery instanceof Zend_Search_Lucene_Search_Query_Insignificant)) {
+          $valid_query = TRUE;
+          break;
+        }
+      }
+      if (!$valid_query) {
+        $query = FALSE;
+      }
+    }
+    elseif ($query instanceof Zend_Search_Lucene_Search_Query_MultiTerm) {
+      $terms = $query->getTerms();
+      if (count($terms)) {
+        $signs = $query->getSigns();
+        if (!$query = luceneapi_query_get('boolean')) {
+          throw new LuceneAPI_Exception(t('Error instantiating boolean query.'));
+        }
+        foreach ($terms as $key => $term) {
+          if ($subquery = luceneapi_query_get('term', $term->text, $term->field)) {
+            luceneapi_subquery_add($query, $subquery, $signs[$key], TRUE);
+          }
+          else {
+            throw new LuceneAPI_Exception(t('Error instantiating term query.'));
+          }
+        }
+      }
+      else {
+        $query = FALSE;
+      }
+    }
+    else {
+      $query = FALSE;
+    }
+
+    // Displays error if $element was passed.
+    if (!$query && NULL !== $element) {
+      if ($count = luceneapi_setting_get('min_word_length')) {
+        $message = t(
+          'You must include at least one positive keyword with @count characters or more.',
+          array('@count' => $count)
+        );
+      }
+      else {
+        $message = t('You must include at least one positive keyword.');
+      }
+      form_set_error((string)$element, $message);
+    }
+
+    // Allows modules to completely rebuild the query.
+    if (NULL !== $module) {
+      if ($query) {
+        foreach (module_implements('luceneapi_query_rebuild') as $hook_module) {
+          $new_query = module_invoke(
+            $hook_module, 'luceneapi_query_rebuild', drupal_clone($query), $module, $type
+          );
+          if ($new_query instanceof Zend_Search_Lucene_Search_Query) {
+            $query = $new_query;
+          }
+        }
+      }
+
+      // Stores query in a static variable.
+      $queries[$module][$keys] = $query;
+    }
+
+    // Returns the query.
+    return $query;
+  }
+  catch (Zend_Search_Lucene_Exception $e) {
+    if (NULL === $default_operator) {
+      Zend_Search_Lucene_Search_QueryParser::setDefaultOperator($default_operator);
+    }
+    if (NULL !== $element) {
+      form_set_error((string)$element, $e->getMessage());
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Logs errors via watchdog() then displays the error message dependant on
+ * whether the user has "view luceneapi errors" permissions.  If $err is an
+ * exception, the message is extracted from $e->getMessage().  The error flag
+ * is set to TRUE if $severity at least WATCHDOG_ERROR.
+ *
+ * @param $err
+ *   A string or an Exception class containing the error message.
+ * @param $severity
+ *   An integer containing the severity of the message, as per RFC 3164.
+ * @param $type
+ *   A string containing the type parameter passed to watchdog(), defaults to
+ *   luceneapi.
+ * @return
+ *   NULL
+ * @see _luceneapi_throw_error()
+ */
+function luceneapi_throw_error($err, $severity = WATCHDOG_ERROR, $type = 'luceneapi') {
+  module_load_include('inc', 'luceneapi', 'luceneapi.error');
+  _luceneapi_throw_error($err, $severity, $type);
+}
+
+/**
+ * Useful for functions that either throw exceptions or handle errors through
+ * luceneapi_throw_error().  Errors are of the severity WATCHDOG_ERROR.
+ *
+ * @param $e
+ *   An Exception object.
+ * @param $throw_exceptions
+ *   A boolean flagging whether to throw exception or handle the error via
+ *   luceneapi_throw_error().
+ * @param $type
+ *   A string containing the type parameter passed to watchdog(), defaults to
+ *   luceneapi.
+ * @return
+ *   NULL
+ */
+function luceneapi_handle_error(Exception $e, $throw_exceptions = FALSE, $type = 'luceneapi') {
+  if (!$throw_exceptions) {
+    luceneapi_throw_error($e, WATCHDOG_ERROR, $type);
+  }
+  else {
+    throw $e;
+  }
+}
+
+/**
+ * Convenience function, returns TRUE if a Search Lucene API error was thrown.
+ *
+ * @return
+ *   A boolean flagging whether an error was thrown.
+ */
+function luceneapi_is_error() {
+  global $_luceneapi_is_error;
+  return (bool)$_luceneapi_is_error;
+}
+
+/**
+ * Resets the error flag.
+ *
+ * @return
+ *   NULL
+ */
+function luceneapi_reset_error() {
+  global $_luceneapi_is_error;
+  $_luceneapi_is_error = NULL;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function luceneapi_form_alter(&$form, &$form_state, $form_id) {
+
+  // adds submit handler to clear cache
+  if ('system_modules' == $form_id) {
+    $form['#submit'][] = 'luceneapi_system_modules_form_submit';
+  }
+
+  // adds validate, submit functions to apply plus sign fix
+  if ('search_form' == $form_id && array_key_exists($form['module']['#value'], luceneapi_searchable_module_list())) {
+    $form['#validate'][] = 'luceneapi_search_form_validate';
+  }
+  if ('search_theme_form' == $form_id) {
+    $form['#submit'][] = 'luceneapi_search_box_form_submit';
+  }
+  if ('search_block_form' == $form_id) {
+    $form['#submit'][] = 'luceneapi_search_block_form_submit';
+  }
+}
+
+/**
+ * Implementation of hook_form_[form_id]_alter().
+ */
+function luceneapi_form_search_admin_settings_alter(&$form, $form_id) {
+  if (!isset($form['indexing_throttle']['search_cron_limit']['#options'][0])) {
+    $options = &$form['indexing_throttle']['search_cron_limit']['#options'];
+    $options = array(0 => t('Do not index')) + $options;
+  }
+}
+
+/**
+ * Applies encoding fix to the plus sign so we can
+ *
+ * @param $form
+ *   A nested array of form elements that comprise the form.
+ * @param &$form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *   NULL
+ */
+function luceneapi_search_form_validate($form, &$form_state) {
+  $keys = luceneapi_keys_encode(trim($form_state['values']['keys']));
+  form_set_value($form['basic']['inline']['processed_keys'], $keys, $form_state);
+}
+
+/**
+ * Uses helper function to hijack the search box if selected.
+ *
+ * @param $form
+ *   A nested array of form elements that comprise the form.
+ * @param &$form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *   NULL
+ * @see _luceneapi_form_submit()
+ */
+function luceneapi_search_box_form_submit($form, &$form_state) {
+  _luceneapi_form_submit('search_theme_form', $form_state);
+}
+
+/**
+ * Uses helper function to hijack the search block if selected.
+ *
+ * @param $form
+ *   A nested array of form elements that comprise the form.
+ * @param &$form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *   NULL
+ * @see _luceneapi_form_submit()
+ */
+function luceneapi_search_block_form_submit($form, &$form_state) {
+  _luceneapi_form_submit('search_block_form', $form_state);
+}
+
+/**
+ * If the option is set, redirects the search to the selected Search Lucene API
+ * module.  This is referred to this as "hijacking the search box".
+ *
+ * @param $key_element
+ *   A string containing the name of the element storing the keys.
+ * @param $form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *  NULL
+ */
+function _luceneapi_form_submit($key_element, &$form_state) {
+  if ($module = luceneapi_setting_get('default_search')) {
+    if (array_key_exists($module, luceneapi_searchable_module_list())) {
+      $keys = luceneapi_keys_encode(trim($form_state['values'][$key_element]));
+      $form_state['redirect'] = sprintf('search/%s/%s', $module, $keys);
+    }
+    else {
+      module_load_include('inc', 'luceneapi', 'luceneapi.error');
+      luceneapi_throw_error(_luceneapi_hook_error_get($module));
+    }
+  }
+}
+
+/**
+ * Submit handler for system modules form.  Clears luceneapi cache elements to
+ * avoid situations where module dependent facets are cached an displayed when
+ * the module is no longer enabled.
+ *
+ * @param $form
+ *   A nested array of form elements that comprise the form.
+ * @param &$form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *   NULL
+ */
+function luceneapi_system_modules_form_submit($form, &$form_state) {
+  foreach (luceneapi_module_list() as $module) {
+    cache_clear_all($module .':', 'cache', TRUE);
+  }
+}
+
+/**
+ * Executes a search query.  Attempts to get the cached results if caching is
+ * enabled.  It also enforces the resultset limit set in the module's
+ * administrative interface.  If the debug logging level is set, the time it
+ * takes to execute the query logged via watchdog().
+ *
+ * @param $index
+ *   A LuceneAPI_Search_Lucene_Proxy object, such as the one returned by the
+ *   luceneapi_index_open() function.
+ * @param $query
+ *   A Zend_Search_Lucene_Search_Query object modeling the query.
+ * @param $sort
+ *   An array containing the sort parameters.
+ * @param &$positive_keys
+ *   Returns the array containing the positive keys found during the search.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An array of Zend_Search_Lucene_Search_QueryHit objects.
+ * @throws LuceneAPI_Exception
+ */
+function luceneapi_find(LuceneAPI_Search_Lucene_Proxy $index, Zend_Search_Lucene_Search_Query $query, array $sort = array(), &$positive_keys = NULL, $throw_exceptions = FALSE) {
+  $log_debug = luceneapi_log_level_compare(WATCHDOG_DEBUG);
+  $module = $index->getModule();
+  $positive_keys = array();
+  $results_cached = FALSE;
+
+  // checks if caching is enabled, attempts to retrieve cached results
+  if ($caching_enabled = luceneapi_variable_get($module, 'caching_enabled')) {
+    $cid = sprintf('%s:%s', $module, sha1((string)$query . serialize($sort)));
+    if ($cache = cache_get($cid, LUCENEAPI_CACHE_TABLE)) {
+      if (is_array($cache->data) && isset($cache->data['hits'])) {
+        $hits = array();
+        foreach ($cache->data['hits'] as $cur) {
+          $hit = new Zend_Search_Lucene_Search_QueryHit($index);
+          $hit->id = $cur['id'];
+          $hit->score = $cur['score'];
+          $hits[] = $hit;
+        }
+        if (isset($cache->data['positive_keys'])) {
+          $positive_keys = (array)$cache->data['positive_keys'];
+        }
+        if ($log_debug) {
+          $vaiables = array('@query' => (string)$query);
+          watchdog($module, 'Query cache hit: @query', $vaiables, WATCHDOG_DEBUG);
+        }
+        $results_cached = TRUE;
+      }
+    }
+  }
+
+  // if cache not hit, executes query and gets positive keys
+  if (!$results_cached) {
+    try {
+
+      // Gets and sets the minimum prefix length. The minimum prefix length
+      // cannot be shorter than Minimum word length. See the issue posted at
+      // http://drupal.org/node/722296.
+      $min_prefix_length = max(
+        luceneapi_variable_get($module, 'minimum_prefix'),
+        luceneapi_setting_get('min_word_length')
+      );
+      Zend_Search_Lucene_Search_Query_Wildcard::setMinPrefixLength($min_prefix_length);
+
+      // Sets result set limit (if any).
+      Zend_Search_Lucene::setResultSetLimit(
+        luceneapi_variable_get($module, 'resultset_limit')
+      );
+
+      // Executes the Lucene search query.
+      if ($log_debug) {
+        $start_time = microtime(TRUE);
+      }
+      if (empty($sort)) {
+        $hits = $index->find($query);
+      }
+      else {
+        $hits = call_user_func_array(
+          array($index, 'find'),
+          array_merge(array($query), $sort)
+        );
+      }
+      if ($log_debug) {
+        $end_time = microtime(TRUE);
+        $search_time = round(($end_time - $start_time), 3);
+        if (!$search_time) {
+          $search_time = '< 0.001';
+        }
+        $variables = array(
+          '%time' => $search_time,
+          '@query' => (string)$query,
+        );
+        watchdog($module, 'Query executed in %time seconds: @query', $variables, WATCHDOG_DEBUG);
+      }
+
+      // Resets settings, captures positive keys.
+      Zend_Search_Lucene_Search_Query_Wildcard::setMinPrefixLength(0);
+      Zend_Search_Lucene::setResultSetLimit(0);
+      $positive_keys = luceneapi_positive_keys_get($query, TRUE);
+    }
+    catch (Exception $e) {
+      Zend_Search_Lucene_Search_Query_Wildcard::setMinPrefixLength(0);
+      Zend_Search_Lucene::setResultSetLimit(0);
+
+      // checks if minum prefix error was hit
+      $handle_error = TRUE;
+      if ($e instanceof Zend_Search_Lucene_Exception) {
+        if (0 === strpos($e->getMessage(), 'At least')) {
+          $handle_error = FALSE;
+        }
+      }
+
+      // in minimum prefix error, do a regular drupal_set_message()
+      if ($handle_error) {
+        luceneapi_handle_error($e, $throw_exceptions);
+      }
+      else {
+        $message = t(
+          'At least %number non-wildcard characters are required in a term.',
+          array('%number' => $min_prefix_length)
+        );
+        drupal_set_message($message, 'error');
+      }
+      return array();
+    }
+  }
+
+  // caches data if caching is enabled and number of results are below threshold
+  $threshold = luceneapi_variable_get($module, 'cache_threshold');
+  if ($caching_enabled && !$results_cached && ($threshold == 0 || count($hits) <= $threshold)) {
+    if ($max_cached = luceneapi_variable_get($module, 'number_cached')) {
+      $hits = array_slice($hits, 0, $max_cached);
+    }
+    $data = array(
+      'hits' => array(),
+      'positive_keys' => $positive_keys
+    );
+    foreach ($hits as $hit) {
+      $data['hits'][] = array(
+        'id' => $hit->id,
+        'score' => $hit->score,
+      );
+    }
+    cache_set($cid, $data, LUCENEAPI_CACHE_TABLE);
+  }
+
+  // returns array of hit objects
+  return $hits;
+}
+
+/**
+ * Wrapper around luceneapi_find() to return a paged result set.  The global
+ * pager variables are set in this function.
+ *
+ * NOTE: This function also rewrites the $_GET['q'] variable.  Specifically, it
+ * encodes all plus signs so they don't get converted to spaces when passed
+ * to the pager theme functions.
+ *
+ * @param $index
+ *   A LuceneAPI_Search_Lucene_Proxy object, such as the one returned by the
+ *   luceneapi_index_open() function.
+ * @param $query
+ *   A Zend_Search_Lucene_Search_Query object modeling the query.
+ * @param $sort
+ *   An array containing the sort parameters.
+ * @param $limit
+ *   The number of query results to display per page, NULL if the limit should
+ *   be obtained from the results_per_page setting.
+ * @param $element
+ *   An optional integer to distinguish between multiple pagers on one page.
+ * @param &$positive_keys
+ *   Returns the array containing the positive keys found during the search.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An array of Zend_Search_Lucene_Search_QueryHit objects.
+ * @throws LuceneAPI_Exception
+ * @return
+ *   An array of Zend_Search_Lucene_Search_QueryHit objects.
+ */
+function luceneapi_pager_find(LuceneAPI_Search_Lucene_Proxy $index, Zend_Search_Lucene_Search_Query $query, array $sort = array(), $limit = NULL, $element = 0, &$positive_keys = NULL, $throw_exceptions = FALSE) {
+  global $pager_page_array, $pager_total, $pager_total_items;
+  try {
+    $hits = luceneapi_find($index, $query, $sort, $positive_keys, TRUE);
+    if (NULL === $limit) {
+      $limit = luceneapi_variable_get($index->getModule(), 'results_per_page');
+    }
+    // gets pager array, initializes if it doesn't exist
+    $page = isset($_GET['page']) ? (string)$_GET['page'] : '';
+    $pager_page_array = explode(',', $page);
+    if (!isset($pager_page_array[$element])) {
+      $pager_page_array[$element] = 0;
+    }
+    // sets the the actual number of results returned
+    $pager_total_items[$element] = count($hits);
+    $pager_total[$element] = ceil($pager_total_items[$element] / $limit);
+    $pager_page_array[$element] = max(
+      min((int)$pager_page_array[$element],
+      ((int)$pager_total[$element]) - 1),
+      0
+    );
+    // calculates offset, pages $hits
+    $offset = $pager_page_array[$element] * $limit;
+    $hits = array_slice($hits, $offset, $limit);
+    // implements hack to encode plus signs in the pager
+    $_GET['q'] = luceneapi_keys_encode($_GET['q']);
+  }
+  catch (LuceneAPI_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+    $hits = array();
+  }
+  return $hits;
+}
+
+/**
+ * Wrapper around luceneapi_pager_find().  All hooks are invoked and sorting
+ * arguments are retrieved from $_GET['lucenesort'].  Also sets the module's
+ * default operator as set in the administrative settings. Sets the semaphore in
+ * luceneapi_search_executed() to TRUE.  This function is most often used in
+ * hook_search('search') implementations.
+ *
+ * @param $index
+ *   A LuceneAPI_Search_Lucene_Proxy object, such as the one returned by the
+ *   luceneapi_index_open() function.
+ * @param $user_query
+ *   A string containing a search query or a Zend_Search_Lucene_Search_Query
+ *   object.
+ * @param &$positive_keys
+ *   Returns the array containing the positive keys found during the search.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An array of Zend_Search_Lucene_Search_QueryHit objects.
+ */
+function luceneapi_do_search(LuceneAPI_Search_Lucene_Proxy $index, $user_query, &$positive_keys = NULL, $throw_exceptions = FALSE) {
+  $hits = array();
+  $sort = array();
+  try {
+
+    // gets module managing the index, type of content being indexed
+    list($module, $type) = luceneapi_index_module_type_get($index);
+
+    // gets query container, appends user query and facet queries
+    if (!$query = luceneapi_query_get('boolean')) {
+      throw new LuceneAPI_Exception(t('Error instantiating boolean query.'));
+    }
+
+    // parses user query if a string was passed
+    if (!$user_query instanceof Zend_Search_Lucene_Search_Query) {
+      $user_query = luceneapi_query_parse($user_query, $module, 'keys');
+      if (!$user_query || form_get_errors()) {
+        return array();
+      }
+    }
+
+    // adds user query to query container
+    luceneapi_subquery_add($query, $user_query, 'required', TRUE);
+
+    // gets the sort array from the query string, sanitized fields
+    if (isset($_GET['lucenesort'])) {
+      $sort = luceneapi_sort_arguments_get($index, $_GET['lucenesort']);
+    }
+    drupal_alter('luceneapi_sort_arguments', $sort, $module, $type);
+
+    // invokes hooks in the appropriate order and executes the query
+    module_invoke_all('luceneapi_query_alter', $query, $module, $type);
+    $hits = luceneapi_pager_find($index, $query, $sort, NULL, 0, $positive_keys, TRUE);
+    module_invoke_all('luceneapi_positive_keys', $positive_keys, $module, $type);
+
+    // flags that the search has been executed.
+    luceneapi_search_executed($module);
+  }
+  catch (LuceneAPI_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return $hits;
+}
+
+/**
+ * Privides an Exception-safe way of retrieving field data from hit objects.
+ * This function should be for all fields other than $hit->id or $hit->score.
+ *
+ * @param $hit
+ *   A Zend_Search_Lucene_Search_QueryHit object.
+ * @param $field
+ *   A string containing the name of the Lucene field to be extracted from the
+ *   document in $hit.
+ * @return
+ *   A string containing the data.
+ * @deprecated
+ */
+function luceneapi_hit(Zend_Search_Lucene_Search_QueryHit $hit, $field) {
+  try {
+    $field = (string)$field;
+    return (!empty($field)) ? $hit->$field : '';
+  }
+  catch (Zend_Search_Exception $e) {
+    return '';
+  }
+}
+
+/**
+ * Returns snippets from a piece of text with matches highlighted.  Used for
+ * formatting search results generated by Search Lucene API modules.
+ *
+ * NOTE: This functions uses mb_strpos() due to the lack of a drupal_strpos()
+ * function.
+ *
+ * @param $positive_keys
+ *   An array containing the positive keys.
+ * @param $text
+ *   A string containing the text to extract fragments from.
+ * @param $limit
+ *   An integer containing the first $limit number of characters to limit.
+ *   Passing 0 means no limit.
+ * @param $element
+ *   A string containing an html element used to wrap the matching text.
+ * @param $attributes
+ *   An array of attributes applied to $element.
+ * @return
+ *   A string containing HTML for the excerpt.
+ * @see luceneapi_highlight()
+ * @todo It would be great to find a way to use Zend's native highlighter.
+ */
+function luceneapi_excerpt(array $positive_keys, $text, $limit = 0, $element = 'strong', $attributes = array()) {
+  $matches = array();
+  $ranges = array();
+  $length = 0;
+  $limit = (int)$limit;
+
+  // checks cache for highlighted excerpt
+  $results_cached = FALSE;
+  $cid = sprintf('luceneapi:excerpt:%s', sha1($text . serialize($positive_keys) . $limit));
+  if ($cache = cache_get($cid, 'cache_luceneapi')) {
+    $highlighted = (string)$cache->data;
+    if (luceneapi_log_level_compare(WATCHDOG_DEBUG)) {
+      $vaiables = array('@query' => (string)$query);
+      watchdog('luceneapi', 'Excerpt cache hit.', array(), WATCHDOG_DEBUG);
+    }
+    $results_cached = TRUE;
+  }
+
+  // highlights matches on cache miss
+  if (!$results_cached) {
+
+    // truncates text if option passed
+    if ($limit) {
+      $text = truncate_utf8($text, $limit, TRUE);
+    }
+
+    try {
+      // strips tags, gets analyzer, retokenizes document
+      $text = luceneapi_strip_tags($text);
+      $analyzer = Zend_Search_Lucene_Analysis_Analyzer::getDefault();
+      $token_list = $analyzer->tokenize($text, LUCENEAPI_ENCODING);
+
+      // tokenizes text to find actual matches, adds matched text to $matches
+      foreach ($token_list as $token) {
+        if (in_array($token->getTermText(), $positive_keys)) {
+          $p = $token->getStartOffset();
+          $match = drupal_substr($text, $p, $token->getEndOffset() - $p);
+          if (!in_array($match, $matches)) {
+            $matches[] = $match;
+          }
+          if ($length < 256) {
+            if (($q = mb_strpos($text, ' ', max(0, $p - 60))) !== FALSE) {
+              $end = drupal_substr($text, $p, 80);
+              if (($s = mb_strrpos($end, ' ')) !== FALSE) {
+                $ranges[$q] = $p + $s;
+                $length += $p + $s - $q;
+              }
+            }
+          }
+        }
+      }
+    }
+    catch (Exception $e) {
+      luceneapi_throw_error($e);
+    }
+
+    // highlight if matched found, return begining otherwise
+    if (count($ranges)) {
+
+      // sort the text ranges by starting position.
+      ksort($ranges);
+
+      // now we collapse overlapping text ranges into one. The sorting makes it O(n).
+      $newranges = array();
+      foreach ($ranges as $from2 => $to2) {
+        if (!isset($from1)) {
+          $from1 = $from2;
+          $to1 = $to2;
+          continue;
+        }
+        if ($from2 <= $to1) {
+          $to1 = max($to1, $to2);
+        }
+        else {
+          $newranges[$from1] = $to1;
+          $from1 = $from2;
+          $to1 = $to2;
+        }
+      }
+      $newranges[$from1] = $to1;
+
+      // creates excerpt
+      $out = array();
+      foreach ($newranges as $from => $to) {
+        $out[] = drupal_substr($text, $from, $to - $from);
+      }
+      $text = (isset($newranges[0]) ? '' : '... ') . join(' ... ', $out) .' ...';
+
+      // highlights the text snippet
+      $highlighted = luceneapi_highlight($matches, $text, $element, $attributes);
+    }
+    else {
+      $highlighted = truncate_utf8($text, 256, TRUE) .' ...';
+    }
+  }
+
+  // caches data if caching is enabled, holds onto cache item for a week
+  if (!$results_cached) {
+    cache_set($cid, $highlighted, LUCENEAPI_CACHE_TABLE, time() + 604800);
+  }
+
+  return $highlighted;
+}
+
+/**
+ * Highlights a piece of text based on the array of positive keys.
+ *
+ * @param $matches
+ *   An array of matches that should be highlighted.
+ * @param $text
+ *   A string containing the text to highlight.
+ * @param $element
+ *   A string containing an html element used to wrap the matching text.
+ * @param $attributes
+ *   An array of attributes applied to $element.
+ * @return
+ *   A string containing the highlighted text.
+ */
+function luceneapi_highlight($matches, $text, $element = 'strong', $attributes = array()) {
+  // highlight around non-CJK characters
+  $boundary = '(?:(?<=['. PREG_CLASS_SEARCH_EXCLUDE . PREG_CLASS_CJK .'])|'
+            .'(?=['. PREG_CLASS_SEARCH_EXCLUDE . PREG_CLASS_CJK .']))';
+
+  // adds spaces before and after text to allow first and last words to be matched
+  $text = sprintf(' %s ', $text);
+
+  // escapes the matches for a reqular expression pattern, formats replacements
+  $matches = array_map('preg_quote', $matches, array('/'));
+  $replace = sprintf('<%s%s>\0</%s>', $element, drupal_attributes($attributes), $element);
+  $pattern = sprintf('/%s(%s)%s/iu', $boundary, join('|', $matches), $boundary);
+  return trim(preg_replace($pattern, $replace, $text));
+}
+
+/**
+ * Returns an instance of Zend_Search_Lucene_Document.
+ *
+ * @return
+ *   A Zend_Search_Lucene_Document object.
+ */
+function luceneapi_document_get() {
+  return new Zend_Search_Lucene_Document();
+}
+
+/**
+ * Adds a document to the index, invokes hook_luceneapi_document_alter() before
+ * adding the document.
+ *
+ * @param $index
+ *   A LuceneAPI_Search_Lucene_Proxy object, such as the one returned by the
+ *   luceneapi_index_open() function.
+ * @param $document
+ *   A Zend_Search_Lucene_Document object, the document being added to the
+ *   index.
+ * @param $item
+ *   A mixed value containing the item being indexed.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ */
+function luceneapi_document_add(LuceneAPI_Search_Lucene_Proxy $index, Zend_Search_Lucene_Document $document, $item, $throw_exceptions = FALSE) {
+  try {
+    list($module, $type) = luceneapi_index_module_type_get($index);
+    module_invoke_all('luceneapi_document_alter', $document, $item, $module, $type);
+    $index->addDocument($document);
+    return TRUE;
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Removes a document from the index.
+ *
+ * @param $index
+ *   A LuceneAPI_Search_Lucene_Proxy object, such as the one returned by the
+ *   luceneapi_index_open() function.
+ * @param $id
+ *   A string containing a unique ID or a Zend_Search_Lucene_Query object.  Note
+ *   that the ID is something like a node ID and not the document ID.  If you
+ *   are looking to delete a document by it's internal ID, use $index->delete()
+ *   instead.
+ * @param $field
+ *   A string containing the field where unique ID's are stored.
+ * @param $item
+ *   A mixed value modeling the content being removed from the index, usually a
+ *   Drupal node object.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ */
+function luceneapi_document_delete(LuceneAPI_Search_Lucene_Proxy $index, $id, $field, $item, $throw_exceptions = FALSE) {
+  try {
+    list($module, $type) = luceneapi_index_module_type_get($index);
+
+    // allows other modules to add additional filters, gets document IDs
+    $results = module_invoke_all('luceneapi_document_delete', $item, $module, $type);
+    if (!$id instanceof Zend_Search_Lucene_Search_Query && !count($results)) {
+      $doc_ids = luceneapi_termdocs_get($index, $id, $field, TRUE);
+    }
+    else {
+
+      // instantiates query container, adds subquery from hooks
+      if ($query = luceneapi_query_get('boolean')) {
+        if (!$id instanceof Zend_Search_Lucene_Search_Query) {
+          if (!$id = luceneapi_query_get('term', $id, $field)) {
+            throw new LuceneAPI_Exception(t('Error instantiating term query.'));
+          }
+        }
+        luceneapi_subquery_add($query, $id, 'required', TRUE);
+        foreach ($results as $subquery) {
+          if ($subquery instanceof Zend_Search_Lucene_Search_Query) {
+            luceneapi_subquery_add($query, $subquery, 'required', TRUE);
+          }
+        }
+      }
+      else {
+        throw new LuceneAPI_Exception(t('Error instantiating boolean query.'));
+      }
+
+      // calls find() directly, results shouldn't be read from cache
+      $doc_ids = array();
+      $hits = $index->find($query);
+      foreach ($hits as $hit) {
+        $doc_ids[] = $hit->id;
+      }
+    }
+
+    // deletes matching documents, commits changes to the database
+    foreach ($doc_ids as $id) {
+      $index->delete($id);
+    }
+
+    // returns TRUE if there were matched documents
+    return !empty($doc_ids);
+  }
+  catch (Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Factory function for a Zend_Search_Lucene_Index_Term object.
+ *
+ * @param $text
+ *   A string containing the field text.
+ * @param $field
+ *   A string containing the field name, pass NULL to get the default field.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   A Zend_Search_Lucene_Index_Term object, FALSE on errors.
+ * @throws Zend_Search_Exception
+ */
+function luceneapi_term_get($text, $field = NULL, $throw_exceptions = FALSE) {
+  try {
+    return new Zend_Search_Lucene_Index_Term($text, $field);
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Gets positive keys matched during a search.  Positive keys are sorted to
+ * promote cache hits in functions such as luceneapi_excerpt().
+ *
+ * NOTE: This function must be called after the query is executed otherwise
+ * exceptions are thrown if certain queries are used, for example wildcards.
+ *
+ * @param $query
+ *   A Zend_Search_Lucene_Search_Query object.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An array of positive keys.
+ * @throws LuceneAPI_Exception
+ * @todo $term->field comparison needs to be modified
+ */
+function luceneapi_positive_keys_get(Zend_Search_Lucene_Search_Query $query, $throw_exceptions = FALSE) {
+  try {
+    if ($default_field = Zend_Search_Lucene::getDefaultSearchField()) {
+      $fields = array($default_field);
+    }
+    else {
+      $fields = array(NULL, 'contents');
+    }
+    $positive_keys = array();
+    foreach ($query->getQueryTerms() as $term) {
+      if (in_array($term->field, $fields, TRUE)) {
+        $positive_keys[] = $term->text;
+      }
+    }
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  sort($positive_keys);
+  return $positive_keys;
+}
+
+/**
+ * Helper function that returns IDs of all the documents containing the term.
+ *
+ * @param $index
+ *   A Zend_Search_Lucene_Index_Interface object.
+ * @param $term
+ *   A string containing the term being searched for.
+ * @param $field
+ *   A string containing the field name, pass NULL to get the default field.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An array of document ID's.
+ * @throws LuceneAPI_Exception
+ */
+function luceneapi_termdocs_get(Zend_Search_Lucene_Interface $index, $term, $field = NULL, $throw_exceptions = FALSE) {
+  try {
+    return $index->termDocs(luceneapi_term_get(
+      drupal_strtolower((string)$term), $field, TRUE
+    ));
+  }
+  catch (Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return array();
+}
+
+/**
+ * Returns the total number of times a term appears in each document.  By
+ * default, this function searches the 'contents' field.
+ *
+ * @param $index
+ *   A Zend_Search_Lucene_Index_Interface object.
+ * @param $term
+ *   A string containing the term being searched for.
+ * @param $field
+ *   A string containing the field name, pass NULL to get the default field.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An associative array of document IDs to frequencies.
+ * @throws Zend_Search_Exception
+ */
+function luceneapi_termfreqs_get(Zend_Search_Lucene_Interface $index, $term, $field = NULL, $throw_exceptions = FALSE) {
+  try {
+    return $index->termFreqs(luceneapi_term_get(
+      drupal_strtolower((string)$term), $field, TRUE
+    ));
+  }
+  catch (Zend_Search_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Returns total number of times a term appears in the index.  By default, this
+ * function searches the 'contents' field.
+ *
+ * @param $index
+ *   A Zend_Search_Lucene_Index_Interface object.
+ * @param $term
+ *   A string containing the term being searched for.
+ * @param $field
+ *   A string containing the field name, pass NULL to get the default field.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An integer containing the number of times the term appears.
+ * @throws LuceneAPI_Exception
+ * @see luceneapi_termfreqs_get()
+ */
+function luceneapi_termfreq_get(Zend_Search_Lucene_Interface $index, $term, $field = NULL, $throw_exceptions = FALSE) {
+  try {
+    $freqs = luceneapi_termfreqs_get($index, $term, $field, TRUE);
+    $total = 0;
+    foreach ($freqs as $doc_id => $num) {
+      $total += $num;
+    }
+    return $total;
+  }
+  catch (Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Returns the number of documents in this index containing the term.
+ *
+ * @param $index
+ *   A Zend_Search_Lucene_Index_Interface object.
+ * @param $term
+ *   A string containing the term being searched for.
+ * @param $field
+ *   A string containing the field name, pass NULL to get the default field.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   An integer containing the number of documents the term appears in.
+ * @throws LuceneAPI_Exception
+ */
+function luceneapi_docfreq_get(Zend_Search_Lucene_Interface $index, $term, $field = NULL, $throw_exceptions = FALSE) {
+  try {
+    return $index->docFreq(luceneapi_term_get(
+      drupal_strtolower((string)$term), $field, TRUE
+    ));
+  }
+  catch (Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Returns a Zend_Search_Lucene_Field object, makes sure we are using utf8
+ * encoding.
+ *
+ * @param $field_type
+ *   A string containing the field type.
+ * @param $name
+ *   A string containing the field name.
+ * @param $value
+ *   A string containing the field's value.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   A Zend_Search_Lucene_Field object, FALSE on errors.
+ */
+function luceneapi_field_get($field_type, $name, $value, $throw_exceptions = FALSE) {
+  try {
+    $method = (string)$field_type;
+    $valid = array('keyword', 'unindexed', 'binary', 'text', 'unstored');
+    if (in_array(drupal_strtolower($method), $valid)) {
+      return Zend_Search_Lucene_Field::$method($name, (string)$value, LUCENEAPI_ENCODING);
+    }
+    else {
+      throw new LuceneAPI_Exception(t(
+        'Lucene field type %type not valid.',
+        array('%type' => $field_type)
+      ));
+    }
+  }
+  catch (Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * A wrapper around _luceneapi_query_*() functions.  This function catches all
+ * exceptions and redirects the error messages to luceneapi_throw_error().
+ *
+ * @param $type
+ *   A string containing the type of query object.
+ * @param ...
+ *   Parameters passed to function.
+ * @return
+ *   A Zend_Search_Lucene_Search_Query object, FALSE on errors.
+ */
+function luceneapi_query_get($type) {
+  module_load_include('inc', 'luceneapi', 'luceneapi.query');
+  $function = sprintf('_luceneapi_query_%s', strtolower((string)$type));
+  try {
+    if (function_exists($function)) {
+      $args = func_get_args();
+      array_shift($args);
+      return call_user_func_array($function, $args);
+    }
+    else {
+      throw new LuceneAPI_Exception(t(
+        'Query type %type not valid.',
+        array('%type' => $type)
+      ));
+    }
+  }
+  catch (Exception $e) {
+    luceneapi_throw_error($e);
+  }
+  return FALSE;
+}
+
+/**
+ * Appends a subquery to a Zend_Search_Lucene_Search_Query_Boolean object.
+ *
+ * @param $query
+ *   A Zend_Search_Lucene_Search_Query_Boolean boolean object the subquery is
+ *   being appended to.
+ * @param $subquery
+ *   A Zend_Search_Lucene_Search_Query object being appended as the subquery.
+ * @param $sign
+ *   A string, boolean, or NULL modeling the sign.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   A boolean flagging whether the subquery was added.
+ * @see _luceneapi_query_sign_get()
+ */
+function luceneapi_subquery_add(Zend_Search_Lucene_Search_Query_Boolean $query, Zend_Search_Lucene_Search_Query $subquery, $sign = NULL, $throw_exceptions = FALSE) {
+  try {
+    module_load_include('inc', 'luceneapi', 'luceneapi.query');
+    $query->addSubquery($subquery, _luceneapi_query_sign_get($sign, TRUE));
+    return TRUE;
+  }
+  catch (Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Appends a term to a Zend_Search_Lucene_Search_Query_MultiTerm object.
+ *
+ * @param $query
+ *   A Zend_Search_Lucene_Search_Query_MultiTerm object the term object is being
+ *   appended to.
+ * @param $term
+ *   A Zend_Search_Lucene_Index_Term object being appended to the multiterm
+ *   object.  The object is usually the return of the luceneapi_term_get()
+ *   function.
+ * @param $sign
+ *   A string, boolean, or NULL modeling the sign.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   A boolean flagging whether the subquery was added.
+ * @see luceneapi_term_get()
+ * @see _luceneapi_query_sign_get()
+ */
+function luceneapi_term_add(Zend_Search_Lucene_Search_Query_MultiTerm $query, Zend_Search_Lucene_Index_Term $term, $sign = NULL, $throw_exceptions = FALSE) {
+  try {
+    module_load_include('inc', 'luceneapi', 'luceneapi.query');
+    $query->addTerm($term, _luceneapi_query_sign_get($sign, TRUE));
+    return TRUE;
+  }
+  catch (Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}
+
+/**
+ * Adds a field to a document.
+ *
+ * @param $doc
+ *   A Zend_Search_Lucene_Document object the field will be added to.
+ * @param $field_type
+ *   A string containing the field type.
+ * @param $name
+ *   A string containing the field name being searched, defaults to contents.
+ * @param $value
+ *   A string containing the field's value.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   A boolean flagging whether the field was added to the document.
+ */
+function luceneapi_field_add(Zend_Search_Lucene_Document $doc, $field_type, $name, $value, $throw_exceptions = FALSE) {
+  try {
+    $doc->addField(luceneapi_field_get($field_type, $name, $value, TRUE));
+    return TRUE;
+  }
+  catch (Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions);
+  }
+  return FALSE;
+}

@@ -1,0 +1,74 @@
+/**
+ * Style away the normal theme for the shopping cart block
+ */
+#ajax-cart-headline { padding-left: 0 !important; }
+
+#sidebar-first .block-uc_ajax_cart a {
+color: Navy !important;
+text-align: right;
+}
+
+#sidebar-first .block-uc_ajax_cart {
+background-color: LightGrey;
+background-image: None;
+color: DarkSlateGray;
+padding: 5px;
+margin: 0 0 10px;
+font-size: 9pt;
+
+position: fixed;
+top: 140px;
+left: 0;
+}
+
+#sidebar-first .block-uc_ajax_cart hr { display: none; }
+#sidebar-first .block-uc_ajax_cart .cart-block-item-desc { text-align: right; }
+
+/* styling of event registration form and views */
+.view-fsp-registration table.views-table {
+  width: 100%;
+	margin-bottom: 40px;
+}
+
+.view-fsp-registration .views-field {
+  padding:10px 5px; margin: 0; vertical-align: top;
+}
+
+.view-fsp-registration .views-field-field-image-cache-fid {
+  width: 50px;
+}
+
+.view-fsp-registration .views-field-title {
+  width: 100px;
+}
+
+.view-fsp-registration .views-field-body {
+  width: 600px;
+}
+
+.view-fsp-registration .views-field-addtocartlink {
+  width: 140px;
+  font-size: x-small;
+}
+
+.view-fsp-registration .views-field-sell-price {
+  width: 40px;
+}
+.view-fsp-registration #complete-package-description {
+  float: left;
+  width: 200px;
+}
+.view-fsp-registration #complete-package-list {
+  float: right;
+  font-size: x-small;
+}
+.view-fsp-registration caption {
+  background:none repeat scroll 0 0 ghostwhite;
+  border:5px double silver;
+  margin:10px 100px 0;
+  padding:5px 0;
+}
+
+/* porcfest 2011 */
+xbody.page-registration-porcfest-2011 .view-fsp-registration .view-content .views-table {display: none; }
+xbody.page-registration-porcfest-2011 .view-fsp-registration .view-content .views-table:first-child {display: block; }

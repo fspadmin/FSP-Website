@@ -1,0 +1,47 @@
+$Id
+
+Ajax Attribute Calculations 6.x-2.x, 2009-11-04
+-----------------------------------------------
+#562100 by longwave, Antoine Solutions: Initial commit of the 6.x-2.x code.
+  * Original code provide by longwave
+  * Code ported to Drupal 6 by AntoineSolutions
+
+#470002 by longwave, AntoineSolutions: Let other modules interact with uc_aac.
+  * uc_aac now rebuilds the entire product view form on every change. This
+    allows users to leverage existing Drupal hooks such as hook_nodeapi and
+    hook_form_alter to alter the appearance of the product view form.
+  * The existing ubercart hook, hook_add_to_cart_data, is now called to load
+    item data modifications made by other modules.
+  * A new hook has been added, hook_cart_item, to allow other modules to modify
+    the cart item.
+
+Feature Request #474400 by Antoine Solutions, xibun, andreiashu: Added support
+  for checkbox attributes.
+
+Bug Report #485606 by Antoine Solutions, xibun: Added support for the new price
+  handler functionality in Ubercart 2.0.
+
+Bug Report #625848 by AntoineSolutions: Product forms will now update on page
+  load no matter the type of attributes.
+
+Bug Report #630242 by AntoineSolutions: Update process fixed.
+
+Bug Report #631490 by AntoineSolutions: Fixed duplicate javascript entires.
+
+Bug Report #629416 by AntoineSolutions: Fixed issue where attributes would
+  revert to their default state after selecting a new attribute option. This
+  patch will work for all the different Ubercart Attribute 'Option price
+  format' options.
+
+Bug Report #657052 by splash112, AntoineSolutions: Fixed form qty field being
+  reset when updating attributes. Added security checks to form fields.
+
+Bug Report #658038 by melon: Fixed a javascript typo when trying to determine
+  the URL to POST to.
+
+Bug Report #697976 by hanoii, AntoineSolutions: Fixed form replacement method
+  to use Drupal.behaviors rather than $(document).ready(). Also updated code to
+  meet Drupals JavaScript coding standards.
+
+Bug Report #738494 by desh, AntoineSolutions: Fixed PHP 5.3 compatability issue
+  with module_invoke_all().

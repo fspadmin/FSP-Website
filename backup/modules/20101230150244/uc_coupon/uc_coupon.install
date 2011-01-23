@@ -1,0 +1,186 @@
+<?php
+// $Id: uc_coupon.install,v 1.9 2009/07/10 18:31:21 longwave Exp $
+
+/**
+ * @file
+ * Ubercart uc_coupon.module schema
+ */
+
+function uc_coupon_schema() {
+  $schema = array();
+
+  $schema['uc_coupons'] = array(
+    'description' => t('Ubercart Coupons'),
+    'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'code' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'value' => array(
+        'type' => 'numeric',
+        'precision' => 6,
+        'scale' => 2,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => '12',
+        'not null' => TRUE,
+        'default' => 'price',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'valid_until' => array(
+        'type' => 'int',
+      ),
+      'max_uses' => array(
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'minimum_order' => array(
+        'type' => 'numeric',
+        'precision' => 6,
+        'scale' => 2,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'text',
+      ),
+      'bulk' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'bulk_seed' => array(
+        'type' => 'char',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('cid'),
+  );
+
+  $schema['uc_coupons_orders'] = array( 
+    'description' => t('Ubercart Coupons used on Orders'),
+    'fields' => array(
+      'cuid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'cid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'oid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'value' => array(
+        'type' => 'numeric',
+        'precision' => 10,
+        'scale' => 2,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'code' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'default' => 'default_code',
+      ),
+    ),
+    'primary key' => array('cuid'),
+  );
+  return $schema;
+}
+
+function uc_coupon_install() {
+   drupal_install_schema('uc_coupon');
+}
+
+function uc_coupon_uninstall() {
+   drupal_uninstall_schema('uc_coupon');
+}
+
+function uc_coupon_update_6000() {
+  $ret = array();
+
+  if (!db_column_exists('uc_coupons', 'data')) {
+    db_add_field($ret, 'uc_coupons', 'data', array('type' => 'text'));
+
+    $result = db_query('SELECT cid, products, users, roles FROM {uc_coupons}');
+    while ($row = db_fetch_object($result)) {
+      $data = array('wholesale' => $row->roles);
+      if ($row->products) {
+        $data['products'] = explode(',', $row->products);
+      }
+      if ($row->users) {
+        // substr() removes the final comma that was present in the previous strings.
+        $data['users'] = explode(',', substr($row->users, 0, -1));
+      }
+      db_query("UPDATE {uc_coupons} SET data = '%s' WHERE cid = %d", serialize($data), $row->cid);
+    }
+
+    db_drop_field($ret, 'uc_coupons', 'products');
+    db_drop_field($ret, 'uc_coupons', 'users');
+    db_drop_field($ret, 'uc_coupons', 'roles');
+
+    db_drop_field($ret, 'uc_coupons_orders', 'user');
+    db_drop_field($ret, 'uc_coupons_orders', 'role');
+  }
+
+  return $ret;
+}
+
+function uc_coupon_update_6001() {
+  $ret = array();
+
+  if (!db_column_exists('uc_coupons', 'bulk')) {
+    $field = array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    );
+    db_add_field($ret, 'uc_coupons', 'bulk', $field);
+
+    $field = array(
+      'type' => 'char',
+      'length' => 32,
+      'not null' => TRUE,
+      'default' => '',
+    );
+    db_add_field($ret, 'uc_coupons', 'bulk_seed', $field);
+    $ret[] = update_sql("UPDATE {uc_coupons} SET bulk_seed = MD5(RAND()) WHERE bulk_seed = ''");
+  }
+
+  return $ret;
+}

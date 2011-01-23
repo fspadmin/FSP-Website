@@ -1,0 +1,15 @@
+; $Id$
+name = ECO: Webform
+description = Provides some ehancements to the Webform module for Ubercart users that can be used with Ubercart ECO or independently 
+core = 6.x
+dependencies[] = uc_eco
+dependencies[] = uc_store
+dependencies[] = webform
+suggests[] = webform_conditional
+package = Ubercart - extra
+; Information added by drupal.org packaging script on 2010-07-28
+version = "6.x-1.0-beta2"
+core = "6.x"
+project = "uc_eco"
+datestamp = "1280356508"
+

@@ -1,0 +1,271 @@
+<?php
+// $Id: sheetnode.install,v 1.1.4.14 2010/04/06 03:15:57 kratib Exp $
+
+function sheetnode_install() {
+  drupal_install_schema('sheetnode');
+}
+
+function sheetnode_uninstall() {
+  drupal_uninstall_schema('sheetnode');
+}
+
+function sheetnode_schema() {
+  return sheetnode_schema_6005();
+}
+
+function sheetnode_schema_6001() {
+  $schema['sheetnode'] = array(
+    'fields' => array(
+      'nid' => array(
+        'description' => t('The primary identifier for a node.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'value' => array(
+        'description' => t('The serialized worksheet content.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+  $schema['sheetnode_template'] = array(
+    'fields' => array(
+      'tid' => array(
+        'description' => t('The primary identifier for the template.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'The unique name of the template. May only be alphanumeric characters plus underscores.',
+      ),
+      'value' => array(
+        'description' => t('The serialized worksheet template content.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('tid'),
+    'unique keys' => array(
+      'key_name' => array('name'),
+    ),
+  );
+  return $schema;
+}
+
+function sheetnode_update_6001(&$sandbox) {
+  $ret = array();
+  $schema = sheetnode_schema_6001();
+  db_create_table($ret, 'sheetnode_template', $schema['sheetnode_template']);
+  db_change_field($ret, 'sheetnode', 'nid', 'nid', $schema['sheetnode']['fields']['nid']);
+  return $ret;
+}
+
+function sheetnode_update_6002(&$sandbox) {
+  drupal_load('module', 'sheetnode');
+  require_once(drupal_get_path('module', 'sheetnode') .'/socialcalc.inc');
+  $ret = array();
+  $sig = 'version:1.5';
+  $siglen = strlen($sig);
+  $result = db_query("SELECT * FROM {sheetnode}");
+  while ($sheetnode = db_fetch_array($result)) {
+    $value = unserialize($sheetnode['value']);
+    if (strncmp($value, $sig, $siglen) === 0) {
+      $sheet = socialcalc_parse_sheet($value);
+      $sc = array(
+        'sheet' => $sheet,
+        'edit' => socialcalc_default_edit($sheet),
+        'audit' => socialcalc_default_audit($sheet),
+      );
+      $sql = "UPDATE {sheetnode} SET value='%s' WHERE nid=%d";
+      $ret[] = array('success' => FALSE !== db_query($sql, serialize(socialcalc_save($sc)), $sheetnode['nid']), 'query' => check_plain($sql));
+    }
+  }
+  $result = db_query("SELECT * FROM {sheetnode_template}");
+  while ($template = db_fetch_array($result)) {
+    $value = unserialize($template['value']);
+    if (strncmp($value, $sig, $siglen) === 0) {
+      $sheet = socialcalc_parse_sheet($value);
+      $sc = array(
+        'sheet' => $sheet,
+        'edit' => socialcalc_default_edit($sheet),
+        'audit' => socialcalc_default_audit($sheet),
+      );
+      $sql = "UPDATE {sheetnode_template} SET value='%s' WHERE tid=%d";
+      $ret[] = array('success' => FALSE !== db_query($sql, serialize(socialcalc_save($sc)), $template['tid']), 'query' => check_plain($sql));
+    }
+  }
+  return $ret;
+}
+
+function sheetnode_schema_6003() {
+  $schema['sheetnode'] = array(
+    'fields' => array(
+      'nid' => array(
+        'description' => t('The primary identifier for a node.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'vid' => array(
+        'description' => t('The revision identifier for a node.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'value' => array(
+        'description' => t('The serialized worksheet content.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('vid'),
+    'indexes' => array(
+      'nid' => array('nid'),
+    ),
+  );
+  $schema['sheetnode_template'] = array(
+    'fields' => array(
+      'tid' => array(
+        'description' => t('The primary identifier for the template.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => t('The unique name of the template. May only be alphanumeric characters plus underscores.'),
+      ),
+      'value' => array(
+        'description' => t('The serialized worksheet template content.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('tid'),
+    'unique keys' => array(
+      'key_name' => array('name'),
+    ),
+  );
+  return $schema;
+}
+
+function sheetnode_update_6003(&$sandbox) {
+  $ret = array();
+  $schema = sheetnode_schema_6003();
+  db_add_field($ret, 'sheetnode', 'vid', $schema['sheetnode']['fields']['vid']);
+  
+  // set the vid of all existing sheetnode rows to the latest node_revisions.vid.
+  db_query('UPDATE {sheetnode} SET {sheetnode}.vid=(SELECT MAX(vid) FROM {node_revisions} WHERE {node_revisions}.nid={sheetnode}.nid GROUP BY {sheetnode}.nid)');
+  
+  db_drop_primary_key($ret, 'sheetnode');
+  db_add_primary_key($ret, 'sheetnode', array('vid'));
+  db_add_index($ret, 'sheetnode', 'nid', array('nid'));
+  return $ret;
+}
+
+function sheetnode_update_6004(&$sandbox) {
+  $ret = array();
+  db_drop_unique_key($ret, 'sheetnode', 'nid');
+  if (!$ret[0]['success']) return array();
+  db_add_index($ret, 'sheetnode', 'nid', array('nid'));
+  return $ret;
+}
+
+function sheetnode_schema_6005() {
+  $schema['sheetnode'] = array(
+    'fields' => array(
+      'nid' => array(
+        'description' => t('The primary identifier for a node.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'description' => t('The revision identifier for a node.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => t('The serialized worksheet content.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('vid'),
+    'indexes' => array(
+      'nid' => array('nid'),
+    ),
+  );
+  $schema['sheetnode_template'] = array(
+    'fields' => array(
+      'tid' => array(
+        'description' => t('The primary identifier for the template.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => t('The unique name of the template. May only be alphanumeric characters plus underscores.'),
+      ),
+      'value' => array(
+        'description' => t('The serialized worksheet template content.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+      ),
+      'vid' => array(
+        'description' => t('The original node version for this template.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('tid'),
+    'unique keys' => array(
+      'key_name' => array('name'),
+    ),
+  );
+  return $schema;
+}
+
+function sheetnode_update_6005(&$sandbox) {
+  $ret = array();
+  $schema = sheetnode_schema_6005();
+  db_add_field($ret, 'sheetnode_template', 'vid', $schema['sheetnode_template']['fields']['vid']);
+  return $ret;
+}
+
+function sheetnode_patch() {
+  drupal_set_message(t('An update has been made to the SocialCalc patch. Please follow the <a href="@patch">instructions online</a> to apply this patch.',
+    array('@patch' => 'http://drupal.org/project/sheetnode#patch')
+  ), 'warning');
+}
+
+function sheetnode_update_6006(&$sandbox) {
+  sheetnode_patch();
+  return array();
+}
+

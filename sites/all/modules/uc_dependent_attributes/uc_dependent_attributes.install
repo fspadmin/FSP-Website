@@ -1,0 +1,67 @@
+<?php
+// $Id: uc_dependent_attributes.install,v 1.1 2009/11/04 23:22:42 antoinesolutions Exp $
+
+/**
+ * @file
+ * Install hooks for uc_dependent_attributes.module.
+ */
+
+/**
+ * Implementation of hook schema().
+ */
+function uc_dependent_attributes_schema() {
+  $schema = array();
+
+  $schema['uc_dependent_attributes'] = array(
+    'description' => t('Dependent Attributes: enable/disable attribute/option combinations on a per product basis.'),
+    'fields' => array(
+      'nid' => array(
+        'description' => t('The product node id that the attribute/option combination is associated with.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'combination' => array(
+        'description' => t('A serialized array whose keys are attribute IDs and values are option IDs.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'enabled' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+    ),
+    'indexes' => array(
+      'nid' => array('nid'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook install().
+ */
+function uc_dependent_attributes_install() {
+  // Install schemas
+  drupal_install_schema('uc_dependent_attributes');
+  // Set the module weight to 1 allowing other modules to execute prior to this
+  // module
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'uc_dependent_attributes'");
+}
+
+/**
+ * Implementation of hook uninstall().
+ */
+function uc_dependent_attributes_uninstall() {
+  // Uninstall schemas
+  drupal_uninstall_schema('uc_dependent_attributes');
+
+  // Delete settings variables
+}

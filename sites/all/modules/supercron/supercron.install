@@ -1,0 +1,59 @@
+<?php
+// $Id: supercron.install,v 1.1.2.1 2009/06/05 06:37:11 63reasons Exp $
+/**
+ * @file
+ * User supercron installation
+ */
+
+
+/**
+ * Schema
+ */
+function supercron_schema() {
+
+  $schema['supercron_enabled_mods'] = array(
+    'fields' => array(
+      'id'         => array('type' => 'serial', 'not null' => TRUE),
+      'module_name'         => array('type' => 'varchar', 'length' => 64, 'not null' => TRUE),
+      'weight'         => array('type' => 'int', 'length' => 11, 'not null' => TRUE),
+      'output'         => array('type' => 'text', 'size' => 'big', 'not null' => TRUE),
+      'enabled'         => array('type' => 'int', 'length' => 1, 'not null' => TRUE, 'default' => 1),
+      'timestamp'         => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+      'last_exec_interval'         => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+      'total_exec_interval'         => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+      'times_count'         => array('type' => 'int', 'size' => 'big', 'not null' => TRUE, 'default' => 0),
+      'detached'         => array('type' => 'int', 'length' => 1, 'not null' => TRUE, 'default' => 0),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['supercron_ips'] = array(
+    'fields' => array(
+      'iid'         => array('type' => 'serial', 'not null' => TRUE),
+      'ip'         => array('type' => 'text', 'size' => 'big', 'not null' => TRUE),
+    ),
+    'primary key' => array('iid'),
+  );
+  
+  return $schema;
+}
+
+/**
+ * Install
+ */
+function supercron_install() {
+  drupal_install_schema('supercron');
+  foreach (gethostbynamel($_SERVER['HTTP_HOST']) as $ip) db_query("INSERT INTO {supercron_ips} (ip) VALUES ('%s')", $ip);
+  db_query("INSERT INTO {supercron_ips} (ip) VALUES ('%s')", '127.0.0.1');  
+}
+
+/**
+ * Uninstall
+ */
+function supercron_uninstall() {
+  drupal_uninstall_schema('supercron');
+  variable_del(SUPERCRON_FIREWALL_ENABLED_VARIABLE);
+  variable_del(SUPERCRON_SAFETY_VARIABLE);
+  variable_del(SUPERCRON_FIREWALL_MODE_VARIABLE);
+  variable_del(SUPERCRON_THROTTLE_SUPPORT_VARIABLE);
+}

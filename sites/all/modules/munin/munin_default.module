@@ -1,0 +1,81 @@
+<?php
+
+// $Id: munin_default.module,v 1.1.2.3 2009/10/14 19:39:02 mcgo Exp $
+
+/**
+ * @file
+ * Default munin plugin configurations
+ *
+ * This file adds default stats as a plugin for the munin api
+ * module
+ */
+
+/**
+ * Implementation of hook_muninplugin().
+ */
+function munin_default_muninplugin() {
+  $plugins = array();
+
+  // Set the category. There will be a munin element for
+  // each category.
+  $plugins['user'] = array(
+    '#title' => t('User information'),
+    '#description' => t('Information about the users on your site.'),
+    '#vlabel' => t('Number'),
+  );
+  // Add the data that fits into that category
+  $plugins['user']['curuser'] = array(
+    '#label' => t('Currently logged in user'),
+    '#description' => t('This item shows the number of currently logged in users.'),
+    '#type' => 'GAUGE ',
+    '#statement' => 'select count(uid) from {users} where unix_timestamp() - access < (60*5)',
+  );
+  $plugins['user']['newuser'] = array(
+    '#label' => t('New users'),
+    '#description' => t('This item shows the number of users that have been created.'),
+    '#type' => 'GAUGE',
+    '#statement' => 'select count(uid) from {users} where unix_timestamp() - created < (60*5)',
+  );
+
+  $plugins['content'] = array(
+    '#title' => t('Content statistics'),
+    '#description' => t('Information about existing and new content like nodes and comments.'),
+    '#vlabel' => t('Amount'),
+  );
+  $plugins['content']['curnodes'] = array(
+    '#label' => t('Existing nodes'),
+    '#description' => t('Number of existing nodes on this site.'),
+    '#type' => 'GAUGE',
+    '#statement' => 'select count(nid) from {node}',
+  );
+  $plugins['content']['curcmnt'] = array(
+    '#label' => t('Existing comments'),
+    '#description' => t('Number of existing comments on this site.'),
+    '#type' => 'GAUGE',
+    '#statement' => 'select count(cid) from {comments}',
+  );
+  $plugins['content']['newnodes'] = array(
+    '#label' => t('New nodes'),
+    '#description' => t('Number of new nodes on this site.'),
+    '#type' => 'GAUGE',
+    '#statement' => 'select count(nid) from {node} where unix_timestamp() - created < (60*5)',
+  );
+  $plugins['content']['newcmnt'] = array(
+    '#label' => t('New Comments'),
+    '#description' => t('Number of new comments on this site.'),
+    '#type' => 'GAUGE',
+    '#statement' => 'select count(cid) from {comments} where unix_timestamp() - timestamp < (60*5)',
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implementation of hook_muninplugin_alter($plugins).
+ */
+function munin_default_muninplugin_alter(&$plugins) {
+  // This hook is used to alter existing plugins.
+}
+
+
+?>

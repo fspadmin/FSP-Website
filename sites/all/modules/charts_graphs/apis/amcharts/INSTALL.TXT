@@ -1,0 +1,25 @@
+; $Id: INSTALL.TXT,v 1.1.2.2 2010/06/24 12:18:40 rsevero Exp $
+
+You need to download amCharts files from: 
+http://www.amcharts.com/download
+
+amCharts ships as several zips with sophisticated folder structure in each one of them. 
+You need to hunt down following files:
+
+amcolumn.swf  
+amline.swf  
+ampie.swf  
+swfobject.js
+
+and place them in the "downloaded" folder of the module (directly
+without any folder structure inside "downloaded").
+
+Sorry for the inconvenience, but there's really nothing we
+can do about it due to licenses restrictions and Drupal policy
+to not ship anything non-GPL with the module code.
+
+CAUTION: Do NOT assume you don't need swfobject.js since
+charts_graphs already requires swfobject Drupal module. Unfortunately,
+the versions of the two js files are different, so you can
+not re-use swfobject from the module file for amCharts the way
+you can re-use it for OFC2 

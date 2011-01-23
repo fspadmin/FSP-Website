@@ -1,0 +1,27 @@
+.pselect {
+  font-weight: normal !important;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+/* Creating Image Links to clean up the interface now instead of the traditional text links */
+.pselect a, 
+.permission_select a.check, 
+.permission_select a.uncheck {
+	text-indent: -2000em;
+	height: 14px;
+	width: 13px;
+	display: inline-block;
+	margin: 0 5px;
+}
+
+a.check {
+  background: transparent url('checkbox-checked.png') no-repeat top left; 
+}
+a.uncheck {
+  background: transparent url('checkbox-unchecked.png') no-repeat top left; 
+}
+span.role {
+  margin: 0 10px;
+  padding: 0 0 5px 0;
+}

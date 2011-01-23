@@ -1,0 +1,588 @@
+<?php
+// $Id: uc_invite_discount.module,v 1.1.2.1.2.4 2010/04/01 07:35:31 piggom Exp $
+
+/**
+ * @file
+ * Provides automated discount coupon creations for Ubercart.
+ *
+ * Invite Discount module grant discount coupons to invitor when invitee make purchase
+ *
+ * Initial development of this module is sponsored by SpokenThreads (http://www.spokenthreads.com)
+ */
+
+/**
+* Implementation of hook_menu().
+*/
+function uc_invite_discount_menu() {
+    $items = array();
+        $items['admin/store/settings/invite_discount'] = array(
+			'title'       	=> 'Invite Discount',
+			'description' 	=> 'Grant discount coupons to invitor when invitee make purchase',
+			'page callback'	=> 'drupal_get_form',
+			'page arguments' => array('uc_invite_discount_admin_settings'),
+			'access arguments' => array('administer store'),
+			'type'        	=> MENU_NORMAL_ITEM,
+        );
+    return $items;
+}
+
+/**
+* Implementation of hook_perm().
+*/
+function uc_invite_discount_perm() {
+    return array('get invite discounts');
+}
+
+/**
+* Implementation of hook_help().
+*/
+function uc_invite_discount_help($section)
+{
+    switch ($section)
+    {
+        case 'admin/store/settings/invite_discount':
+            return t("<p>Übercart Invite Discounts module let your customers to get discount coupons whenever another user, refered by her/him, purchase a product.</p>");
+        case 'admin/help#uc_invite_discount':
+            return t("<h3>Principle</h3>
+                      <p>Here the workflow of a invite discounts:</p>
+                      <ol>
+                            <li>A user is registered on your website,</li>
+                            <li>This user invite some friends,</li>
+                            <li>User's friends get invite message</li>
+                            <li>One of the invitee register,</li>
+                            <li>This new member (invitee) purchase a product on your store,</li>
+                            <li>The order status become <em>payment_received</em>,</li>
+                            <li>A new discount coupon is generated and granted to inviter</li>
+                            <li>The <em>discount coupon information message</em> is sent to the inviter,</li>
+                            <li>The inviter can use granted coupon within validity period,</li>
+                        </ol>");
+    }
+}
+
+function uc_invite_discount_admin_settings()
+{
+    $form['settings'] = array(
+                            '#type'        => 'fieldset',
+                            '#title'       => t('Coupon Settings'),
+                            );
+    $form['settings']['name_pattern'] = array(
+                            '#type' => 'textfield',
+                            '#title' => t('Coupon Name Pattern'),
+                            '#default_value' => variable_get('uc_invite_discount_name_pattern', '[invitor-username]-[invitee-username]'),
+                            '#required' => TRUE,
+                            '#description' => 'User token patterns to generate unique and understandable coupon names',
+                            );
+    $form['settings']['name_help'] = array(
+                            '#title' => t('Replacement patterns'),
+                            '#type' => 'fieldset',
+                            '#collapsible' => TRUE,
+                            '#collapsed' => TRUE,
+                            '#description' => t('Prefer raw-text replacements for text to avoid problems with HTML entities!'),
+                            );
+
+    $form['settings']['name_help']['help'] = array(
+                            '#value' => theme('token_help',  'uc_invite_discount'),
+                            );
+
+    $form['settings']['code_pattern'] = array(
+                            '#type' => 'textfield',
+                            '#title' => t('Coupon Code Pattern'),
+                            '#default_value' => variable_get('uc_invite_discount_code_pattern', 'INV[invitor-id][invitee-id][coupon-order]'),
+                            '#required' => TRUE,
+                            '#description' => 'User token patterns to generate unique coupon codes. Result should not be longer than 14 character so pick carefully.',
+                            );
+
+    $form['settings']['code_help'] = array(
+                            '#title' => t('Replacement patterns'),
+                            '#type' => 'fieldset',
+                            '#collapsible' => TRUE,
+                            '#collapsed' => TRUE,
+                            '#description' => t('Prefer raw-text replacements for text to avoid problems with HTML entities!'),
+                            );
+
+    $form['settings']['code_help']['help'] = array(
+                            '#value' => theme('token_help', 'uc_invite_discount'),
+                            );
+
+    $form['settings']['validity_period'] = array(
+                            '#type' => 'textfield',
+                            '#title' => t('Validity Period'),
+                            '#default_value' => variable_get('uc_invite_discount_validity_period', 30),
+                            '#required' => TRUE,
+                            '#description' => t('How many days will a coupon will stay valid.'),
+                            );
+    $form['settings']['type'] = array(
+                            '#type' => 'select',
+                            '#title' => t('Discount type'),
+                            '#default_value' => variable_get('uc_invite_discount_type','price'),
+                            '#options' => array(
+                                                'percentage' => 'Percentage',
+                                                'price' => 'Price'
+                                                ),
+                            );
+
+    $form['settings']['value'] = array(
+                            '#type' => 'textfield',
+                            '#title' => t('Discount value'),
+                            '#default_value' => variable_get('uc_invite_discount_value',10),
+                            '#size' => 10,
+                            '#description' => t('Enter values without symbols, for 15%, enter "15" and choose Percentage as the discount type.'),
+                            '#required' => TRUE,
+                            );
+
+    $form['settings']['minimum_order'] = array(
+                            '#type' => 'textfield',
+                            '#title' => t('Minimum order limit'),
+                            '#default_value' => variable_get('uc_invite_discount_minimum_order',30),
+                            '#size' => 10,
+                            '#description' => t('A minimum order total that needed to generate coupon,0 for no minimum order limit.'),
+                            '#required' => TRUE,
+                            );
+    $form['settings']['minimum_usage_order'] = array(
+                            '#type' => 'textfield',
+                            '#title' => t('Minimum order limit for usage of granted coupon'),
+                            '#default_value' => variable_get('uc_invite_discount_minimum_usage_order',30),
+                            '#size' => 10,
+                            '#description' => t('A minimum order total that applies to the coupon, or 0 for no minimum order limit.'),
+                            '#required' => TRUE,
+                            );
+    $form['roles'] = array(
+                            '#type' => 'fieldset',
+                            '#title' => t('Allowed Roles'),
+                            '#description' => t('Enter one or more role names below to make coupons valid only for users with those roles.'),
+                            '#tree' => TRUE,
+                            '#collapsible' => TRUE,
+                            );
+    $default_roles = unserialize(variable_get('uc_invite_discount_roles',NULL));
+
+    if (isset($default_roles) && is_array($default_roles))
+    {
+        foreach ($default_roles as $role)
+        {
+            if($role !="")
+            {
+                $form['roles'][] = array(
+                                        '#type' => 'textfield',
+                                        '#default_value' => $role,
+                                        '#autocomplete_path' => 'uc_coupon/autocomplete/role',
+                                        );
+            }
+        }
+    }
+
+    for ($i = 0; $i < 3; $i++)
+    {
+        $form['roles'][] = array(
+                                '#type' => 'textfield',
+                                '#autocomplete_path' => 'uc_coupon/autocomplete/role',
+                                );
+    }
+
+    $form['denied_roles'] = array(
+                            '#type' => 'fieldset',
+                            '#title' => t('Denied Roles'),
+                            '#description' => t('Enter one or more role names below if you want people not to receive coupons if they belong to these roles.'),
+                            '#tree' => TRUE,
+                            '#collapsible' => TRUE,
+                            );
+    $denied_roles = unserialize(variable_get('uc_invite_discount_denied_roles',NULL));
+
+    if (isset($denied_roles) && is_array($denied_roles))
+    {
+        foreach ($denied_roles as $role)
+        {
+            if($role !="")
+            {
+                $form['denied_roles'][] = array(
+                                        '#type' => 'textfield',
+                                        '#default_value' => $role,
+                                        '#autocomplete_path' => 'uc_coupon/autocomplete/role',
+                                        );
+            }
+        }
+    }
+
+    for ($i = 0; $i < 3; $i++)
+    {
+        $form['denied_roles'][] = array(
+                                '#type' => 'textfield',
+                                '#autocomplete_path' => 'uc_coupon/autocomplete/role',
+                                );
+    }
+
+    $form['admin_notify'] = array(
+                                '#type' => 'fieldset',
+                                '#title' => t('Admin Notification'),
+                                '#collapsible' => TRUE,
+                                '#collapsed' => TRUE,
+                                );
+    $form['admin_notify']['admin_notify_setting'] = array(
+                                '#type' => 'checkbox',
+                                '#default_value' => variable_get('uc_invite_discount_admin_notify_setting', FALSE),
+                                '#title' => t('Send email to admin after a coupon is generated.'),
+                                );
+    $form['admin_notify']['admin_custom_mail'] = array(
+                                '#type' => 'textfield',
+                                '#title' => t('Admin mail'),
+                                '#default_value' => variable_get('uc_invite_discount_admin_custom_mail',''),
+                                '#description' => t('If you want to send notification mail to anything other than site mail. Fill this textbox with desired addres.'),
+                                '#required' => FALSE,
+                                );
+    $form['admin_notify']['admin_notify_subject'] = array(
+                                '#type' => 'textfield',
+                                '#title' => t('Message subject'),
+                                '#default_value' => variable_get('uc_invite_discount_admin_notify_subject', ''),
+                                '#required' => TRUE,
+                                );
+    $form['admin_notify']['admin_notify_message'] = array(
+                                '#type' => 'textarea',
+                                '#title' => t('Message text'),
+                                '#default_value' => variable_get('uc_invite_discount_admin_notify_message', ''),
+                                '#description' => t('The message the admin receives when a coupon granted.'),
+                                '#rows' => 10,
+                                '#required' => TRUE,
+                                );
+
+    $form['admin_notify']['code_help'] = array(
+                                '#title' => t('Replacement patterns'),
+                                '#type' => 'fieldset',
+                                '#collapsible' => TRUE,
+                                '#collapsed' => TRUE,
+                                '#description' => t('Prefer raw-text replacements for text to avoid problems with HTML entities!'),
+                                );
+
+    $form['admin_notify']['code_help']['help'] = array(
+                                '#value' => theme('token_help', 'uc_invite_discount'),
+                                );
+
+    $form['invitor_notify'] = array(
+                                '#type' => 'fieldset',
+                                '#title' => t('Invitor Notification'),
+                                '#collapsible' => TRUE,
+                                '#collapsed' => TRUE,
+                                );
+    $form['invitor_notify']['invitor_notify_setting'] = array(
+                                '#type' => 'checkbox',
+                                '#default_value' => variable_get('uc_invite_discount_invitor_notify_setting', TRUE),
+                                '#title' => t('Send email to invitor after coupon is awarded to him/her.'),
+                                );
+    $form['invitor_notify']['invitor_notify_subject'] = array(
+                                '#type' => 'textfield',
+                                '#title' => t('Message subject'),
+                                '#default_value' => variable_get('uc_invite_discount_invitor_notify_subject', ''),
+                                '#required' => TRUE,
+                                );
+    $form['invitor_notify']['invitor_notify_message'] = array(
+                                '#type' => 'textarea',
+                                '#title' => t('Message text'),
+                                '#default_value' => variable_get('uc_invite_discount_invitor_notify_message', ''),
+                                '#description' => t('The message the admin receives when a coupon granted.'),
+                                '#rows' => 10,
+                                '#required' => TRUE,
+                                );
+
+    $form['invitor_notify']['code_help'] = array(
+                                '#title' => t('Replacement patterns'),
+                                '#type' => 'fieldset',
+                                '#collapsible' => TRUE,
+                                '#collapsed' => TRUE,
+                                '#description' => t('Prefer raw-text replacements for text to avoid problems with HTML entities!'),
+                                );
+
+    $form['invitor_notify']['code_help']['help'] = array(
+                                '#value' => theme('token_help', 'uc_invite_discount'),
+                                );
+
+    $form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save'),
+		);
+		return $form;
+}
+
+
+function uc_invite_discount_admin_settings_validate($form, &$form_state)
+{
+    if (!is_numeric($form_state['values']['validity_period']) && $form_state['values']['validity_period'] >= 0)
+    {
+        form_set_error('validity_period', t('You must enter a value bigger than 0 for the validity period.'));
+    }
+    if($form_state['admin_custom_mail'] !='')
+    {
+        if(!valid_email_address($form_state['values']['admin_custom_mail']))
+        {
+            form_set_error('admin_custom_mail', t('You must enter a valid email adress.'));
+        }
+    }
+}
+
+function uc_invite_discount_admin_settings_submit($form, &$form_state)
+{
+
+    if ($form_state['values']['submit'] == $form_state['values']['op'])
+    {
+        variable_set('uc_invite_discount_name_pattern',             $form_state['values']['name_pattern']);
+        variable_set('uc_invite_discount_code_pattern',             $form_state['values']['code_pattern']);
+        variable_set('uc_invite_discount_validity_period',          $form_state['values']['validity_period']);
+        variable_set('uc_invite_discount_type',                     $form_state['values']['type']);
+        variable_set('uc_invite_discount_value',                    $form_state['values']['value']);
+        variable_set('uc_invite_discount_minimum_order',            $form_state['values']['minimum_order']);
+        variable_set('uc_invite_discount_minimum_usage_order',      $form_state['values']['minimum_usage_order']);
+        variable_set('uc_invite_discount_admin_notify_setting',     $form_state['values']['admin_notify_setting']);
+        variable_set('uc_invite_discount_admin_custom_mail',        $form_state['values']['admin_custom_mail']);
+        variable_set('uc_invite_discount_admin_notify_subject',     $form_state['values']['admin_notify_subject']);
+        variable_set('uc_invite_discount_admin_notify_message',     $form_state['values']['admin_notify_message']);
+        variable_set('uc_invite_discount_invitor_notify_setting',   $form_state['values']['invitor_notify_setting']);
+        variable_set('uc_invite_discount_invitor_notify_subject',   $form_state['values']['invitor_notify_subject']);
+        variable_set('uc_invite_discount_invitor_notify_message',   $form_state['values']['invitor_notify_message']);
+        variable_set('uc_invite_discount_roles',                    serialize($form_state['values']['roles']));
+        variable_set('uc_invite_discount_denied_roles',             serialize($form_state['values']['denied_roles']));
+
+        drupal_set_message(t('Configuration saved.'));
+    }
+    else if ($$form_state['values']['reset'] == $form_state['values']['op'])
+    {
+        variable_del('uc_invite_discount_name_pattern');
+        variable_del('uc_invite_discount_code_pattern');
+        variable_del('uc_invite_discount_validity_period');
+        variable_del('uc_invite_discount_type');
+        variable_del('uc_invite_discount_value');
+        variable_del('uc_invite_discount_minimum_order');
+        variable_del('uc_invite_discount_minimum_usage_order');
+        variable_del('uc_invite_discount_admin_notify_setting');
+        variable_del('uc_invite_discount_admin_custom_mail');
+        variable_del('uc_invite_discount_admin_notify_subject');
+        variable_del('uc_invite_discount_admin_notify_message');
+        variable_del('uc_invite_discount_invitor_notify_setting');
+        variable_del('uc_invite_discount_invitor_notify_subject');
+        variable_del('uc_invite_discount_invitor_notify_message');
+        variable_del('uc_invite_discount_roles');
+        variable_del('uc_invite_discount_denied_roles');
+
+        drupal_set_message(t('Settings restored to their default values.'));
+    }
+}
+
+/* ************************************************************************* *
+*  Übercart Hooks                                                           *
+* ************************************************************************* */
+
+/**
+* Implementation of hook_order().
+*/
+function uc_invite_discount_order($op, $order, $status)
+{
+    global $user;
+
+    switch ($op)
+    {
+        case 'update':
+            if (($status == 'payment_received' || $status == 'completed') &&
+                 $order->status != $status &&
+                 $order->uid > 0 &&
+                 ($order_user = user_load(array('uid' => $order->uid))) !== FALSE)
+            {
+                $minimum_order = variable_get('uc_invite_discount_minimum_order',30);
+
+                if($minimum_order <= $order->order_total)
+                {
+                    $invitor_id = db_fetch_object(db_query("SELECT * FROM {invite} WHERE email = '%s'", $order_user->init));
+
+                    if($invitor_id->uid)
+                    {
+                        $invitor =  user_load(array('uid' => $invitor_id->uid));
+                        $denied = FALSE;
+                        $denied_roles = unserialize(variable_get('uc_invite_discount_denied_roles',NULL));
+                        foreach($denied_roles AS $role)
+                        {
+                            if(uc_invite_discount_user_has_role($role, $invitor))
+                            {
+                                $denied = TRUE;
+                            }
+                        }
+
+                        if(!$denied)
+                        {
+                            $token_filters = array('global' => NULL, 'user' => $user, 'order' => $order, 'uc_invite_discount' => $order);
+                            $code = uc_invite_discount_coupon_code($token_filters, $user, $order);
+                            $name = uc_invite_discount_coupon_name($token_filters, $user, $order);
+                            $minimum_usage_order = variable_get('uc_invite_discount_minimum_usage_order',30);
+                            $valid_until = strtotime('+'.variable_get('uc_invite_discount_validity_period',100).' day');
+                            $value = variable_get('uc_invite_discount_value',10);
+                            $type = variable_get('uc_invite_discount_type','price');
+
+                            if($type == 'percentage')
+                            {
+                                $calculated_value = ($value*$order->order_total)/100;
+                                $value = $calculated_value;
+                                $type = 'price';
+                            }
+                            $status   = 1;
+                            $max_uses = 1;
+
+                            $data = array();
+                            $data['users'][] = $invitor->uid;
+                            $data['max_uses_per_user'] = 1;
+                            $data['negate_products'] = FALSE;
+
+                            $roles = unserialize(variable_get('uc_invite_discount_roles',NULL));
+
+                            foreach ($roles as $role)
+                            {
+                                if ($role) {
+                                    $data['roles'][] = $role;
+                                }
+                            }
+
+                            $data['wholesale'] = 1;
+
+                            $result = db_query("INSERT INTO {uc_coupons} (name, code, value, type, status, valid_until, max_uses, minimum_order, data) VALUES ('%s', '%s', %f, '%s', %d, %d, %d, %d, '%s')", $name, $code, $value, $type, $status, $valid_until, $max_uses, $minimum_usage_order, serialize($data));
+
+                            if($result)
+                            {
+
+                                if(variable_get('uc_invite_discount_admin_notify_setting',FALSE))
+                                {
+                                    $to = uc_store_email_from();
+                                    if(valid_email_address(variable_get('uc_invite_discount_admin_custom_mail','')))
+                                    {
+                                        $to = variable_get('uc_invite_discount_admin_custom_mail','');
+                                    }
+                                    $subject = variable_get('uc_invite_discount_admin_notify_subject','');
+                                    $body = variable_get('uc_invite_discount_admin_notify_message', '');
+                                    $from = uc_store_email_from();
+
+                                    $subject = token_replace_multiple($subject, $token_filters);
+                                    $subject = token_replace_multiple($subject, $token_filters);
+
+                                    $body = token_replace_multiple($body, $token_filters);
+                                    $body = token_replace_multiple($body, $token_filters);
+
+                                    drupal_mail($key, $to, $subject, $body, $from);
+                                }
+
+                                if(variable_get('uc_invite_discount_invitor_notify_setting',TRUE))
+                                {
+                                    $to = $invitor->mail;
+                                    $subject = variable_get('uc_invite_discount_invitor_notify_subject','');
+                                    $body = variable_get('uc_invite_discount_invitor_notify_message', '');
+                                    $from = uc_store_email_from();
+
+                                    $subject = token_replace_multiple($subject, $token_filters);
+                                    $subject = token_replace_multiple($subject, $token_filters);
+
+                                    $body = token_replace_multiple($body, $token_filters);
+                                    $body = token_replace_multiple($body, $token_filters);
+
+                                    drupal_mail($key, $to, $subject, $body, $from);
+                                }
+                            }
+                            else
+                            {
+                                drupal_set_message('Could not generate coupon. Please report this to administrator!', 'error');
+                            }
+                        }
+                    }
+                }
+            }
+        break;
+    }
+}
+
+/**
+* Implementation of hook_token_list().
+*/
+function uc_invite_discount_token_list($type = 'all')
+{
+    if ($type == 'uc_invite_discount' || $type == 'all' || 'coupon_vars')
+    {
+        $tokens['uc_invite_discount']['invitor-id']         = t('Invitor user id');
+        $tokens['uc_invite_discount']['invitor-username']   = t('Invitor user name');
+        $tokens['uc_invite_discount']['invitor-mail']       = t('Invitor mail');
+        $tokens['uc_invite_discount']['invitee-id']         = t('Invitee user id');
+        $tokens['uc_invite_discount']['invitee-username']   = t('Invitee user name');
+        $tokens['uc_invite_discount']['invitee-mail']       = t('Invitee mail');
+        $tokens['uc_invite_discount']['coupon-name']        = t('Coupon name');
+        $tokens['uc_invite_discount']['coupon-code']        = t('Coupon code');
+        $tokens['uc_invite_discount']['coupon-value']       = t('Coupon value');
+        $tokens['uc_invite_discount']['coupon-order']       = t('Order ID which coupon generated as a result of');
+        $tokens['uc_invite_discount']['coupon-last-valid']  = t('Last valid date to use coupon');
+    }
+
+    return $tokens;
+}
+
+/**
+* Implementation of hook_token_values().
+*/
+function uc_invite_discount_token_values($type, $object = NULL)
+{
+    global $user;
+    switch ($type) {
+        case 'uc_invite_discount':
+            $order = $object;
+            $invitee =  user_load(array('uid' => $order->uid));
+            $invitor_id = db_fetch_object(db_query("SELECT * FROM {invite} WHERE email = '%s'", $invitee->init));
+            $invitor =  user_load(array('uid' => $invitor_id->uid));
+            $valid_untill = strtotime('+'.variable_get('uc_invite_discount_validity_period',100).' day');
+
+            $minimum_usage_order = variable_get('uc_invite_discount_minimum_usage_order',30);
+            $value = variable_get('uc_invite_discount_value',10);
+            $type = variable_get('uc_invite_discount_type','price');
+
+            if($type == 'percentage')
+            {
+                $calculated_value = ($value*$order->order_total)/100;
+                $value = $calculated_value;
+            }
+
+            $token_filters = array('global' => NULL, 'user' => $user, 'order' => $order, 'uc_invite_discount' => $order);
+            $coupon_name = uc_invite_discount_coupon_name($token_filters, $user, $order);
+            $coupon_code = uc_invite_discount_coupon_code($token_filters, $user, $order);
+
+            $values['invitor-id']           = $invitor->uid;
+            $values['invitor-username']     = $invitor->name;
+            $values['invitor-mail']         = $invitor->mail;
+            $values['invitee-id']           = $invitee->uid;
+            $values['invitee-username']     = $invitee->name;
+            $values['invitee-mail']         = $invitee->mail;
+            $values['coupon-value']         = $value;
+            $values['coupon-code']          = $coupon_code;
+            $values['coupon-name']          = $coupon_name;
+            $values['coupon-order']         = $order->order_id;
+            $values['coupon-last-valid']    = format_date($valid_untill, 'large');
+
+        break;
+    }
+
+    return $values;
+}
+
+function uc_invite_discount_coupon_name($token_filters, $user, $order)
+{
+    $name = token_replace_multiple(variable_get('uc_invite_discount_name_pattern','[invitor-username]-[invitee-username]'), $token_filters);
+
+    return $name;
+}
+
+function uc_invite_discount_coupon_code($token_filters, $user, $order)
+{
+    $code = token_replace_multiple(variable_get('uc_invite_discount_code_pattern','INV[invitor-id][invitee-id][coupon-order]'), $token_filters);
+
+    return $code;
+}
+
+function uc_invite_discount_user_has_role($role, $user = NULL) {
+  if ($user == NULL)
+  {
+    global $user;
+  }
+
+  if (is_array($user->roles) && in_array($role, array_values($user->roles))) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+?>

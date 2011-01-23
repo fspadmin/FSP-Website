@@ -1,0 +1,53 @@
+<?php
+
+function feed_path_publisher_schema() {
+  $schema['feed_path_publisher'] = array(
+      'fields' => array(
+           'fppid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'disp-width' => '10'),
+           'title' => array('type' => 'varchar', 'length' => '50', 'not null' => TRUE),
+           'path_prefix' => array('type' => 'varchar', 'length' => '100', 'not null' => TRUE),
+           'feed' => array('type' => 'varchar', 'length' => '200', 'not null' => TRUE),
+           'weight' => array('type' => 'int', 'not null' => TRUE, 'disp-width' => '11')),
+      'primary key' => array('fppid'),
+      'unique keys' => array(
+           'path_prefix' => array('path_prefix', 'feed')),
+      'indexes' => array(
+           'listing' => array('weight', 'path_prefix', 'title')),
+  );
+  
+  $schema['feed_path_publisher_roles'] = array(
+    'fields' => array(
+         'fpprid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'disp-width' => '10'),
+         'fppid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'disp-width' => '10'),
+         'show_hide' => array('type' => 'varchar', 'length' => '50', 'not null' => TRUE),
+         'rids' => array('type' => 'varchar', 'length' => '100', 'not null' => TRUE)),
+    'primary key' => array('fpprid'),
+  );
+
+  return $schema;
+}
+
+function feed_path_publisher_install() {
+  drupal_install_schema('feed_path_publisher');
+}
+
+function feed_path_publisher_uninstall() {
+  drupal_uninstall_schema('feed_path_publisher');
+}
+
+
+function feed_path_publisher_update_1() {
+  $schema['feed_path_publisher_roles'] = array(
+    'fields' => array(
+         'fpprid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'disp-width' => '10'),
+         'fppid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'disp-width' => '10'),
+         'show_hide' => array('type' => 'varchar', 'length' => '50', 'not null' => TRUE),
+         'rids' => array('type' => 'varchar', 'length' => '100', 'not null' => TRUE)),
+    'primary key' => array('fpprid'),
+  );
+
+  $ret = array();
+  db_create_table($ret, 'feed_path_publisher_roles', $schema['feed_path_publisher_roles']);
+  return $ret;
+}
+

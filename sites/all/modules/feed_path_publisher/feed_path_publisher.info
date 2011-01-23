@@ -1,0 +1,11 @@
+name = Feed Path Publisher
+description = Publishes RSS feeds sitewide and to specific paths.
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2008-10-02
+version = "6.x-1.2"
+core = "6.x"
+project = "feed_path_publisher"
+datestamp = "1222987209"
+

@@ -1,0 +1,14 @@
+<?php
+// $Id: util.install,v 1.6 2008/05/30 19:23:46 litwol Exp $
+
+/**
+ * @file
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function util_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE '%s%%'", 'util_');
+  cache_clear_all('variables', 'cache');
+}

@@ -1,0 +1,355 @@
+<?php
+// $Id:
+
+
+/**
+ * @uc_who_bought_what.module (dev 12/7/10)
+ *  
+ * Displays a list of customers who have purchased a particular product in Übercart.
+ *
+ * Adds an additional menu item to the Ubercart Reports, that lists the customers
+ * who purchased certain products.  And totals, and show all records
+ * now fixed permissions and table prefixes correctly using curly braces at all seven locations
+ * also fixed title exposure problem and added check_plain.
+ *
+ * Copyright 2010 Michael Moradzadeh Cayenne.SF@gmail.com
+ * based on code by Misha Chitharanjan ubercart@mishac.com
+ * contribution by blackice78
+ * Based on code from Ubercart project.
+ * Released under GPL.  
+ */
+ 
+ 
+
+/*******************************************************************************
+ * Hook Functions (Ubercart)
+ ******************************************************************************/
+
+
+/**
+ * Display the purchaser list report
+ */
+function uc_who_bought_what_report() {
+ 
+  $product_id = $_GET['pid'];
+  
+  $page = (!is_null($_GET['page'])) ? intval($_GET['page']) : 0;
+  $page_size = (!is_null($_GET['nopage'])) ? UC_REPORTS_MAX_RECORDS : variable_get('uc_reports_table_size', 1000);
+
+  $csv_rows = array();
+  
+  $output = drupal_get_form('uc_who_bought_what_form');
+  $uc_order_products = db_prefix_tables('{uc_order_products}');
+  $uc_orders = db_prefix_tables('{uc_orders}');
+  $uc_node_checkout_order_products = db_prefix_tables('{uc_node_checkout_order_products}');
+  
+  // if a node was specified, it better be one you can look at!
+ 
+  $node = node_load($product_id);	
+  if (uc_product_is_product($node)){	
+	if(!node_access('view', $node)){
+	  drupal_set_message('You are not authorized to view who bought that item.  Please contact your site administrator', 'warning');
+	  return drupal_access_denied();  
+	}
+		$checkout = FALSE;
+		
+		//What about node checkout?  Better test first.
+				
+		if (module_exists('uc_node_checkout')){		  
+		  $uc_node_checkout_order_products = db_prefix_tables('{uc_node_checkout_order_products}');
+		  $uc_node_checkout_types = db_prefix_tables('{uc_node_checkout_types}');
+		  $sql = "SELECT node_type, product_nid from $uc_node_checkout_types WHERE product_nid = $product_id";
+			$checknode = db_fetch_array(db_query($sql));
+			if($checknode) {
+			  drupal_set_message("Also Displaying linked nodes (beta).");
+				$checkout = TRUE;
+				};
+   		} //end if node checkout module 
+		
+
+    $tql = "SELECT COUNT($uc_order_products.qty) AS ordcount, SUM($uc_order_products.qty) AS GrandTotal FROM $uc_order_products" . 
+			 " JOIN $uc_orders ON $uc_order_products.order_id = $uc_orders.order_id " . 
+			 " AND $uc_order_products.nid  =  $product_id  WHERE order_status <> 'in_checkout' AND order_status <> 'canceled' " ; 
+	$tquery = db_query($tql);
+	$tresult = db_fetch_object($tquery);
+  
+    $output .= '<h3>' . l($node->title, 'node/' . $node->nid) . " ($tresult->GrandTotal sold in $tresult->ordcount orders)</h3>";
+   
+	
+	$header = array( //thanks to blackice78 for this code fix
+            array('data' => t('Qty'),   'field' => 'Qty',   'sql_field' => "$uc_order_products.qty"),
+            array('data' => t('LName'), 'field' => 'LName', 'sql_field' => "$uc_orders.billing_last_name"),
+            array('data' => t('FName'), 'field' => 'FName', 'sql_field' => "$uc_orders.billing_first_name"),
+            array('data' => t('Email'), 'field' => 'Email', 'sql_field' => "$uc_orders.primary_email"),
+            array('data' => t('Phone'), 'field' => 'Phone', 'sql_field' => "$uc_orders.billing_phone"),
+            array('data' => t('Price'), 'field' => 'Price', 'sql_field' => "$uc_order_products.price"),
+            array('data' => t('Total'), 'field' => 'Total', 'sql_field' => "($uc_order_products.price * $uc_order_products.qty)"),
+            array('data' => t('Date'),  'field' => 'Date',  'sql_field' => "FROM_UNIXTIME($uc_orders.created, '%Y.%m.%e')"),
+            array('data' => t('HowPay'),'field' => 'HowPay','sql_field' => "$uc_orders.payment_method"),
+            array('data' => t('Status'),'field' => 'Status','sql_field' => "$uc_orders.order_status"),
+            array('data' => t('ID'),    'field' => 'ID',    'sql_field' => "$uc_orders.order_id"),  
+			array('data' => t('Model'),    'field' => 'Model',    'sql_field' => "$uc_order_products.model"),                    
+    );
+
+    $sqsel = "  "; //now build the sql query
+    foreach($header as $hval){
+        $sqsel .= $hval['sql_field'] . " AS " . $hval['field'];
+    $sqsel .= ", ";
+    }           
+    $sqsel .=   "$uc_orders.uid" .  " AS uid ,";  
+	
+
+		
+   if($checkout) $sqsel .=   "$uc_node_checkout_order_products.nid" .  " AS checkOutNode ,"; // if it exists
+		
+	 $sqsel .=   "$uc_order_products.data AS OrderData ";	// this is to collect the raw attribute data and also not to have a comma at the end
+	  $sql = "SELECT  $sqsel FROM $uc_orders JOIN $uc_order_products" . 
+			 " ON $uc_order_products.order_id = $uc_orders.order_id " . 
+			 " AND $uc_order_products.nid  =  $product_id" ; 
+			 
+       if($checkout) $sql .=  " LEFT JOIN $uc_node_checkout_order_products" ; // if it exists
+		   if($checkout) $sql .=  " ON $uc_node_checkout_order_products.order_product_id = $uc_order_products.order_product_id" ;
+			 			 
+       $sql .= " WHERE order_status <> 'in_checkout' AND order_status <> 'canceled' ";
+    
+
+    $customers = pager_query($sql . tablesort_sql($header), $page_size, 0, $sql_count);
+    $email_addresses = array();  // we like to collect the addresses.
+		
+		//What about node checkout?  Better test first.
+		if($checkout) $header[]=array('data'=>$checknode['node_type']);  // we did the search earlier	
+		
+		//What about the attributes?  Not everyone uses attributes.  Better test first.
+				
+		if (module_exists('uc_attribute')){
+		
+      $uc_attributes = db_prefix_tables('{uc_attributes}');
+	  $uc_product_attributes = db_prefix_tables('{uc_product_attributes}');
+		  
+		
+      //Collect and unserialize the attributes.  First, the names
+		   $attsql = "SELECT att.aid, att.ordering, att.name, IF(LENGTH(uca.label)>0,uca.label, att.name) AS label, uca.nid FROM $uc_attributes att 
+		   JOIN $uc_product_attributes uca ON uca.aid=att.aid AND nid = %d Order By ordering, name";
+		   $attresults = (db_query($attsql, $product_id));
+		
+			 while ($attrow = db_fetch_array($attresults)) {
+        $header[]=array('data'=>t($attrow['label']));
+  			$attrlist[] = array('data'=>t($attrow['label']));
+			
+   		 }
+		} //end if attribute module exists
+		
+		$csv_rows = array();  //hold the plain values.
+
+			$temp_csv = array();
+			foreach ($header as $new_csv_val) {
+			  $temp_csv[] =  strip_tags($new_csv_val['data']);
+			}
+			$csv_rows[]=$temp_csv;
+		
+		
+    while ($customer = db_fetch_array($customers)) {
+		  $temparray = array();
+		  $temparray[]=  $customer['Qty'];
+			$temparray[]=  l(check_plain($customer['LName']), 'user/' . $customer['uid']); 
+			$temparray[]=  l(check_plain($customer['FName']), 'user/' . $customer['uid']); 
+     		$temparray[]=  l($customer['Email'], 'mailto:' . $customer['Email']); 
+			$temparray[]=  check_plain($customer['Phone']);
+			$temparray[]=  number_format($customer['Price'],2);
+			$temparray[]=  number_format($customer['Total'],2);
+			$temparray[]=  $customer['Date'];
+			$temparray[]=  $customer['HowPay'];
+			$temparray[]=  l($customer['Status'],'admin/store/orders/' . $customer['ID']);
+		    $temparray[]=  l("#" . $customer['ID'],'admin/store/orders/' . $customer['ID']);
+            $temparray[]=  check_plain($customer['Model']);
+			
+			$email_addresses[] = $customer['Email'];  //add to the list
+			
+			//now to deal with the serialized data, including node checkout and attributes
+			
+			$mydata=unserialize($customer['OrderData']);
+			
+			if ($checkout && isset($mydata['node_checkout_nid']))  {
+			  $nodeval = $mydata['node_checkout_nid'];
+			  $mychk = node_load($nodeval);
+			  $temparray[]=  l($mychk->title, 'node/' . $nodeval);
+			};
+			
+			
+      if (!is_null($attrlist)){
+			  foreach ($attrlist as $myattrib) { 
+				 $thisdatum = $mydata['attributes'][$myattrib['data']];
+				 if (is_array($thisdatum) == 1) {   //Since UC 6.x-2.0-rc6, attributes are stored as arrays just in case there is more than one selected.
+				   $temparray[] = implode(' | ', check_plain($thisdatum));
+				  } else {$temparray[] = check_plain($thisdatum);} 
+			  }
+			}
+			
+			$rows[] = $temparray;
+			
+			$temp_csv = array();
+			foreach ($temparray as $new_csv_val) {
+			  $temp_csv[] = strip_tags($new_csv_val); // do not need to check_plain because we did that above
+			}
+			$csv_rows[]=$temp_csv;
+      
+    }  
+    if (empty($rows)) {
+      $rows[] = array(array('data' => t('No customers found for this item'), 'colspan' => count($header)));
+    }
+    $csv_data = uc_reports_store_csv('who_bought_' . convert_to_filename($node->title), $csv_rows);
+  
+    $output .= theme('table', $header, $rows, array('width' => '100%', 'class' => 'uc-sales-table'));
+    $output .= theme_pager(NULL, $page_size);
+    
+    $output .= '<div class="uc-reports-links">'. l(t('Export ' . (sizeof($csv_rows)-1) . ' rows to csv file'), 'admin/store/reports/getcsv/'. $csv_data['report'] .'/'. $csv_data['user']) .'&nbsp;&nbsp;&nbsp;'. (!is_null($_GET['nopage']) ? l(t('Show paged records'), 'admin/store/reports/uc_who_bought_what', array('query' => "pid=$product_id")) : l(t('Show all records'), 'admin/store/reports/uc_who_bought_what', array('query' => "nopage=1&pid=$product_id"))) .'</div>';
+    $output .= '<br />';
+    $output .= '<div class="email-addresses"><h4>Email Addresses</h4><label for="email-addresses-textarea" value="Email addresses:" /><textarea id="email-addresses-textarea" rows="5" cols="100">' . implode(', ', $email_addresses). '</textarea></div>';
+    
+  } 
+    
+  return $output;
+ 
+} // function uc_who_bought_what_report
+
+
+
+/*******************************************************************************
+ * Callback Functions, Forms, and Tables
+ ******************************************************************************/
+
+
+function uc_who_bought_what_form($form_state) {
+
+global $user;
+
+  $listquery = "SELECT DISTINCT({uc_products}.nid) AS nid, {node}.title AS title, {uc_product_classes}.name AS type, {node}.status as status 
+    FROM {uc_products}
+    INNER JOIN {node} ON {uc_products}.nid = {node}.nid
+    LEFT JOIN {uc_product_classes} ON {uc_product_classes}.pcid = {node}.type
+		WHERE status = status";
+		
+	if (user_access('view all who bought what')) 
+	  $listquery .= ''; // do nothing. see all
+	else {
+	  if (user_access('view uc_who_bought_what'))	
+		  $listquery .= " AND {node}.uid = $user->uid";  //limit to my stuff
+			drupal_set_message("Only displaying reports for items posted by $user->name.");
+		};	
+
+  $listquery .=  " ORDER BY {uc_product_classes}.name, {node}.title";
+  
+  $products = db_query($listquery);
+
+  $product_list[0] = t('Select an item...');
+  
+  
+  while ($product = db_fetch_array($products)) {
+    if ($product['type'] != NULL)
+      $type = $product['type'];
+    else 
+      $type = "Product";
+    $product_list[$type][$product['nid']] =  $product['title'];
+  }
+  
+  
+  
+  $form['product_select'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose a product'),
+    '#options' => $product_list,
+    '#description' => t('Choose a product.'),
+  );
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Submit'));
+  
+  return $form;
+
+} // function uc_who_bought_what_form
+
+
+
+function uc_who_bought_what_form_validate($form_id, $form_values) {
+  if ($form_values['product_select'] == '0') {
+    form_set_error('', t('You must select a product.'));
+  }
+} // function uc_who_bought_what_validate
+
+
+function uc_who_bought_what_form_submit($form, $form_values) {
+	drupal_goto("admin/store/reports/uc_who_bought_what","pid=" . $form_values['values']['product_select']);
+} // function uc_who_bought_what_form_submit
+
+
+
+/*******************************************************************************
+ * Module and Helper Functions
+ ******************************************************************************/
+
+
+/**
+* Valid permissions for this module
+* @return array An array of valid permissions for the uc_who_bought_what module
+*/
+function uc_who_bought_what_perm() {
+  return array('view uc_who_bought_what', 'view all who bought what');
+} // function uc_who_bought_what_perm
+
+
+function uc_who_bought_what_menu() {
+
+  $items = array();
+    
+  $items['admin/store/reports/uc_who_bought_what'] = array(
+    'title' => 'Who Bought What',
+    'description' => 'View reports of users who purchased specific products',
+    'page callback' => 'uc_who_bought_what_report',
+    'access arguments' => array('view uc_who_bought_what'),
+    'type' => MENU_NORMAL_ITEM,
+   );
+
+  return $items;
+} // function uc_who_bought_what_menu
+
+
+
+/**
+ * Converts a string to a valid UNIX filename.
+ * @param $string The filename to be converted
+ * @return $string The filename converted
+ */
+function convert_to_filename ($string) {
+
+  // Replace spaces with underscores and makes the string lowercase
+  $string = str_replace (" ", "_", $string);
+
+  $string = str_replace ("..", ".", $string);
+  $string = strtolower ($string);
+
+// Match any character that is not in our whitelist
+  preg_match_all ("/[^0-9^a-z^_^.]/", $string, $matches);
+
+  // Loop through the matches with foreach
+  foreach ($matches[0] as $value) {
+    $string = str_replace($value, "", $string);
+  }
+
+
+  return $string;
+}
+ 
+
+/**
+* Display help and module information
+* @param path which path of the site we're displaying help
+* @param arg array that holds the current path as would be returned from arg() function
+* @return help text for the path
+*/
+function uc_who_bought_what_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case "admin/help#uc_who_bought_what":
+      $output = '<p>'.  t("Displays list of users who purchased a product") .'</p>';
+      break;
+  }
+  return $output;
+} // function uc_who_bought_what_help

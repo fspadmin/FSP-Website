@@ -1,0 +1,16 @@
+; $Id: views_charts.info,v 1.1 2009/03/04 11:23:19 inadarei Exp $
+
+name = ViewsCharts
+description = "Views Charts."
+dependencies[] = views
+dependencies[] = charts_graphs
+package = "Views"
+core = 6.x
+php = 5.1
+
+; Information added by drupal.org packaging script on 2010-01-12
+version = "6.x-1.0-rc1"
+core = "6.x"
+project = "views_charts"
+datestamp = "1263334505"
+

@@ -1,0 +1,793 @@
+# $Id: user_import.pot,v 1.1 2010/11/21 23:19:12 MegaGrunt Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  user_import.module,v 1.26 2009/09/20 11:58:10 MegaGrunt
+#  user_import.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt
+#  user_import.install,v 1.12 2009/09/20 01:59:29 MegaGrunt
+#  user_import.info,v 1.8 2009/09/20 01:59:29 MegaGrunt
+#  content_profile.inc,v 1.1 2009/10/24 21:10:47 MegaGrunt
+#  nodeprofile.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt
+#  profile.inc,v 1.6 2009/04/04 16:24:18 MegaGrunt
+#  subscribed.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt
+#  user.inc,v 1.8 2009/09/20 11:58:10 MegaGrunt
+#  watchdog.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-11-21 22:31+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: user_import.module:44
+msgid "Import or update users from a comma separated file (csv). Click 'Import' to start a new import."
+msgstr ""
+
+#: user_import.module:144
+msgid "Performance"
+msgstr ""
+
+#: user_import.module:151
+msgid "Maximum Users/Process"
+msgstr ""
+
+#: user_import.module:155
+msgid "Maximum number of users to import each time the file is processed, useful for controling the rate at which emails are sent out."
+msgstr ""
+
+#: user_import.module:160
+msgid "Maximum length of line"
+msgstr ""
+
+#: user_import.module:164
+msgid "The default is set at 1,000 characters, if a line in your csv is longer than this you should set a higher maximum here. Setting higher maximums will slow down imports."
+msgstr ""
+
+#: user_import.module:174
+msgid "Settings Templates"
+msgstr ""
+
+#: user_import.module:188
+msgid "Default Settings"
+msgstr ""
+
+#: user_import.module:189
+msgid "Select if you want to use a previously saved set of settings as default for all imports."
+msgstr ""
+
+#: user_import.module:197
+msgid "Delete Templates"
+msgstr ""
+
+#: user_import.module:205 supported/user_import.inc:175
+msgid "Save"
+msgstr ""
+
+#: user_import.module:214
+msgid "Value should be at least 10."
+msgstr ""
+
+#: user_import.module:217;225
+msgid "Value must be a number."
+msgstr ""
+
+#: user_import.module:221
+msgid "Value must be higher than 1000."
+msgstr ""
+
+#: user_import.module:222
+msgid "Value must be lower than 1,000,000."
+msgstr ""
+
+#: user_import.module:253
+msgid "Settings templates deleted: @deleted"
+msgstr ""
+
+#: user_import.module:255
+msgid "Configuration settings have been saved."
+msgstr ""
+
+#: user_import.module:269
+msgid "-- none --"
+msgstr ""
+
+#: user_import.module:276 supported/user_import.inc:185
+msgid "Saved Settings"
+msgstr ""
+
+#: user_import.module:277
+msgid "Select if you want to use a previously saved set of settings."
+msgstr ""
+
+#: user_import.module:286
+msgid "Next"
+msgstr ""
+
+#: user_import.module:300
+msgid "A file must be uploaded or selected from FTP updates."
+msgstr ""
+
+#: user_import.module:376
+msgid "Update Existing Users"
+msgstr ""
+
+#: user_import.module:384
+msgid "No Update"
+msgstr ""
+
+#: user_import.module:384
+msgid "Replace Data"
+msgstr ""
+
+#: user_import.module:384
+msgid "Add Data"
+msgstr ""
+
+#: user_import.module:403
+msgid "Test"
+msgstr ""
+
+#: user_import.module:411;775;72;85
+msgid "Import"
+msgstr ""
+
+#: user_import.module:418
+msgid "Cancel"
+msgstr ""
+
+#: user_import.module:445
+msgid "Database fields can only be matched to one column of the csv file."
+msgstr ""
+
+#: user_import.module:454
+msgid "One column of the csv file must be set as the email address."
+msgstr ""
+
+#: user_import.module:460
+msgid "Name of saved settings must be 25 characters or less."
+msgstr ""
+
+#: user_import.module:480
+msgid "'%name' was saved as a settings template."
+msgstr ""
+
+#: user_import.module:504
+msgid "'%name' settings template was updated."
+msgstr ""
+
+#: user_import.module:516
+msgid "Tested"
+msgstr ""
+
+#: user_import.module:524;1538
+msgid "Imported"
+msgstr ""
+
+#: user_import.module:547
+msgid "Browser Upload"
+msgstr ""
+
+#: user_import.module:549
+msgid "Upload a CSV file."
+msgstr ""
+
+#: user_import.module:552
+msgid "Maximum file size: !size MB."
+msgstr ""
+
+#: user_import.module:556
+msgid "CSV File"
+msgstr ""
+
+#: user_import.module:558
+msgid "Select the CSV file to be imported. "
+msgstr ""
+
+#: user_import.module:565
+msgid "FTP Upload"
+msgstr ""
+
+#: user_import.module:568
+msgid "Any files uploaded to the 'user_import' directory using FTP can be selected for import here. Useful if the import file is too large for upload via the browser."
+msgstr ""
+
+#: user_import.module:573
+msgid "Files"
+msgstr ""
+
+#: user_import.module:581
+msgid "Check for new files"
+msgstr ""
+
+#: user_import.module:711
+msgid "Return"
+msgstr ""
+
+#: user_import.module:753
+msgid "importable"
+msgstr ""
+
+#: user_import.module:753
+msgid "imported"
+msgstr ""
+
+#: user_import.module:754
+msgid "file"
+msgstr ""
+
+#: user_import.module:754
+msgid "started"
+msgstr ""
+
+#: user_import.module:754
+msgid "processed"
+msgstr ""
+
+#: user_import.module:754
+msgid "errors"
+msgstr ""
+
+#: user_import.module:754
+msgid "status"
+msgstr ""
+
+#: user_import.module:772
+msgid "Settings"
+msgstr ""
+
+#: user_import.module:773
+msgid "Delete"
+msgstr ""
+
+#: user_import.module:774
+msgid "Continue Processing"
+msgstr ""
+
+#: user_import.module:788
+msgid "csv column"
+msgstr ""
+
+#: user_import.module:788
+msgid "Drupal fields"
+msgstr ""
+
+#: user_import.module:788
+msgid "username"
+msgstr ""
+
+#: user_import.module:788
+msgid "abbreviate"
+msgstr ""
+
+#: user_import.module:813
+msgid "Email Address"
+msgstr ""
+
+#: user_import.module:830
+msgid "Name %sort"
+msgstr ""
+
+#: user_import.module:849
+msgid "<strong>CSV File:</strong> %file"
+msgstr ""
+
+#: user_import.module:850
+msgid "<strong>Errors:</strong> !total"
+msgstr ""
+
+#: user_import.module:852
+msgid "Errors"
+msgstr ""
+
+#: user_import.module:860
+msgid "All usernames are OK."
+msgstr ""
+
+#: user_import.module:862
+msgid "User ID"
+msgstr ""
+
+#: user_import.module:862
+msgid "Email"
+msgstr ""
+
+#: user_import.module:862;1000
+msgid "Username"
+msgstr ""
+
+#: user_import.module:862
+msgid "Error"
+msgstr ""
+
+#: user_import.module:875
+msgid "File '%filename' was uploaded using FTP and should be deleted manually once the import has been completed."
+msgstr ""
+
+#: user_import.module:884
+msgid "File error: file '%old_filename' (%filename) could not be deleted."
+msgstr ""
+
+#: user_import.module:887
+msgid "File '%old_filename' was deleted."
+msgstr ""
+
+#: user_import.module:940
+msgid "Could not find the csv file '%filename'"
+msgstr ""
+
+#: user_import.module:941
+msgid "Please add your file again."
+msgstr ""
+
+#: user_import.module:952
+msgid "Could not get data, the file '%filename' is either empty or has incompatible line endings."
+msgstr ""
+
+#: user_import.module:961
+msgid "none"
+msgstr ""
+
+#: user_import.module:999
+msgid "Match columns in CSV file to profile fields, leave as '----' if there is no match."
+msgstr ""
+
+#: user_import.module:1000
+msgid "The Username will be built from CSV columns in the order selected."
+msgstr ""
+
+#: user_import.module:1001
+msgid "Abbreviate"
+msgstr ""
+
+#: user_import.module:1001
+msgid "Use the first letter of a field in uppercase for the Username, e.g. 'john' -> 'J'."
+msgstr ""
+
+#: user_import.module:1002
+msgid "If no CSV fields are selected, the Username will be randomly generated."
+msgstr ""
+
+#: user_import.module:1006
+msgid "Field Match"
+msgstr ""
+
+#: user_import.module:1029
+msgid "no"
+msgstr ""
+
+#: user_import.module:1498
+msgid "File has already been imported"
+msgstr ""
+
+#: user_import.module:52
+msgid "import users"
+msgstr ""
+
+#: user_import.module:60
+msgid "User Imports"
+msgstr ""
+
+#: user_import.module:61
+msgid "Import or update users from a comma separated file (csv)."
+msgstr ""
+
+#: user_import.module:66
+msgid "List Imports"
+msgstr ""
+
+#: user_import.module:79
+msgid "Continue"
+msgstr ""
+
+#: user_import.module:91
+msgid "Delete Import"
+msgstr ""
+
+#: user_import.module:97
+msgid "Configure"
+msgstr ""
+
+#: user_import.module:104
+msgid "Remove Info"
+msgstr ""
+
+#: user_import.module:110
+msgid "Import Errors"
+msgstr ""
+
+#: user_import.install:24
+msgid "Settings for each import, and import setting templates."
+msgstr ""
+
+#: user_import.install:27;153
+msgid "ID key of import or template."
+msgstr ""
+
+#: user_import.install:34
+msgid "Label of import template, only used if this is an import template."
+msgstr ""
+
+#: user_import.install:41
+msgid "Name of file being used as source of data for import."
+msgstr ""
+
+#: user_import.install:48
+msgid "Original name of file being used as source of data for import."
+msgstr ""
+
+#: user_import.install:55
+msgid "Path to file being used as source of data for import."
+msgstr ""
+
+#: user_import.install:61
+msgid "Datestamp of when import was started."
+msgstr ""
+
+#: user_import.install:68
+msgid "Pointer to where test/import last finished."
+msgstr ""
+
+#: user_import.install:75
+msgid "Number of users processed by import."
+msgstr ""
+
+#: user_import.install:82
+msgid "Number of users processed without errors."
+msgstr ""
+
+#: user_import.install:89
+msgid "Ignore the first line of the CSV file, which are usually field headings."
+msgstr ""
+
+#: user_import.install:96
+msgid "Enable the Contact preference of user accounts."
+msgstr ""
+
+#: user_import.install:103
+msgid "Add a space between elements of a user name."
+msgstr ""
+
+#: user_import.install:110
+msgid "Send welcome email to imported users."
+msgstr ""
+
+#: user_import.install:117
+msgid "Settings for how data matches to Drupal fields."
+msgstr ""
+
+#: user_import.install:124
+msgid "Roles to give imported users."
+msgstr ""
+
+#: user_import.install:132
+msgid "Store of all other options for import. Most of the other settings in this table will be moved into here in future."
+msgstr ""
+
+#: user_import.install:139
+msgid "Status of import, or whether it is an import template."
+msgstr ""
+
+#: user_import.install:150
+msgid "Record of errors encountered during an import."
+msgstr ""
+
+#: user_import.install:160
+msgid "Data (matched to fields) for user that failed to import due to error."
+msgstr ""
+
+#: user_import.install:167
+msgid "Error(s) encountered for user that failed to import."
+msgstr ""
+
+#: user_import.info:0
+msgid "User Import"
+msgstr ""
+
+#: user_import.info:0
+msgid "Import users into Drupal from a CSV file."
+msgstr ""
+
+#: supported/content_profile.inc:27
+msgid "Content Profile: (!type) !key "
+msgstr ""
+
+#: supported/content_profile.inc:46
+msgid "Content Profile"
+msgstr ""
+
+#: supported/content_profile.inc:46
+msgid "Affected: fields in Content Profile nodes."
+msgstr ""
+
+#: supported/content_profile.inc:150
+msgid "Unknown error on saving the node: %node_data! Check watchdog logs for details."
+msgstr ""
+
+#: supported/content_profile.inc:161
+msgid "Please enable %module module!"
+msgstr ""
+
+#: supported/nodeprofile.inc:26
+msgid "Node Profile: !key (!type)"
+msgstr ""
+
+#: supported/nodeprofile.inc:43
+msgid "Category: !vocabulary"
+msgstr ""
+
+#: supported/nodeprofile.inc:54
+msgid "Node Profile"
+msgstr ""
+
+#: supported/nodeprofile.inc:54
+msgid "Affected: fields in Node Profile nodes."
+msgstr ""
+
+#: supported/profile.inc:18
+msgid "Profile"
+msgstr ""
+
+#: supported/profile.inc:18
+msgid "Affected: Profile fields."
+msgstr ""
+
+#: supported/subscribed.inc:16
+msgid "Subscriptions"
+msgstr ""
+
+#: supported/subscribed.inc:40
+msgid "No Subscription"
+msgstr ""
+
+#: supported/subscribed.inc:66
+msgid "Subscribed"
+msgstr ""
+
+#: supported/subscribed.inc:66
+msgid "Affected: subscriptions."
+msgstr ""
+
+#: supported/user.inc:14
+msgid "Email Address*"
+msgstr ""
+
+#: supported/user.inc:15;38
+msgid "Password"
+msgstr ""
+
+#: supported/user.inc:16;37
+msgid "Roles"
+msgstr ""
+
+#: supported/user.inc:37
+msgid "Affected: roles assigned to user."
+msgstr ""
+
+#: supported/user.inc:38
+msgid "Affected: password."
+msgstr ""
+
+#: supported/user.inc:39 supported/user_import.inc:120
+msgid "Contact"
+msgstr ""
+
+#: supported/user.inc:39
+msgid "Affected: user contact option."
+msgstr ""
+
+#: supported/user.inc:169
+msgid "Role Assign"
+msgstr ""
+
+#: supported/user.inc:176
+msgid "Assign Role(s) To All Users"
+msgstr ""
+
+#: supported/user.inc:180
+msgid "Select which role(s) all imported users should be assigned. The role 'authenticated user' is assigned automatically."
+msgstr ""
+
+#: supported/user.inc:185
+msgid "Add New Roles"
+msgstr ""
+
+#: supported/user.inc:187
+msgid "Create imported role(s) that are not found and assign it to the user, in addition to any role(s) selected above. Warning: incorrect roles will be created if the incoming data includes typos."
+msgstr ""
+
+#: supported/user.inc:197
+msgid "Email Message"
+msgstr ""
+
+#: supported/user.inc:198
+msgid "Welcome message to be sent to imported users. Leave blank to use the default !message. If an existing user account is updated no welcome email will be sent to that user. <strong>Note - if \"Activate Accounts\" option is enabled !login_url (one time login) will not work.</strong>"
+msgstr ""
+
+#: supported/user.inc:205
+msgid "Message Subject"
+msgstr ""
+
+#: supported/user.inc:207
+msgid "Customize the subject of the welcome e-mail, which is sent to imported members."
+msgstr ""
+
+#: supported/user.inc:207;214
+msgid "Available variables are:"
+msgstr ""
+
+#: supported/user.inc:212
+msgid "Message"
+msgstr ""
+
+#: supported/user.inc:214
+msgid "Customize the body of the welcome e-mail, which is sent to imported members."
+msgstr ""
+
+#: supported/user.inc:219
+msgid "Email Format"
+msgstr ""
+
+#: supported/user.inc:221
+msgid "Plain Text"
+msgstr ""
+
+#: supported/user.inc:221
+msgid "HTML"
+msgstr ""
+
+#: supported/user.inc:226
+msgid "CSS"
+msgstr ""
+
+#: supported/user.inc:228
+msgid "Use if sending HTML formated email."
+msgstr ""
+
+#: supported/user.inc:237
+msgid "no email"
+msgstr ""
+
+#: supported/user.inc:240
+msgid "invalid email"
+msgstr ""
+
+#: supported/user.inc:244
+msgid "duplicate email"
+msgstr ""
+
+#: supported/user.inc:275
+msgid "The following unrecognised roles were specified: "
+msgstr ""
+
+#: supported/user_import.inc:103
+msgid "Options"
+msgstr ""
+
+#: supported/user_import.inc:111
+msgid "Ignore First Line"
+msgstr ""
+
+#: supported/user_import.inc:113
+msgid "If the first line is the names of the data columns, set to ignore first line."
+msgstr ""
+
+#: supported/user_import.inc:122
+msgid "Set each user's personal contact form to 'allowed'."
+msgstr ""
+
+#: supported/user_import.inc:127
+msgid "Send Email"
+msgstr ""
+
+#: supported/user_import.inc:129
+msgid "Send email to users when their account is created."
+msgstr ""
+
+#: supported/user_import.inc:134
+msgid "Username Space"
+msgstr ""
+
+#: supported/user_import.inc:136
+msgid "Include spaces in usernames, e.g. 'John' + 'Smith' => 'John Smith'."
+msgstr ""
+
+#: supported/user_import.inc:141
+msgid "Activate Accounts"
+msgstr ""
+
+#: supported/user_import.inc:143
+msgid "User accounts will not be visible to other users until their owner logs in. Select this option to make all imported user accounts visible. <strong>Note - one time login links in welcome emails will no longer work if this option is enabled.</strong>"
+msgstr ""
+
+#: supported/user_import.inc:158
+msgid "Save Settings"
+msgstr ""
+
+#: supported/user_import.inc:159
+msgid "Save settings for re-use on other imports."
+msgstr ""
+
+#: supported/user_import.inc:167
+msgid "Settings Name"
+msgstr ""
+
+#: supported/user_import.inc:170;218
+msgid "Name to identify these settings by."
+msgstr ""
+
+#: supported/user_import.inc:186
+msgid "If changes have neen made to the settings since they where last saved you can update the saved template, or save them as a new template."
+msgstr ""
+
+#: supported/user_import.inc:196;202
+msgid "Update"
+msgstr ""
+
+#: supported/user_import.inc:197
+msgid "Update '%name' settings template"
+msgstr ""
+
+#: supported/user_import.inc:209
+msgid "Create New"
+msgstr ""
+
+#: supported/user_import.inc:210
+msgid "Save as new settings template"
+msgstr ""
+
+#: supported/user_import.inc:215;223
+msgid "Save As New"
+msgstr ""
+
+#: supported/user_import.inc:237
+msgid "A name needs to be set to save this settings template."
+msgstr ""
+
+#: supported/user_import.inc:246
+msgid "'!name' is already in use by another settings template."
+msgstr ""
+
+#: supported/user_import.inc:253
+msgid "Use Different CSV File"
+msgstr ""
+
+#: supported/user_import.inc:254
+msgid "Remove file to use a different file. All settings on this page will be deleted."
+msgstr ""
+
+#: supported/user_import.inc:262
+msgid "Uploaded file"
+msgstr ""
+
+#: supported/user_import.inc:268
+msgid "Remove file"
+msgstr ""
+
+#: supported/user_import.inc:309;315
+msgid "Update Preferences"
+msgstr ""
+
+#: supported/user_import.inc:309;316
+msgid "Unsubscribe"
+msgstr ""
+
+#: supported/watchdog.inc:15
+msgid "edit"
+msgstr ""
+
+#: supported/watchdog.inc:15
+msgid "user"
+msgstr ""
+
+#: supported/watchdog.inc:15
+msgid "New user: %name %email."
+msgstr ""
+

@@ -1,0 +1,331 @@
+<?php
+// $Id: uc_ajax_cart.module,v 1.13.2.13.2.16 2010/05/01 12:42:30 erikseifert Exp $
+
+define('UC_AJAX_CART_ADD_CALLBACK', 'uc_ajax_cart/add/item') ;
+define('UC_AJAX_CART_REMOVE_CALLBACK', 'uc_ajax_cart/remove/item') ;
+define('UC_AJAX_CART_SHOW_CALLBACK', 'uc_ajax_cart/show') ;
+define('UC_AJAX_CART_LINK_CALLBACK', 'uc_ajax_cart/addlink') ;
+define('UC_AJAX_CART_UPDATE_CALLBACK', 'uc_ajax_cart/update') ;
+define('UC_AJAX_CART_SHOW_VIEW_CALLBACK', 'uc_ajax_cart/show-cart-view') ;
+
+define('UC_AJAX_CART_DEFAULT_TIMEOUT', 3000) ;
+define('UC_AJAX_CART_DEFAULT_EFFECT', 1) ;
+
+include 'uc_ajax_cart.php' ;
+include 'uc_modules_add_to_cart.php' ;
+
+
+_uc_ajax_cart_load_res();
+
+function uc_ajax_cart_perm() {
+  return array('show uncached cart', 'use cart');
+}
+
+
+function uc_ajax_cart_cart_item( $op, $product ) {
+  switch ( $op ) {
+    case 'remove':
+      if ( variable_get('ajax_cart_message_remove_display', 1 ) )  {
+        $message = variable_get('ajax_cart_message_remove', '!product successfully removed from cart.');
+        drupal_set_message( t( $message, array('!product' => $product->title )) );
+      }
+    break;
+  }
+}
+
+
+function uc_ajax_cart_menu() {
+
+  /** Default Settings URL **/
+  $items['admin/store/settings/uc_ajax_cart'] = array(
+    'title'             => 'UC Ajax cart settings',
+    'description'       => 'Configure the uc ajax cart settings.',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('uc_ajax_cart_settings_overview'),
+    'access arguments'  => array('administer store'),
+    'file'              => 'uc_ajax_cart.admin.inc',
+  );
+  $items[UC_AJAX_CART_ADD_CALLBACK] = array(
+    'page callback'    => 'uc_ajax_cart_callback',
+    'page arguments'   => array('add'),
+    'access arguments' => array('access content'),
+    'type'             => MENU_CALLBACK
+  );
+  $items[UC_AJAX_CART_REMOVE_CALLBACK] = array(
+    'page callback'    => 'uc_ajax_cart_callback',
+    'page arguments'   => array('remove'),
+    'access arguments' => array('access content'),
+    'type'             => MENU_CALLBACK
+  );
+  $items[UC_AJAX_CART_SHOW_CALLBACK] = array(
+    'page callback'    => 'uc_ajax_cart_callback',
+    'page arguments'   => array('show'),
+    'access arguments' => array('access content'),
+    'type'             => MENU_CALLBACK
+  );
+  $items[UC_AJAX_CART_LINK_CALLBACK] = array(
+    'page callback'     => 'uc_ajax_cart_callback',
+    'page arguments'    => array('link'),
+    'access arguments'  => array('access content'),
+    'type'              => MENU_CALLBACK,
+    'file'              => 'uc_cart_links.pages.inc'
+  );
+  $items[UC_AJAX_CART_UPDATE_CALLBACK] = array(
+    'page callback'     => 'uc_ajax_cart_callback',
+    'page arguments'    => array('update'),
+    'access arguments'  => array('access content'),
+    'type'              => MENU_CALLBACK,
+  );
+  $items[UC_AJAX_CART_SHOW_VIEW_CALLBACK] = array(
+    'page callback'     => 'uc_ajax_cart_callback',
+    'page arguments'    => array('show-cart-view'),
+    'access arguments'  => array('access content'),
+    'type'              => MENU_CALLBACK,
+  );
+  return $items ;
+}
+
+function uc_ajax_cart_callback( $op , $nid = NULL , $data = NULL ) {
+
+  $cacheEnabled = variable_get('cache', 0);
+  if ( $cacheEnabled > 0 && !$user->uid  ) {
+    $page = request_uri();
+    global $base_root;
+    cache_clear_all($base_root . 'uc_ajax_cart/show', 'cache_page' );
+    cache_clear_all($base_root . 'uc_ajax_cart/remove', 'cache_page' );
+    cache_clear_all($base_root . 'uc_ajax_cart/show-cart-view', 'cache_page' );
+    cache_clear_all($base_root . 'uc_ajax_cart/update', 'cache_page' );
+    cache_clear_all($base_root . 'uc_ajax_cart/link', 'cache_page' );
+  }
+
+  switch ( $op ) {
+    case 'remove':
+      uc_ajax_cart_remove_item( $_GET['nid'], unserialize(base64_decode($_GET['data'])) );
+      print  theme('status_messages');
+    break ;
+    case 'add':
+      uc_ajax_cart_add_item($_POST);
+      print  theme('status_messages');
+    break ;
+    case 'show':
+      uc_ajax_cart_show_cart();
+    break ;
+    case 'show-cart-view':
+      include_once( drupal_get_path('module', 'uc_cart') .'/uc_cart.pages.inc' );
+      print uc_cart_view();
+    break ;
+    case 'update':
+      $formValues = array('values' => $_POST) ;
+      $cart = new UcAjaxCart();
+      $items = $cart->getCartContents();
+      drupal_execute('uc_cart_view_form', $formValues, $items);
+      print theme('status_messages'); 
+    break ;
+    case 'link':
+      if ( module_exists('uc_cart_links') ) {
+        $link = array_pop(explode('/', $_GET['href']));
+        uc_ajax_cart_links_process($link);
+      }
+      else {
+        drupal_set_message(t('Sorry link is not valid'), 'error') ;
+      }
+      print  theme('status_messages'); 
+    break ;
+  }
+}
+
+function uc_ajax_cart_show_cart() {
+  $cartContent = uc_cart_get_contents();
+  if ( count($cartContent) > 0  ) print theme('uc_ajax_cart_block_content', $cartContent);
+  else print theme('uc_ajax_cart_block_content_empty', $cartContent);
+}
+
+function uc_ajax_cart_remove_item( $nid, $data ) {
+  $cart = new UcAjaxCart();
+  try {
+    $cart->removeItemFromCart( $nid , $data );
+  } catch ( NoProductException $ex ) {
+    drupal_set_message( t('No valid product') );
+  } catch ( CartException $ex ) {
+    foreach ( $ex->getMessages() as $message ) {
+      drupal_set_message( $message , 'warning' );
+    }
+  }
+}
+
+function uc_ajax_cart_add_item( $data ) {
+  if ( !isset($data['qty']) ) $data['qty'] = 1 ;
+
+  $formID = explode('_', $data['form_id']) ;
+  $nodeID = array_pop($formID) ;
+  $formID = implode('_', $formID ) ;
+
+  $product = node_load($nodeID);
+  uc_product_load($product) ;
+
+  $formValues = array( 'values' => $data );
+
+  drupal_execute($formID, $formValues, $product );
+  return ;
+}
+
+function uc_ajax_cart_theme() {
+  return array(
+    'uc_ajax_cart_block' => array(
+      'arguments' => array('title' => NULL , 'collapsible' => FALSE),
+      'file'      => 'uc_ajax_cart.theme.inc'
+    ),
+    'uc_ajax_cart_attributes' => array(
+      'arguments' => array('title' => NULL , 'collapsible' => FALSE),
+      'file'      => 'uc_ajax_cart.theme.inc'
+    ),
+    'uc_ajax_cart_block_header' => array(
+      'arguments' => array('text' => NULL, 'hasItems' => NULL ),
+      'file'      => 'uc_ajax_cart.theme.inc'
+    ),
+    'uc_ajax_cart_block_content' => array(
+      'arguments' => array('items' => NULL),
+      'template'  => 'templates/uc_ajax_cart_block_content',
+      'file'      => 'uc_ajax_cart.theme.inc'
+    ),
+    'uc_ajax_cart_block_content_empty' => array(
+      'arguments' => array('items' => NULL),
+      'template'  => 'templates/uc_ajax_cart_block_content_empty',
+    ),
+      'uc_ajax_cart_cart_links' => array(
+      'file'      => 'uc_ajax_cart.theme.inc'
+    ),
+    'uc_ajax_cart_messages' => array(
+      'arguments' => array('messages' => NULL),
+      'template'  => 'templates/uc_ajax_cart_messages'
+    ),
+      'uc_ajax_cart_block_content_cached' => array(
+      'arguments' => array('total' => NULL, 'collapsible' => FALSE),
+      'file'      => 'uc_ajax_cart.theme.inc'
+    )
+  );
+}
+
+function uc_ajax_cart_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    // Retrieve block informations
+    $blocks[0] = array(
+      'info' => t('Ajax shopping cart'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+        return $blocks;
+   } 
+   elseif ($op == 'view') {
+        //Only a wrapper to uc_cart_block
+        $cartContent = uc_cart_get_contents();
+        if ( count($cartContent) > 0  ) $hasItems = TRUE ;
+        
+        $content['subject'] = theme('uc_ajax_cart_block_header', $hasItems );
+        
+        global $user;
+        $cacheEnabled = variable_get('cache', 0);
+        
+        if ( !$user->uid && $cacheEnabled > 0 ) {
+          $loadOnPageView = variable_get('uc_ajax_cart_cart_cached_load', 0);
+
+          if ( $loadOnPageView != 0 ) {
+            $content['content'] =  '<div id="ajaxCartUpdate" class="load-on-view"><p>' . t('Loading cart') . '</p></div>' ;
+          } 
+          else {
+            $content['content'] =  '<div id="ajaxCartUpdate">' . theme('uc_ajax_cart_block_content_cached') . '</div>' ;
+          }
+        }
+        else {
+          if ( $hasItems == TRUE ) {
+            $content['content'] = '<div id="ajaxCartUpdate">' . theme('uc_ajax_cart_block_content', $cartContent) . '</div>' ;
+          } 
+          else {
+            $content['content'] = '<div id="ajaxCartUpdate">' . theme('uc_ajax_cart_block_content_empty') . '</div>' ;
+          }
+        }
+        return $content ;
+   }
+   elseif ($op == 'configure') {
+      $form['text'] = array
+      (
+        '#title' => t('Ajax cart settings'),
+        '#type' => 'fieldset',
+        '#description' => t('Advanced settings for ajax cart are !here', array('!here' => l(t('here'), 'admin/store/settings/uc_ajax_cart')))
+      );
+      return $form ;
+   }
+}
+
+function _uc_ajax_cart_load_res() {
+  static $loaded ;
+
+  if ( isset($loaded) && $loaded === TRUE  ) return ;
+
+  /** Add standard js **/
+  drupal_add_js( 'misc/jquery.form.js' );
+  drupal_add_js( drupal_get_path('module', 'uc_ajax_cart') .'/js/jquery.blockUI.js' );
+  drupal_add_js( drupal_get_path('module', 'uc_ajax_cart') .'/js/uc_ajax_cart.js' );
+  drupal_add_js( drupal_get_path('module', 'uc_ajax_cart') .'/js/jquery.cookie.js' );
+
+  drupal_add_css( drupal_get_path('module', 'uc_ajax_cart') .'/css/ajax.cart.css' );
+    
+  $settings = array( 
+    'CALLBACK' => url(UC_AJAX_CART_ADD_CALLBACK),
+    'SHOW_CALLBACK' => url(UC_AJAX_CART_SHOW_CALLBACK) ,
+    'ADD_MESSAGE' => t('Add product to cart'),
+    'ADD_TITLE' => t('Please wait'),
+    'REMOVE_MESSAGE' => t('Remove product from cart'),
+    'REMOVE_TITLE' => t('Please wait'),
+    'CART_LINK_CALLBACK' => url(UC_AJAX_CART_LINK_CALLBACK),
+    'BLOCK_UI' => (int) variable_get('ajax_cart_message_effect' , UC_AJAX_CART_DEFAULT_EFFECT )  ,
+    'TIMEOUT' => (int) variable_get('ajax_cart_message_timeout', UC_AJAX_CART_DEFAULT_TIMEOUT )   ,
+    'UPDATE_CALLBACK' => url(UC_AJAX_CART_UPDATE_CALLBACK) ,
+    'UPDATE_MESSAGE' => t('Update cart') ,
+    'SESSION' => session_id(),
+    'ON_CLICK' => variable_get('uc_ajax_cart_closed',0),
+    'UPDATE' => variable_get('uc_ajax_cart_closed_update',0),
+    'CART_OPERATION' => t('Cart'),
+    'CART_VIEW_ON' => variable_get('uc_ajax_cart_cart_view', 0),
+    'SHOW_VIEW_CALLBACK' => url(UC_AJAX_CART_SHOW_VIEW_CALLBACK)
+   );
+    
+  drupal_add_js( array('uc_ajax_cart' => $settings), 'setting');
+  $loaded = TRUE ;
+}
+
+function uc_ajax_cart_form_uc_cart_links_settings_form_alter( &$form ) {
+  $form['instructions']['#value'] .= '<div><strong>'. t('Ajax Cart driven cart links') . '</strong><div>'. t('For use with Ajax Cart add class <em>ajax-cart-link</em> to links.') .'</div></div>';
+}
+
+function uc_ajax_cart_alter_cart_form( &$form, $formState, $formId ) {
+  if ( preg_match('/^uc_catalog_buy_it_now_form_/', $formId ) )  {
+    $ucAjaxCart = new UcAjaxCart();
+    $product = node_load($form['nid']['#value']);
+    uc_product_load($product); ;
+    if ( $product->type == 'product_kit'  ) {
+      //@todo: Must be implemented	
+    }
+    else {
+      if ( $ucAjaxCart->hasAttributes($product) )  {
+        $form['submit']['#value'] = t('Please choose an option') ;
+        return ;
+      }
+    }
+  }
+  if ( !is_array($form['#attributes']) ) $form['#attributes'] = array();
+  $form['product-nid'] = array('#type' => 'hidden' , '#value' => $form['nid']['#value'] ) ;
+  $form['#attributes']['class'] .= 'ajax-cart-submit-form';
+  $form['submit']['#attributes']['class'] .= ' ajax-cart-submit-form-button';
+      
+}
+
+function uc_ajax_cart_form_alter( &$form, $form_state , $formId ) {
+  if ( preg_match('/^uc_product_add_to_cart_form_/', $formId) 
+     || preg_match('/^uc_catalog_buy_it_now_form_/', $formId ) 
+     || preg_match('/^uc_product_kit_add_to_cart_form/', $formId ) ) {
+    uc_ajax_cart_alter_cart_form( $form, $formState, $formId );
+  }
+  elseif ( 'uc_cart_view_form' == $formId ) {
+    $form['update']['#attributes']['class'] .= ' ajax-cart-submit-form-button';  
+  }
+}

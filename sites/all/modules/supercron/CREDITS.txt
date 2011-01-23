@@ -1,0 +1,18 @@
+$Id
+
+This module is sponsored by the 63reasons team at 63reasons.com
+
+Architecture:
+Louis-Eric Simard
+
+First Implementation:
+Yuriy Pobezhimov
+Louis-Eric Simard
+
+Multithreading Code:
+Rene-Marc Simard
+
+Throttle Support, Firewall, Code Readiness:
+Mustafah El Banna
+
+(In chronological order of contribution)

@@ -1,0 +1,145 @@
+<?php
+// $Id: corner.install,v 1.4.2.2 2009/06/08 09:23:07 kirie Exp $
+
+/**
+ * @file
+ * Install file.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function corner_install() {
+  $result = drupal_install_schema('corner');
+
+  // TODO: is this the correct way to check if install is successful?
+  if ($result[0]['success']) {
+    // Insert an example corner
+    $example = new stdClass;
+    $example->name = 'Drupal love';
+    $example->image = 'drupal-love-right.png';
+    $example->image_title = 'I love Drupal!';
+    $example->image_uri = 'http://drupal.org';
+    $example->options =  serialize(array('location' => 'top-right', 'position' => 'fixed', 'image_map_shape' => 'poly', 'image_map_coords' => '0,0,150,150,150,95,55,0', 'image_link_rel' => '', 'image_link_target' => ''));
+    $sql = "INSERT INTO {corners} (name, image, image_title, image_uri, options)";
+    $sql .= " VALUES ('%s', '%s', '%s', '%s', '%s')";
+    db_query($sql, $example->name, $example->image, $example->image_title, $example->image_uri, $example->options);
+  }
+}
+
+/**
+ * Implementation of hook_disable().
+ */
+function corner_disable() {
+  // Disable all enabled corners if the module is disabled.
+  db_query("UPDATE {corners} SET status = 0 WHERE status = 1");
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function corner_uninstall() {
+  // Drop the associated schema(s).
+  drupal_uninstall_schema('corner');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function corner_schema() {
+  $schema['corners'] = array(
+    'description' => 'Stores corner settings, such as image and visibility settings.',
+    'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique corner ID.',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Name of the corner. The name will be added to the corner class to enable custom theming.',
+      ),
+      'image' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The filename of the corner to be shown.',
+      ),
+      'image_title' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The title of the corner image.',
+      ),
+      'image_uri' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Link URI of corner.',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'Corner enabled status. (1 = enabled, 0 = disabled)',
+      ),
+      'languages' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The language visibility of the corner. Comma separated string of language names.',
+      ),
+      'roles' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The role visibility of the corner. Comma separated string of role ids (rid).',
+      ),
+      'visibility' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'Flag to indicate how to show corners on pages. (0 = Show on all pages except listed pages, 1 = Show only on listed pages, 2 = Use custom PHP code to determine visibility)',
+      ),
+      'pages' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Contents of the "Pages" textarea; contains either a list of paths on which to include/exclude the corner or PHP code, depending on "visibility" setting.',
+      ),
+      'options' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Serialized array of various corner options.',
+      ),
+    ),
+    'primary key' => array('cid'),
+    'indexes' => array(
+      'list' => array('status'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Add two new fields and drop one old field.
+ */
+function corner_update_6200() {
+  $ret = array();
+  db_add_field($ret, 'corners', 'languages', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'The language visibility of the corner. Comma separated string of language names.'), array());
+  db_add_field($ret, 'corners', 'options', array('type' => 'text', 'not null' => TRUE, 'description' => 'Serialized array of various corner options.'), array());
+  db_drop_field($ret, 'corners', 'position');
+  return $ret;
+}

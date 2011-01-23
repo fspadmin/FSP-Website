@@ -1,0 +1,27 @@
+/* $Id $
+
+/**
+ * @file
+ * Adds a "Logged In As" block.
+ */
+
+.logged-in-small {
+  font-size: 85%;
+}
+
+.logged-in-xsmall {
+  font-size: 67%;
+}
+
+#logged-in-settings .form-radios {
+  margin-top: 0;
+}
+
+#logged-in-settings .form-radios .form-item {
+  float: left;
+  margin-left: 2em;
+}
+
+#logged-in-settings .description {
+  clear: both;
+}

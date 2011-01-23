@@ -1,0 +1,256 @@
+<?php
+// $Id: munin_api.module,v 1.1 2009/10/02 08:36:25 mcgo Exp $
+
+/**
+ * @file
+ * The munin module API.
+ *
+ * This module is the API for generating own munin plugins.
+ * Other module may user the hooks this module delivers to
+ * register own information for the munin server. See
+ * README.txt for details.
+ */
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function munin_api_menu() {
+  $items = array();
+  $items['admin/settings/munin'] = array(
+    'title' => 'Munin Plugin',
+    'description' => "Generate a munin plugin shell script with this gui.",
+    'page callback' => '_munin_api_generate',
+    'access arguments' => array('generate munin plugin'),
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function munin_api_theme() {
+  return array(
+    'munin_api_script' => array(
+      'arguments' => array('plugins' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function munin_api_perm() {
+  return array('generate munin plugin');
+}
+
+
+/**
+ * The page callback to show the generation form
+ */
+function _munin_api_generate() {
+  if (isset($_REQUEST['valid']) && $_REQUEST['valid'] == 1) {
+    $plugins = _munin_api_parse_selection($_REQUEST['plugins']);
+    return theme('munin_api_script', $plugins);
+  }
+  else {
+    return drupal_get_form('_munin_api_generate_form');
+  }
+}
+
+/**
+ * The form that helps you generate the shell script
+ */
+function _munin_api_generate_form() {
+  $form = array();
+
+  $mapi = _munin_api_render_mapielement();
+
+  $form['configuration'] = $mapi;
+
+  if ($mapi['valid']['#value'] == 1) {
+    $form['control'] = array(
+      '#type' => 'submit',
+      '#value' => t('Generate the script'),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Calls the munin api hook and returns a fapi array
+ */
+function _munin_api_render_mapielement() {
+  // Call the API Hooks
+  $plugins = module_invoke_all('muninplugin');
+  // Let other modules alter the definition.
+  module_invoke_all('muninplugin_alter', &$plugins);
+
+  if (count($plugins) == 0) {
+    $form['message'] = array(
+      '#type' => 'markup',
+      '#value' => t('There are currently no munin plugin definitions available. Please enable a module that defines some munin plugin configurations.'),
+    );
+    $form['valid'] = array(
+      '#type' => 'hidden',
+      '#value' => 0,
+    );
+  }
+  else {
+    $form['plugins'] = array('#tree' => TRUE);
+    foreach($plugins as $category => $definition) {
+      // There are some meta elements describing the category
+      // All remaining elements are definitions.
+      $form['plugins'][$category] = array(
+        '#type' => 'fieldset',
+        '#title' => $definition['#title'],
+        '#description' => $definition['#description'],
+        '#collabsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      foreach ($definition as $key => $value) {
+        // Each plugin may define multiple stats in their
+        // category. Each of them represents an item in the
+        // munin graph element. Let the user choose.
+        if (drupal_substr($key, 0 ,1) != '#') {
+          $form['plugins'][$category][$key] = array(
+            '#type' => 'checkbox',
+            '#title' => $value['#label'],
+            '#description' => $value['#description'],
+          );
+        }
+      }
+    }
+    $form['valid'] = array(
+      '#type' => 'hidden',
+      '#value' => 1,
+    );
+  }
+  return $form;
+}
+
+
+/**
+ * Parsing the selected plugins
+ */
+function _munin_api_parse_selection($values) {
+  $return = array();
+
+  $plugins = module_invoke_all('muninplugin');
+  module_invoke_all('muninplugin_alter', &$plugins);
+
+  foreach ($values as $key => $value) {
+    foreach ($value as $name => $active) {
+      if ($active == 1) {
+        $return[$key][$name] = $plugins[$key][$name];
+      }
+      unset($plugins[$key][$name]);
+    }
+    if (count($return[$key]) > 0) $return[$key]['#meta'] = $plugins[$key];
+  }
+
+  $return['#header']['db'] = _munin_api_decoded_dburl();
+
+  return $return;
+}
+
+/**
+ * Decode the DB url
+ */
+function _munin_api_decoded_dburl() {
+  global $db_url;
+  $step1 = explode('@', $db_url);
+
+  $step2 = explode('/',$step1[1]);
+  $host = $step2[0];
+  $database = $step2[1];
+
+  $step3 = explode('//', $step1[0]);
+  $step4 = explode(':', $step3[1]);
+  $user = $step4[0];
+  $pass = $step4[1];
+
+  return array('db_user' => $user, 'db_pass' => $pass, 'db_host' => $host, 'db_dbase' => $database);
+}
+
+/**
+ * Renders the file
+ */
+function _munin_api_renderscript($values) {
+
+}
+
+/**
+ * Renders the header of the script
+ */
+function _munin_api_renderheader($header, $meta, $values) {
+  $output = '';
+
+  foreach ($values as $key => $value) {
+    $configstring .= '<br>'.$key.'.label '.$value['#label'];
+    $configstring .= '<br>'.$key.'.type '.$value['#type'];
+  }
+
+  $output .= '<pre>
+#!/bin/bash
+# Drupal munin plugin - This script was generated by the munin Drupal module.
+
+# Variables
+CONF_MYSQL_USER="'.$header['db']['db_user'].'"
+CONF_MYSQL_PASS="'.$header['db']['db_pass'].'"
+CONF_DATABASE="'.$header['db']['db_dbase'].'"
+
+# config settings
+case $1 in
+  config)
+    cat <<\'EOM\'
+graph_title '.$meta['#title'].'
+graph_vlabel '.$meta['#vlabel'].'
+graph_category Drupal'.$configstring.'
+EOM
+  exit 0;;
+esac</pre>';
+  return $output;
+}
+
+/**
+ * Render a single line of the shell script
+ */
+function _munin_api_renderelements($definition) {
+  $line = '';
+
+  foreach ($definition as $key => $value) {
+    $line .= '<pre>
+# Stats for '.$value['#label'].'
+# '.$value['#description'].'
+echo "'.db_prefix_tables($value['#statement']).'" | mysql --user=$CONF_MYSQL_USER --password=$CONF_MYSQL_PASS --database $CONF_DATABASE | tail -n+2 | {
+  read VALUE ; echo "'.$key.'.value $VALUE.00"
+}</pre>';
+  }
+
+  return $line;
+}
+
+/**
+ * Theme the generated script(s)
+ */
+function theme_munin_api_script($plugins) {
+  drupal_add_css(drupal_get_path('module', 'munin_api').'/munin.css', 'module');
+  $header = $plugins['#header'];
+  unset ($plugins['#header']);
+
+  foreach ($plugins as $key => $value) {
+    $meta = $value['#meta'];
+    unset ($value['#meta']);
+
+    $output .= "<br><br><h3>". t('Save this script as !filename in your munin plugins directory (/etc/munin/plugins)', array('!filename' => 'drupal-'.$key.'.sh'))."</h3>";
+    $output .= "<div class='munin_script' id='munin_script_".$key."'>";
+    $output .= _munin_api_renderheader($header, $meta, $value);
+    $output .= _munin_api_renderelements($value);
+    $output .= "</div>";
+  }
+
+
+  return $output;
+}

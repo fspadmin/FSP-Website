@@ -1,0 +1,14 @@
+; $Id: top_buttons.info,v 1.1.2.1 2010/08/22 18:46:04 nancyw Exp $
+name = Top Buttons
+description = Duplicate node form buttons at the top.
+dependencies[] = util
+dependencies[] = node
+package = Util
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-10-28
+version = "6.x-3.0"
+core = "6.x"
+project = "util"
+datestamp = "1288295149"
+

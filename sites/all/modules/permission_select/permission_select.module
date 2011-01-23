@@ -1,0 +1,87 @@
+<?php
+// $Id: permission_select.module,v 1.1.2.6 2009/05/27 17:42:39 himerus Exp $
+/**
+ * @file
+ * Module will add select all/deselect all options through out the 
+ * admin permission selection screen
+ */
+
+function permission_select_help($path, $arg) {
+	$path = drupal_substr($path, 0, 22);
+  switch ($path) {
+    case 'admin/user/permissions':
+      $output = t('<h3>Permission Select</h3><p class="description">The <a href="http://drupal.org/project/permission_select">permission_select</a> module adds several key elements to the permission interface, including check all and uncheck all options. You may <a href="' .$base_path.'admin/build/modules">disable this module here</a>. A special group of controls has been added at the top of the permission table to enable easier modification of permissions. Also, on each specific module "title" row, you will see a pair of graphics in each role column that will either check or uncheck ALL the checkboxes for that role associated with that module.</p>');
+      return $output;
+  }
+}
+/**
+ * Implementation of hook_perm().
+ */
+function permission_select_perm() {
+  return array('use permission select');
+}
+/**
+ * Implementation of hook_init().
+ */
+function permission_select_init() {
+  if (user_access('use permission select') && 
+drupal_substr($_GET['q'], 0, 22) == 'admin/user/permissions') {
+    $path = drupal_get_path('module', 'permission_select');
+    drupal_add_css($path .'/permission_select.css', 'module', 'all', FALSE);
+    drupal_add_js($path .'/permission_select.js', 'module', 'header', TRUE);
+  }
+}
+/**
+ * hook_theme_registry_alter
+ * telling the system we want to use out custom function to render this form
+ */
+function permission_select_theme_registry_alter(&$theme_registry) {
+  if (!empty($theme_registry['user_admin_perm']) && user_access('use permission select')) {
+    $theme_registry['user_admin_perm']['function'] = 'permission_select_theme_user_admin_perm';
+  }
+}
+/**
+ * Theme the administer permissions page.
+ */
+function permission_select_theme_user_admin_perm($form) {
+  $roles = user_roles();
+  $permission_select_header = '<div class="permission_select"><h5>Master Permission Select</h5><ul>';
+  foreach (element_children($form['permission']) as $key) {
+    // Don't take form control structures
+    if (is_array($form['permission'][$key])) {
+      $row = array();
+      // Module name
+      if (is_numeric($key)) {
+        // this is when the first TD is reached
+        $mod_name = t($form['permission'][$key]['#value']);
+        $row[] = array('data' => t('@module module', array('@module' => drupal_render($form['permission'][$key]))), 'class' => 'module module_name', 'id' => 'module-'. $mod_name, 'colspan' => count($form['role_names']) + 1);
+      }
+      else {
+        // alternate TDs that have the actual checkboxes in them
+        $row[] = array('data' => drupal_render($form['permission'][$key]), 'class' => 'permission');
+        foreach (element_children($form['checkboxes']) as $rid) {
+          if (is_array($form['checkboxes'][$rid])) {
+            $row[] = array('data' => drupal_render($form['checkboxes'][$rid][$key]), 'class' => 'checkbox module-'. $mod_name, 'title' => $roles[$rid] .' : '. t($key));
+          }
+        }
+      }
+      // modify the TR so it has a class to reference via jQuery
+      $rows[] = array(
+        'data' => $row,
+        'class' => 'module-'. $mod_name,
+      );
+    }
+  }
+  $header[] = (t('Permission'));
+  foreach (element_children($form['role_names']) as $rid) {
+  	$permission_select_header .= '<li><a href="#" class="check">check all</a>&nbsp;<a href="#" class="uncheck">uncheck all</a><span class="role">' .$roles[$rid].'</span></li>';
+    if (is_array($form['role_names'][$rid])) {
+      $header[] = array('data' => drupal_render($form['role_names'][$rid]), 'class' => 'checkbox');
+    }
+  }
+  $permission_select_header .= '<ul></div>';
+  $output = $permission_select_header;
+  $output .= theme('table', $header, $rows, array('id' => 'permissions'));
+  $output .= drupal_render($form);
+  return $output;
+}

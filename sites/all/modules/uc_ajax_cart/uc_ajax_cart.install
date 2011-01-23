@@ -1,0 +1,16 @@
+<?php 
+
+/**
+ * @file
+ * Installer for UC Ajax Cart
+ */
+
+function uc_ajax_cart_uninstall() {
+  variable_del('ajax_cart_message_timeout' );
+  variable_del('ajax_cart_message_effect' );
+  variable_del('uc_ajax_cart_cart_view' );
+  variable_del('uc_ajax_cart_cart_cached_load' );
+  variable_del('uc_ajax_cart_closed' );
+  variable_del('uc_ajax_cart_closed_update' );
+  variable_del('uc_ajax_cart_closed_default' );
+}

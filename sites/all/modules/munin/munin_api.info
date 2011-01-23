@@ -1,0 +1,13 @@
+; $Id: munin_api.info,v 1.1 2009/10/02 08:36:25 mcgo Exp $
+name = Munin API
+description = This module contains the munin monitoring API for generating munin plugin files
+package = Munin
+core = 6.x
+version = 6.x-1.0
+
+; Information added by drupal.org packaging script on 2009-10-14
+version = "6.x-1.0"
+core = "6.x"
+project = "munin"
+datestamp = "1255549557"
+

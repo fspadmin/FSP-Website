@@ -1,0 +1,1509 @@
+<?php
+// $Id: phplist.module,v 1.12.2.30 2009/11/18 14:36:46 pwolanin Exp $
+
+/**
+ * @module phplist
+ * @package phplist - A Drupal 6 module developed for integrating with phpList
+ * @description Provides an interface for phpList
+ * @author pb at paulbeaney dot com
+ *
+ */
+if (variable_get('phplist_debug', FALSE)) {
+  DEFINE('PHPLIST_DEBUG', TRUE);
+} else {
+  DEFINE('PHPLIST_DEBUG', FALSE);
+}
+
+/**
+ * Provides description information for the phplist module.
+ *
+ */
+function phplist_help($path, $arg) {
+  switch ($path) {
+    case 'admin/build/modules#description' :
+        $output = t('Provides mass mailing functionality by interfacing to an external phpList installation.');
+      break;
+    case 'admin/help#phplist':
+        $output = t('<p>The phpList interface module allows you to send newsletters to your Drupal users using a separate phpList installation.  You can allow your Drupal users to (un)subscribe to newsletters via the Drupal site, but all creating, sending and processing of newsletters/bounces etc. is done directly in phpList.</p>
+                     <p>The phpList pre-requisites are minimal:
+                     	<ul>
+	                      <li>phplist must be installed and configured (on this or another server)</li>
+	                       <li>the phpList database must be accessible from this (the Drupal) server on port 3306</li>
+	                       <li>you must configure this module\'s "Table prefix" and "User table prefix" to match the values for $table_prefix and $usertable_prefix in the config.php of the phpList installation</li>
+                     	</ul>
+                     </p>
+                     <p>User accounts are synchronised from Drupal to phpList - if a user changes their email, or their account is deleted, this change is
+                     replicated to phpList.  An attribute is added to enable you to easily identify users which are not "native" to phpList - take care
+                     not to amend or delete these users anywhere than in Drupal!</p>');
+  }
+  return $output;
+}
+
+/**
+ * Provides the phplist permission information for the drupal system.
+ *
+ * @ingroup phplist
+ */
+function phplist_perm() {
+  return array("access lists", "administer phpList", "manage subscriptions");
+}
+
+/**
+ * Provides the phplist menu information for the drupal system.
+ *
+ * @ingroup phplist
+ */
+function phplist_menu() {
+
+  $items = array();
+  $mlm = variable_get('phplist_dbpass', '');
+  if (PHPLIST_DEBUG) {
+    drupal_set_message("PHPlist database password ". ($mlm ? '' : 'not') ." set");
+  }
+  $items['admin/settings/phplist'] = array(
+    'title'            => 'phpList',
+    'description'      => 'phpList configuration',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('phplist_admin_settings'),
+    'access arguments' => array('administer phpList'),
+  );
+  $items['admin/settings/phplist/settings'] = array(
+    'title' => 'Settings',
+    'weight' => -10,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/settings/phplist/listroles'] = array(
+    'title'            => 'List access',
+    'description'      => 'Control list access based on user roles',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('phplist_list_roles'),
+    'access arguments' => array('administer phpList'),
+    'type'             => MENU_LOCAL_TASK,
+  );
+  if ($mlm) {
+    $items['user/%/phplist/%/%'] = array(
+      'title'            => 'Manage subscription',
+      'page callback'    => '_phplist_manage_subscription',
+      'page arguments'   => array('', 4, 3, TRUE, 1),
+      'access arguments' => array('access lists'),
+      'type'             => MENU_CALLBACK,
+    );
+    $items['newsletters'] = array(
+      'title'            => 'Mailing lists',
+      'description'      => 'Mailing lists',
+      'page callback'    => 'drupal_get_form',
+      'page arguments'   => array('_phplist_redirect'),
+      'access arguments' => array('access lists'),
+      'type'             => MENU_SUGGESTED_ITEM,
+    );
+  }
+ 
+  return $items;
+}
+
+/**
+ * Displays and allows an administrator to change the settings for this module.
+ *
+ * @ingroup phplist
+ * @return the content for a settings page.
+ */
+function phplist_admin_settings() {
+  if (arg(3) == 'sync') {
+    _phplist_sync_users();
+    return;
+  }
+  $path = drupal_get_path('module', 'phplist');
+  drupal_add_js($path .'/phplist.js');
+  
+  $form['general'] = array(
+    '#title' => 'External phpList configuration',
+    '#type' => 'fieldset'
+    );
+
+  $form['general']['phplist_dbhost'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Database host'),
+    '#default_value' => variable_get('phplist_dbhost', 'localhost'),
+    '#description' => t('Host name for the phpList database')
+  );
+
+  $form['general']['phplist_dbname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Database name'),
+    '#default_value' => variable_get('phplist_dbname', 'phpList'),
+    '#description' => t('Name of the phpList database')
+  );
+
+  $form['general']['phplist_dbuser'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Database user'),
+    '#default_value' => variable_get('phplist_dbuser', 'phplist'),
+    '#description' => t('User name for the phpList database')
+  );
+
+  $form['general']['phplist_dbpass'] = array(
+    '#type' => 'password',
+    '#title' => t('Database password'),
+    '#description' => t('Password for the phpList database'),
+    '#default_value' => variable_get('phplist_dbpass', '')
+  );
+
+  $pass = variable_get('phplist_dbpass', '');
+  if ($pass == '') {
+    $form['general']['phplist_dbpassstatus'] = array(
+      '#type' => 'markup',
+      '#prefix' => '<span style="padding:4px;border:solid 1px #f33;color:#f33">',
+      '#value' => t('Password is not set'),
+      '#suffix' => '</span>'
+    );
+  }
+  else {
+    // Test database connection
+    $prefix = _phplist_dbconn();
+    if ($prefix === FALSE) {
+      $message = t('no connection');
+    }
+    else {
+      $connection_ok = 0;
+      $message = t('no connection');
+      db_set_active('phplist');
+      
+      $tables = db_query("SHOW TABLES");
+      while ($table = db_fetch_object($tables)) {
+        if ($table->{"Tables_in_". variable_get('phplist_dbname', '')} == $prefix['user'] .'user') {
+          $connection_ok += 2;
+          if ($connection_ok == 3) break;
+        }
+        if ($table->{"Tables_in_". variable_get('phplist_dbname', '')} == $prefix['prefix'] .'listuser') {
+          $connection_ok += 1;
+          if ($connection_ok == 3) break;
+        }
+      }
+      db_set_active('default');
+      if ($connection_ok == 3) {
+        $message = t('connection OK');
+      } elseif ($connection_ok == 2) {
+        $message = t('table prefix incorrect');
+      } elseif ($connection_ok == 1) {
+        $message = t('user table prefix incorrect');
+      } else {
+        $message = t('table prefixes incorrect');
+      }
+      
+      variable_set('phplist_connection', $connection_ok == 3 ? TRUE : FALSE);
+    }
+    
+    $form['general']['phplist_dbpassstatus'] = array(
+      '#type' => 'markup',
+      '#prefix' => '<span style="padding:4px;border:solid 1px #000">',
+      '#value' => t('Password is set') ." - ". $message,
+      '#suffix' => '</span>'
+    );
+  }
+  $form['general']['phplist_prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Table prefix'),
+    '#default_value' => variable_get('phplist_prefix', 'phplist_'),
+    '#description' => t('Prefix for the database tables')
+  );
+  $form['general']['phplist_user_prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('User table prefix'),
+    '#default_value' => variable_get('phplist_user_prefix', 'phplist_user_'),
+    '#description' => t('Prefix for the user table. Blank = same as table prefix'),
+  );
+  $form['general']['phplist_subscribe_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('PHPList URL'),
+    '#required' => TRUE,
+    '#description' => t('The absolute path or URL of your PHPList front page, for example: <em>/lists/</em> or <em>http://lists.mydomain.com/</em>'),
+    '#default_value' => variable_get('phplist_subscribe_url', '/lists'),
+  );
+  $form['mapping'] = array(
+    '#title' => 'Attribute mapping',
+    '#type' => 'fieldset',
+    '#description' => t('Use these settings to transfer first and last names from Drupal profiles to phpList (requires user_profile module).  If the phpList attributes do not already exist, they will be created.  Use the SYNCHRONISE NOW link to refresh all existing accounts.')
+  );
+  $form['mapping']['phplist_roles'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Map non-system roles'),
+    '#options' => array(0, 1),
+    '#default_value' => variable_get('phplist_roles', 0),
+    '#description' => t('Create phpList attributes for any custom user roles')
+  );
+  if (module_exists('profile')) {
+    $form['mapping']['phplist_profilefirstname'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Drupal profile field for FIRST NAME'),
+      '#default_value' => variable_get('phplist_profilefirstname', 'profile_')
+    );
+
+    $form['mapping']['phplist_plfirstname'] = array(
+      '#type' => 'textfield',
+      '#title' => t('phpList FIRST NAME attribute'),
+      '#default_value' => variable_get('phplist_plfirstname', 'First Name')
+    );
+
+    $form['mapping']['phplist_profilelastname'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Drupal profile field for LAST NAME'),
+      '#default_value' => variable_get('phplist_profilelastname', 'profile_')
+    );
+
+    $form['mapping']['phplist_pllastname'] = array(
+      '#type' => 'textfield',
+      '#title' => t('phpList LAST NAME attribute'),
+      '#default_value' => variable_get('phplist_pllastname', 'Last Name')
+    );
+  }
+  $form['user'] = array(
+    '#title' => 'My Account - My Newsletters options',
+    '#type' => 'fieldset'
+    );
+
+  $form['user']['phplist_subscribe_on_register'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show subscription checkboxes in user registration form'),
+    '#default_value' => variable_get('phplist_subscribe_on_register', 0),
+  );
+  $form['user']['phplist_register_preamble'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text to show on the registration form'),
+    '#default_value' => variable_get('phplist_register_preamble', ''),
+    '#description' => t('')
+  );
+  $form['user']['phplist_autosubscribe_on_register'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Automatically subscribe users to first listed newsletter'),
+    '#default_value' => variable_get('phplist_autosubscribe_on_register', 0),
+  );
+  $form['user']['phplist_preamble'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text to show on the My Newsletters page'),
+    '#default_value' => variable_get('phplist_preamble', ''),
+    '#description' => t('')
+  );
+
+  $form['user']['phplist_descriptions'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show mailing list descriptions'),
+    '#options' => array(0, 1),
+    '#default_value' => variable_get('phplist_descriptions', 1)
+  );
+
+  $form['misc'] = array(
+    '#title' => 'Miscellaneous',
+    '#type' => 'fieldset'
+  );
+
+  $form['misc']['phplist_anonymous_redirect_register'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Redirect /newsletters to registration'),
+    '#description' => t('Mailing Lists menu - redirect anonymous users to register instead of login'),
+    '#default_value' => variable_get('phplist_anonymous_redirect_register', 0),
+  );
+  
+  if (isset($connection_ok)) {
+    $form['sync'] = array(
+      '#title' => 'Synchronise users to phpList',
+      '#type' => 'fieldset'
+      );
+  
+    $form['sync']['phplist_sync'] = array(
+      '#type' => 'item',
+      '#value' => t('<a href="'. url('admin/settings/phplist/sync') .'">Synchronise now</a>'),
+      '#description' => t('Update all users to phpList, add any that are missing and update existing.  USE WITH CARE - CAN TAKE A WHILE TO RUN!')
+    );
+  }
+  
+  $form['phplist_debug'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Turn on debugging'),
+    '#default_value' => variable_get('phplist_debug', false),
+  );
+  
+  return system_settings_form($form);
+}
+
+function phplist_list_roles() {
+  $path = drupal_get_path('module', 'phplist');
+  drupal_add_js($path .'/phplist.js');
+  
+  $form['intro'] = array(
+    '#type' => 'markup',
+    '#value' => t('You can determine access to lists based on roles'),
+  );
+
+  // Create a tab for each role
+  $roles = db_query("SELECT rid, name FROM {role}");
+  $lists = _phplist_get_lists(0);
+  $options = array();
+
+  if (count($lists) == 0) {
+    drupal_set_message(t('Please configure the PHPlist module and ensure you have some lists setup in PHPlist first'));
+    return;
+  }
+  
+  foreach ($lists as $l) {
+    $options[$l->lid] = $l->name;
+  }
+  
+  if (count($options) > 0) {
+    // Add the "all" option
+    
+    // The following commented line replaced by the one after it after reports of array keys being lost using array_merge #414206
+    //$options = array_merge(array("<strong>". t('All'). "</strong>"), $options);
+    $options = array("<strong>". t('All'). "</strong>") + $options;
+  }
+  
+  while ($role = db_fetch_array($roles)) {
+    // Lookup existing permissions
+    $perms       = db_query("SELECT * FROM {phplist_access} WHERE rid=%d", $role['rid']);
+    $aryperms    =  array();
+    while ($perm = db_fetch_array($perms)) {
+      $aryperms[$perm['lid']] = true;
+    }
+
+    // If all the lists are selected, make sure 'All' is ticked too
+    if (count($aryperms) == count($options) - 1) {
+      $aryperms[0] = true;
+    }
+
+    $form['role'. $role['rid']] = array(
+      '#type'        => 'fieldset',
+      '#title'       => $role['name'],
+      '#collapsible' => true,
+      '#collapsed'   => true,
+    );
+    
+    $form['role'. $role['rid']]['lists'. $role['rid']] = array(
+      '#type'          => 'checkboxes',
+      '#default_value' => array_keys($aryperms),
+      '#options'       => $options,
+    );
+  }
+  
+  $form['submit'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Save settings'),
+  );
+  return $form;
+}
+
+function phplist_list_roles_submit($form, &$form_state) {
+  db_query("DELETE FROM {phplist_access}");
+  
+  foreach ($form_state['values'] as $key => $value) {
+    if (substr($key, 0, 4) == 'list') {
+      $rid = substr($key, 5);
+      
+      foreach($value as $lid => $perm) {
+        if ($perm) db_query("INSERT INTO {phplist_access} (lid, rid) VALUES(%d, %d)", $lid, $rid);
+      }
+    }
+  }
+}
+
+/**
+ * Utility function to lookup the phpList database prefix
+ *
+ * @ingroup phplist
+ */
+function _phplist_get_prefix() {
+  // Make it static so we don't have to keep doing database queries
+  static $prefix;
+
+  if ($prefix === NULL) {
+    $prefix['prefix'] = db_escape_table(variable_get('phplist_prefix', 'phplist_'));
+    $prefix['user']   = db_escape_table(variable_get('phplist_user_prefix', $prefix['prefix']));
+    
+    if ($prefix['user'] == '') $prefix['user'] = $prefix['prefix'];
+  }
+
+  return $prefix;
+}
+
+/**
+ * Hooks into user to allow synchronisation of phpList data
+ *
+ * @ingroup phplist
+ */
+function phplist_user($op, &$edit, &$user, $category = NULL) {
+  // Connect to phpList database
+  global $db_url;
+  static $phplistid = '';
+
+  $prefix = _phplist_dbconn();
+  if ($prefix === FALSE) {
+    return;
+  }
+
+  // See if this is an admin manipulating this account
+  $admin = $thisuser->uid != $user->uid;
+
+  static $phplistid;
+  static $done;
+  
+  switch ($op) {
+    case 'login':
+    case 'insert':
+      if ($done) break;  // Ensure we don't run this code twice when creating a new account
+      if ($op == 'login' && $user->access == 0) {
+        $phplist_subscribe_lists = isset($user->phplist_subscribe_lists) ? $user->phplist_subscribe_lists : array();
+      }
+      elseif ($op == 'insert' && $user->status) {
+        $phplist_subscribe_lists = isset($edit['phplist_subscribe_lists']) ? $edit['phplist_subscribe_lists'] : array();
+      }
+
+      if ((($op == 'login' && $user->access == 0) || ($op == 'insert' && $user->status)) && count($phplist_subscribe_lists) ) {
+        // Check whether user is already in PHPlist database (possible, but unlikely in most situations)
+        $phplistid = _phplist_lookup_phplistid($user->mail);     
+        _phplist_sync_user($phplistid, $user);
+        if (PHPLIST_DEBUG) {
+          $phplistid = _phplist_lookup_phplistid($user->mail);
+          drupal_set_message("Created phplistid $phplistid for email ".$user->mail);
+        }
+
+        $l_done = 0;    // id of first public list
+        if (variable_get('phplist_autosubscribe_on_register', false)) {
+          // Ensure they are signed up to the first mailing list if auto-subscribe is activated
+          
+          $lists = _phplist_get_lists($user);
+            
+          if (isset($lists[0])) {
+            $l_done = $lists[0]->lid;
+            _phplist_manage_subscription($user->mail, $l_done);
+            
+            if (PHPLIST_DEBUG) drupal_set_message('Auto-subscribed to list '.$lists[0]->lid);
+          }
+        }
+
+        // Cycle through all user-selected lists and sign the user up to them
+        foreach ($phplist_subscribe_lists as $lid => $sub) {
+          if ($l_done != $lid) _phplist_manage_subscription($user->mail, $lid, ($sub ? 'subscribe' : 'unsubscribe'));
+          if (PHPLIST_DEBUG) drupal_set_message("Email: {$user->mail}, phpid: $phplistid, ListID: $lid, Sub: $sub");
+        }
+        
+        if ($op == 'login' && $user->access == 0) {
+          unset($user->phplist_subscribe_lists);
+          user_save($user);
+        }
+      }
+      $done = true;
+      break;
+
+    case 'update':
+  	  // Account has been modified - object $user still has original email, array $edit has modified (if changed) 
+      $phplistid = _phplist_lookup_phplistid($user->mail);
+      break;
+
+    case 'after_update':
+      _phplist_sync_user($phplistid, $user);
+      break;
+
+    case 'delete':
+  	  // User is being deleted - update phpList too
+      $phplistid = _phplist_lookup_phplistid($user->mail);
+
+      if (true) {
+  	  	// Just remove the Drupal flag from the phpList account
+        _phplist_update_attribute('Drupal', 'checkbox', 'off', $phplistid);
+      }
+      else {
+        db_set_active('phplist');
+
+  	  	// Completely remove this user from PHPlist - could be enabled using another system variable
+        /*db_query("DELETE FROM $strprefix%s WHERE userid = %d", $prefix['prefix']."listuser", $phplistid);
+        db_query("DELETE FROM %s WHERE userid = %d", $prefix['user']."attribute", $phplistid);
+        db_query("DELETE FROM $strprefix%s WHERE userid = %d", $prefix['prefix']."usermessage", $phplistid);
+        db_query("DELETE FROM $strprefix%s WHERE user = %d", $prefix['user']."message_bounce", $phplistid);
+        db_query("DELETE FROM %s WHERE id = %d", $prefix['user']."user", $phplistid);
+        db_query("DELETE FROM %s WHERE userid = %d", $prefix['user']."user_history", $phplistid);
+        db_query("DELETE FROM $strprefix%s WHERE userid = %d", $prefix['user']."rss", $phplistid);
+        */
+        db_set_active('default');
+      }
+      break;
+
+    case 'form':
+      if ($category == 'phplist' && user_access('access lists')) {
+      	// Lookup the list of mails lists
+        $form = phplist_lists($user);
+
+		// Show the pre-amble text
+        $form['preamble'] = array(
+          '#value' => variable_get('phplist_preamble', ''),
+          '#weight' => -10
+        );
+
+        $form["phplist_html"] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Receive emails in text format'),
+          '#options' => array(0, 1),
+          '#default_value' => $user->phplist_html,
+          '#weight' => 10
+        );
+
+        return $form;
+      }
+      break;
+
+    case 'categories':
+      if (user_access('access lists')) {
+        $output[] = array('name' => 'phplist', 'title' => t('My newsletters'), 'weight' => 10);
+      }
+      return $output;
+
+    case 'view':
+      // Not used for the time being
+  }
+}
+
+
+/**
+ * Handle (un)subscribing to a given mailing list
+ *
+ * Email parameter is now redundant
+ * @ingroup phplist
+ * @return none
+ */
+
+
+function _phplist_manage_subscription($email, $lid, $action='subscribe', $redirect=FALSE, $userid=0) {
+  $prefix = _phplist_dbconn();
+  if ($prefix === FALSE) {
+    return;
+  }
+  
+  $lid    = intval($lid);
+  $userid = intval($userid);
+  
+  // Check token - CSRF protection
+  $path = preg_replace('/\/'. $value .'$/', '', $_GET['q']);
+  if ($redirect && (!isset($_GET['token']) || !phplist_check_token($_GET['token'], arg(4)))) {
+    drupal_set_message(t('Got an invalid token. Subscription not updated.'), 'error');
+    drupal_goto('user/'. $userid .'/edit/phplist');
+  }
+  else {
+    if ($userid > 0 && user_access("manage subscriptions")) {
+      // This is a manager updating another user's account
+      $user = user_load(array('uid' => $userid));
+      $email = $user->mail;
+    }
+    else {
+      $user = user_load(array('mail' => $email));
+    }
+  
+    if ($email == '') {
+      form_set_error("", t('Email address is empty for UID '. $userid));
+      return;
+    }
+    if ($lid == 0 || $lid == '') return;
+  
+    $phplistid = _phplist_lookup_phplistid($email);
+    if (PHPLIST_DEBUG) drupal_set_message("Found phplistid [$phplistid] for email $email");
+    
+    // This bit of code is for administrators who have forgotten to "sync users" first !!
+    // Thanks to Dave Cohen, http://drupal.org/node/249559
+    if (!$phplistid) {
+      $account = user_load(array('mail' => $email));
+      if ($account)
+        _phplist_sync_user($phplistid, $account);
+      $phplistid = _phplist_lookup_phplistid($email);
+    }
+  
+    $booOK = false;
+    if ($phplistid) {
+      if ($action == 'subscribe') {
+        // Check user is allowed to subscribe to this list
+        $roles = array();
+        if (isset($user->roles)) {
+          foreach ($user->roles as $rid => $role) {
+            $roles[] = $rid;
+          }
+        }
+        $roles = implode(",", $roles);
+        
+        if (db_result(db_query("SELECT lid FROM {phplist_access} WHERE lid=%d AND rid IN (%s)", $lid, $roles))) $booOK = true;
+      }
+      else {
+        $booOK = true;
+      }
+      
+      db_set_active('phplist');
+     
+      switch ($action) {
+        case 'subscribe';
+          if ($booOK) {
+            db_query("INSERT INTO {$prefix['prefix']}listuser(userid, listid, entered) VALUES(%d, %d, NOW())", $phplistid, $lid);
+            if (PHPLIST_DEBUG) drupal_set_message("Subscribing $phplistid to list $lid");
+          }
+          break;
+        case 'unsubscribe':
+          db_query("DELETE FROM {$prefix['prefix']}listuser WHERE userid=%d AND listid=%d", $phplistid, $lid);
+          if (PHPLIST_DEBUG) drupal_set_message("Unsubscribing $phplistid from list $lid");
+          break;
+      }
+     
+      db_set_active('default');
+      
+      if ($redirect) {
+        if ($booOK) drupal_set_message(t("Your subscriptions have been updated"));
+        else drupal_set_message(t('You do not have permission to subscribe to this list'));
+        drupal_goto('user/'. $userid .'/edit/phplist');
+      }
+    }
+    else {
+      drupal_set_message(t('Failed to update email newsletter subscription.'));
+    }
+  }
+}
+
+
+/**
+ * Displays available mailing lists
+ *
+ * @ingroup phplist
+ * @return form listing available mailing lists
+ */
+function phplist_lists($user, $op='list', $lid=0, $subonly=false) {
+  global $db_url;
+
+  if (!isset($db_url['phplist'])) {
+    $db_url['phplist'] = _phplist_dburl();
+    if (variable_get('phplist_dbpass', '') == '') return;
+  }
+
+  $booshowdescription = variable_get('phplist_descriptions', 1);
+
+  db_set_active('phplist');
+
+  // Lookup available mailing lists and allow user to (un)subscribe
+  $lists = _phplist_get_lists($user);
+
+  if (!$lists) {
+    $lists = array();
+  }
+
+  $rows = array();
+  foreach ($lists as $list) {
+    if ($list->userid == '' && !$subonly) {
+      $rows[] = array('name' => "<b>". $list->name ."</b>". ($booshowdescription ? " <br />". $list->description : ""),
+        'subscribe' => l(t('Subscribe'), "user/". $user->uid ."/phplist/subscribe/". $list->lid, array('query' => array('token' => phplist_get_token($list->lid))))
+      );
+    }
+    elseif ($list->userid != '') {
+      $rows[] = array('name' => "<b>". $list->name ."</b>". ($booshowdescription ? " <br />". $list->description : ""),
+        'unsubscribe' => l(t('Unsubscribe'), "user/". $user->uid ."/phplist/unsubscribe/". $list->lid, array('query' => array('token' => phplist_get_token($list->lid))))
+      );
+    }
+  }
+
+  if (empty($rows)) {
+    if ($subonly) {
+  	  // We're in the user account area - change the wording slightly
+      $rows[] = array(array('data' => t('No subscriptions.  You can subscribe to mailing lists <a href="'. url('phplist') .'">here</a>.'), 'colspan' => '2'));
+    }
+    else {
+      $rows[] = array(array('data' => t('No lists available.'), 'colspan' => '2'));
+    }
+  }
+
+  db_set_active('default');
+  $header = array('', array('data' => '', 'colspan' => '2'));
+
+  $content = theme('table', $header, $rows, array('id' => 'lists'));
+  $form['assigned'] = array(
+    '#type' => 'markup',
+    '#value' => $content
+    );
+
+  return $form;
+}
+
+/**
+ * Looks up the currently available mailing lists
+ *
+ * @ingroup phplist
+ * @return array of available mailing lists
+ */
+function _phplist_get_lists($user) {
+  $prefix = _phplist_dbconn();
+  if ($prefix === FALSE) {
+    return;
+  }
+
+  $phplistid = _phplist_lookup_phplistid($user->mail);
+
+  $lists = array();
+  
+  db_set_active('phplist');
+
+  $roles = array();
+  if (isset($user->roles)) {
+    foreach ($user->roles as $rid => $role) {
+      $roles[] = $rid;
+    }
+  }
+
+  $result = db_query("SELECT DISTINCT l.id as lid, l.name as name, l.description as description, (SELECT userid FROM {$prefix['prefix']}listuser t2 WHERE t2.listid=l.id AND userid=%d) as 'userid'
+    FROM {$prefix['prefix']}list l LEFT OUTER JOIN {$prefix['prefix']}listuser t2 ON l.id = t2.listid
+    WHERE active=1 ORDER BY listorder", $phplistid);
+
+  while ($list = db_fetch_object($result)) {
+    $lists[] = $list;
+  }
+
+  db_set_active('default');
+  
+  if (isset($user->roles)) {
+    $allowed = array();
+    // Check access for each list and remove it if no access
+    foreach ($lists as $list) {
+      if (db_result(db_query("SELECT lid FROM {phplist_access} WHERE lid=%d AND rid IN (%s)", $list->lid, implode(',', $roles))))
+        $allowed[] = $list;
+    }
+  }
+  
+  return isset($allowed) ? $allowed : $lists;
+}
+
+
+/**
+ * Lookups up the phpList id for a given email
+ *
+ * @ingroup phplist
+ * @return the phpList id for a given user
+ */
+function _phplist_lookup_phplistid($email) {
+  $prefix = _phplist_dbconn();
+  if ($prefix === FALSE) {
+    return;
+  }
+
+  db_set_active('phplist');
+  $id = db_result(db_query("SELECT id FROM {$prefix['user']}user WHERE email='%s'", $email));
+  db_set_active('default');
+  return $id;
+}
+
+
+/**
+ * Generate a database URL for the phpList data
+ *
+ * @ingroup phplist
+ * @return database URL (string)
+ */
+function _phplist_dburl() {
+  global $db_url;
+  
+  $dbtype = substr($db_url['default'], 0, strpos($db_url['default'], "://"));
+  $db_dsn = "$dbtype://". drupal_urlencode(variable_get('phplist_dbuser', '')) .":". drupal_urlencode(variable_get('phplist_dbpass', '')) ."@". variable_get('phplist_dbhost', '') .'/'. variable_get('phplist_dbname', '') ."";
+  return $db_dsn; 
+}
+
+
+/**
+ * Create/update a specific Drupal user to phpList
+ *
+ * @ingroup phplist
+ * @return none
+ */
+function _phplist_sync_user($phplistid, $user) {
+  static $drupalid;
+
+  $prefix = _phplist_dbconn();
+  if ($prefix === FALSE) {
+    return;
+  }
+
+  $booroles = variable_get('phplist_roles', false);
+
+  $attrmap = array();
+  if (($profile_firstname = variable_get('phplist_profilefirstname', '')) != 'profile_') {
+  	// Map first name to phpList attribute
+    $attrmap[] = array($profile_firstname, variable_get('phplist_plfirstname', ''));
+  }
+
+  if (($profilelastname = variable_get('phplist_profilelastname', '')) != 'profile_') {
+  	// Map last name to phpList attribute
+    $attrmap[] = array($profilelastname, variable_get('phplist_pllastname', ''));
+  }
+  
+  if ($phplistid != '') {
+    db_set_active('phplist');
+    $result = db_query("UPDATE {$prefix['user']}user SET email='%s', modified=NOW(), htmlemail=%d, confirmed=1 WHERE id=%d", ($user->mail == '' ? $user->init : $user->mail), ($user->phplist_html == 0 || $user->phplist_html == '' ? 1 : 0), $phplistid);
+  }
+  else {
+    $uniqueid = _phplist_uniqueid($user->mail);
+    db_set_active('phplist');
+    db_query("INSERT INTO {$prefix['user']}user (email, entered, htmlemail, confirmed, uniqid) VALUES('%s', NOW(), %d, 1, '%s')", $user->mail, ($user->phplist_html == 0 || $user->phplist_html == '' ? 1 : 0), $uniqueid);
+    $phplistid = db_result(db_query("SELECT last_insert_id()"));
+  }
+
+  if (module_exists('profile')) {
+    // Get this user profile if we need to access the roles or profile settings
+    db_set_active('default');
+    profile_load_profile($user);
+  }
+
+  // Update/add phpList attrbiutes for this user's roles
+  $aryroles = $user->roles;
+
+  foreach ($aryroles as $role) {
+    if ($booroles && $role != 'authenticated user') {
+      _phplist_update_attribute('Drupal role - '. $role, 'checkbox', 'on', $phplistid);
+    }
+    elseif ($role == 'authenticated user') {
+  	  // Always add this role to tag the phpList user as originating from Drupal
+      _phplist_update_attribute('Drupal', 'checkbox', 'on', $phplistid);
+      if (!$booroles) break;
+    }
+  }
+
+  // Synchronise other profile fields to phpList attributes
+  if (module_exists('profile')) {
+	// Store other attributes/profile settings
+    foreach ($attrmap as $attr) {
+      if (isset($user->{$attr[0]})) {
+        if (PHPLIST_DEBUG) drupal_set_message('Synchronised attribute '. $attr[1] .' : '. $user->{$attr[0]});
+        _phplist_update_attribute($attr[1], 'textline', $user->{$attr[0]}, $phplistid);
+      }
+    }
+  }
+  
+  db_set_active('default');
+}
+
+function _phplist_update_attribute($attr_name, $attr_type, $attr_val, $uid) {
+  $prefix = _phplist_dbconn();
+  if ($prefix === FALSE) {
+    return;
+  }
+  db_set_active('phplist');
+
+  // Check the attribute exists and create it if not
+  $drupalid = db_result(db_query("SELECT id FROM {$prefix['user']}attribute WHERE name='%s'", $attr_name));
+
+  if ($drupalid == '') {
+  	// Attribute has not been created
+    db_query("INSERT INTO {$prefix['user']}attribute(name, type, listorder, default_value, required, tablename) VALUES('%s', '%s', 0, '', 0, '%s')", $attr_name, $attr_type, $attr_name);
+    $drupalid = db_result(db_query("SELECT id FROM {$prefix['user']}attribute WHERE name='%s'", $attr_name));
+    if (PHPLIST_DEBUG) drupal_set_message("Added PHPlist attribute");
+  }
+
+  // Add attribute
+  db_query("REPLACE INTO {$prefix['user']}user_attribute VALUES(%d, %d, '%s')", $drupalid, $uid, $attr_val);
+  
+  db_set_active('default');
+}
+
+
+/**
+ * Fetched the id of the default mailing list to sign new users up to
+ *
+ * @ingroup phplist
+ * @return id of mailing list
+ */
+function _phplist_default_list() {
+  $prefix = _phplist_dbconn();
+  if ($prefix === FALSE) {
+    return;
+  }
+  
+  db_set_active('phplist');
+  $lid = db_result(db_query("SELECT id FROM {$prefix['prefix']}list WHERE active=1 ORDER BY listorder LIMIT 1"));
+  db_set_active('default');
+
+  return $lid;
+}
+
+
+/**
+ * Check database DSN is available - returm empty string if not
+ *
+ * @ingroup phplist
+ * @return table prefix
+ */
+function _phplist_dbconn() {
+  global $db_url;
+  
+  if ((is_array($db_url) && !isset($db_url['phplist'])) || !is_array($db_url)) {
+    if (variable_get('phplist_dbpass', '') == '') return FALSE;
+    if (!is_array($db_url)) {
+      $db_temp = $db_url;
+      $db_url = array();
+      $db_url['default'] = $db_temp;
+    }
+    $db_url['phplist'] = _phplist_dburl();
+  }
+
+  return _phplist_get_prefix();
+}
+
+
+/**
+ * Create/update all active Drupal users to phpList
+ *
+ * @ingroup phplist
+ * @return none
+ */
+function _phplist_sync_users() {
+  $prefix = _phplist_dbconn();
+  if ($prefix === FALSE) {
+    return;
+  }
+
+  // Find all the users in the system
+  $result = db_query("SELECT mail FROM {users} WHERE status=1");
+
+  // Cycle through the Drupal users and sync with phpList
+  while ($user = db_fetch_object($result)) {
+    $phplistid = _phplist_lookup_phplistid($user->mail);
+    $user = user_load(array('mail' => $user->mail));
+    _phplist_sync_user($phplistid, $user);
+  }
+
+  drupal_set_message(t('Synchronisation to phpList complete'));
+  drupal_goto('admin/settings/phplist');
+}
+
+
+/**
+ * Make sure users see the correct screen depending on whether or not they are logged in and which action they are trying to execute
+ *
+ * @ingroup phplist
+ * @return none
+ */
+function _phplist_redirect() {
+  global $user;
+
+  if ($user->uid > 0) {
+    // Logged in users always go to their My Newsletters page
+    drupal_goto('user/'. $user->uid .'/edit/phplist');
+  }
+  else {
+    // Anonymous users need sending to the appropriate page
+    if (arg(1) == 'unsubscribe') {
+      return phplist_unsubscribe_form();
+    }
+    elseif (arg(1) == 'confirm') {
+      return phplist_confirm_subscription();
+    }
+    elseif (arg(1) == '' && variable_get('phplist_anonymous_redirect_register', 0)) {
+      drupal_goto('user/register');
+    }
+    else {
+      // If all else fails, take them to the login screen 
+      drupal_goto('user/login', 'destination=newsletters');
+    }
+  }
+}
+
+
+/**
+ * Create a unique ID for phpList
+ *
+ * @ingroup phplist
+ * @return md5 string
+ */
+function _phplist_uniqueid($stremail) {
+  // Function taken from phpList itself
+  // Make sure it is really unique
+  $prefix = _phplist_dbconn();
+  if ($prefix === FALSE) {
+    return;
+  }
+  
+  db_set_active('phplist');
+  $id = md5(uniqid(mt_rand()));
+  
+  $result = db_result(db_query("SELECT id FROM {$prefix['user']}user WHERE uniqid='%s'", $id));
+
+  while ($result) {
+    $id = md5(uniqid(mt_rand()));
+    $result = db_result(db_query("SELECT id FROM {$prefix['user']}user WHERE uniqid='%s'", $id));
+  }
+
+  db_set_active('default');
+  return $id;
+}
+
+
+/**
+ * Implementation of hook_block().
+ */
+function phplist_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks[0] = array(
+      'info' => t('PHPList subscribe'),
+    );
+    return $blocks;
+  }
+
+  elseif ($op == 'configure' && $delta == 0) {
+    $block_body = variable_get('phplist_subscribe_block_header', array());
+    
+    // basically straight out of block.module lines 554-566
+    $form['body_filter']['#weight'] = -17;
+    $form['body_filter']['phplist_subscribe_block_header'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Block text'),
+      '#default_value' => $block_body['content'],
+      '#rows' => 15,
+      '#description' => t('Explanatory text that will be displayed above the subscription form.'),
+      '#weight' => -17,
+    );
+    if (!isset($block_body['format'])) {
+      $block_body['format'] = FILTER_FORMAT_DEFAULT;
+    }
+    $form['body_filter']['phplist_subscribe_block_header_format'] = filter_form($block_body['format'], -16);
+    
+    $form['block']['phplist_email_confirm'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show email confirmation field'),
+      '#default_value' => variable_get('phplist_email_confirm', 0),
+    );
+    $form['block']['phplist_format_block'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show email format box'),
+      '#default_value' => variable_get('phplist_format_block', 1),
+    );
+    $form['block']['phplist_format_default'] = array(
+      '#type' => 'select',
+      '#title' => t('If not showing the email format box, default to this format'),
+      '#default_value' => variable_get('phplist_format_default', 0),  // Default to HTML format
+      '#options' => array(0 => 'html', 1 => 'text'),
+    );
+    
+    $form['block']['phplist_email_width'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Size of email box(es)'),
+      '#default_value' => variable_get('phplist_email_width', 16),
+      '#size' => 5,
+    );
+    
+    return $form;
+  }
+
+  elseif ($op == 'save' && $delta == 0) {
+    if (!filter_access($edit['phplist_subscribe_block_header_format'])) {
+      $edit['phplist_subscribe_block_header_format'] = FILTER_FORMAT_DEFAULT;
+    }
+    variable_set('phplist_subscribe_block_header', array('content' => $edit['phplist_subscribe_block_header'], 'format' => $edit['phplist_subscribe_block_header_format']));
+    variable_set('phplist_email_confirm', $edit['phplist_email_confirm']);
+    variable_set('phplist_email_width', $edit['phplist_email_width']);
+    variable_set('phplist_format_block', $edit['phplist_format_block']);
+    variable_set('phplist_format_default', $edit['phplist_format_default']);
+  }
+
+  elseif ($op == 'view' && $delta == 0 && variable_get('phplist_connection', FALSE)) {
+    global $user;
+    $lists = _phplist_get_lists($user);
+
+    if (count($lists) > 0) {
+      $block = array(
+        'subject' => t('Subscribe to our mailing list'),
+        'content' => drupal_get_form('phplist_subscribe_form'),
+      );
+      return $block;
+    }
+  }
+}
+
+/*
+ * Implementation of hook_form_alter().
+ * 
+ * Adds checkboxes to the user registration form so that users can subscribe to
+ * lists as they register.
+ * 
+ * Adds a submit function (phplist_admin_settings_submit_pass()) to the admin
+ * settings form so that the PHPList database password isn't blanked out.
+ */
+function phplist_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'user_register' && variable_get('phplist_subscribe_on_register', 0)) {
+    $preamble = variable_get('phplist_register_preamble', '');
+    $form['mailing_lists'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Mailing lists'),
+      '#weight' => 29,
+    );
+    if ($preamble != '') {
+      $form['mailing_lists']['preamble'] = array(
+        '#type' => 'markup',
+        '#value' => $preamble,
+      );
+    }
+    $form['mailing_lists']['lists'] = phplist_subscribe_checkboxes(false);
+  } 
+  elseif ($form_id == 'user_register' && variable_get('phplist_autosubscribe_on_register', false)) {
+    // Ensure auto-subscribe happens if required
+    if (variable_get('phplist_autosubscribe_on_register', false) && !variable_get('phplist_subscribe_on_register', false)) {
+      $lists = _phplist_get_lists($user);
+
+      $form['phplist_subscribe_lists'] = array(
+        '#type' => 'value',
+        '#value' => $lists[0]->lid,
+      );
+    }
+  }
+  elseif ($form_id == 'phplist_admin_settings') {
+    // prevent saving settings from resetting phplist db password
+    $form['#submit'][] = 'phplist_admin_settings_submit_pass';
+    $form['#submit'] = array_reverse($form['#submit']);
+  }
+}
+
+/*
+ * This submit function is added to the phplist_admin_settings() form to make 
+ * sure PHPList database password isn't unset by saving the admin settings.
+ *
+ * If the phplist_dbpass variable is (1) already set and (2) hasn't been reset
+ * on this edit, this function removes the phplist_dbpass field from the form
+ * before it is saved so that the password is not *unset* by saving the form.
+ */
+function phplist_admin_settings_submit_pass($form_id, &$form_values) {
+  if (variable_get('phplist_dbpass', '') && $form_values['values']['phplist_dbpass'] == '') {
+    unset($form_values['values']['phplist_dbpass']);
+  }
+}
+
+/*
+ * Create the 'subscribe' form
+ */
+/*
+ * Create the 'subscribe' form
+ */
+function phplist_subscribe_form() {
+  global $user;
+  $form = array();
+
+  $block_body = variable_get('phplist_subscribe_block_header', array('content' => '', 'format' => FILTER_FORMAT_DEFAULT));
+  $form['subscribe_block_header'] = array(
+    '#value' => check_markup($block_body['content'], $block_body['format'], FALSE),
+  );
+  
+  if ($user->uid) {
+    // Logged in, so do nothing
+    // TODO Add list of mailing lists to which the logged in person is subscribed
+/*    $form['mail'] = array(
+      '#type' => 'item',
+      '#title' => t('E-mail'),
+      '#size' => variable_get('phplist_email_width', 16),
+      '#value' => $user->mail,
+    );
+*/
+    $form['link'] = array(
+      '#type' => 'markup',
+      '#prefix' => '<div>',
+      '#suffix' => '</div>',
+      '#value' => l(t('Manage my subscriptions'), 'user/'. $user->uid .'/edit/phplist'),
+    );
+  }
+  else {
+    $form['mail'] = array(
+      '#type' => 'textfield',
+      '#title' => t('E-mail'),
+      '#size' => variable_get('phplist_email_width', 16),
+    );
+    if (variable_get('phplist_email_confirm', 0)) {
+      $form['mailconfirm'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Confirm e-mail'),
+        '#size' => variable_get('phplist_email_width', 16),
+      );
+    }
+  
+    $form['lists'] = phplist_subscribe_checkboxes();
+
+    if (variable_get('phplist_format_block', 1)) {
+      $form['phplist_html'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Receive emails in text format'),
+        '#options' => array(0, 1),
+        '#default_value' => 0,
+      );
+    }
+    else {
+      $form['phplist_html'] = array(
+        '#type' => 'value',
+        '#value' => variable_get('phplist_format_default', 0),
+      );
+    }
+
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Subscribe'),
+    );
+  }
+
+  return $form;
+}
+
+
+/**
+ * Generate a checkbox for each configured mailing list.
+ * Returns a 'checkboxes' form element.
+ */
+function phplist_subscribe_checkboxes($hide_one = true) {
+  global $user;
+  $lists = _phplist_get_lists($user);
+  $options = array();
+  $auto = 0;
+
+  foreach ($lists as $l) {
+    $options[$l->lid] = $l->name;
+    
+    if (count($options) == 1 && variable_get('phplist_autosubscribe_on_register', false)) {
+      $options[$l->lid] .= ' ('. t('Required') .')';
+      $auto = $l->lid;
+    }
+  }
+
+  if (count($options) == 1 && $hide_one) {
+    $form_checkboxes['phplist_subscribe_lists'] = array(
+      '#type' => 'value',
+      '#value' => array_keys($options),
+    );
+  }
+  else {
+    $form_checkboxes['phplist_subscribe_lists'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Subscribe me to'),
+      '#default_value' => array_keys($options),
+      '#options' => $options,
+      '#attributes' => array('onclick' => 'if(this.value=='. $auto .')this.checked=true'),
+    );
+  }
+  
+  return $form_checkboxes;
+}
+
+/*
+ * Validate the subscribe form:
+ * - validate the email address
+ * - check that the email field matches email confirm field
+ * - confirm that there is at least one subscription selected
+ */
+function phplist_subscribe_form_validate($form, &$form_state) {
+  if (! valid_email_address($form_state['values']['mail'])) {
+    form_set_error('mail', t('Please enter a valid email address.'));
+  }
+  elseif (variable_get('phplist_email_confirm', 0) && $form_state['values']['mail'] !== $form_state['values']['mailconfirm']) {
+    form_set_error('mailconfirm', t('The email address you entered does not match.'));
+  }
+  
+  if (_phplist_lookup_phplistid($form_state['values']['mail']) > 0) {
+    form_set_error('mailconfirm', t('This email address is already registered.'));
+  }
+  
+  if (count($form_state['values']['phplist_subscribe_lists']) == 0) {
+    form_set_error('phplist_subscribe_lists', t('You did not select any mailing lists to subscribe to.'));
+  }
+}
+
+/*
+ * This uses what I would call 'AHAX' -- it's like AJAX but without the 
+ * Javascript and with HTML instead of XML. Or maybe that should just be 'HAX'
+ * since it's not Asynchronous either :)
+ * 
+ * Takes the user's email and list subscription preferences from the
+ * phplist_subscribe_form() (validated already by phplist_subscribe_form_validate()) 
+ * and submits them to phplist's 'subscribe' page as if it were a normally-POSTed
+ * form. Checks the response for the string "Thank you for subscribing" which
+ * means that PHPList has added the user to the list (and will send out its own
+ * confirmation email)
+ */
+function phplist_subscribe_form_submit($form, &$form_state) {
+  global $user;
+
+  $data = array(
+    'email' => $form_state['values']['mail'],
+    'emailconfirm' => $form_state['values']['mail'], // this has already been checked in the _validate function
+    'htmlemail' => ($form_state['values']['phplist_html'] ? 0 : 1), // looks backwards, is not. see usage in _phplist_sync_user()
+    'subscribe' => 'Subscribe',
+  );
+  
+  $lists = _phplist_get_lists($user);
+
+  foreach ($lists as $l) {
+    if ($form_state['values']['phplist_subscribe_lists'][$l->lid] || count($lists) == 1) {
+      $listkey = '['. $l->lid .']';
+      $data['list'. $listkey] = 'signup';
+    }
+  }
+  
+  $postdata = '';
+  foreach ($data as $key => $val) {
+    $postdata .= ($postdata ? '&' : '') . urlencode($key) .'='. urlencode($val);
+  }
+  
+  $subscribe_url = url(variable_get('phplist_subscribe_url', 'lists'), array('query' => 'p=subscribe', 'absolute' => TRUE));
+  $headers = array('Content-Type' => 'application/x-www-form-urlencoded');
+  
+  $result = drupal_http_request($subscribe_url, $headers, 'POST', $postdata);
+
+  if (PHPLIST_DEBUG) {
+    ob_clean();
+    print '<p>'. t('Result of form submission to PHPlist:') .'</p>';
+    print $result->data;
+    print '<fieldset>';
+    print_r($result);
+    print '</fieldset>';
+    exit;
+  }
+  
+  if (strpos($result->data, t('Thank you for subscribing')) !== FALSE) {
+    drupal_set_message(t('You will be e-mailed shortly with a request to confirm your membership. Please make sure to click the link in that message to confirm your subscription.'));
+  }
+  else {
+    drupal_set_message(t('Oops, you have not been added to the mailing list; please contact a site administrator.'));
+  }
+}
+
+function phplist_unsubscribe_form() {
+  // Use the PHPlist uid if available - for anonymous users
+  // Drupal users should be sent to their account page
+  global $user;
+  if ($user->uid > 0) {
+    drupal_goto('newsletters');
+  }
+  
+  $email = '';
+
+  if (isset($_GET["uid"])) {
+    $prefix = _phplist_dbconn();
+    if ($prefix !== FALSE) {
+      // Lookup email from PHPlist
+      db_set_active("phplist");
+      $email = db_result(db_query("SELECT email FROM {$prefix['prefix']}user WHERE uniqid='%s'", check_plain($_GET["uid"])));
+      db_set_active("default");
+    }
+  }    
+  if ($email) {
+    // Check whether this is a Drupal user
+    $user = user_load(array('mail' => $email));
+    if ($user) {
+      // They have a Drupal account - get them to login
+      drupal_set_message(t("Please login to manage your newsletter subscriptions"));
+      drupal_goto('newsletters');
+    }
+  }
+
+  
+  // If we are still here, this is a non-Druapl person unsubscribing
+  $form['mail'] = array(
+    '#title' => t('Email address'),
+  	'#type' => 'textfield',
+    '#required' => TRUE,
+    '#default_value' => $email,
+  );
+  $form['reason'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Reason for unsubscribing'),
+    '#rows' => 4,
+    '#cols' => 40,
+    '#resizable' => FALSE,
+    '#description' => t('We are sorry you are no longer interested in receiving our newsletters.  We would be grateful if you could tell us why.'),
+  );
+  $form['unsubscribe'] = array(
+    '#type' => 'submit',
+    '#value' => t('Unsubscribe'),
+  );
+  return $form;
+}
+
+function phplist_unsubscribe_form_validate($form_id, $form_values) {
+  if (! valid_email_address($form_values['mail'])) {
+    form_set_error('mail', t('Please enter a valid email address.'));
+  }
+  
+  // Check this email address doesn't belong to a Drupal user
+  if (user_load(array('mail' => $form_values['mail']))) {
+    drupal_set_message(t('This email address belongs to a registered account.  Please login to manage your subscriptions.'));
+    drupal_goto('newsletters');
+  }
+}
+
+function phplist_unsubscribe_form_submit($form_id, $form_values) {
+  $data = array(
+    'unsubscribeemail' => $form_values['mail'],
+    'unsubscribereason' => $form_values['reason'],
+    'unsubscribe' => 'Continue',
+  );
+  
+  $postdata = '';
+  foreach ($data as $key => $val) {
+    $postdata .= ($postdata ? '&' : '') . urlencode($key) .'='. urlencode($val);
+  }
+  
+  $subscribe_url = url(variable_get('phplist_subscribe_url', 'lists'), 'p=unsubscribe', NULL, TRUE);
+  $headers = array('Content-Type' => 'application/x-www-form-urlencoded');
+  $result = drupal_http_request($subscribe_url, $headers, 'POST', $postdata);
+  
+  if ($result->code != 200 || strpos($result->data, t('You have been unsubscribed')) === FALSE) {
+    drupal_set_message(t('Oops, you have not been unsubscribed; please contact a site administrator.'));
+  }
+  else {
+    drupal_set_message(t('You have been unsubscribed from all newsletters and you will shortly receive email confirmation.'));
+  }
+}
+
+function phplist_confirm_subscription() {
+  $uid = isset($_GET['uid']) ? $_GET['uid'] : '';
+
+  // Pass through to PHPlist installation
+  $confirm_url = url(variable_get('phplist_subscribe_url', 'lists'), array('query' => 'p=confirm&uid='. $uid));
+
+  $result = drupal_http_request($confirm_url);
+
+  if ($result->code != 200) {
+    // Something went wrong at the network level
+    $form['info'] = array(
+      '#type' => 'item',
+      '#title' => t('Error with confirmation'),
+      '#value' => t('Oops, you have not been confirmed; please contact a site administrator.'),
+    );
+  }
+  elseif (strpos($result->data, 'request for confirmation was not recognised') > 0) {
+    // Invalid uid
+    $form['info'] = array(
+      '#type' => 'item',
+      '#title' => t('Problem with confirmation'),
+      '#value' => t('Sorry, your request for confirmation was not recognised. 
+		Please make sure to use the full web address as mentioned in the email that you received. 
+		Sometimes this web address wraps onto multiple lines.'),
+    );
+  }
+  elseif (strpos($result->data, 'Thank you for confirming ') > 0) {
+    // All ok
+    $form['info'] = array(
+      '#type' => 'item',
+      '#title' => t('Confirmation confirmed'),
+      '#value' => t('Thank you. Your subscription is now confirmed and activated.'),
+    );
+  }
+  
+  return $form;
+}
+
+/**
+ * Get a private token used to protect links from CSRF attacks.
+ * "Borrowed" from 5 Star module :D
+ */
+function phplist_get_token($value) {
+  global $user;
+
+  // Anonymous users don't get a session ID, which breaks page caching.
+  $session_id = $user->uid ? session_id() : '';
+  $private_key = drupal_get_private_key();
+  return md5($session_id . $value . $private_key);
+}
+
+/**
+ * Check to see if a token value matches the specified node.
+ * "Borrowed" from 5 Star module :D
+ */
+function phplist_check_token($token, $value) {
+  return phplist_get_token($value) == $token;
+}

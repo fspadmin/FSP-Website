@@ -1,0 +1,45 @@
+<?php
+
+// $Id: upload_image.install,v 1.6 2007/08/29 02:48:16 drewish Exp $
+
+function upload_image_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {upload_images} (
+                  nid int(10) unsigned NOT NULL default '0',
+                  fid int(10) unsigned NOT NULL default '0',
+                  oid int(10) unsigned NOT NULL default '0',
+                  PRIMARY KEY (nid),
+                  KEY oid (oid)
+                ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {upload_images} (
+                  nid integer NOT NULL default 0,
+                  fid integer NOT NULL default 0,
+                  oid integer NOT NULL default 0,
+                  PRIMARY KEY (nid)
+                ) ; ");
+      db_query("CREATE INDEX {upload_images}_idx ON {upload_images} (oid) ;");
+      break;
+  }
+}
+
+function upload_image_update_1() {
+  return _system_update_utf8(array('upload_image'));
+}
+
+/**
+* Implementation of hook_uninstall().
+*/
+function upload_image_uninstall() {
+  db_query('DROP TABLE {upload_images}');
+  global $conf;
+
+  db_query("DELETE FROM {variable} WHERE name LIKE 'upload_image_create_%'");
+  db_query("DELETE FROM {variable} WHERE name LIKE 'upload_image_delete_%'");
+  cache_clear_all('variables', 'cache');
+
+  unset($conf[$name]);
+}

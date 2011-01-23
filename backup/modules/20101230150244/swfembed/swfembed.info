@@ -1,0 +1,13 @@
+;$Id: swfembed.info,v 1.1 2009/03/18 20:27:12 mbutcher Exp $
+
+name = SWF Embed
+description = Add SWF (ShockWave Flash) files to your site.
+core = 6.x
+php = 5.x
+
+; Information added by drupal.org packaging script on 2009-11-06
+version = "6.x-1.1"
+core = "6.x"
+project = "swfembed"
+datestamp = "1257544303"
+

@@ -1,0 +1,8 @@
+.terms-text {
+  border: 1px solid #D2E6F3;
+  height: 100px;
+  overflow: auto;
+  padding: 5px;
+  margin: 0 0 10px 0;
+  display: block;
+}

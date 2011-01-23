@@ -1,0 +1,750 @@
+<?php
+// $Id: luceneapi.test,v 1.1.2.8 2009/11/10 00:40:09 cpliakas Exp $
+
+/**
+ * @file
+ * Unit tests for Search Lucene API.  The Zend Framework components are
+ * already heavily tested, to these tests focus on the API functions.
+ *
+ * @ingroup luceneapi
+ */
+
+/**
+ * Base class for Search Lucene API tests.
+ */
+class luceneapiWebTestCase extends DrupalWebTestCase {
+
+  /**
+   * Implementation setUp().
+   */
+  public function setUp() {
+    parent::setUp('search', 'luceneapi', 'luceneapi_test');
+    variable_set('luceneapi_test:index_path', file_directory_path() .'/luceneapi_test');
+    variable_set('luceneapi_test:caching_enabled', 0);
+    luceneapi_module_list(FALSE, TRUE);
+  }
+
+  /**
+   * Implementation tearDown().
+   */
+  public function tearDown() {
+    luceneapi_index_close('luceneapi_test');
+    parent::tearDown();
+  }
+
+  /**
+   * Asserts that an index object was created.
+   *
+   * @param $index
+   *   A mixed value containing the variable being tested.
+   * @return
+   *   A boolean flagging the success of the test.
+   */
+  public function assertIndexObject($index) {
+    $message = t('A call to luceneapi_index_open() returns an index object.');
+    $class = 'LuceneAPI_Search_Lucene_Proxy';
+    return $this->assertTrue(($index instanceof $class), $message, 'Index creation');
+  }
+
+  /**
+   * Asserts that a term object was created.
+   *
+   * @param $term
+   *   A mixed value containing the variable to test.
+   * @return
+   *   A boolean flagging the success of the test.
+   */
+  public function assertTermObject($term) {
+    $class = 'Zend_Search_Lucene_Index_Term';
+    $message = t('An %class object was returned.', array('%class' => $class));
+    return $this->assertTrue(($term instanceof $class), $message, 'Query API');
+  }
+
+  /**
+   * Asserts the appropriate query object was returned.
+   *
+   * @param $query
+   *   A mixed value containing the variable to test.
+   * @param $type
+   *   A string containing the query type that $query should be.
+   * @param $message
+   *   A string containing the test message.
+   * @return
+   *   A boolean flagging the success of the test.
+   */
+  public function assertQueryObject($query, $type, $message = NULL) {
+    $class = sprintf('Zend_Search_Lucene_Search_Query_%s', $type);
+    if (NULL === $message) {
+      $message = t('An %class query object was returned.', array('%class' => $class));
+    }
+    return $this->assertTrue(($query instanceof $class), $message, 'Query API');
+  }
+
+  /**
+   * Returns link to an issue in the queue.
+   *
+   * @param $number
+   *   An integer containing the issue number.
+   * @return
+   *   A string containing the formatted link.
+   */
+  public function getIssueLink($number) {
+    $text = sprintf('#%d', $number);
+    $path = sprintf('http://drupal.org/node/%d', $number);
+    return l($text, $path, array('attributes' => array('target' => '_blank')));
+  }
+
+  /**
+   * Opens an index, throws Exception on failure.
+   *
+   * @return
+   *   A LuceneAPI_Search_Lucene_Proxy object, FALSE on failure.
+   * @throws Exception
+   */
+  protected function _indexOpen() {
+    if (!$index = luceneapi_index_open('luceneapi_test', $errstr)) {
+      throw new Exception(t('Error opening index: '. $errstr));
+    }
+    return $index;
+  }
+
+  /**
+   * Helper method for generating snippets of content.  Stolen from the
+   * D7 search tests.
+   *
+   * Generated items to test against:
+   *   1  ipsum
+   *   2  dolore sit
+   *   3  sit am ut
+   *   4  am ut enim am
+   *   5  ut enim am minim veniam
+   *   6  enim am minim veniam es cillum
+   *   7  am minim veniam es cillum dolore eu
+   */
+  protected function _getText($n) {
+    $words = explode(' ', "Ipsum dolore sit am. Ut enim am minim veniam. Es cillum dolore eu.");
+    return join(' ', array_slice($words, $n - 1, $n));
+  }
+
+  /**
+   * Populates a test index.
+   */
+  protected function _setUp(LuceneAPI_Search_Lucene_Proxy $index) {
+    for ($i = 1; $i <= 7; ++$i) {
+      $data = array(
+        'unique_id' => $i,
+        'contents' => $this->_getText($i),
+      );
+      $document = luceneapi_document_get();
+      luceneapi_field_add($document, 'keyword', 'unique_id', $data['unique_id'], TRUE);
+      luceneapi_field_add($document, 'text', 'contents', $data['contents'], TRUE);
+      luceneapi_document_add($index, $document, $data, TRUE);
+    }
+    luceneapi_index_commit($index, TRUE);
+  }
+
+  /**
+   * Adds a document to the index.
+   *
+   * @param $ids
+   *   An integer containing a unique ID or an array of IDs.
+   * @return
+   *   A LuceneAPI_Search_Lucene_Proxy object.
+   * @throws Exception
+   */
+  protected function _documentAdd($ids) {
+    $index = $this->_indexOpen();
+    if (!is_array($ids)) {
+      $ids = array($ids);
+    }
+
+    // adds documents to the index
+    foreach ($ids as $id) {
+      $document = luceneapi_document_get();
+      luceneapi_field_add($document, 'keyword', 'unique_id', $id, TRUE);
+      luceneapi_document_add($index, $document, $id, TRUE);
+    }
+
+    // commits changes, returns the index object
+    luceneapi_index_commit($index, TRUE);
+    return $index;
+  }
+}
+
+/**
+ * Makes sure API functions work as expected.
+ */
+class luceneapiAPITestCase extends luceneapiWebTestCase {
+
+  /**
+   * Returns information about the tests.
+   *
+   * @return
+   *   An array of test information.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'API Functions',
+      'description' => 'Ensures that API functions work correcty.',
+      'group' => 'Search Lucene API',
+    );
+  }
+
+  /**
+   * Makes sure luceneapi_module_list() works as expected.
+   */
+  public function testLuceneAPIModuleList() {
+    // makes sure module list is returned
+    $modules = luceneapi_module_list();
+    $expected = array('luceneapi_test');
+    $message = t('List of modules that implement hook_luceneapi_index() returned.');
+    $this->assertEqual($modules, $expected, $message, 'API Functions');
+
+    // makes sure module list with index paths are returnes
+    $paths = luceneapi_module_list(TRUE);
+    $expected = array('luceneapi_test' => file_directory_path() .'/luceneapi_test');
+    $message = t('List of modules that implement hook_luceneapi_index() and index paths returned.');
+    $this->assertEqual($paths, $expected, $message, 'API Functions');
+
+    // disables module to test static
+    module_disable(array('luceneapi_test'));
+
+    // makes sure module list is returned
+    $modules = luceneapi_module_list();
+    $expected = array('luceneapi_test');
+    $message = t('List of modules is statically cached within hook_luceneapi_index().');
+    $this->assertEqual($modules, $expected, $message, 'API Functions');
+
+    // tests resetting the static
+    $modules = luceneapi_module_list(FALSE, TRUE);
+    $expected = array();
+    $message = t('Static reset in hook_luceneapi_index().');
+    $this->assertEqual($modules, $expected, $message, 'API Functions');
+  }
+
+  /**
+   * Tests the luceneapi_search_executed() function.
+   */
+  public function testLuceneAPISearchExecuted() {
+    luceneapi_search_executed('luceneapi_test');
+    $module = luceneapi_search_executed();
+    $message = t('Correct module returned by luceneapi_search_executed().');
+    $this->assertEqual($module, 'luceneapi_test', $message, 'API Functions');
+  }
+
+  /**
+   * Tests the luceneapi_search_executed() function.
+   */
+  public function testLuceneAPIIndexTypeGet() {
+    $type = luceneapi_index_type_get('luceneapi_test');
+    $message = t('Correct type returned by luceneapi_index_type_get().');
+    $this->assertEqual($type, 'text', $message, 'API Functions');
+  }
+
+}
+
+/**
+ * Tests bugs that have shown up in different environments.
+ */
+class luceneapiEnvironmentTestCase extends luceneapiWebTestCase {
+
+  /**
+   * Returns information about the tests.
+   *
+   * @return
+   *   An array of test information.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Environment',
+      'description' => 'Tests environment factors that have caused bugs in the past.',
+      'group' => 'Search Lucene API',
+    );
+  }
+
+  /**
+   * Tests encoding bug that prevents anything from being indexed.
+   *
+   * @see http://drupal.org/node/539472
+   */
+  public function testEncoding() {
+    $output = iconv('ISO-8859-1', LUCENEAPI_ENCODING, 'test');
+    $message = t('Encoding passed to iconv() is valid. !link', array(
+      '!link' => $this->getIssueLink(539472)
+    ));
+    $this->assertTrue(!empty($output), $message, 'Environment');
+  }
+
+  /**
+   * Autoload callback must ignore non-Zend classes otherwise there are
+   * compatibility issues with projects such as Views.
+   *
+   * @see http://drupal.org/node/391162
+   */
+  public function testAutoloadCallback() {
+    luceneapi_autoload_callback('Non_Zend_Class');
+    $message = t('Autoload implementation functioning correctly. !link', array(
+      '!link' => $this->getIssueLink(391162)
+    ));
+    $this->pass($message, 'Environment');
+  }
+}
+
+/**
+ * Tests index functions.
+ */
+class luceneapiIndexTestCase extends luceneapiWebTestCase {
+
+  /**
+   * Returns information about the tests.
+   *
+   * @return
+   *   An array of test information.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Index functions',
+      'description' => 'Tests the creation of Lucene indexes and basic index functions.',
+      'group' => 'Search Lucene API',
+    );
+  }
+
+  /**
+   * Tests creating and opening an index.
+   */
+  public function testIndexOpen() {
+
+    // make sure $errstr is normalized to a string
+    $errstr = array();
+
+    // tests opening the index
+    $index1 = luceneapi_index_open('luceneapi_test', $errstr);
+    $this->assertIndexObject($index1);
+    $this->assertTrue(is_string($errstr), t('Error string parameter normalized to a string.'), 'Error handling');
+    $this->assertTrue(empty($errstr), t('No error message returned on index creation.'), 'Error handling');
+
+    // opening the index again should return the same object
+    $index2 = $this->_indexOpen();
+    $message = t('A second call to luceneapi_index_open() returns the same object.');
+    $this->assertIdentical($index1, $index2, $message, 'Index creation');
+  }
+
+  /**
+   * Tests opening an invalid index.
+   */
+  public function testIndexOpenError() {
+    $index = luceneapi_index_open('bad_index', $errstr);
+
+    // makes sure $index is FALSE
+    $this->assertFalse($index, t('FALSE returned on error opening index.'), 'Error handling');
+
+    // ensures an error message is returned
+    $message = t('Error message was returned on failure to open the index.');
+    $this->assertTrue(!empty($errstr), $message, 'Error handling');
+  }
+
+  /**
+   * Tests closing and index.
+   */
+  public function testIndexClose() {
+    // opens index so we have an object to compare
+    $index1 = $this->_indexOpen();
+
+    // closes the index, then opens a new one
+    luceneapi_index_close('luceneapi_test');
+    $index2 = $this->_indexOpen();
+
+    // opening an index after closing it should yield an object different than the original
+    $message = t('Opening the default connection after it is closed returns a new object.');
+    $this->assertNotIdentical($index1, $index2, $message, 'Index creation');
+  }
+
+  /**
+   * Tests retrieving the index size.
+   */
+  public function testIndexSize() {
+
+    // gets ids, real index size is number of IDs
+    $ids = range(1, mt_rand(2, 10));
+    $real_size = count($ids);
+
+    // adds documents to the index, makes sure we get the correct size
+    $index = $this->_documentAdd($ids);
+    $calculated_size = luceneapi_index_size_get($index);
+
+    $message = t('Number of documents in the index can be retrieved.');
+    $this->assertEqual($real_size, $calculated_size, $message, 'Index statistics');
+  }
+
+  /**
+   * Tests deleting documents by the document's unique ID.
+   */
+  public function testDocumentDeleteById() {
+
+    // adds four documents to the index
+    $ids = range(1, 4);
+    $index = $this->_documentAdd($ids);
+
+    // removes one of the Ids.
+    $id = mt_rand(1, 4);
+    luceneapi_document_delete($index, $id, 'unique_id', array(), TRUE);
+    luceneapi_index_commit($index, TRUE);
+
+    // makes sure there are three documents left
+    $size = luceneapi_index_size_get($index, FALSE, TRUE);
+    $this->assertEqual(3, $size, t('Document deleted by unique key in a field.'), 'Index operations');
+  }
+
+  /**
+   * Tests deleting documents by items matched by a Lucene query.
+   */
+  public function testDocumentDeleteByQuery() {
+
+    // adds four documents to the index
+    $ids = range(1, 4);
+    $index = $this->_documentAdd($ids);
+
+    // builds query to remove two documents
+    if ($query = luceneapi_query_get('multiterm')) {
+      luceneapi_term_add($query, luceneapi_term_get('2', 'unique_id', TRUE), 'neither', TRUE);
+      luceneapi_term_add($query, luceneapi_term_get('3', 'unique_id', TRUE), 'neither', TRUE);
+    }
+    else {
+      throw new LuceneAPI_Exception(t(
+        'Error instantiating multiterm query object.'
+      ));
+    }
+
+    // removes documents by those matching the query
+    luceneapi_document_delete($index, $query, 'unique_id', array(), TRUE);
+    luceneapi_index_commit($index, TRUE);
+
+    // makes sure there are three documents left
+    $size = luceneapi_index_size_get($index, FALSE, TRUE);
+    $this->assertEqual(2, $size, t('Document deleted by Lucene query.'), 'Index operations');
+  }
+
+  /**
+   * Tests wiping the entire index.
+   */
+  public function testIndexWipe() {
+
+    // adds four documents to the index
+    $ids = range(1, 4);
+    $index = $this->_documentAdd($ids);
+
+    // wipes the index
+    luceneapi_index_wipe($index);
+
+    // makes sure there aren't any documents left
+    $size = luceneapi_index_size_get($index, FALSE, TRUE);
+    $this->assertEqual(0, $size, t('Wiping the index removes all the documents.'), 'Index operations');
+  }
+}
+
+/**
+ * Tests operations relating to fields.
+ */
+class luceneapiFieldTestCase extends luceneapiWebTestCase {
+
+  /**
+   * Returns information about the tests.
+   *
+   * @return
+   *   An array of test information.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Lucene documents',
+      'description' => 'Tests creation of and adding fields to Lucene document objects.',
+      'group' => 'Search Lucene API',
+    );
+  }
+
+  /**
+   * Makes sure we get a document object.
+   */
+  public function testDocumentGet() {
+    $document = luceneapi_document_get();
+    $message = t('%class object returned.', array('%class' => 'Zend_Search_Lucene_Document'));
+    $this->assertTrue(($document instanceof Zend_Search_Lucene_Document), $message, 'Lucene document');
+  }
+
+  /**
+   * Tests adding a fields to a document.
+   */
+  public function testFieldAdd() {
+    $document = luceneapi_document_get();
+
+    // attempts to add valid types to the index
+    $types = array('keyword', 'unindexed', 'binary', 'text', 'unstored');
+    foreach ($types as $type) {
+
+      // adds a random piece of text to the field, adds field to document
+      $field = sprintf('keyword_%s', $type);
+      $text  = $this->randomName(8, '');
+      $added = luceneapi_field_add($document, $type, $field, $text);
+
+      // verifies that the field was added by retrieving value from document object
+      $success = ($added) ? $document->getFieldValue($field) == $text : FALSE;
+
+      $message = t(
+        'Field of type %type successfully added to the document',
+        array('%type' => $type)
+      );
+      $this->assertTrue($success, $message, 'Lucene field');
+    }
+  }
+
+  /**
+   * Tests error handling of fields.
+   */
+  public function testFieldAddError() {
+    $document = luceneapi_document_get();
+    $success = luceneapi_field_add($document, 'bad_name', 'bad_name', 'text');
+    $message = t('Adding an invalid field throws an error.');
+    $this->assertFalse($success, $message, 'Error handling');
+  }
+
+  /**
+   * Tests adding a document to the index.
+   */
+  public function testDocumentAdd() {
+    $index = $this->_indexOpen();
+    $document = luceneapi_document_get();
+    luceneapi_field_add($document, 'keyword', 'unique_id', '1', TRUE);
+
+    // tests adding a document to the index
+    $added = luceneapi_document_add($index, $document, '1');
+    $message = t('Document successfully added to the index.');
+    $this->assertTrue($added, $message, 'Index operations');
+  }
+}
+
+/**
+ * Tests the query API.
+ */
+class luceneapiQueryAPI extends luceneapiWebTestCase {
+
+  /**
+   * Implementtion of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Query API',
+      'description' => 'Tests programatic creation of search queries.',
+      'group' => 'Search Lucene API',
+    );
+  }
+
+  /**
+   * Tests returning a field object.
+   */
+  public function testTermObject() {
+    $term = luceneapi_term_get('text');
+    $this->assertTermObject($term);
+  }
+
+  /**
+   * Tests instaltiating a boolean query.
+   */
+  public function testBooleanQuery() {
+    $query = luceneapi_query_get('boolean');
+    $this->assertQueryObject($query, 'boolean');
+  }
+
+  /**
+   * Tests instaltiating an empty query.
+   */
+  public function testEmptyQuery() {
+    $query = luceneapi_query_get('empty');
+    $this->assertQueryObject($query, 'empty');
+  }
+
+  /**
+   * Tests instaltiating a fuzzy query.
+   */
+  public function testFuzzyQuery() {
+    $query = luceneapi_query_get('fuzzy', 'text');
+    $this->assertQueryObject($query, 'fuzzy');
+  }
+
+  /**
+   * Tests instantiating an insignificant query.
+   */
+  public function testInsignificantQuery() {
+    $query = luceneapi_query_get('insignificant');
+    $this->assertQueryObject($query, 'insignificant');
+  }
+
+  /**
+   * Tests instantiating a multiterm query.
+   */
+  public function testMultitermQuery() {
+    $term1 = luceneapi_term_get('text1', NULL, TRUE);
+    $term2 = luceneapi_term_get('text2', NULL, TRUE);
+    $query = luceneapi_query_get('multiterm', array($term1, $term2));
+    $this->assertQueryObject($query, 'multiterm');
+  }
+
+  /**
+   * Tests instantiating a phrase query.
+   */
+  public function testPhraseQuery() {
+    $query = luceneapi_query_get('phrase', array('term1', 'term2'), array(0, 1));
+    $this->assertQueryObject($query, 'phrase');
+  }
+
+  /**
+   * Tests instantiating a range query.
+   */
+  public function testRangeQuery() {
+    $query = luceneapi_query_get('range', time() - 10, time());
+    $this->assertQueryObject($query, 'range');
+  }
+
+  /**
+   * Tests instantiating a term query.
+   */
+  public function testTermQuery() {
+    $query = luceneapi_query_get('term', 'text');
+    $this->assertQueryObject($query, 'term');
+  }
+
+  /**
+   * Tests instantiating a wildcard query.
+   */
+  public function testWildcardQuery() {
+    $query = luceneapi_query_get('wildcard', 'text*');
+    $this->assertQueryObject($query, 'wildcard');
+  }
+
+  /**
+   * Tests query parsing.
+   */
+  public function testQueryParse() {
+    $string = 'test test* "test phrase" date:[20020101 TO 20030101] (test1 test2) roam~';
+    $query = luceneapi_query_parse($string);
+
+    // makes sure the string is parsed into a boolean query.
+    $message = t('String parsed into a %type query.', array('%type' => 'boolean'));
+    if ($this->assertQueryObject($query, 'boolean', $message)) {
+      $message = 'A %type query was extracted from the string.';
+      foreach ($query->getSubqueries() as $key => $subquery) {
+        switch ($key) {
+          case 0:
+            $type = 'term';
+            break;
+          case 1:
+            $type = 'wildcard';
+            break;
+          case 2:
+            $type = 'phrase';
+            break;
+          case 3:
+            $type = 'range';
+            break;
+          case 4:
+            $type = 'boolean';
+            break;
+          case 5:
+            $type = 'fuzzy';
+            break;
+          default:
+            continue;
+            break;
+        }
+        $message = t(
+          'A %type query was extracted from the string.',
+          array('%type' => $type)
+        );
+        $this->assertQueryObject($subquery, $type, $message);
+      }
+    }
+  }
+}
+
+/**
+ * Tests basic search functionality.
+ */
+class luceneapiSearchTestCase  extends luceneapiWebTestCase {
+
+  /**
+   * Implementtion of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Search',
+      'description' => 'Tests basic search functionality.',
+      'group' => 'Search Lucene API',
+    );
+  }
+
+  /**
+   * Builds index.
+   */
+  /*
+  public function testLuceneAPIFind() {
+    $index = $this->_indexOpen();
+    $this->_setUp($index);
+
+    $queries = array(
+      // Simple AND queries.
+      'ipsum' => array(1),
+      'enim' => array(4, 5, 6),
+      'xxxxx' => array(),
+      'enim minim' => array(5, 6),
+      'enim xxxxx' => array(),
+      'dolore eu' => array(7),
+      'dolore xx' => array(),
+      'ut minim' => array(5),
+      'xx minim' => array(),
+      'enim veniam am minim ut' => array(5),
+      // Simple OR queries.
+      'dolore OR ipsum' => array(1, 2, 7),
+      'dolore OR xxxxx' => array(2, 7),
+      'dolore OR ipsum OR enim' => array(1, 2, 4, 5, 6, 7),
+      'ipsum OR dolore sit OR cillum' => array(2, 7),
+      'minim dolore OR ipsum' => array(7),
+      'dolore OR ipsum veniam' => array(7),
+      'minim dolore OR ipsum OR enim' => array(5, 6, 7),
+      'dolore xx OR yy' => array(),
+      'xxxxx dolore OR ipsum' => array(),
+      // Negative queries.
+      'dolore -sit' => array(7),
+      'dolore -eu' => array(2),
+      'dolore -xxxxx' => array(2, 7),
+      'dolore -xx' => array(2, 7),
+      // Phrase queries.
+      '"dolore sit"' => array(2),
+      '"sit dolore"' => array(),
+      '"am minim veniam es"' => array(6, 7),
+      '"minim am veniam es"' => array(),
+      // Mixed queries.
+      '"am minim veniam es" OR dolore' => array(2, 6, 7),
+      '"minim am veniam es" OR "dolore sit"' => array(2),
+      '"minim am veniam es" OR "sit dolore"' => array(),
+      '"am minim veniam es" -eu' => array(6),
+      '"am minim veniam" -"cillum dolore"' => array(5, 6),
+      '"am minim veniam" -"dolore cillum"' => array(5, 6, 7),
+      'xxxxx "minim am veniam es" OR dolore' => array(),
+      'xx "minim am veniam es" OR dolore' => array()
+    );
+
+    foreach ($queries as $string => $results) {
+      if (!$query = luceneapi_query_parse($string)) {
+        $this->fail('Error parsing search query.', 'Query API');
+        return;
+      }
+      $hits = luceneapi_find($index, $query);
+      $found = array();
+      foreach ($hits as $hit) {
+        $found[] = $hit->unique_id;
+      }
+      sort($found);
+      sort($results);
+      $this->assertEqual($found, $results, "Query matching '$string'");
+    }
+  }
+  */
+}

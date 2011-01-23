@@ -1,0 +1,27 @@
+/* $Id $
+
+/**
+ * @file
+ * CSS for Comment Box.
+ */
+
+#comment-box-settings .form-item label {
+  clear: left;
+  float: left;
+  /* If you have a long content type name, just change this width. */
+  width: 8em;
+}
+
+#comment-box-settings .form-item input {
+  clear: right;
+  float: left;
+  text-align: right;
+  width: 3em;
+}
+
+/* The following is a sample of marking up the textarea further.
+   The class ".comment-box-page" can be changed to each content type. */
+/* form#comment-form .comment-box-page textarea#edit-comment {
+  font-size: 130%;
+  font-family: "Courier New", fixed;
+} /* */

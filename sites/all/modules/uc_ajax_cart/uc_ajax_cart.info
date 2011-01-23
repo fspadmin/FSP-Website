@@ -1,0 +1,14 @@
+; $Id: uc_ajax_cart.info,v 1.3.6.15 2010/05/01 12:42:30 erikseifert Exp $
+name = Ajax Driven Cart
+description = Ajax Driven Cart
+package = "Ubercart - extra"
+core = 6.x
+version = 2.0-alpha8
+dependencies[] = uc_cart
+
+; Information added by drupal.org packaging script on 2010-11-12
+version = "6.x-2.x-dev"
+core = "6.x"
+project = "uc_ajax_cart"
+datestamp = "1289564621"
+

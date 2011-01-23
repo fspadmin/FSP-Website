@@ -1,0 +1,21 @@
+<?php
+// $Id: luceneapi_test.module,v 1.1.2.1 2009/09/17 01:21:16 cpliakas Exp $
+
+/**
+ * @file
+ * Module that supports unit testing.
+ *
+ * @ingroup luceneapi
+ */
+
+/**
+ * Implementation of hook_luceneapi_index().
+ */
+function luceneapi_test_luceneapi_index($op) {
+  switch ($op) {
+    case 'path':
+      return luceneapi_variable_get('luceneapi_test', 'index_path');
+    case 'type':
+      return 'text';
+  }
+}

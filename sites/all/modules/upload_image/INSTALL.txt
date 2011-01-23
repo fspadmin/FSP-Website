@@ -1,0 +1,3 @@
+Enable image module and activate upload module from Drupal core, then upload_image.
+
+$Id: INSTALL.txt,v 1.3 2006/06/28 01:42:20 drewish Exp $

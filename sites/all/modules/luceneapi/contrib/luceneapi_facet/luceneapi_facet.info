@@ -1,0 +1,14 @@
+; $Id: luceneapi_facet.info,v 1.1.2.5 2009/11/15 17:54:37 cpliakas Exp $
+name = "Search Lucene Facets"
+description = "Adds faceted searching to Search Lucene API modules."
+dependencies[] = search
+dependencies[] = luceneapi
+package = "Search Lucene API"
+core = 6.x
+php = 5.1.6
+; Information added by drupal.org packaging script on 2010-07-13
+version = "6.x-2.4"
+core = "6.x"
+project = "luceneapi"
+datestamp = "1279057209"
+

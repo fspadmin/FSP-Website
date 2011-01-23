@@ -1,0 +1,83 @@
+# $Id: ja.po,v 1.1.2.2 2010/01/04 05:12:25 frjo Exp $
+# -----------------------------------------------------------------------------
+# Japanese translation of Drupal (adminblock.module)
+#
+# Copyright (c) 2006-2007  Drupal Japan  ( http://drupal.jp/ )  /
+#                          Drupal Nippon ( http://drupon.org/ ) /
+#                          Takafumi      ( jp.drupal@imagine **reverse order**)
+#
+# Generated from file:
+#  adminblock.module,v 1.14 2006/12/26 21:28:59 frjo
+#  adminblock.info,v 1.1 2006/11/05 12:26:14 frjo
+#
+# -----------------------------------------------------------------------------
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2007-04-27 01:59+0900\n"
+"Last-Translator: Takafumi <jp.drupal@imagine **reverse order**>\n"
+"Language-Team: Drupal Japan / Drupal Nippon\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: adminblock.module:24;72
+msgid "Admin block"
+msgstr "アドミンブロック"
+
+#: adminblock.module:40
+#msgid "node"
+#msgstr "ノード"
+
+#: adminblock.module:40;54;68
+#msgid "edit"
+#msgstr "編集"
+
+#: adminblock.module:40;54;68
+#msgid "delete"
+#msgstr "削除"
+
+#: adminblock.module:54
+msgid "By @user"
+msgstr "投稿：@user"
+
+#: adminblock.module:74
+msgid "Comments queue"
+msgstr "コメントキュー"
+
+#: adminblock.module:75;79;83
+#msgid "more"
+#msgstr "続き..."
+
+#: adminblock.module:75
+msgid "Administer the approval queue"
+msgstr "承認キューを管理します"
+
+#: adminblock.module:78
+msgid "Content queue"
+msgstr "コンテンツキュー"
+
+#: adminblock.module:79
+msgid "Administer content"
+msgstr "コンテンツを管理します"
+
+#: adminblock.module:82
+msgid "Trackback queue"
+msgstr "トラックバックキュー"
+
+#: adminblock.module:83
+msgid "Administer trackbacks"
+msgstr "トラックバックを管理します"
+
+#: adminblock.info:0
+msgid "Admin Block"
+msgstr "アドミンブロック"
+
+#: adminblock.info:0
+msgid "Block that display the comments approval queue, the node moderation queue and the trackback queue."
+msgstr "コメント承認キュー、ノードモデレーションキュー、トラックバックキューを表示するブロックを提供します。"
+
+#: adminblock.info:0
+msgid "adminblock"
+msgstr "adminblock"
+

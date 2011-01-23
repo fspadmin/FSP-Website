@@ -1,0 +1,17 @@
+; $Id: dblog_common.info,v 1.1.2.1 2009/10/09 19:45:26 nancyw Exp $
+
+name = Database logging common
+description = Provides API support for other modules to enhance "Recent log" report page.
+core = 6.x
+version = 0.1
+package = Util
+
+; alternative confirm_from/JavaScript/none
+; format_minutes
+
+; Information added by drupal.org packaging script on 2010-10-28
+version = "6.x-3.0"
+core = "6.x"
+project = "util"
+datestamp = "1288295149"
+

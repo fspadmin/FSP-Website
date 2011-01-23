@@ -1,0 +1,91 @@
+<?php
+// $Id: luceneapi_facet.install,v 1.1.2.9 2009/10/19 21:55:44 cpliakas Exp $
+
+/**
+ * @file
+ * Installation functions for Search Lucene Facets.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function luceneapi_facet_install() {
+  $sql = "SELECT weight FROM {system} WHERE type = 'module' AND name = 'luceneapi'";
+  $weight = db_result(db_query($sql));
+
+  $sql = "UPDATE {system} SET weight = %d WHERE type = 'module' AND name = 'luceneapi_facet'";
+  db_query($sql, array($weight + 1));
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function luceneapi_facet_uninstall() {
+  // removes all variables that start with "luceneapi_facet:"
+  $result = db_query("SELECT name FROM {variable} WHERE name LIKE 'luceneapi_facet:%%'");
+  while ($row = db_fetch_object($result)) {
+    variable_del($row->name);
+  }
+}
+
+/**
+ * Implementation of hook_requirements().
+ */
+function luceneapi_facet_requirements($phase) {
+  // Ensure translations don't break at install time
+  $t = get_t();
+
+  // if requirements fail for Search Lucene API, this module will still get
+  // installed breaking the site.  This code double checks the requirements to
+  // get around this bug.  Requirements are only returned on failure.
+  // @see http://drupal.org/node/592182
+  // @see http://drupal.org/node/592800
+  if ('install' == $phase) {
+
+    // bails if Drupal is in the process of being installed
+    if (!function_exists('db_query') || (function_exists('install_verify_drupal') && !install_verify_drupal())) {
+      return array();
+    }
+
+    // makes sure path to luceneapi exists, formats path to "lib" dir
+    if ($luceneapi_path = drupal_get_path('module', 'luceneapi')) {
+      $lib_dir = sprintf('%s/lib', $luceneapi_path);
+    }
+    else {
+      return array(
+        'luceneapi_facet' => array(
+          'title' => t('Search Lucene Facets'),
+          'severity' => REQUIREMENT_ERROR,
+          'description' => t('Search Lucene Facets depends on Search Lucene API.'),
+        ),
+      );
+    }
+
+    // re-tests Search Lucene API requirements
+    if (!is_dir("$lib_dir/Zend") || !is_dir("$lib_dir/LuceneAPI") || !extension_loaded('iconv')) {
+      return array(
+        'luceneapi_facet' => array(
+          'title' => t('Search Lucene Facets'),
+          'severity' => REQUIREMENT_ERROR,
+          'description' => t('Search Lucene Facets depends on Search Lucene API.'),
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function luceneapi_facet_update_6201() {
+  $items = array();
+
+  // each module has it's own facet block now
+  $sql = 'UPDATE {blocks}'
+       ." SET delta = 'luceneapi_node'"
+       ." WHERE module = 'luceneapi_facet' AND delta = 'luceneapi_facet'";
+
+  $items[] = update_sql($sql);
+
+  return $items;
+}

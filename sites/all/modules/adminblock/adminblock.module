@@ -1,0 +1,83 @@
+<?php
+// $Id: adminblock.module,v 1.17.2.5 2010/03/02 21:23:00 frjo Exp $
+
+/**
+ * @file
+ * Author: Fredrik Jonsson fredrik at combonet dot se
+ * Enables admins to display a block with the comments approval queue,
+ * the node moderation queue and the trackback queue.
+ *
+ * The block will only show for users with
+ * "administer comments/nodes/trackback" privilages.
+ *
+ * If there are no comments to approve, no nodes to moderate
+ * and no trackbacks to approve the block will not show.
+ */
+
+/**
+ * Implementation of hook_block().
+ *
+ * $nlimit sets the number of comments, nodes and trackbacks to display
+ */
+function adminblock_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks[0]['info'] = t('Admin block');
+    return $blocks;
+  }
+  else if ($op == 'view') {
+    $nlimit = 10;
+    $items = array();
+    $items2 = array();
+    $items3 = array();
+
+    if (user_access('administer comments')) {
+      $result = db_query_range('SELECT c.timestamp, c.subject, c.cid, c.nid, n.title
+        FROM {comments} c
+        INNER JOIN {node} n ON c.nid = n.nid
+        WHERE c.status = 1
+        ORDER BY c.timestamp DESC ', 0, $nlimit);
+      $comment_delete_path = module_exists('mollom') && mollom_get_mode('comment_form') ? 'mollom/report/comment/' : 'comment/delete/';
+      while ($comment = db_fetch_object($result)) {
+        $items[] = check_plain($comment->subject) .' - '. format_date($comment->timestamp, 'medium') .'<br />['. l(t('node'), 'node/'. $comment->nid, array('fragment' => 'comment-'. $comment->cid, 'attributes' => array('title' => $comment->title))) .'] ['. l(t('edit'), 'comment/edit/'. $comment->cid) .'] ['. l(t('delete'), $comment_delete_path . $comment->cid) .']';
+      }
+    }
+
+    if (user_access('administer nodes')) {
+      $result2 = db_query_range('SELECT n.nid, n.title, n.type, n.changed, u.name, u.uid
+        FROM {node} n
+        INNER JOIN {users} u ON n.uid = u.uid
+        WHERE n.status = 0
+        ORDER BY n.changed DESC', 0, $nlimit);
+      while ($node = db_fetch_object($result2)) {
+        $node_delete_path = module_exists('mollom') && mollom_get_mode($node->type .'_node_form') ? 'mollom/report/node/'. $node->nid : 'node/'. $node->nid .'/delete';
+        $items2[] = check_plain($node->title) .' - '. format_date($node->changed, 'medium') .'<br />['. l(t('By @user', array('@user' => $node->name)), 'user/'. $node->uid) .'] ['. l(t('edit'), 'node/'. $node->nid .'/edit') .'] ['. l(t('delete'), $node_delete_path) .']';
+      }
+    }
+
+    if (module_exists('trackback') && user_access('administer trackbacks')) {
+      $result3 = db_query_range('SELECT t.created, t.subject, t.trid
+        FROM {trackback_received} t
+        WHERE t.status = 0
+        ORDER BY t.created DESC ', 0, $nlimit);
+      while ($trackback = db_fetch_object($result3)) {
+        $items3[] = check_plain($trackback->subject) .' - '. format_date($trackback->created, 'medium') .'<br />['. l(t('edit'), 'trackback/edit/'. $trackback->trid) .'] ['. l(t('delete'), 'trackback/delete/'. $trackback->trid) .']';
+      }
+    }
+
+    $block['subject'] = t('Admin block');
+    if ($items) {
+      $block['content'] = theme('item_list', $items, t('Comments queue'));
+      $block['content'] .= '<div class="more-link">'. l(t('more'), 'admin/content/comment/approval', array('attributes' => array('title' => t('Administer the approval queue')))) .'</div>';
+    }
+    if ($items2) {
+      $block['content'] .= theme('item_list', $items2, t('Content queue'));
+      $block['content'] .= '<div class="more-link">'. l(t('more'), 'admin/content/node', array('attributes' => array('title' => t('Administer content')))) .'</div>';
+    }
+    if ($items3) {
+      $block['content'] .= theme('item_list', $items3, t('Trackback queue'));
+      $block['content'] .= '<div class="more-link">'. l(t('more'), 'admin/content/trackback/list/approval', array('attributes' => array('title' => t('Administer trackbacks')))) .'</div>';
+    }
+
+    return $block;
+  }
+}

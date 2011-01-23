@@ -1,0 +1,12 @@
+$Id
+
+Ubercart Dependent Attributes 6.x-1.x, 2009-11-04
+-------------------------------------------------
+by AntoineSolutions: Initial commit.
+
+Bug Report #635090 by AntoineSolutions: Fixed attribute options not updating.
+  Fixed attribute/option ordering to match the product specific ordering of the
+  attributes.
+
+Bug Report #645992 by AntoineSolutions: Fixed errors when adding a product
+  without attributes to the cart.

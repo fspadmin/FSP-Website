@@ -1,0 +1,26 @@
+// $Id: CHANGELOG.TXT,v 1.6 2008/05/30 15:26:00 litwol Exp $
+
+Util 5.x-1.x, xxxx-xx-xx
+------------------------
+New features:
+#134472 by litwol: First release of static_resizeable plugin.
+#171303 by litwol: Modules page display how many modules are enabled out of
+  total (# of ##).
+Utility plugins can specify their own menu items through 'hook menu' setting.
+Plugin settings in admin/settings/util are displayed collapsed now.
+Allow to enable/disable individual plugins from admin/settings/util.
+
+
+Changes:
+Renamed util_run_utilities() to util_init_utilities().
+
+
+Fixed bugs:
+by sun: Fixed package information in .info file.
+#171381 by litwol: Fixed invalid argument warning.
+Added CHANGELOG.TXT.
+
+
+Util 5.x-1.0, 2007-08-09
+------------------------
+Initial release of Util.module.

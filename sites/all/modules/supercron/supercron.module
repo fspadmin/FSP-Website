@@ -1,0 +1,567 @@
+<?php
+
+// $Id: supercron.module,v 1.1.2.5 2009/06/15 06:55:20 63reasons Exp $
+
+/**
+* @file
+* The supercron module functions.
+*/
+
+define(SUPERCRON_INVOKE_ALL, 'admin/reports/status/run-supercron');
+
+// Variable constants; duplicating literals is an open invitation to bugs
+define(SUPERCRON_SAFETY_VARIABLE, 'supercron_safety');
+define(SUPERCRON_FIREWALL_ENABLED_VARIABLE, 'supercron_firewall_enabled');
+define(SUPERCRON_FIREWALL_MODE_VARIABLE, 'supercron_firewall_mode');
+define(SUPERCRON_THROTTLE_SUPPORT_VARIABLE, 'supercron_respond_to_throttling');
+define(SUPERCRON_SCRIPT_NAME, 'supercron.php');
+
+function supercron_menu() {
+  $items = array();
+  $items['admin/settings/supercron'] = array(
+    'title' => t('SuperCron'),
+    'description' => t('Configure how Cron behaves, which cron hooks are called and in what order, capture debugging information and parallelize tasks.'),    
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('supercron_settings'),
+    'access arguments' => array('access administration pages'),
+    );
+  $items['admin/settings/supercron/'] = array(
+    'title' => t('Settings'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+    );
+  $items['admin/settings/supercron/firewall'] = array(
+    'title' => t('Firewall'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('supercron_firewall_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_LOCAL_TASK,
+    'parent' => 'admin/settings/supercron'
+    );
+  $items['admin/settings/supercron/firewall/delete'] = array(
+    'page callback' => 'supercron_firewall_delete',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK
+    );
+  $items['admin/settings/supercron/output/%'] = array(
+    'title' => t('Cron output in module: '),
+    'page callback' => 'supercron_output',
+    'page arguments' => array(4),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+    );
+  
+  $items['admin/settings/supercron/exception/%'] = array(
+    'title' => t('Cron exceptions in module: '),
+    'page callback' => 'supercron_exception',
+    'page arguments' => array(4),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+    );
+  
+  $items['admin/settings/supercron/call/%/%'] = array(
+    'title' => t('Call individual cron handlers'),
+    'page callback' => 'supercron_invoke_one',
+    'page arguments' => array(4, 5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+    );
+  
+  $items[SUPERCRON_INVOKE_ALL] = array(
+    'page callback' => 'supercron_drupal_cron_run',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+    'file' => 'cron.inc',
+    );
+  
+  $items['admin/reports/status/run-cron'] = array(
+    'page callback' => 'supercron_drupal_cron_run',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+    'file' => 'cron.inc',
+    );
+  
+  return $items;
+}
+
+function supercron_theme() {
+  return array(
+    'supercron_settings' => array(
+      'arguments' => array('form' => NULL),
+      ),
+    'supercron_firewall_form' => array(
+      'arguments' => array('form' => NULL),
+      ),
+    );
+}
+
+function supercron_base_path()
+{
+  global $base_path;
+  return $_SERVER['DOCUMENT_ROOT'] . $base_path;
+}
+
+function supercron_get_script_URL()
+{
+  global $base_url;  
+  return $base_url .'/' . SUPERCRON_SCRIPT_NAME;
+}
+
+function supercron_get_script_path()
+{
+  return supercron_base_path() . SUPERCRON_SCRIPT_NAME;
+}
+
+
+function _supercron_format_seconds($value) {
+  if (is_null($value)) return '';
+  if (is_numeric($value)) $value = sprintf("%01.2f", (float)$value);
+  return (strlen($value) > 0) ? $value .' '. t('sec'): '';    
+}
+
+
+function supercron_help($path, $arg) {
+  switch ($path) {
+  case 'admin/settings/supercron':
+    $output = '<p>'. t('Here you can enable or disable parts of the cron process, change the order in which cron hooks are called, capture extraneous output or exceptions, measure performance and even make your cron tasks multithreaded.') .'</p>';
+    return $output;
+  case 'admin/settings/supercron/firewall':
+    $output = '<p>'. t('SuperCron sports a mini firewall that offers a way to limit access to your cron start-up file and thus limits the abilities of nefarious users to overload your site for a denial-of-service attack through cron.') .'</p>';
+    return $output;
+  }
+}
+
+function supercron_firewall_delete($id) {
+  db_query("DELETE FROM {supercron_ips} WHERE iid = %d", $id);
+  drupal_set_message('ip deleted.');
+  drupal_goto('admin/settings/supercron/firewall');
+}
+
+function supercron_firewall_form(&$form_state) {
+  $firewall_enabled = variable_get(SUPERCRON_FIREWALL_ENABLED_VARIABLE, FALSE);
+  $form['firewall_enable_field'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Firewall Status'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE
+    );
+  $form['firewall_enable_field']['firewall_enable'] = array(
+    '#type' => 'submit',
+    '#prefix' => '<div class="form-item"><label style="display:inline;font-size:120%;">' . t('The firewall is currently ') .
+    ($firewall_enabled?t('enabled') . '. ' . theme_image('misc/watchdog-ok.png', t('ok'), t('ok')):t('disabled') . '. ' . theme_image('misc/watchdog-error.png', t('error'), t('error'))),
+    '#suffix' => '</label></div>',
+    '#value' => $firewall_enabled?t('Disable'):t('Enable'),
+    '#submit' => array('supercron_firewall_enable'),
+    '#attributes' => array('style' => 'margin:0px;')
+    );
+  
+  if ($firewall_enabled)
+  {
+    $form['mode_field'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Firewall Mode'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE
+      );
+    $form['mode_field']['mode'] = array(
+      '#type' => 'radios',
+      '#title' => t('Firewall mode'),
+      '#default_value' => variable_get(SUPERCRON_FIREWALL_MODE_VARIABLE, 'only'),
+      '#options' => array(
+        'only' => t('Only Accept Calls From The Specified IP Addresses')
+        , 'except' => t('Accept Calls From Any IP Address Except The Specified IP Addresses')),
+      '#description' => t('Select the desired firewall mode.')
+      );
+    
+    
+    $options = array();
+    
+    $form['mode_field']['listing'] = array(
+      '#type' => 'markup',
+      );
+    
+    $form['mode_field']['insert'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Insert IP'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+      );
+    $form['mode_field']['insert']['ip'] = array(
+      '#type' => 'textfield',
+      '#title' => t('IP'),
+      '#description' => t('Some IP address like 192.168.1.2')
+      );
+    $form['mode_field']['insert']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Insert'),
+      '#submit' => array('supercron_firewall_add')
+      );
+    
+    $form['mode_field']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+      '#submit' => array('supercron_firewall_save')
+      );
+    
+    $result = db_query('SELECT * FROM {supercron_ips}');
+    while ($ip = db_fetch_object($result)) {
+      if ($firewall_enabled) {
+        $form[$ip->iid]['title'] = array('#value' => $ip->ip);
+        $form[$ip->iid]['delete'] = array('#value' => l(t('delete'), "admin/settings/supercron/firewall/delete/" . $ip->iid));
+      }
+      else {
+        $form[$ip->iid]['title'] = array('#value' => $ip->ip);
+        $form[$ip->iid]['delete'] = array('#value' => '<span style="text-decoration: line-through;">' . t('delete') . '</span>');
+      }
+    }
+    
+  }
+  return $form;
+}
+
+function supercron_firewall_add() {
+  db_query("INSERT INTO {supercron_ips} (ip) VALUES ('%s')", $_POST['ip']);
+  drupal_set_message("IP $_POST[ip] added.");
+}
+
+function supercron_firewall_enable() {
+  $enabled = variable_get(SUPERCRON_FIREWALL_ENABLED_VARIABLE, FALSE);
+  variable_set(SUPERCRON_FIREWALL_ENABLED_VARIABLE, !$enabled);
+  drupal_set_message('SuperCron firewall '. (!$enabled?t('enabled'):t('disabled')).'.');
+}
+function supercron_firewall_save() {
+  variable_set(SUPERCRON_FIREWALL_MODE_VARIABLE, $_POST['mode']);
+  drupal_set_message(t('SuperCron firewall mode changed.'));
+}
+
+function supercron_settings(&$form_state) {
+  
+  if (!file_exists(supercron_get_script_path())) drupal_set_message(t('The !script file should copied from the !here directory to !path; until that is done, your tasks will not execute when scheduled to.', array('!script' => SUPERCRON_SCRIPT_NAME, '!here' => supercron_base_path() . drupal_get_path('module', 'supercron'), '!path' => supercron_base_path())), 'warning');
+  
+  $modules = supercron_modules_list();
+  supercron_add_new_modules($modules);
+  $modules = supercron_modules_list_from_db();
+  
+  $form = array();
+  
+  $form['invoke-all']=array(
+    '#type' => 'markup',
+    '#prefix' => '<div>',
+    '#value' => l(t('Invoke All'), SUPERCRON_INVOKE_ALL),
+    '#suffix' => '</div>',
+    '#weight' => -1
+    );
+  
+  while ($row = db_fetch_object($modules)) {
+    $form['rows'][$row->id]['data']=array(
+      '#type' => 'value',
+      '#value' => $row->module_name,
+      );
+    
+    $form['rows'][$row->id]['call']=array(
+      '#type' => 'markup',
+      '#value' => l(t('Invoke'), 'admin/settings/supercron/call/'. $row->module_name .'/1')
+      );
+    
+    
+    $form['rows'][$row->id]['timestamp']=array(
+      '#type' => 'value',
+      '#value' => $row->timestamp==0 ? t('Never successfully ran') : strftime("%Y-%m-%d %H:%M:%S", $row->timestamp),
+      );
+    
+    if ($never_ran = $row->times_count==0)
+      $last_exec_interval = t('Never successfully ran');
+    else
+    $last_exec_interval = t('< 1 ');
+    $form['rows'][$row->id]['how_long_took']=array(
+      '#type' => 'value',
+      '#value' => $never_ran ? $last_exec_interval : _supercron_format_seconds(($row->times_count==0) ? $last_exec_interval : $row->last_exec_interval),
+      );
+    
+    $form['rows'][$row->id]['how_long_took_avg']=array(
+      '#type' => 'value',
+      '#value' => $never_ran ? $last_exec_interval : _supercron_format_seconds(($row->times_count==0) ? $last_exec_interval : sprintf("%01.2f", $row->total_exec_interval/$row->times_count)),
+      );
+    
+    $form['rows'][$row->id]['output_link']=array(
+      '#type' => 'markup',
+      '#value' => !empty($row->output) ? l(t('Output'), 'admin/settings/supercron/output/'. $row->id) : "",
+      );
+    
+    $module = db_result(db_query_range("SELECT module_name FROM {supercron_enabled_mods} WHERE id=%d", $row->id, 0, 1));
+    $result = db_query("SELECT * FROM {watchdog} WHERE type='cron exception' ORDER BY wid DESC");
+    
+    $act = FALSE;
+    while ($r = db_fetch_array($result)) {
+      $variables = unserialize($r["variables"]);
+      if ($variables["@module"]==$row->module_name) {
+        $act = TRUE;
+        break;
+      }
+    }
+    
+    $form['rows'][$row->id]['exception_link']=array(
+      '#type' => 'markup',
+      '#value' => l('Exceptions', 'admin/settings/supercron/exception/'. $row->id),
+      );
+    
+    $form['rows'][$row->id]['exception_link']=array(
+      '#type' => 'markup',
+      '#value' => $act ? l(t('Exceptions'), 'admin/settings/supercron/exception/'. $row->id) : "",
+      );
+    
+    $form['rows'][$row->id]['enabled-'. $row->id]=array(
+      '#type' => 'checkbox',
+      '#default_value' => $row->enabled,
+      );
+    
+    $form['rows'][$row->id]['detached-'. $row->id]=array(
+      '#type' => 'checkbox',
+      '#default_value' => $row->detached,
+      );
+    
+    $form['rows'][$row->id]['weight-'. $row->id]=array(
+      '#type' => 'textfield',
+      '#size' => 5,
+      '#default_value' => $row->weight,
+      '#attributes' => array('class' => 'weight'),
+      );
+  }
+  
+  $form['throttle'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Do not perform cron tasks when the site is under heavy load.'),
+    '#description' => module_exists('throttle')?'':t('This features depends on the Throttle module being installed and enabled.'),
+    '#default_value' => module_exists('throttle') ? variable_get(SUPERCRON_THROTTLE_SUPPORT_VARIABLE, FALSE) : FALSE,
+    '#disabled' => !module_exists('throttle')
+    );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save changes'),
+    );
+  
+  return $form;
+}
+
+function theme_supercron_firewall_form($form) {
+  $rows = array();
+  foreach (element_children($form) as $key) {
+    if (isset($form[$key]['title'])) {
+      $ip = &$form[$key];
+      
+      $row = array();
+      $row[] = drupal_render($ip['title']);
+      $row[] = drupal_render($ip['delete']);
+      $rows[] = array('data' => $row);
+    }
+  }
+  if (empty($rows)) {
+    $rows[] = array(array('data' => t('No ips available.'), 'colspan' => '2'));
+  }
+  
+  if (variable_get(SUPERCRON_FIREWALL_ENABLED_VARIABLE, FALSE))
+  {
+    $header = array(t('IP'));
+    $header[] = array('data' => t('Operations'), 'colspan' => '1');    
+    //    return drupal_render($form['firewall_enable_field']) . drupal_render($form['insert']) . theme('table', $header, $rows, array('id' => 'ips', 'style' => 'width: 500px')) . drupal_render($form);
+    
+    $form['mode_field']['listing']['#value'] = theme('table', $header, $rows, array('id' => 'ips', 'style' => 'width: 500px'));
+    return drupal_render($form['firewall_enable_field']) . drupal_render($form['mode_field']) . drupal_render($form);
+  }
+  else return drupal_render($form['firewall_enable_field']) . drupal_render($form);  
+}
+
+function theme_supercron_settings($form) {
+  $header = array(t('Name'), t('Invoke'), t('Last called'), t('Execution Time'), t('Avg. Execution Time'), t('Output'), t('Exceptions'), t('Enabled'), t('Multithread'), t('Weight'));
+  
+  foreach ($form['rows'] as $id => $row) {    
+    if (isset($row['data'])) {
+      $this_row=array();
+      $this_row[] = check_plain($row['data']['#value']);
+      $this_row[] = drupal_render($row['call']);
+      $this_row[] = check_plain($row['timestamp']['#value']);
+      $this_row[] = check_plain($row['how_long_took']['#value']);
+      $this_row[] = check_plain($row['how_long_took_avg']['#value']);
+      $this_row[] = drupal_render($row['output_link']);
+      $this_row[] = drupal_render($row['exception_link']);
+      $this_row[] = drupal_render($row['enabled-'. $id]);
+      $this_row[] = drupal_render($row['detached-'. $id]);
+      $this_row[] = drupal_render($row['weight-'. $id]);
+      $table_rows[] = array('data' => $this_row, 'class' => 'draggable');
+      unset($form['rows'][$id]);
+    }
+  }
+  
+  drupal_add_tabledrag('supercron-table', 'order', 'sibling', 'weight');
+  
+  $output = drupal_render($form['invoke-all']);
+  unset($form['invoke-all']);
+  $output .= theme('table', $header, $table_rows, array('id' => 'supercron-table'));
+  $output .= drupal_render($form);
+  return $output;
+}
+
+function supercron_settings_submit($form, &$form_state) {
+  $weights = array();
+  
+  foreach ($form_state['values'] as $key => $data) {
+    if (strpos($key, 'weight-') === 0) {
+      $id = drupal_substr($key, drupal_strlen('weight-'));
+      $weights[$id] = $form_state['values'][$key];
+    }
+  }
+  
+  $min_weight = min($weights);
+  foreach ($weights as $module_id => $value) {
+    if ($min_weight)
+      $weights[$module_id] -= $min_weight;
+    db_query("UPDATE {supercron_enabled_mods} SET weight=%d, enabled=%d, detached=%d WHERE id=%d", $weights[$module_id], $form_state["values"]["enabled-". $module_id], $form_state["values"]["detached-". $module_id], $module_id);
+  }
+  
+  variable_set(SUPERCRON_THROTTLE_SUPPORT_VARIABLE, $form_state['values']['throttle']);
+}
+
+function supercron_modules_list() {
+  return module_implements('cron', TRUE);
+}
+
+
+function supercron_add_new_modules($modules) {
+  $max_weight = db_result(db_query("SELECT MAX(weight) FROM {supercron_enabled_mods}"));
+  if ($max_weight==NULL)
+    $max_weight = 0;
+  else
+  $max_weight++;
+  
+  foreach ($modules as $module) {
+    $is = db_result(db_query_range("SELECT COUNT(*) FROM {supercron_enabled_mods} WHERE module_name='%s'", $module, 0, 1));
+    if (!$is) {
+      db_query("INSERT INTO {supercron_enabled_mods} (module_name, weight, output) VALUES ('%s', %d, '')", $module, $max_weight);
+      $max_weight++;
+    }
+  }
+}
+
+function supercron_module_set_exec_intevals_and_times_count($module, $start_time, $end_time) {
+  $interval = $end_time - $start_time;
+  db_query("UPDATE {supercron_enabled_mods}
+    SET timestamp=%d, last_exec_interval=%d,
+    total_exec_interval=total_exec_interval+%d, times_count=times_count+1 WHERE module_name='%s'", $start_time, $interval, $interval, $module);
+}
+
+function supercron_module_add_output($module, $output) {
+  db_query("UPDATE {supercron_enabled_mods} SET output=Concat(output, '%s<br />') WHERE module_name='%s'", $output, $module);
+}
+
+function supercron_output($id) {
+  $module = db_fetch_array(db_query_range("SELECT * FROM {supercron_enabled_mods} WHERE id=%d", (int)$id, 0, 1));
+  drupal_set_title(drupal_get_title() . $module["module_name"]);
+  $output = $module["output"];
+  return $output;
+}
+
+function supercron_exception($id) {
+  $module = db_result(db_query_range("SELECT module_name FROM {supercron_enabled_mods} WHERE id=%d", $id, 0, 1));
+  drupal_set_title(drupal_get_title() . $module);
+  $result = db_query("SELECT * FROM {watchdog} WHERE type='cron exception' ORDER BY wid DESC");
+  $exceptions = array();
+  while ($row = db_fetch_array($result)) {
+    $variables = unserialize($row["variables"]);
+    if ($variables["@module"]==$module)
+      $exceptions[$row["wid"]]= array("message" => $variables["@message"], "location" => $row["location"], "timestamp" => $row["timestamp"]);
+  }
+  
+  $header = array(t('Log ID'), t('Message'), t('Location link'), t('Created'));
+  $rows = array();
+  
+  if (empty($exceptions))
+    $rows[] = array(array('data' => t("No catched cron exceptions in $module module"), 'colspan' => 4));
+  else
+  foreach ($exceptions as $wid => $exception) {
+    $rows[] = array(
+      check_plain($wid),
+      check_plain($exception["message"]),
+      check_plain($exception["location"]),
+      check_plain(strftime("%Y-%m-%d %H:%M:%S", $exception["timestamp"])),
+      );
+  }
+  
+  $output = theme('table', $header, $rows);
+  return $output;
+}
+
+function supercron_modules_list_from_db($sort = 0, $only_enabled = 0) {
+  if ($only_enabled)
+    $filter = ' WHERE enabled=1'; else $filter = '';
+  return db_query("SELECT * FROM {supercron_enabled_mods}". $filter ." ORDER BY weight ". ($sort==0 ? "ASC" : "DESC"));
+}
+
+function supercron_invoke_one($module, $return = NULL) {
+  try {
+    ob_start();
+    $start_time = time();
+    module_invoke($module, 'cron');
+    supercron_module_set_exec_intevals_and_times_count($module, $start_time, time());
+    $output = ob_get_contents();
+    ob_end_clean();
+    if (!empty($output))
+      supercron_module_add_output($module, $output);
+  } catch (Exception $e) {
+    ob_end_clean();
+    $message = $e->getMessage();
+    watchdog(t('cron exception'), t("Module name: @module;\nException message: @message;"), array('@module' => $module, '@message' =>  !empty($message) ? $message : "no message"), WATCHDOG_ERROR);
+  } 
+  if ($return) drupal_goto(getenv("HTTP_REFERER"));
+}
+
+
+function supercron_module_invoke_all_cron() {
+  
+  global $base_url;
+  mt_srand();
+  $safety = md5(rand() .'-'. mt_rand());
+  variable_set(SUPERCRON_SAFETY_VARIABLE, $safety);
+  $modules = supercron_modules_list();
+  supercron_add_new_modules($modules);
+  
+  $invoke_modules = array();
+  $run_in_parallel = array();
+  $modules_config_result = supercron_modules_list_from_db(0, 1);
+  while ($row = db_fetch_object($modules_config_result)) {
+    $invoke_modules[] = $row->module_name;
+    $run_in_parallel[$row->module_name] = $row->detached;
+  }
+  unset($modules_config_result);
+  
+  if (empty($invoke_modules))
+  {
+    variable_set('cron_last', time());
+    return FALSE;
+  }
+  
+  
+  variable_set('cron_semaphore', time());
+  foreach ($invoke_modules as $module) {
+    if ($run_in_parallel[$module]) {
+      $url = supercron_get_script_URL() . '?safety='. drupal_urlencode($safety) .'&module='. drupal_urlencode($module);
+      $parts = parse_url($url);
+      $u = $parts['path'] .'?'. $parts['query'];
+      $fp = fsockopen($parts['host'], (isset($parts['port'])?$parts['port']:80), $errno, $errstr, 20);
+      if ($fp) {
+        $out = "GET {$u} HTTP/1.1\r\n";
+        $out .= "Host: {$parts['host']}\r\n";
+        $out .= "Connection: Close\r\n\r\n";
+        fwrite($fp, $out);
+        
+        stream_set_blocking($fp, FALSE);
+        stream_set_timeout($fp, 2);
+        fclose($fp);
+      }
+    }
+    else supercron_invoke_one($module);
+  }  
+  variable_del('cron_semaphore');  
+  variable_set('cron_last', time());
+  return TRUE;
+}

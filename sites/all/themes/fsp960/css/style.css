@@ -1,0 +1,313 @@
+/* fix some missing stuff in Omega */
+body { padding: 0; margin: 0; }
+body { background: Silver url('/sites/all/themes/fsp960/images/nhfall.jpg') no-repeat top center;
+/* Image from http://www.flickr.com/people/hynkle/ */ }
+
+.float-right { float: right; }
+.float-left { float: left; }
+tr.even, .even, span.even { background-color: ghostwhite; }
+
+#main-content-container { margin-top: 1em; }
+#preface-wrapper { display: none; }
+#internal-nav { display: none; }
+#mission { display: none; }
+
+#page { 
+background:transparent url('/sites/all/themes/fsp960/images/header-bg.jpg') repeat-x scroll 0 0;
+font-family: Calibri,Verdana,Arial,Geneva,Helvetica,sans-serif;
+font-size: 16px;
+}
+
+#main-wrapper { background: #FFF; }
+#main-wrapper > .box { border: 1px solid CadetBlue; }
+#site-header { margin: 0 auto; height: 124px; }
+
+/* counter and search */
+#counter-region { color:#D2B48C; line-height: 20px; height: 124px; }
+#counter-region #block-fsp_counter-0 { float: right; padding: 10px 0; }
+
+.block-search {
+	float: right; clear: both; padding: 0px !important; margin: 0px;
+  position: absolute; bottom: 2px; right: 0px;
+	width: 201px; height: 20px;
+	background: url('/sites/all/themes/fsp960/images/search-background.png') no-repeat; 
+}
+
+.block-search .form-text {
+	float: left;
+	margin: 0px 0px 0px 10px;
+	background: none;
+	width: 160px;
+	border: none;
+  color: Sienna;
+}
+
+.block-search .form-submit {
+	position: absolute; right: 0;
+	cursor: pointer; border: 0;
+	background: transparent no-repeat scroll 0 0
+		url(/sites/all/themes/fsp960/images/transparent-button.gif);
+	text-indent: -2000px; font-size: 0px; /* IE7 font-size:0 is a hack */
+	width: 20px; height: 20px; float: right;
+}
+.block-search label { display: none; }
+
+
+/* sidebar */
+
+.sidebar .block { margin-bottom: 10px; padding: 10px; }
+.sidebar .block { 
+	border: 1px solid CadetBlue;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+}
+#sidebar-first, #sidebar-last { overflow: hidden; }
+
+#sidebar-first .block { background: url('/sites/all/themes/fsp960/images/pinstripe.gif') #226; color: Peru; }
+#sidebar-last  .block { background: #FFF; }
+
+#sidebar-first .block a { color: #DDD; text-decoration: none; display: block; letter-spacing: -.2px; } 
+#sidebar-last  .block a { color: Peru; text-decoration: none; display: inline; }
+
+.views-admin-links ul.links li a,
+#sidebar-last  .block a:hover, 
+#sidebar-first .block a:hover { color: Peru; text-decoration: underline;}
+
+
+#sidebar-first .block h2 { font-size: 14px; text-align: center ; margin: 0; padding: 0;}
+#sidebar-last  .block h2 { font-size: 16px; text-align: left ; margin: 0; padding: .5em 0;
+  border-top: 1px solid gray;
+}
+#sidebar-last  .block > h2 { border: 0; }
+
+/* main-wrapper */
+#main-wrapper h1,
+#main-wrapper h2,
+#main-wrapper h3,
+#main-wrapper h4,
+#main-wrapper h5,
+#main-wrapper h6 { color: Peru; line-height: 1.2em; }
+
+#main-wrapper h1,
+#main-wrapper h2 { font-size: 1.5em; }
+
+
+/* sidebar menu */
+.sidebar ul.menu li { margin-bottom: .5em; }
+/* Front page NH 101 flash */
+#block-block-17 { padding:0; margin: 0 30px; }
+
+
+/* breadcrumbs */
+#bcrumb { font-size: .8em; }
+
+/* Karate Korners! */
+.box { position: relative; padding: 1em; }
+.blue { background: #226; color: Peru; }
+.white { background: #FFF; color: Peru; }
+.korner { position: absolute; width: 15px; height: 15px; background: url('/sites/all/themes/fsp960/images/karate.gif') no-repeat; }
+.TL { top: 0; left: 0; background-position: 0 0; }
+.TR { top: 0; right: 0; background-position: 100% 0; }
+.BL { bottom: 0; left: 0; background-position: 0 100%; }
+.BR { bottom: 0; right: 0; background-position: 100% 100%; }
+
+/* FSP Spotlight Block */
+#fsp_spotlight_block tr.center h5{
+	text-align: center;
+	margin-bottom: 0px;
+	font-size: 16px; 
+}
+
+#fsp_spotlight_block p {
+	margin-bottom: 1em;
+}
+
+#fsp_spotlight_block p:first-letter {
+	font-size: 150%;
+	font-style: italic;
+	font-family: "Times new roman";
+	float: left
+	display: block;
+}
+
+/* fix up tables */
+table.table { border: 1px solid tan; width: 100%; }
+table.table td { border: 1px solid tan; padding: .5em; }
+
+/* dress up participant creation/edit forms */
+body.page-node-add-participant .description { display: none; }
+
+body.page-node-add-participant .nullspace { margin-bottom: 1em; }
+
+body.page-node-add-participant #edit-field-fsp-soi-value-wrapper .description { display: block; }
+
+body.page-node-add-participant label {
+  display: inline;
+  font-weight: normal;
+}
+
+#edit-field-fsp-year-check-value-wrapper,
+#edit-field-fsp-year-value-wrapper{
+  display: inline;
+}
+
+#edit-field-fsp-year-value-wrapper,
+#edit-field-fsp-year-value-wrapper label,
+#edit-field-fsp-0-value-wrapper,
+#edit-field-fsp-0-value-wrapper label,
+input#edit-field-fsp-0-value {
+  display:inline;
+	font-weight: normal;
+}
+
+#edit-field-fsp-movers-check-value-wrapper,
+#edit-field-fsp-movers-year-value-wrapper,
+#edit-field-fsp-movers-year-value-wrapper label,
+#edit-field-fsp-movers-0-value-wrapper,
+#edit-field-fsp-movers-0-value-wrapper label,
+input#edit-field-fsp-movers-0-value {
+  display:inline;
+	font-weight: normal;
+}
+
+#edit-field-fsp-job-check-value-wrapper,
+#edit-field-fsp-job-year-value-wrapper,
+#edit-field-fsp-job-year-value-wrapper label,
+#edit-field-fsp-job-0-value-wrapper,
+#edit-field-fsp-job-0-value-wrapper label,
+input#edit-field-fsp-job-0-value {
+  display:inline;
+}
+
+#edit-field-fsp-event-check-value-wrapper,
+#edit-field-fsp-event-value-0-value-wrapper,
+#edit-field-fsp-event-value-0-value-wrapper input{
+  display:inline;
+}
+
+#edit-field-fsp-event-value-0-value-wrapper input{
+  margin-left: 1em;
+}
+
+#edit-field-fsp-event-year-value-wrapper,
+input#edit-field-fsp-event-year-value {
+  display:inline;
+}
+
+body.page-node-add-participant .governmentovereach {
+  font-weight: bold;
+}
+
+#edit-field-fsp-issue-value-wrapper,
+#edit-field-fsp-issue-value-wrapper label,
+#edit-field-fsp-issue-value-0-value-wrapper,
+#edit-field-fsp-issue-value-0-value-wrapper input {
+  display:inline;
+}
+#edit-field-fsp-issue-value-0-value-wrapper input{
+  margin-left: 1em;
+}
+
+#edit-trip-mail-wrapper {
+  display:none;
+}
+
+/* front page bottom joinUs image */
+#joinus  {
+	text-align: center;
+}
+
+#joinus a {
+	margin: 0 auto;
+	display: block;
+	width: 300px;
+	height: 125px;
+	background: transparent url("/images/Join-with-Usroll.jpg") no-repeat;
+}
+
+#joinus a:hover  {
+	background-position: 0 -125px;
+} 
+
+/* LF table hack - remove anytime after 2011-01-01 */
+body.page-libertyforum table * { vertical-align: text-top; }
+body.page-libertyforum td { padding: 1em; }
+
+/* all <ol> lists need to be tweaked for omega theme */
+ol { padding-left: 1em;  }
+
+/* fix org charts page */
+table#tablestyle  {
+	width: auto;
+	margin: 0 auto;
+  border: 1px solid sliver; 
+}
+
+table#tablestyle td { padding: .75em; border: 1px solid tan;}
+
+#tablestyle tr.toprow td { background: tan;  font-size: large;}
+
+/**
+ * AddToAny - cept front page :)
+ */
+body.front a.a2a_dd { display: none; }
+
+/**
+ * Pretty DHTML menu icons
+ **/
+li.leaf { 
+	list-style-image: url(
+	"/sites/all/themes/fsp960/images/circle.png");
+}
+li.collapsed { 
+	list-style-image: url(
+	"/sites/all/themes/fsp960/images/right-triangle.png");
+}
+li.expanded { 
+	list-style-image: url(
+	"/sites/all/themes/fsp960/images/down-triangle.png");
+}
+
+/**
+ * User's Profile styling
+ **/
+
+.user-profile-category, .content-profile-box, .user-profile-item {
+	/* If we ever need to style each subsection */
+	border: 1px dotted #EAD885;
+	padding: 10px;
+	margin-bottom: 1em;
+}
+
+.content-profile-display { border: none; }
+
+.user-profile-title, .content-profile-title {
+	text-transform: capitalize;
+}
+
+span#login-bar {  padding-right: 10px; }
+span#login-bar a { float: right; margin-right: 10em; text-decoration: none; }
+
+.page-events-libertyforum-2011 table.views-view-grid { width: 99.9%; }
+.page-events-libertyforum-2011 table.views-view-grid tr { vertical-align: top; border: 1px dotted tan; }
+.page-events-libertyforum-2011 table.views-view-grid tr > td { width: 30em; padding: 1em; }
+
+/* block-fsp-0 Social Media */
+#block-fsp-0 li { list-style: none; padding-left: 0; font-size: 16px; letter-spacing: -.2px;}
+
+/*  lists  */
+ul,ol { padding-left: 1em; }
+li { margin: .5em 0; list-style-type: circle; }
+.block ul { padding-left: .5em; }
+
+/* front page justify */
+body.front #main-content { letter-spacing:-0.5px; text-align:justify; }
+body.front #flashcontent { margin-left: -10px; }
+
+/* share any button */
+body.not-front a.da2a_button { 
+	position: absolute;
+	top: 4em;
+	right: 20px;
+}

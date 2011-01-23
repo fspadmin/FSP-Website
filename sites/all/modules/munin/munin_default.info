@@ -1,0 +1,14 @@
+; $Id: munin_default.info,v 1.1 2009/10/02 08:36:25 mcgo Exp $
+name = Munin Default Plugins
+description = Provides default plugins for the munin monitoring tool
+package = Munin
+core = 6.x
+version = 6.x-1.0
+dependencies[] = munin_api
+
+; Information added by drupal.org packaging script on 2009-10-14
+version = "6.x-1.0"
+core = "6.x"
+project = "munin"
+datestamp = "1255549557"
+

@@ -1,0 +1,12 @@
+; $Id: util.info,v 1.5 2008/05/30 15:26:00 litwol Exp $
+name = Util
+description = Enables Menu parent for the util modules
+package = Util
+core = 6.x
+
+; Information added by drupal.org packaging script on 2008-06-05
+version = "6.x-2.3"
+core = "6.x"
+project = "util"
+datestamp = "1212682516"
+

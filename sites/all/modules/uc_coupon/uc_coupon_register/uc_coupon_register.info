@@ -1,0 +1,13 @@
+; $Id: uc_coupon_register.info,v 1.1 2010/12/18 07:37:30 longwave Exp $
+name = Discount Coupon User Registration
+description = Issues a coupon after a new user is registered.
+dependencies[] = uc_coupon
+package = Ubercart - payment
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-12-29
+version = "6.x-1.5"
+core = "6.x"
+project = "uc_coupon"
+datestamp = "1293641772"
+

@@ -1,0 +1,409 @@
+<?php
+// $Id: corner.module,v 1.5.2.2 2009/06/08 09:23:07 kirie Exp $
+
+/**
+ * @file
+ * Shows configurable corners on your site.
+ *
+ * Acknowledgement: Some of the code and way of doing things were borrowed from the excellent admin_menu module.
+ */
+
+define('CORNER_PATH_IMAGES', 'images');
+
+/**
+ * Implementation of hook_help().
+ */
+function corner_help($path, $arg) {
+  switch ($path) {
+    case 'admin/modules#description':
+      return t('Shows configurable corner corners on your site.');
+    case 'admin/build/corner':
+      $params = array('!add_new' => l(t('add corner page'), 'admin/build/corner/add'), '%configure' => t('configure'));
+      return t('Corners are images which are shown at the top of pages - in the left or right \'corner\'.  Create new corners on the !add_new or configure existing corners by clicking the %configure link next to each one.', $params);
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function corner_theme() {
+  return array(
+    'corner_corner' => array(
+      'template' => 'corner',
+      'arguments' => array('html' => NULL, 'corner' => NULL),
+    ),
+    'corner_image' => array(
+      'arguments' => array('corner' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_init().
+ *
+ * We can't move this into corner_footer(), because PHP-only based themes
+ * like chameleon load and output scripts and stylesheets in front of
+ * theme_closure(), so we ensure the style(s) are loaded on all pages.
+ */
+function corner_init() {
+  // Add the CSS only if we have any active corners
+  // TODO: should this be a cached flag - and should it be determined on a page/role basis?
+  $num_active = db_result(db_query("SELECT COUNT(*) FROM {corners} WHERE status = 1"));
+  if ($num_active) {
+    $path = drupal_get_path('module', 'corner');
+    drupal_add_css($path .'/corner.css', 'module', 'all', FALSE);
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function corner_perm() {
+  return array('administer corners', 'use PHP for corner visibility');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function corner_menu() {
+  $items = array();
+  $items['admin/build/corner'] = array(
+    'title' => 'Corners',
+    'description' => t('Configure corners, including what they are and where they appear on the site.'),
+    'page callback' => 'corner_admin_display',
+    'access arguments' => array('administer corners'),
+    'file' => 'corner.admin.inc',
+  );
+  $items['admin/build/corner/list'] = array(
+    'title' => 'List',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/build/corner/add'] = array(
+    'title' => 'Add corner',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('corner_admin_configure', NULL, 'add'),
+    'access arguments' => array('administer corners'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'corner.admin.inc',
+  );
+  $items['admin/build/corner/%corner/configure'] = array(
+    'title' => 'Configure corner',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('corner_admin_configure', 3),
+    'access arguments' => array('administer corners'),
+    'type' => MENU_CALLBACK,
+    'file' => 'corner.admin.inc',
+  );
+  $items['admin/build/corner/%corner/clone'] = array(
+    'title' => 'Clone corner',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('corner_admin_configure', 3, 'clone'),
+    'access arguments' => array('administer corners'),
+    'type' => MENU_CALLBACK,
+    'file' => 'corner.admin.inc',
+  );
+  $items['admin/build/corner/%corner/delete'] = array(
+    'title' => 'Delete corner',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('corner_admin_delete', 3),
+    'access arguments' => array('administer corners'),
+    'type' => MENU_CALLBACK,
+    'file' => 'corner.admin.inc',
+  );
+  $items['admin/build/corner/%corner/disable'] = array(
+    'title' => 'Disables corner',
+    'page callback' => 'corner_admin_disable',
+    'page arguments' => array(3),
+    'access arguments' => array('administer corners'),
+    'type' => MENU_CALLBACK,
+    'file' => 'corner.admin.inc',
+  );
+  $items['admin/build/corner/%corner/enable'] = array(
+    'title' => 'Enables corner',
+    'page callback' => 'corner_admin_enable',
+    'page arguments' => array(3),
+    'access arguments' => array('administer corners'),
+    'type' => MENU_CALLBACK,
+    'file' => 'corner.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_footer().
+ */
+function corner_footer($main = 0) {
+
+  // Fetch all active corners
+  // TODO: cache?
+  $corners = array();
+  $result = db_query("SELECT * FROM {corners} WHERE status = 1");
+  while ($row = db_fetch_object($result)) {
+    $corners[] = $row;
+  }
+
+  // Nothing to do - return
+  if (!count($corners)) {
+    return;
+  }
+
+  global $user;
+  global $language ;
+  $rids = array_keys($user->roles);
+  $lang_name = $language->language;
+  $output = '';
+
+  // Output all the corners for the current path/role
+  foreach ($corners as $corner) {
+
+    // Get the settings
+    $vis_languages = explode(',', $corner->languages);
+    $vis_roles = explode(',', $corner->roles);
+    $vis_vis = $corner->visibility;
+    $vis_pages = $corner->pages;
+
+    // Match languages
+    if (module_exists('locale') && count(array_filter($vis_languages))) {
+      $lang_enabled = in_array($lang_name, $vis_languages);
+    }
+    else {
+      $lang_enabled = TRUE;
+    }
+
+    // Match roles
+    if (count(array_filter($vis_roles))) {
+      $role_enabled = count(array_intersect($vis_roles, $rids)) ? TRUE : FALSE;
+    }
+    else {
+      $role_enabled = TRUE;
+    }
+
+    // Match path if necessary
+    if ($vis_pages) {
+      if ($vis_vis < 2) {
+        $path = drupal_get_path_alias($_GET['q']);
+        // Compare with the internal and path alias (if any).
+        $page_match = drupal_match_path($path, $vis_pages);
+        if ($path != $_GET['q']) {
+          $page_match = $page_match || drupal_match_path($_GET['q'], $vis_pages);
+        }
+        // When $vis_vis has a value of 0, the corner is displayed on
+        // all pages except those listed in $vis_pages. When set to 1, it
+        // is displayed only on those pages listed in $vis_pages.
+        $page_match = !($vis_vis xor $page_match);
+      }
+      else {
+        $page_match = drupal_eval($vis_pages);
+      }
+    }
+    else {
+      $page_match = TRUE;
+    }
+
+    // Output corner if enabled for current path, role and language
+    if ($lang_enabled === TRUE && $role_enabled === TRUE && $page_match) {
+
+      // Prepare the corner object before being sent to theming
+      $corner = corner_prepare($corner);
+
+      // Get the HTML of the corner itself
+      $html = theme('corner_image', $corner);
+
+      // Theme the corner to make it easy to override.
+      $output .= theme('corner_corner', $html, $corner);
+    }
+  }
+  return $output;
+}
+
+/**
+ * Prepares a corner object prior to being sent to theming.
+ * This function was added mainly to ease unit testing.
+ *
+ * @param $corner A corner object
+ * @return A prepared corner object
+ */
+function corner_prepare($corner) {
+
+  // Better to do check_plain here before sending to theme functions
+  $corner->image = check_plain($corner->image);
+  $corner->image_title = check_plain($corner->image_title);
+  $corner->image_uri = isset($corner->image_uri) ? check_url($corner->image_uri) : '';
+
+  // Load options
+  $corner = corner_load_options($corner);
+  $corner->image_map_shape = isset($corner->image_map_shape) ? check_plain($corner->image_map_shape) : '';
+  $corner->image_map_coords = isset($corner->image_map_coords) ? check_plain($corner->image_map_coords) : '';
+  $corner->image_link_rel = isset($corner->image_link_rel) ? check_plain($corner->image_link_rel) : '';
+  $corner->image_link_target = isset($corner->image_link_target) ? check_plain($corner->image_link_target) : '';
+  // Construct the image path
+  $corner->image_path = drupal_get_path('module', 'corner') .'/'. CORNER_PATH_IMAGES .'/'. $corner->image;
+
+  // No need to carry over these to the theme
+  unset($corner->status);
+  unset($corner->roles);
+  unset($corner->visibility);
+  unset($corner->pages);
+  unset($corner->languages);
+
+  return  $corner;
+}
+
+/**
+ * Convenience function to get the HTML of the corner itself - themed  theme('image', ...).
+ *
+ * @param $corner A corner object
+ * @return A themed corner image
+ */
+function theme_corner_image($corner) {
+  $html = '';
+
+  // Create code for image map (if enabled)
+  $image_title = $corner->image_title;
+  $image_args = array();
+  if (!empty($corner->image_uri) && !empty($corner->image_map_shape) && !empty($corner->image_map_coords)) {
+
+    $attributes = '';
+    if (!empty($corner->image_title)) $attributes .= 'title="'. $corner->image_title .'" ';
+    // IE7 will show 'alt' as the title on mouse hover, we'll therefore use the title for 'alt'
+
+    if (!empty($corner->image_title)) $attributes .= 'alt="'. $corner->image_title .'" ';
+    if (!empty($corner->image_link_rel)) $attributes .= 'rel="'. $corner->image_link_rel .'" ';
+    if (!empty($corner->image_link_target)) $attributes .= 'target="'. $corner->image_link_target .'"';
+
+    $image_args = array('usemap' => '#cornermap-'. $corner->cid);
+    $html .= '<map id="cornermap'. $corner->cid .'" name="cornermap-'. $corner->cid .'">'."\n";
+    $html .= '<area shape="'. $corner->image_map_shape .'" coords="'. $corner->image_map_coords .'" href="'. $corner->image_uri .'" '. $attributes .' />'."\n";
+    $html .= '</map>'."\n";
+  }
+
+  // Theme the image
+  $image = theme('image', $corner->image_path, $corner->image, $image_title, $image_args);
+
+  // If a URI is specified, make the corner into a link, else keep as is (unless a URI and image map is specified, in which case map code has already been added)
+  if (empty($corner->image_uri) || (!empty($corner->image_uri) && !empty($corner->image_map_shape) && !empty($corner->image_map_coords))) {
+    $html .= $image;
+  }
+  else {
+    $attributes = array();
+    if (!empty($corner->image_title)) $attributes['title'] = $corner->image_title;
+    if (!empty($corner->image_link_rel)) $attributes['rel'] = $corner->image_link_rel;
+    if (!empty($corner->image_link_target)) $attributes['target'] = $corner->image_link_target;
+    
+    $html .= l($image, $corner->image_uri, array('html' => TRUE, 'attributes' => $attributes));
+  }
+  return $html;
+}
+
+/**
+ * Get an corner by its id or a combination of other fields.
+ *
+ * @param $array An associative array of attributes to search for in selecting the corner,
+ *               such as corner id (cid) or name (name).
+ * @return An corner array if found, otherwise false.
+ */
+function corner_load($array = array()) {
+  // Dynamically compose a SQL query (similar to user.module -> user_load):
+  $query = array();
+  $params = array();
+
+  if (is_numeric($array)) {
+    $array = array('cid' => $array);
+  }
+  elseif (!is_array($array)) {
+    return FALSE;
+  }
+
+  foreach ($array as $key => $value) {
+    if ($key == 'cid' || $key == 'status' || $key == 'visibility') {
+      $query[] = "$key = %d";
+      $params[] = $value;
+    }
+    else {
+      $query[]= "LOWER($key) = LOWER('%s')";
+      $params[] = $value;
+    }
+  }
+  // Only return first hit
+  $corner = db_fetch_object(db_query('SELECT * FROM {corners} WHERE '. implode(' AND ', $query), $params));
+  $corner = corner_load_options($corner);
+  return $corner;
+}
+
+/**
+ * Convenience function to take options out of serialized array and add as object attributes.
+ */
+function corner_load_options($corner) {
+  $options = unserialize($corner->options);
+  if (is_array($options) && count($options)) {
+    foreach ($options AS $key => $value) {
+      $corner->$key = $value;
+    }
+    unset($corner->options);
+  }
+  return $corner;
+}
+
+/**
+ * Get the default values of a new corner
+ */
+function corner_get_default() {
+  $default = new stdClass;
+  $default->cid = 0;
+  $default->status = 1;
+  $default->name = '';
+  $default->image = '';
+  $default->image_title = '';
+  $default->image_uri = '';
+  $default->image_link_rel = '';
+  $default->image_link_target = '';
+  $default->image_map_shape = '';
+  $default->image_map_coords = '';
+  $default->languages = '';
+  $default->roles = '';
+  $default->visibility = 0;
+  $default->pages = '';
+  $default->location = '';
+  $default->position = '';
+  return $default;
+}
+
+/**
+ * Retrieve a list of the png images in the images directory.
+ *
+ * @return array
+ */
+function corner_get_images() {
+  $path = drupal_get_path('module', 'corner') .'/'. CORNER_PATH_IMAGES;
+  $files = file_scan_directory($path, '.+\.png$|.+\.PNG$', array('.', '..', 'CVS', '.svn'));
+  return $files;
+}
+
+/**
+ * Returns either an array of select options or, if a key is specified, the value for the specific key in the given array.
+ *
+ * @param $type 'location' or 'position'
+ * @param $key A key corresponding to a specific entry in one of the options arrays
+ * @return mixed
+ */
+function corner_get_options($type, $key = '') {
+  switch ($type) {
+    case 'location':
+      $options = array('top-left' => t('Top left'), 'top-right' => t('Top right'), 'bottom-left' => t('Bottom left'), 'bottom-right' => t('Bottom right'));
+      break;
+    case 'position':
+      $options = array('absolute' => t('Absolute'), 'fixed' => t('Fixed'));
+      break;
+    default:
+      $options = array();
+  }
+
+  if ($key == '') {
+    return $options;
+  }
+  else {
+    return $options[$key];
+  }
+}

@@ -1,0 +1,9 @@
+$Id: CHANGELOG.txt,v 1.1.4.3 2008/12/28 19:22:49 add1sun Exp $
+
+Changelog for Revision Moderation module for Drupal 6.
+
+6.x-1.0-ALPHA1 (December 28, 2008)
+==================================
+Initial Drupal 6 alpha release.
+Changes from the Drupal 5 version:
+  FEATURE #306033 by mikl and NikLP; better Diff support.

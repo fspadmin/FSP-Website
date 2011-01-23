@@ -1,0 +1,114 @@
+<?php
+// $Id: uc_coupon_purchase.install,v 1.3 2010/11/28 22:31:36 longwave Exp $
+
+function uc_coupon_purchase_schema() {
+  $schema = array();
+
+  $schema['uc_coupon_purchase'] = array(
+    'description' => t('Ubercart Purchased Coupons'),
+    'fields' => array(
+      'pfid' => array(
+        'description' => t('The product feature id.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => t('The identifier of the node that has a feature.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'model' => array(
+        'description' => t('The SKU of the product that has a feature.'),
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'base_cid' => array(
+        'description' => t('The base coupon ID to use when purchasing this feature.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'nid' => array('nid'),
+      'model' => array('model'),
+    ),
+    'primary key' => array('pfid'),
+  );
+
+  $schema['uc_coupon_purchase_users'] = array(
+    'description' => t('Ubercart Purchased Coupons Per Purchaser'),
+    'fields' => array(
+      'cpuid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('The user id.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'cid' => array(
+        'description' => t('The coupon id.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('cpuid'),
+  );
+
+  return $schema;
+}
+
+function uc_coupon_purchase_install() {
+  drupal_install_schema('uc_coupon_purchase');
+}
+
+function uc_coupon_purchase_uninstall() {
+  drupal_uninstall_schema('uc_coupon_purchase');
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_coupon_purchase_%%'");
+}
+
+/**
+ * Add the coupon tracking table.
+ */
+function uc_coupon_purchase_update_6000() {
+  $ret = array();
+
+  $schema['uc_coupon_purchase_users'] = array(
+    'description' => t('Ubercart Purchased Coupons Per Purchaser'),
+    'fields' => array(
+      'cpuid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('The user id.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'cid' => array(
+        'description' => t('The coupon id.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('cpuid'),
+  );
+
+  db_create_table($ret, 'uc_coupon_purchase_users', $schema['uc_coupon_purchase_users']);
+  
+  return $ret;
+}

@@ -1,0 +1,1782 @@
+<?php
+
+/**
+ * FSP module containing FSP-specific functions
+ *
+ * The stats plotting code was contributed by Curry Taylor 
+ * (ctaylo12@twcny.rr.com)
+ */
+
+/**
+ * Constants for this module. Some of these should really be made available 
+ * on the module settings page instead of being defined here
+ */
+define(FSP_GREETER_SUBJECT, "Greet Me!");
+define(FSP_GREETER_CONTENT, 
+  "User Status: %member_type\n" .
+  "Honorific: %title\n" .
+  "First Name: %first_name\n" .
+  "Last Name: %last_name\n" .
+  "City: %city\n" .
+  "State: %state\n" .
+  "Country: %country\n" .
+  "Phone(H): %home_phone\n" .
+  "Phone(W): %work_phone\n" .
+  "Phone(C): %cell_phone\n" .
+  "Email: %email\n"
+  );
+define(FSP_GREETER_MAILKEY, "fsp_mailkey_greeter");
+define(FSP_REGISTER_MAILKEY, "fsp_mailkey_register");
+// Record of statistics brought over from old system
+define(FSP_OLD_PARTICIPANTS, 7650); // Participants at switch time
+define(FSP_OLD_QUERY, 8745);        // Result of raw query at switch time
+define(FSP_OLD_OFFSET, 825);        // Subtracted from old system query 
+                                    // (8745) to get to 7650
+define(FSP_NEW_OFFSET, 53);         // New offset with new query, and 
+                                    // after Jon handled pending confs
+// Hour to run daily stats at
+define(FSP_DAILYSTATS_HR, 1);       // Run at 1AM Pacific time, 4AM Eastern
+// Start date for stats plots (Contributed by Curry Taylor)
+define(FSP_EPOCH_DATE_STR, "2001/08/01");
+define(FSP_EPOCH_DATE, strtotime(FSP_EPOCH_DATE_STR));
+// Storage location for plot files
+define(FSP_PLOT_PATH, '/var/www/www-files/fsp-graphs');
+
+//define(FSP_TWITTER_COUNTER_NAME, 'FSPCounter');
+define(FSP_TWITTER_COUNTER_NAME, 'DanDevAccount');
+define(FSP_TWITTER_COUNTER_PASS, 'porc20K');
+
+/**
+ * Standard module help functions
+ */
+function fsp_help($section='') {
+  $output = '';
+  switch ($section) {
+    case "admin/modules#description":
+      $output = t("FSP-specific functionality");
+      break;
+    case 'admin/help#fsp':
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Tell drupal we have some views in code
+ **/
+function fsp_views_api(){
+  return array(
+	'api' => 2,
+	'path' => drupal_get_path('module','fsp') . '/views/*.inc',
+  );
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function fsp_perm() {
+  return array('no friend role');
+}
+
+
+function fsp_menu() {
+  // This is the minimum information you can provide for a menu item.
+	$items = array();
+  $items['friend/grant'] = array(
+    'title' => '',
+    'page callback' => 'fsp_friend_grant',
+    'access callback' => TRUE,
+  );
+  $items['admin/settings/fsp'] = array(
+    'title' => 'FSP Settings',
+    'description' => '',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fsp_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer users'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function fsp_friend_grant(){
+  if (!user_access('no friend role')){
+    global $user;
+    $account = $user;
+    //drupal_set_message('We will give you friend status.');
+    $role_list = array_flip(user_roles(TRUE));
+    $account->roles += array($role_list['friend'] => 'friend');
+    user_save($account, array('roles' => $account->roles));
+  }
+  drupal_goto('friend');
+}
+
+
+/**
+ * Load in default views located in views subfolder
+ */
+function fsp_views_default_views() {
+  $views = array(); // container of views
+  $views_dir = drupal_get_path('module','fsp') . '/views';
+  $dirlist = glob( $views_dir . '/*.inc' );
+  
+  foreach( $dirlist as $views_filename ){
+    require_once($views_filename);
+  }
+
+  return $views;
+}
+
+/**
+ * Hook into user data change methods
+ *
+ */
+function fsp_user($op, &$edit, &$user) {
+  switch ($op) {
+    case 'after_update':
+      _fsp_update_moved($edit, $user);
+      return true;
+      break;
+    case 'update':
+      _fsp_greet_email($edit, $user);
+      return true;
+      break;
+    case 'insert':
+      _fsp_newuser_email($edit, $user);
+      return true;
+      break;
+  }
+  return false;
+}
+
+/**
+ * Implements hook_nodeapi to render PHP formatted pages blank to the search engine
+ */
+function fsp_nodeapi(&$node, $op, $teaser = FALSE, $page = FALSE) {
+	// If both $teaser and $page are FALSE, the node is being rendered for search results.
+	if ('view' == $op && !$teaser && !$page) {
+		if($node->format == 2) {
+			$node->body = '';
+		}else {
+			$node->body = truncate_utf8($node->body, 1024, TRUE);
+		}
+	}
+}
+
+/**
+ * Send registration approval email
+ */
+function _fsp_newuser_email(&$edit, &$account) {
+  global $conf;
+  $subject = t('FSP Registration: Authentication required for !username', 
+    array('!username' => $account->name));
+  $from = variable_get('site_mail', ini_get('sendmail_from'));
+
+  drupal_mail(
+    FSP_REGISTER_MAILKEY,
+    $conf["fsp_register_email_to"], 
+    $subject,
+    t("A new user !user (!uri) has registered.\n\nPlease review at !edit-uri.", 
+      array(
+        '!uri' => url("user/$account->uid", array()), 
+        '!user' => $account->name,
+        '!edit-uri' => url("user/$account->uid/edit", array())
+      )
+    ),
+    $from
+  );
+  watchdog("fsp", "Authentication alert sent for " . $account->name . " to " .
+           $conf["fsp_register_email_to"], 
+           $severity = WATCHDOG_NOTICE);
+}
+
+/**
+ * Update already in NH counter
+ */
+function _fsp_update_moved($edit, $user) {
+  fsp_get_stats("moved_to_nh");
+  watchdog("fsp", "Already in NH counter recalculated", 
+           $severity = WATCHDOG_NOTICE);
+}
+
+/**
+ * Send greeter email if needed
+ */
+function _fsp_greet_email($edit, $account) {
+  global $conf;
+  if (isset($edit['roles'])) {
+    // Get all the roles, and then the auth role id
+    $all_roles = array_flip(user_roles(1));
+    $auth_id = $all_roles[$conf["fsp_approved_role"]];
+    
+    // Now check if the auth role was applied & if greeter contact was 
+    // requested
+    if (isset($edit['roles'][$auth_id]) && 
+        !isset($account->roles[$auth_id]) &&
+        ($account->profile_request_local_contact == 1))
+      {
+        $from = $conf["fsp_greeter_email_from"];
+        $headers = "From: $from\nReply-to: $from\n" .
+          "X-Mailer: Drupal\n" .
+          "Return-path: $from\n" .
+          "Errors-to: $from";
+        $subject = FSP_GREETER_SUBJECT;
+        if ($account->profile_member_type == "Participant") {
+          $member_type = "Member (Participant)";
+        }
+        if ($account->profile_title == "0") {
+          $title = "";
+        }
+        else {
+          $title = $account->profile_title;
+        }
+        if ($account->profile_state == "0") {
+          $state = "";
+        }
+        else {
+          $state_map = array_flip(_fsp_state_map());
+          $state = $state_map[$account->profile_state];
+        }
+        
+        // This conversion is needed for the filter at 
+        // thefreestate@google.com to trigger
+        //
+        if ($account->profile_country != "United States") {
+          $country = $account->profile_country;
+        }
+        else {
+          $country = "US";
+        }
+        $body = strtr(FSP_GREETER_CONTENT, array(
+          "%member_type" => $member_type,
+          "%title"       => $title,
+          "%first_name"  => $account->profile_first_name,
+          "%last_name"   => $account->profile_last_name,
+          "%city"        => $account->profile_city,
+          "%state"       => $state,
+          "%country"     => $country,
+          "%home_phone"  => $account->profile_home_phone,
+          "%work_phone"  => $account->profile_work_phone,
+          "%cell_phone"  => $account->profile_cell_phone,
+          "%email"       => $account->mail
+          ));
+        $result = drupal_mail(FSP_GREETER_MAILKEY, 
+                              $conf["fsp_greeter_email_to"], 
+                              $subject, $body, $headers);
+        watchdog("fsp", "Greeter email sent for $account->name, $state", 
+                 $severity = WATCHDOG_NOTICE);
+        return $result;
+      } 
+  }
+  return false;
+}
+
+/**
+ * cron hook: Recalculate stats when appropriate, generate the member report
+ *            at the same time
+ */
+function fsp_cron() {
+  _fsp_stats_recalc();
+}
+
+/**
+ * Return the current stats, calculate if not yet calculated. If $force_recalc
+ * is set to a valid entry in the stats array, that stats item will be 
+ * recalculated. However, the hour and day flags will not be set, so it will 
+ * be recalculated again on the next hour / day.
+ */
+function fsp_get_stats($force_recalc = NULL) {
+  $fsp_stats = variable_get("_fsp_stats", array());
+  if (isset($force_recalc)) {
+    switch ($force_recalc) {
+      case "participants":
+        $fsp_stats["participants"] = _fsp_stats_participants();
+        break;
+      case "last_week":
+        $fsp_stats["last_week"] = _fsp_stats_last_week();
+        break;
+      case "moved_to_nh":
+        $fsp_stats["moved_to_nh"] = _fsp_stats_moved_to_nh();
+        break;
+      case "weekly_sixmonth_avg":
+        $fsp_stats["weekly_sixmonth_avg"] = _fsp_stats_weekly_sixmonth_avg();
+        break;
+      case "weekly_month_avg":
+        $fsp_stats["weekly_month_avg"] = _fsp_stats_weekly_month_avg();
+        break;
+      case "by_state":
+        $fsp_stats["by_state"] = _fsp_stats_by_state();
+        break;
+      case "by_country":
+        $fsp_stats["by_country"] = _fsp_stats_by_country();
+        break;
+      case "by_move_plans":
+        $fsp_stats["by_move_plans"] = _fsp_stats_by_move_plans();
+        break;
+      case "plot":
+        _fsp_stats_plot();
+        break;
+      case "member_report":
+        _fsp_fill_member_report();
+        break;
+      case "hourly":
+        _fsp_stats_recalc("hourly");
+        break;
+      case "daily":
+        _fsp_stats_recalc("daily");
+        break;
+    }
+    variable_set("_fsp_stats", $fsp_stats);
+  }
+  return $fsp_stats;
+}
+
+/**
+ * Helper function to reset last recalc dates
+ */
+function fsp_stats_reset($reset="all") {
+  $fsp_stats = variable_get("_fsp_stats", array());
+  switch ($reset) {
+    case "all":
+      $fsp_stats["last_daily"] = NULL;
+      $fsp_stats["last_hourly"] = NULL;
+      break;
+    case "daily":
+      $fsp_stats["last_daily"] = NULL;
+      break;
+    case "hourly":
+      $fsp_stats["last_hourly"] = NULL;
+      break;
+  }
+  variable_set("_fsp_stats", $fsp_stats);
+}
+
+/**
+ * Re-calculate the FSP statistics in two groups: Those recalculated hourly,
+ * and those recalculated daily. Only recalculates if appropriate period 
+ * has elapsed.
+ */ 
+function _fsp_stats_recalc($recalc_type = NULL) {
+  $fsp_stats = variable_get("_fsp_stats", array());
+  $now = getdate();
+  $recalc_hourly = !isset($fsp_stats["last_hourly"]) ||
+    ( ($now["hours"] != $fsp_stats["last_hourly"]["hours"]) ||
+      ($now["yday"] != $fsp_stats["last_hourly"]["yday"])
+    );
+  $recalc_daily = !isset($fsp_stats["last_daily"]) ||
+    ( ($now["yday"] != $fsp_stats["last_daily"]["yday"]) &&
+      ($now["hours"] >= FSP_DAILYSTATS_HR)
+    );
+  if ($recalc_hourly || $recalc_type == "hourly") {
+    _fsp_stats_recalc_hourly($fsp_stats);
+  }
+  if ($recalc_daily || $recalc_type == "daily") {
+    _fsp_stats_recalc_daily($fsp_stats);
+  }
+  variable_set("_fsp_stats", $fsp_stats);
+  return $fsp_stats;
+}
+
+/**
+ * Do the hourly recalculations
+ */
+function _fsp_stats_recalc_hourly(&$stats) {
+  watchdog("fsp", "Hourly stats recalculation started at " . strftime("%T"), 
+           $severity = WATCHDOG_NOTICE);
+  $stats["participants"] = _fsp_stats_participants();
+  $stats["last_week"]    = _fsp_stats_last_week();
+  $stats["last_hourly"]  = getdate();
+  watchdog("fsp", "Hourly stats recalculation completed at " . strftime("%T"), 
+           $severity = WATCHDOG_NOTICE);
+}
+
+/**
+ * Do the daily recalculations
+ */
+function _fsp_stats_recalc_daily(&$stats) {
+  watchdog("fsp", "Daily stats recalculation started at " . strftime("%T"), 
+           $severity = WATCHDOG_NOTICE);
+
+  $stats["last_daily"]          = getdate();
+  $stats["moved_to_nh"]         = _fsp_stats_moved_to_nh();
+  $stats["weekly_sixmonth_avg"] = _fsp_stats_weekly_sixmonth_avg();
+  $stats["weekly_month_avg"]    = _fsp_stats_weekly_month_avg();
+  $stats["by_state"]            = _fsp_stats_by_state();
+  $stats["by_country"]          = _fsp_stats_by_country();
+  $stats["by_move_plans"]       = _fsp_stats_by_move_plans();
+
+  _fsp_stats_plot();
+  _fsp_fill_member_report();
+	/**
+	 * Disabled now that LF 2010 over.  Remove code next year if better method found
+
+  _fsp_DISABLED_liberty_forum_report(); // dgarthwaite - temporarly run _fsp_liberty_forum_report
+
+	 */
+
+	// If participants or movers counter moved, send tweet
+  $midnight_count = _fsp_stats_participants($since_midnight = TRUE);
+	$count_delta = $stats['participants'] - $midnight_count;
+  watchdog("fsp", "DEBUG: ".$stats['participants'] . " - $midnight_count  = " . $count_delta,
+           $severity = WATCHDOG_DEBUG);
+
+  $midnight_movers = _fsp_stats_moved_to_nh($since_midnight = TRUE);
+	$mover_delta = $stats['moved_to_nh'] - $midnight_movers;
+
+	if( $count_delta > 0 || $mover_delta > 0 ){
+		$msg = sprintf( 'FSP Participants: %-5s (+%s) Movers: %-5s (+%s)',
+				$stats['participants'], $count_delta, $stats['moved_to_nh'], $mover_delta
+				);
+		_fsp_send_tweet( $msg );
+	}
+  watchdog("fsp", "Daily stats recalculation completed at " . strftime("%T"), 
+           $severity = WATCHDOG_NOTICE);
+}
+/** 
+ * Calculate number of participants.
+ */
+function _fsp_stats_participants( $since_midnight = FALSE) {
+  global $conf;
+	/* old query - dgarthwaite
+    select count(pv_part.uid)
+    from
+      ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
+        inner join role r on ur.rid = r.rid )
+          inner join profile_values pv_part on u.uid = pv_part.uid )
+            inner join profile_fields pf on pv_part.fid = pf.fid
+    where
+      pf.name = 'profile_member_type' and pv_part.value = 'Participant' 
+      and r.name = '%s' 
+      and u.status = '1'
+    $query_participants ="
+		SELECT count(node.nid) FROM {node} node
+		INNER JOIN {users} users ON node.uid = users.nid -- link profile to user
+		LEFT JOIN {content_type_profile} member_type ON node.nid = member_type.nid
+		INNER JOIN {users_roles} users_roles ON node.uid = users_roles.uid
+		WHERE 
+			member_type.field_member_type_value = 'Participant'
+			AND users_roles.rid = 16
+	"; */
+	$query_participants = "
+		SELECT count( u.uid )
+		FROM users AS u
+		JOIN users_roles as isAur on u.uid = isAur.uid
+		JOIN role AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+		JOIN users_roles as isPur on u.uid = isPur.uid
+		JOIN role AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+		WHERE u.status=1";
+	if ( $since_midnight === TRUE ) $query_participants .= " AND u.created <= unix_timestamp(date(date_sub(now(), INTERVAL 1 DAY )))";
+	$result = db_result(db_query( $query_participants ));
+	$result = 0 + $result + FSP_NEW_OFFSET;
+	return $result;
+}
+
+/**
+ * Calculate participants by state
+ */
+function _fsp_stats_by_state() {
+	global $conf;
+	/* old query - dgarthwaite
+		 $result = db_query(
+		 "
+		 select 
+		 count(pv_state.uid) as number, pv_state.value as state
+		 from
+		 ( ( ( ( ( ( ( users u
+		 inner join users_roles ur on u.uid = ur.uid )
+		 inner join role r on ur.rid = r.rid )
+		 inner join profile_values pv_part on u.uid = pv_part.uid )
+		 inner join profile_fields pf_part on pv_part.fid = pf_part.fid )
+		 inner join profile_values pv_state on u.uid = pv_state.uid )
+		 inner join profile_fields pf_state on pv_state.fid = pf_state.fid )
+		 inner join profile_values pv_us on u.uid = pv_us.uid )
+		 inner join profile_fields pf_us on pv_us.fid = pf_us.fid
+		 where
+		 pf_part.name = 'profile_member_type'
+		 and pv_part.value = 'Participant' and pf_state.name = 'profile_state'
+		 and pf_us.name = 'profile_country' and pv_us.value = 'United States'
+		 and r.name = '%s' and u.status = '1'
+		 group by 
+		 pv_state.value
+		 order by 
+		 state
+		 ",
+		 $conf["fsp_approved_role"]
+		 );
+	 */
+	$query_by_state="
+		SELECT rolodex.field_fsp_state_value AS state_name,
+					 COUNT( rolodex.field_fsp_state_value  ) AS population
+						 FROM node node
+						 LEFT JOIN content_type_rolodex rolodex ON node.vid = rolodex.vid
+						 INNER JOIN users_roles users_roles ON node.uid = users_roles.uid
+						 WHERE node.type = 'rolodex' AND users_roles.rid = 30
+						 GROUP BY rolodex.field_fsp_state_value
+						 ORDER BY state_name
+						 ";
+	$result = db_query($query_by_state);
+
+	$state_stats["None"] = 0;
+	while ($item = db_fetch_object($result)) {
+		$state = $item->state_name;
+		$population = $item->population;
+		if (strlen($state) < 1) {
+			$state_stats["None"] += $population;
+		}
+		else {
+			$state_stats[$state] = $population;
+		}
+	}
+	return $state_stats;
+}
+
+/**
+ * Calculate participants by country
+ */
+function _fsp_stats_by_country() {
+	global $conf;
+	/* $old_query_country ="
+		 SELECT user_profile.field_country_value AS country, COUNT(node.nid) AS population
+		 FROM node node 
+		 LEFT JOIN content_type_profile user_profile ON node.vid = user_profile.vid
+		 INNER JOIN users_roles users_roles ON node.uid = users_roles.uid
+		 WHERE ((user_profile.field_member_type_value) = ('Participant'))
+		 AND (users_roles.rid = 16)
+		 GROUP BY country
+		 ORDER BY population DESC "; */
+
+	$query_country = "
+		SELECT rolodex.field_fsp_country_value AS country_name,
+					 COUNT( rolodex.field_fsp_country_value  ) AS population
+						 FROM node node
+						 LEFT JOIN content_type_rolodex rolodex ON node.vid = rolodex.vid
+						 INNER JOIN users_roles users_roles ON node.uid = users_roles.uid
+						 WHERE node.type = 'rolodex' AND users_roles.rid = 30
+						 GROUP BY rolodex.field_fsp_country_value
+						 ORDER BY country_name
+						 ";
+
+	$result = db_query( $query_country );
+
+	$country_stats = array();
+	while ($stat = db_fetch_object($result)) {
+		if (strlen($stat->country_name) < 1) {
+			$country_stats["None"] = $stat->population;
+		}
+		else {
+			$country_stats[$stat->country_name] = $stat->population;
+		}
+	}
+	return $country_stats;
+}
+
+/**
+ * Calculate participants by move plans
+ */
+function _fsp_stats_by_move_plans() {
+	/*  dgarthwaite - jmaltz - old query
+	global $conf;
+			$result = db_query( "
+			select count(pv_move.uid) as number, pv_move.value as move_plan
+			from ( ( ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
+			inner join role r on ur.rid = r.rid )
+			inner join profile_values pv_part on u.uid = pv_part.uid )
+			inner join profile_fields pf_part on pv_part.fid = pf_part.fid )
+			inner join profile_values pv_move on u.uid = pv_move.uid )
+			inner join profile_fields pf_move on pv_move.fid = pf_move.fid
+			where
+			pf_part.name = 'profile_member_type' and pv_part.value = 'Participant' 
+			and pf_move.name = 'profile_when_move' and r.name = '%s' and u.status = '1'
+			group by pv_move.value ",
+			$conf["fsp_approved_role"]
+			); */
+	$move_plan_query = "
+		SELECT
+			count( u.uid ) as `number`
+			field_fsp_move_plan as plan
+		FROM {users} AS u
+			JOIN {users_roles} as isAur on u.uid = isAur.uid
+			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+			JOIN {users_roles} as isPur on u.uid = isPur.uid
+			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+	  GROUP BY field_fsp_move_plan
+	 ";
+
+	$result = db_query( $move_plan_query );
+
+	// Comment out the next line in production - dgarthwaite
+	//if(!$result) die("Error in sql $move_plan_query");
+
+	$move_plan_stats = array();
+	while ($stat = db_fetch_object($result)) {
+		if (strlen($stat->plan) < 1) {
+			$move_plan_stats["None"] = $stat->movers;
+		}
+		else {
+			$move_plan_stats[$stat->plan] = $stat->movers;
+		}
+	}
+	return $move_plan_stats;
+}
+
+/**
+ * Calculate members in NH
+ */
+function _fsp_stats_moved_to_nh( $since_midnight=FALSE) {
+	global $conf;
+	/* old query - dgarthwaite
+		 select 
+		 count(pv_nh.uid)
+		 from
+		 ( ( ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
+		 inner join role r on ur.rid = r.rid )
+		 inner join profile_values pv_part on u.uid = pv_part.uid )
+		 inner join profile_fields pf_part on pv_part.fid = pf_part.fid )
+		 inner join profile_values pv_nh on u.uid = pv_nh.uid )
+		 inner join profile_fields pf_nh on pv_nh.fid = pf_nh.fid
+		 where
+		 pf_part.name = 'profile_member_type' and pv_part.value = 'Participant' 
+		 and pf_nh.name = 'profile_state' and pv_nh.value = 'New Hampshire' 
+		 and r.name = '%s'
+		 and u.status = '1' */
+
+	$query_movers = "
+		SELECT
+			count( u.uid ) as movers
+		FROM {users} AS u
+			LEFT JOIN {node} node_users ON u.uid = node_users.uid AND node_users.type = 'rolodex'
+			LEFT JOIN {content_type_rolodex} AS rolodex_state ON node_users.vid = rolodex_state.vid
+			JOIN {users_roles} as isAur on u.uid = isAur.uid
+			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+			JOIN {users_roles} as isPur on u.uid = isPur.uid
+			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+		WHERE rolodex_state.field_fsp_state_value = 'New Hampshire' AND u.status=1 
+	";
+	if ( $since_midnight === TRUE ) $query_movers .= "AND u.created <= unix_timestamp(date(date_sub(now(), INTERVAL 1 DAY )))";
+  $result = db_result(db_query( $query_movers ));
+  return $result;
+}
+
+/**
+ * Calculate six-month sign up stats
+ */
+function _fsp_stats_weekly_sixmonth_avg() {
+	/*
+  global $conf;
+  $old_query = t(db_result(db_query( "
+    select 
+      count(pv_part.uid) / 182 * 7
+    from
+      ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
+        inner join role r on ur.rid = r.rid )
+          inner join profile_values pv_part on u.uid = pv_part.uid )
+            inner join profile_fields pf on pv_part.fid = pf.fid
+    where
+      pf.name = 'profile_member_type' and pv_part.value = 'Participant' 
+      and r.name = '%s' 
+      and u.status = '1'
+      and datediff(now(), from_unixtime(u.created))<='182'
+    ",
+    $conf["fsp_approved_role"]
+    )));
+	*/
+	$weekly_avg_query = "
+		SELECT
+			count( u.uid ) / 182 * 7 as `avg`
+		FROM {users} AS u
+			JOIN {users_roles} as isAur on u.uid = isAur.uid
+			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+			JOIN {users_roles} as isPur on u.uid = isPur.uid
+			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+		WHERE DATEDIFF( NOW(), FROM_UNIXTIME(u.created) ) <= '182'
+	";
+  return t(db_result(db_query( $weekly_avg_query )));
+}
+
+/**
+ * Calculate last month's weekly sign-up stats
+ */
+function _fsp_stats_weekly_month_avg() {
+	/*
+  global $conf;
+  $result = t(db_result(db_query( "
+    select 
+      count(pv_part.uid) / 30 * 7
+    from
+      ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
+        inner join role r on ur.rid = r.rid )
+          inner join profile_values pv_part on u.uid = pv_part.uid )
+            inner join profile_fields pf on pv_part.fid = pf.fid
+    where
+      pf.name = 'profile_member_type' and pv_part.value = 'Participant' 
+      and r.name = '%s' 
+      and u.status = '1'
+      and datediff(now(), from_unixtime(u.created))<='30'
+    ",
+    $conf["fsp_approved_role"]
+    )));
+  return $result;
+	*/
+	$monthly_avg_query = "
+		SELECT
+			count( u.uid ) / 30 * 7 as `avg`
+		FROM {users} AS u
+			JOIN {users_roles} as isAur on u.uid = isAur.uid
+			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+			JOIN {users_roles} as isPur on u.uid = isPur.uid
+			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+		WHERE DATEDIFF( NOW(), FROM_UNIXTIME(u.created) ) <= '30'
+	";
+  return t(db_result(db_query( $monthly_avg_query )));
+}
+
+/**
+ * Calculate last week's sign-ups. 
+ */
+function _fsp_stats_last_week() {
+	/*
+  global $conf;
+  $participants = t(db_result(db_query(
+    "
+    select 
+      count(pv_part.uid)
+    from
+      ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
+        inner join role r on ur.rid = r.rid )
+          inner join profile_values pv_part on u.uid = pv_part.uid )
+            inner join profile_fields pf on pv_part.fid = pf.fid
+    where
+      pf.name = 'profile_member_type' and pv_part.value = 'Participant' 
+      and r.name = '%s' 
+      and u.status = '1'
+      and datediff(now(), from_unixtime(u.created))<='7'
+    ",
+    $conf["fsp_approved_role"]
+    )));
+  return $participants;
+	*/
+	$last_week_query = "
+		SELECT
+			count( u.uid )
+		FROM {users} AS u
+			JOIN {users_roles} as isAur on u.uid = isAur.uid
+			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+			JOIN {users_roles} as isPur on u.uid = isPur.uid
+			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+		WHERE DATEDIFF( NOW(), FROM_UNIXTIME(u.created) ) <= '7'
+	";
+  return t(db_result(db_query( $last_week_query )));
+}
+
+/**
+ * Create temporary table that can be used for membership reports spreadsheets
+ *
+ * TBD: Change hard-coded field IDs to query of field description table
+ */
+function _fsp_fill_member_report() {
+  global $conf;
+  db_query("drop table if exists fsp_tmp_member_report");
+  db_query(
+    "
+    create 
+      table fsp_tmp_member_report
+    select 
+      t.uid as 'uid', 
+      u.name as 'username',
+      u.mail as 'email',
+      u.status as 'account_active',
+      from_unixtime(u.created) as 'account_created',
+      group_concat(if(t.fid=24, t.value, NULL)) as 'member_type',
+      group_concat(if(t.fid= 1, t.value, NULL)) as 'title',
+      group_concat(if(t.fid= 2, t.value, NULL)) as 'first_name',
+      group_concat(if(t.fid= 3, t.value, NULL)) as 'last_name',
+      group_concat(if(t.fid= 4, t.value, NULL)) as 'organization',
+      group_concat(if(t.fid= 5, t.value, NULL)) as 'address_1',
+      group_concat(if(t.fid= 6, t.value, NULL)) as 'address_2',
+      group_concat(if(t.fid= 7, t.value, NULL)) as 'city',
+      group_concat(if(t.fid= 8, t.value, NULL)) as 'state',
+      group_concat(if(t.fid= 9, t.value, NULL)) as 'country',
+      group_concat(if(t.fid=10, t.value, NULL)) as 'postal_code',
+      group_concat(if(t.fid=11, t.value, NULL)) as 'home_phone',
+      group_concat(if(t.fid=12, t.value, NULL)) as 'work_phone',
+      group_concat(if(t.fid=13, t.value, NULL)) as 'cell_phone',
+      group_concat(if(t.fid=14, t.value, NULL)) as 'subscribe_newsletter',
+      group_concat(if(t.fid=15, t.value, NULL)) as 'subscribe_events',
+      group_concat(if(t.fid=16, t.value, NULL)) as 'subscribe_press',
+      group_concat(if(t.fid=17, t.value, NULL)) as 'where_heard_of',
+      group_concat(if(t.fid=18, t.value, NULL)) as 'when_move',
+      group_concat(if(t.fid=19, t.value, NULL)) as 'request_local_contact',
+      group_concat(if(t.fid=20, t.value, NULL)) as 'statement_of_intent',
+      group_concat(if(t.fid=25, t.value, NULL)) as 'import_old',
+      group_concat(if(t.fid=33, t.value, NULL)) as 'commit_no_condition',
+      group_concat(if(t.fid=34, t.value, NULL)) as 'commit_no_condition_year',
+      group_concat(if(t.fid=35, t.value, NULL)) as 'commit_on_participants',
+      group_concat(if(t.fid=36, t.value, NULL)) as 'commit_on_participants_year',
+      group_concat(if(t.fid=37, t.value, NULL)) as 'commit_on_participants_number',
+      group_concat(if(t.fid=38, t.value, NULL)) as 'commit_on_employment',
+      group_concat(if(t.fid=39, t.value, NULL)) as 'commit_on_employment_year',
+      group_concat(if(t.fid=40, t.value, NULL)) as 'commit_on_ronpaul',
+      group_concat(if(t.fid=41, t.value, NULL)) as 'commit_on_election',
+      group_concat(if(t.fid=42, t.value, NULL)) as 'commit_on_election_year',
+      group_concat(if(t.fid=43, t.value, NULL)) as 'commit_on_election_candidate',
+      group_concat(if(t.fid=44, t.value, NULL)) as 'commit_on_event',
+      group_concat(if(t.fid=45, t.value, NULL)) as 'commit_on_event_year',
+      group_concat(if(t.fid=46, t.value, NULL)) as 'commit_on_event_event',
+      group_concat(if(t.fid=47, t.value, NULL)) as 'commit_on_realid',
+      group_concat(if(t.fid=48, t.value, NULL)) as 'commit_on_sovereignty',
+      group_concat(if(t.fid=49, t.value, NULL)) as 'commit_on_healthcare',
+      group_concat(if(t.fid=50, t.value, NULL)) as 'commit_on_firearms',
+      group_concat(if(t.fid=51, t.value, NULL)) as 'commit_on_drugs',
+      group_concat(if(t.fid=52, t.value, NULL)) as 'commit_on_education',
+      group_concat(if(t.fid=53, t.value, NULL)) as 'commit_on_regulation',
+      group_concat(if(t.fid=54, t.value, NULL)) as 'commit_on_regulation_regulation'
+    from 
+      profile_values as t, 
+      users as u 
+    where 
+      t.uid=u.uid 
+    group by t.uid
+    "
+    );
+  $csv_file = $conf["fsp_member_report_path"] . "/memrep.csv";
+  $fp = fopen($csv_file,'w');
+  if (!$fp) {
+    watchdog('fsp', "Unable to open '$csv_file' for writing member report", 
+             $severity = WATCHDOG_ERROR);
+    return;
+  }
+  $titleline = 
+    "User Id \tUsername \tEmail \tAccount Active \tAccount Created \t" .
+    "Member Type \tTitle \tFirst Name \tLast Name \tOrganization \t" .
+    "Address 1 \tAddress 2 \tCity \tState \tCountry \tPostal Code \t" .
+    "Home Phone \tWork Phone \tCell Phone \t" .
+    "Subscribe to Newsletter \tSubscribe to Events \tSubscribe to Press \t" .
+    "Channel \tMove Plan \tLocal contact requested \t" .
+    "Statement of Intent \tImported from old system \t" .
+    "Commit without condition \t" .
+    "Commit without condition year \t" .
+    "Commit on participants \t" .
+    "Commit on participants year \t" .
+    "Commit on participants number \t" .
+    "Commit on employment \t" .
+    "Commit on employment year \t" .
+    "Commit on Ron Paul \t" .
+    "Commit on election \t" .
+    "Commit on election year \t" .
+    "Commit on election candidate \t" .
+    "Commit on event \t" .
+    "Commit on event year \t" .
+    "Commit on event event \t" .
+    "Commit on Real ID \t" .
+    "Commit on sovereignty \t" .
+    "Commit on healthcare \t" .
+    "Commit on firearms \t" .
+    "Commit on drugs \t" .
+    "Commit on education \t" .
+    "Commit on regulation \t" .
+    "Commit on regulation description\r\n";
+  fwrite($fp, $titleline);
+  $result = db_query("select * from fsp_tmp_member_report");
+  while ($data = db_fetch_object($result)) {
+    $nextline = 
+      $data->uid . "\t" . 
+      $data->username . "\t" .
+      $data->email . "\t" .
+      $data->account_active . "\t" .
+      $data->account_created . "\t" .
+      $data->member_type . "\t" .
+      $data->title . "\t" .
+      $data->first_name . "\t" .
+      $data->last_name . "\t" .
+      $data->organization . "\t" .
+      $data->address_1 . "\t" .
+      $data->address_2 . "\t" .
+      $data->city . "\t" .
+      $data->state . "\t" .
+      $data->country . "\t" .
+      $data->postal_code . "\t" .
+      $data->home_phone . "\t" .
+      $data->work_phone . "\t" .
+      $data->cell_phone . "\t" .
+      $data->subscribe_newsletter . "\t" .
+      $data->subscribe_events . "\t" .
+      $data->subscribe_press . "\t" .
+      $data->where_heard_of . "\t" .
+      $data->when_move . "\t" .
+      $data->request_local_contact . "\t" .
+      $data->statement_of_intent . "\t" .
+      $data->import_old . "\t" .
+      $data->commit_no_condition . "\t" .
+      $data->commit_no_condition_year . "\t" .
+      $data->commit_on_participants . "\t" .
+      $data->commit_on_participants_year . "\t" .
+      $data->commit_on_participants_number . "\t" .
+      $data->commit_on_employment . "\t" .
+      $data->commit_on_employment_year . "\t" .
+      $data->commit_on_ronpaul . "\t" .
+      $data->commit_on_election . "\t" .
+      $data->commit_on_election_year . "\t" .
+      $data->commit_on_election_candidate . "\t" .
+      $data->commit_on_event . "\t" .
+      $data->commit_on_event_year . "\t" .
+      $data->commit_on_event_event . "\t" .
+      $data->commit_on_realid . "\t" .
+      $data->commit_on_sovereignty . "\t" .
+      $data->commit_on_healthcare . "\t" .
+      $data->commit_on_firearms . "\t" .
+      $data->commit_on_drugs . "\t" .
+      $data->commit_on_education . "\t" .
+      $data->commit_on_regulation . "\t" .
+      $data->commit_on_regulation_regulation . "\r\n";
+    fwrite($fp, $nextline);
+  }
+  fclose($fp);   
+  watchdog("fsp", "Generated member report in '$csv_file'", 
+           $severity = WATCHDOG_NOTICE);
+}
+
+/**
+ * Utility function to return a map of state codes to states
+ */
+function _fsp_state_map() {
+  return array(
+    "AL" => "Alabama",
+    "AK" => "Alaska",
+    "AZ" => "Arizona",
+    "AR" => "Arkansas",
+    "AE" => "Armed Forces Americas",
+    "AE" => "Armed Forces Atlantic",
+    "AP" => "Armed Forced Pacific",
+    "CA" => "California",
+    "CO" => "Colorado",
+    "CT" => "Connecticut",
+    "DE" => "Delaware",
+    "DC" => "District of Columbia",
+    "FL" => "Florida",
+    "GA" => "Georgia",
+    "HI" => "Hawaii",
+    "ID" => "Idaho",
+    "IL" => "Illinois",
+    "IN" => "Indiana",
+    "IA" => "Iowa",
+    "KS" => "Kansas",
+    "KY" => "Kentucky",
+    "LA" => "Louisiana",
+    "ME" => "Maine",
+    "MD" => "Maryland",
+    "MA" => "Massachusetts",
+    "MI" => "Michigan",
+    "MN" => "Minnesota",
+    "MS" => "Mississippi",
+    "MO" => "Missouri",
+    "MT" => "Montana",
+    "NE" => "Nebraska",
+    "NV" => "Nevada",
+    "NJ" => "New Jersey",
+    "NH" => "New Hampshire",
+    "NM" => "New Mexico",
+    "NY" => "New York",
+    "NC" => "North Carolina",
+    "ND" => "North Dakota",
+    "OH" => "Ohio",
+    "OK" => "Oklahoma",
+    "OR" => "Oregon",
+    "PA" => "Pennsylvania",
+    "RI" => "Rhode Island",
+    "SC" => "South Carolina",
+    "SD" => "South Dakota",
+    "TN" => "Tennessee",
+    "TX" => "Texas",
+    "UT" => "Utah",
+    "VT" => "Vermont",
+    "VA" => "Virginia",
+    "WA" => "Washington",
+    "WV" => "West Virginia",
+    "WI" => "Wisconsin",
+    "WY" => "Wyoming"
+    );  }
+
+
+/**
+ * Generate stats plots.
+ *
+ * Contributed by Curry Taylor 
+ */
+
+function _fsp_stats_plot() {
+
+  # query mysql database to get all people at once
+  list($participant_data, $friend_data) =
+    _fsp_get_mysql_data($mysql_database, $mysql_host, $mysql_user, 
+      $mysql_pass, FSP_EPOCH_DATE);
+	// die(print_r($friend_data,TRUE));
+
+  # parameters for all plots
+  $current_date = time();
+
+  # font location must be full path - png terminal does not yet support 
+  # "set fontpath"
+  //$font_location = FSP_PLOT_PATH . '/' . 'n019004l.pfb'; # .ttf, .pfa, or .pfb
+  $font_name = 'n019004l.pfb'; # .ttf, .pfa, or .pfb
+
+  # parameters for recent plots
+  $days_for_plot = 90;  # days to use for recent plotting
+  $old_date = _fsp_days_ago($days_for_plot, 0);
+
+  # parameters for weekly binned plots
+  $last_week = _fsp_get_prior_monday(0);
+  $interval = 1;  # weeks between xtics
+  $interval_sec = $interval*7*24*60*60;
+  $fewer_days = $days_for_plot % 7;
+  $first_week = _fsp_days_ago($days_for_plot-$fewer_days, $last_week);
+  $first_week_str = date("Y/m/d", $first_week);
+  $last_week_str = date("Y/m/d", $last_week);
+  $xtics_str = "\"$first_week_str\",$interval_sec,\"$last_week_str\"";
+
+  # Ensure the storage path exists
+  $plot_path = FSP_PLOT_PATH;
+  if (!file_check_directory($plot_path)) {
+    mkdir(FSP_PLOT_PATH, "2775");
+  }
+
+	//die(print_r(get_defined_vars(),TRUE));
+
+  # make the plots
+  _fsp_make_all_plots($participant_data, 
+                      "Participants", 
+                      FSP_EPOCH_DATE, 
+                      $current_date, 
+                      $old_date,
+                      $days_for_plot, 
+                      $xtics_str, 
+                      $totalflag, 
+                      $font_name);
+  _fsp_make_all_plots($friend_data, 
+                      "Friends", 
+                      FSP_EPOCH_DATE, 
+                      $current_date, 
+                      $old_date,
+                      $days_for_plot, 
+                      $xtics_str, 
+                      $totalflag, 
+                      $font_name);
+  watchdog("fsp", "Statistics plots generated in " . FSP_PLOT_PATH, 
+           $severity = WATCHDOG_NOTICE);
+}
+
+/**
+ * Makes all desired plots for each signup type
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+
+function _fsp_make_all_plots($data, $type, $epoch_date, $current_date, $old_date,
+                        $days_for_plot, $xtics_str, $totalflag, $font_name)
+{
+  $totalfile = FSP_PLOT_PATH . "/cumulative.txt";
+  $binfile_week = FSP_PLOT_PATH . "/binned_week.txt";
+  $binfile_month = FSP_PLOT_PATH . "/binned_month.txt";
+  //$plot_path = $_SERVER['DOCUMENT_ROOT'] . "/" . FSP_PLOT_PATH . "/";
+  $plot_path = FSP_PLOT_PATH . '/';
+
+  # do cumulative totalling or binning manually since gnuplot can't do that itself
+  # create accumulated data file
+  _fsp_accumulate_people($data, $totalfile, $epoch_date, $current_date);
+  # create binned data file by week
+  _fsp_bin_people_week($data, $binfile_week);
+  # create binned data file by month
+  _fsp_bin_people_month($data, $binfile_month);
+
+  # make the since epoch plot (cumulative)
+  _fsp_make_plot($type,
+                 $plot_path . $type."_Since_Epoch_Cum.png",
+                 "Total $type Since Founding Date",
+                 "Days",
+                 "Number of $type",
+                 "on",
+                 $epoch_date,
+                 $current_date,
+                 "",
+                 $totalfile,
+                 $font_name
+                 );
+
+  # make the since epoch plot
+  _fsp_make_plot($type,
+                 $plot_path . $type."_Since_Epoch.png",
+                 "New $type Since Founding Date",
+                 "Months",
+                 "Number of $type",
+                 "",
+                 $epoch_date,
+                 $current_date,
+                 "",
+                 $binfile_month,
+                 $font_name
+                 );
+
+  # make the last X days plot (cumulative)
+  _fsp_make_plot($type,
+                 $plot_path . $type."_Last_".$days_for_plot."_Days_Cum.png",
+                 "Total $type, Past $days_for_plot Days",
+                 "Days",
+                 "Number of $type",
+                 "on",
+                 $old_date,
+                 $current_date,
+                 "",
+                 $totalfile,
+                 $font_name
+                 );
+
+  # make the last X days plot
+  _fsp_make_plot($type,
+                 $plot_path . $type."_Last_".$days_for_plot."_Days.png",
+                 "New $type, Past $days_for_plot Days",
+                 "Weeks",
+                 "Number of $type",
+                 "",
+                 $old_date,
+                 $current_date,
+                 $xtics_str,
+                 $binfile_week,
+                 $font_name
+                 );
+
+}
+
+
+/**
+ * Produces a plot by calling gnuplot
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+
+function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalflag,
+                        $start_date, $end_date, $xtics_str, $plotfile, $font_name)
+{
+  $gnuplotfile = FSP_PLOT_PATH . "/gnuplot.txt";
+  $gnuplot_cmd = sprintf('GDFONTPATH=%s gnuplot %s', FSP_PLOT_PATH, $gnuplotfile);
+
+  list($sec, $min, $hour, $day, $month, $year) = localtime();
+  $year += 1900; $month++;
+  $timelabel = sprintf("Created on %04d/%02d/%02d at %02d:%02d:%02d", $year, $month,
+    $day, $hour, $min, $sec);
+
+  $gnuplot_fh = fopen($gnuplotfile,"w");
+  if (!gnuplot_fh) {
+    watchdog("fsp", "Unable to open '$gnuplotfile' for writing!", 
+             $severity = WATCHDOG_ERROR);
+    return;
+  }
+
+  $gnuplot_text = <<<END
+	#!/usr/bin/gnuplot
+
+    set terminal png font "$font_name" 12 size 750,600 enhanced  \
+      xffffff x000000 x404040 xc79f6c x0000ff
+      # background, border, axes, plotting colors...
+
+    set xlabel "$xlabel" 0,-3.5
+    set ylabel "$ylabel"
+    set title "$plottitle"
+    set bmargin 7.5
+    set label "$timelabel" at screen 1.0,0.01 right font "$font_name,14"
+    set label "$year Free State Project www.freestateproject.org" \
+      at screen 0.01,0.01 left font "$font_name,14"
+    set key off
+    set grid lt 0
+
+    set timefmt "%Y/%m/%d"
+    set xdata time
+    set format x "%Y/%m/%d"
+    set xtics rotate by 90 $xtics_str
+    set datafile separator ","
+
+    set boxwidth 1.0 relative
+    set style fill solid 1.00 noborder
+    set datafile missing '-'
+    set style data boxes
+
+    set output "$imagefile"
+
+END;
+
+
+  $start_date_str = date("Y/m/d", $start_date);
+  $end_date_str = date("Y/m/d", $end_date);
+
+  $linetype = ($totalflag == "on") ? 2 : 1;
+  $yscale = ($totalflag == "on") ? "" : "[0:]";
+
+  $gnuplot_text_suffix = <<<END
+
+    plot ["$start_date_str":"$end_date_str"] $yscale "$plotfile" using 1:2 \
+      with boxes lt $linetype
+    set output
+
+END;
+
+  $gnuplot_text .= $gnuplot_text_suffix;
+
+  fwrite($gnuplot_fh, $gnuplot_text);
+  fclose($gnuplot_fh);
+
+  exec($gnuplot_cmd);
+
+  echo "<img src=\"$imagefile\"/>\n";
+}
+
+/**
+ * Produces running total of signups and writes out result
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+
+function _fsp_accumulate_people($data, $totalfile, $start_date, $end_date)
+{
+  $total_fh = fopen($totalfile,"w");
+  if (!total_fh) {
+    watchdog("fsp", "Unable to open '$totalfile' for writing!", 
+             $severity = WATCHDOG_ERROR);
+    return;
+  }
+  $total = 0;
+
+  $histogram = array_count_values($data);
+  $sorted_dates = array_keys($histogram);
+  $numdates = count($sorted_dates);
+
+  for($i=0; $i<$numdates; $i++) {
+    $date = $sorted_dates[$i];
+    $signuprec = $histogram[$date];
+
+    $total += $signuprec;
+    $date_str = date("Y/m/d", $date);
+    fwrite($total_fh, "$date_str,$total\n");
+  }
+  fclose($total_fh);
+}
+
+/**
+ * Groups signups according to weeks, referenced by first Monday, 
+ * and writes out result
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+
+function _fsp_bin_people_week($data, $binfile)
+{
+  $num = count($data);
+  $rounded_array = array();
+  for($i=0; $i<$num; $i++) {
+    $rounded_date = date("Y/m/d", _fsp_get_prior_monday($data[$i]));
+    $rounded_array[$i] = $rounded_date;
+  }
+
+  $histogram = array_count_values($rounded_array);
+
+  $bin_fh = fopen($binfile,"w") or exit("Unable to open '$binfile' for writing!");
+  foreach($histogram as $date_str => $cnt) {
+    fwrite($bin_fh, "$date_str,$cnt\n");
+  }
+  fclose($bin_fh);
+}
+
+/**
+ * Groups signups according to months, and writes out result
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+
+function _fsp_bin_people_month($data, $binfile)
+{
+  $num = count($data);
+  $rounded_array = array();
+  for($i=0; $i<$num; $i++) {
+    $rounded_date = date("Y/m/d", _fsp_round_to_month($data[$i]));
+    $rounded_array[$i] = $rounded_date;
+  }
+
+  $histogram = array_count_values($rounded_array);
+
+  $bin_fh = fopen($binfile,"w") or exit("Unable to open '$binfile' for writing!");
+  foreach($histogram as $date_str => $cnt) {
+    fwrite($bin_fh, "$date_str,$cnt\n");
+  }
+  fclose($bin_fh);
+}
+
+/**
+ * Rounds to month
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+
+function _fsp_round_to_month($date)
+{
+  list($sec, $min, $hour, $day, $month, $year) = localtime($date);
+  $rounded_date = mktime(00, 00, 00, $month, 01, $year);
+
+  return $rounded_date;
+}
+
+/**
+ * Returns the date specified number of days before given date
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+
+function _fsp_days_ago($daysago, $date)
+{
+  if($date == 0) { $date = time(); }
+  $olddate = $date - $daysago*24*60*60;   # days ago in seconds
+
+  return $olddate;
+}
+
+/**
+ * Returns the Monday prior to given date
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+
+function _fsp_get_prior_monday($date)
+{
+  if($date == 0) { $date = time(); }
+  $mydatearr = localtime($date);
+  $wday = $mydatearr[6];
+  $diff = $wday-1;
+  if($diff <= 0)  { $diff += 7; }
+
+  $monday_before = _fsp_days_ago($diff, $date);
+
+  return $monday_before;
+}
+
+/**
+ * Starts session with MySQL and returns all selected data
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+
+function _fsp_get_mysql_data($database, $host, $user, $pass, $start_date)
+{
+  // query for participants
+  list($myplist, $cnt) = _fsp_get_mysql_query("Participant", $start_date);
+
+  // query for friends
+  list($myflist, $cnt) = _fsp_get_mysql_query("Friend", $start_date);
+
+  return array($myplist, $myflist);
+}
+
+/**
+ * Selects data for a particular signup type and returns all
+ *
+ * The stat plotting code was contributed by Curry Taylor (ctaylo12@twcny.rr.com)
+ */
+function _fsp_get_mysql_query($type, $start_date)
+{
+  global $conf;
+  $start_date_str = date("Y-m-d 00:00:00", $start_date);
+
+  /** 
+   * retrieve the signup data from the table
+   * query gives: uid, signup date, signup type
+   * query throws out all records with dates less than the $start_date
+   * query sorts all records by the signup date
+   */
+  /*$result = db_query(
+    "
+    select u.uid, u.created, pv_part.value  from
+       ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
+         inner join role r on ur.rid = r.rid )
+           inner join profile_values pv_part on u.uid = pv_part.uid )
+             inner join profile_fields pf on pv_part.fid = pf.fid
+    where
+       pf.name = 'profile_member_type' and r.name = '%s'
+       and u.status = '1' 
+       and pv_part.value = '%s' 
+       and u.created >= '%s'
+    order by u.created;
+    ",
+    $conf["fsp_approved_role"],
+    $type, 
+    $start_date_str
+    );
+	*/
+	$result = db_query("
+			SELECT u.uid, u.created, isP.name
+			FROM users AS u
+			JOIN users_roles as isAur on u.uid = isAur.uid
+			JOIN role AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+			JOIN users_roles as isPur on u.uid = isPur.uid
+			JOIN role AS isP ON isPur.rid = isP.rid AND isP.name = '%s'
+			WHERE u.status=1 AND u.created >= '%s'",
+			strtolower($type), $start_date_str	);
+
+	$mylist = array();
+  while ($data = db_fetch_object($result)) {
+    $mylist[] = $data->created;
+  }
+  return array($mylist, count($mylist));
+}
+
+function fsp_form_alter(&$form, $form_state, $form_id){
+  switch ($form_id) {
+		case 'user_register':
+				unset($form['Badges']);
+				break;
+	}
+}
+
+function fsp_form_rolodex_node_form_alter(&$form, $form_state, $form_id){
+  // drupal_set_message(print "<pre>".print_r($form,true)."</pre>");
+  if (!$form['nid']['#value']) { 
+    drupal_set_title(t('Now, we need some contact info...'));
+    $form['buttons']['submit']['#value'] = t('Next (almost finished)');
+    $form['buttons']['submit']['#submit'][] = 'fsp_determine_nextstep';
+  }
+}
+
+function fsp_form_participant_node_form_alter(&$form, $form_state, $form_id){
+  //drupal_set_message(print "<pre>".print_r($form,true)."</pre>");
+  if (!$form['nid']['#value']) {
+    drupal_set_title(t('Become an FSP Participant...'));
+    // Change the default buttons
+    $form['buttons']['submit']['#value'] = t('Finish');
+    unset($form['buttons']['preview']);
+  }
+}
+
+function fsp_determine_nextstep($form, &$form_state){
+  if ($form_state['values']['field_fsp_state'][0]['value'] == 'New Hampshire'){
+   drupal_goto('friend/grant');
+  } else {
+   drupal_goto('node/add/participant');
+  }
+}
+
+//function fsp_form_user_register_alter(&$form, $form_state, $form_id){
+function fsp_form_user_register_alter(&$form, $form_state){
+   $form['trip_mail'] = $form['mail'];
+   $form['trip_mail']['#required'] = 0;
+   $form['#validate'][] = 'fsp_trip_check';
+}
+
+function fsp_trip_check($form, &$form_state) {
+ if ($form_state['values']['trip_mail'] != ''){
+   drupal_goto('invalidsignup');
+ }
+}
+
+function fsp_block($op = 'list', $delta = 0, $edit = array()) {
+  // The $op parameter determines what piece of information is being requested.
+  switch ($op) {
+    case 'list':
+      // If $op is "list", we just need to return a list of block descriptions.
+      // This is used to provide a list of possible blocks to the administrator,
+      // end users will not see these descriptions.
+      $blocks[0] = array(
+        'info'       => t('FSP Social Media'),
+      );
+      $blocks[1] = array(
+        'info' => t('FSP Spotlight'),
+      );
+      return $blocks;
+    case 'configure':
+      // If $op is "configure", we need to provide the administrator with a
+      // configuration form. The $delta parameter tells us which block is being
+      // configured. In this example, we'll allow the administrator to customize
+      // the text of the first block.
+      $form = array();
+      if ($delta == 1) {
+        // All we need to provide is a text field, Drupal will take care of
+        // the other block configuration options and the save button.
+        $form['fsp_spotlight_title'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Spotlight Header'),
+          '#size' => 60,
+          '#description' => t('Spotlight Headliner'),
+          '#default_value' => variable_get('fsp_spotlight_title',  t('Extra Extra!')),
+        );
+        $form['fsp_spotlight_body'] = array(
+          '#type' => 'textarea',
+          '#title' => t('Text to display under spotlight header'),
+          '#description' => t('This space intentionally left blank - dgarthwaite'),
+          '#default_value' => variable_get('fsp_spotlight_body',  t('Some example content.')),
+        );
+        $form['fsp_spotlight_date'] = array(
+          '#type' => 'date',
+          '#title' => t('Date to countdown to'),
+          '#description' => t('Computed as a countdown (days till) in $fsp_spotlight_countdown'),
+        );
+        $form['fsp_spotlight_last_day'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Last day countdown text'),
+          '#size' => 60,
+          '#default_value' => variable_get('fsp_spotlight_last_day',  t('tomorrow')),
+        );
+      }
+      return $form;
+    case 'save':
+      // If $op is "save", we need to save settings from the configuration form.
+      if ($delta == 1) {
+        // Have Drupal save the string to the database.
+        variable_set('fsp_spotlight_title', $edit['fsp_spotlight_title']);
+        variable_set('fsp_spotlight_body', $edit['fsp_spotlight_body']);
+        variable_set('fsp_spotlight_date', $edit['fsp_spotlight_date']);
+        variable_set('fsp_spotlight_last_day', $edit['fsp_spotlight_last_day']);
+      }
+      return;
+    case 'view': 
+    default:
+      // If $op is "view", then we need to generate the block for display
+      // purposes. The $delta parameter tells us which block is being requested.
+      switch ($delta) {
+        case 0:
+          // The subject is displayed at the top of the block. Note that it
+          // should be passed through t() for translation.
+          $block['subject'] = t('FSP Social Media');
+          // The content of the block is typically generated by calling a custom
+          // function.
+          $block['content'] = fsp_social_media_block();
+          break;
+        case 1:
+	  // The subject is displayed at the top of the block. Note that it
+	  // should be passed through t() for translation.
+	  $block['subject'] = t('Spotlight');
+	  // The content of the block is typically generated by calling a custom
+	  // function.
+	  $block['content'] = fsp_spotlight_contents();
+      }
+      return $block;
+  }
+}
+
+function fsp_social_media_block(){
+	$links = '<ul>
+	<li><a href="http://www.facebook.com/pages/Free-State-Project/147390698637518" target="_blank"><img src="/images/facebook_0.jpg">&nbsp;Facebook</a></li>
+	<li><a href="http://www.youtube.com/freestateprojectnh" target="_blank"><img src="/images/youtube.jpg">&nbsp;YouTube</a></li>
+	<li><a href="http://twitter.com/FreeStateNH" target="_blank"><img src="/images/twitter_0.jpg">&nbsp;Twitter</a></li>
+	<li><a href="http://www.myspace.com/freestateproject" target="_blank"><img src="/images/myspace_0.jpg">&nbsp;MySpace</a></li>
+	<li><a href="http://www.linkedin.com/groups?home=&gid=1835717" target="_blank"><img src="/images/linkedin_0.jpg">&nbsp;LinkedIn</a></li>
+	<!--li><a href="http://bureaucrashsocial.ning.com/group/FreeStateProject" target="_blank"><img src="/images/bureaucrash_0.jpg">&nbsp;Bureaucrash</a></li-->
+	<li><a href="http://fr33agents.net/groups" target="_blank"><img src="/images/fr33agentsicon.jpg">&nbsp;Fr33 Agents</a></li>
+	</ul>';
+	return $links;
+}
+
+function fsp_spotlight_contents() {
+    $output = "";
+
+	/**
+	 * This php snippet displays (x) days left to a specific event
+	 *eChange the values for keyMonth, keyDay and keyYear to suit
+	 * Tested and works with drupal 4.6 and 4.5
+	 */
+
+  $spotlight_date = variable_get('fsp_spotlight_date', FALSE);
+	if( ! $spotlight_date === FALSE ) {
+		$keyMonth = $spotlight_date['month']; 
+		$keyDay = $spotlight_date['day']; 
+		$keyYear = $spotlight_date['year']; 
+
+		$stillTime="<b>There ";
+		$stillTime2=" to sign up!";
+		$noTime ="<b>The Free State Project Money Bomb is underway!</b>";
+
+		$month = date(F); 
+		$mon = date(n); 
+		$day = date(j); 
+		$year = date(Y);
+		$hours_left = ((mktime(0,0,0,$keyMonth,$keyDay,$keyYear) - time())/3600); 
+		$daysLeft = ceil($hours_left/24) ;
+
+		if ($daysLeft > 1) {
+			$pfdeadline = "are only " . (string)$daysLeft . " days left";
+			$PFLine= $stillTime . $pfdeadline . $stillTime2;
+		}
+		elseif ($daysLeft == 1)
+		{    
+			$pfdeadline = "is only one day left";
+			$PFLine= $stillTime . $pfdeadline . $stillTime2;
+		} else {
+			$PFLine = $noTime;
+		}
+	} // end if( ! $spotlight_date === FALSE )
+
+	$fsp_spotlight_title = variable_get('fsp_spotlight_title',
+			'Unconfigured Spotlight');
+	$fsp_spotlight_body = variable_get('fsp_spotlight_body',
+			'<a href="/admin/build/block">Please configure the Spotlight block.</a>');
+
+	$output .= '
+		<div id="fsp_spotlight_block">
+		<table border="0" class="center-table">
+			<tr class="center">
+				<td width="46">
+					<img src="/images/spotlight-left.gif" alt="" width="23" height="22" />
+				</td>
+				<td><h5><em>'.$fsp_spotlight_title.'</em></h5></td>
+				<td width="46">
+					<img src="/images/spotlight-right.gif" alt="" width="23" height="22" />
+				</td>
+			</tr>
+		</table>
+		<p>'.$fsp_spotlight_body.'</p></div>
+	';
+
+    return $output;
+}
+
+function fsp_fieldgroup_form(&$form, $form_state, $form_id, $group){
+  switch( $form_id ){
+    case 'participant_node_form':
+		_fsp_mangle_participant_form($form, $form_state, $form_id, $group);  break;
+  }
+}
+
+function _fsp_mangle_participant_form(&$form, $form_state, $form_id, $group){
+  //drupal_set_message(print_r($form,true));
+  //drupal_set_message(print_r($group,true));
+
+  $form['field_fsp_soi']['#element_validate'] = array('_fsp_participant_soi_validate');
+
+  $form['group_obsolete']['#access'] = FALSE;
+  $form['field_fsp_movers_year']['#title'] = '';
+  $form['field_fsp_job_check']['#prefix'] = '<div class="nullspace"></div>';
+  $form['field_fsp_job_year']['#title'] = '';
+  $form['field_fsp_event_check']['#prefix'] = '<div class="nullspace"></div>';
+  $form['field_fsp_event_year']['#title'] = '';
+  $form['field_fsp_event_value'][0]['#title'] = '';
+  $form['field_fsp_issue_value'][0]['#title'] = '';
+  // $form['field_fsp_participants'][0]['#title'] = 'when the number of participants reaches';
+  $form['field_fsp_healthcare']['#prefix'] = '<div class="governmentovereach">' . t('If my current State or the Federal Government...') . '</div>';
+
+  if (!$form['nid']['#value']) { 
+    //drupal_set_title(t('Become a FSP Participant...')); 
+   $form['#redirect'] = 'community/welcome';
+  }
+
+}
+
+function _fsp_participant_soi_validate($element){
+  // Check that the statement of intent box is checked.
+  // dsm($element['#post']);
+
+  if (!isset($element['#post']['field_fsp_soi'])){
+    form_set_error('field_fsp_oi', t('You must accept the Statement of Intent.'));
+  }
+}
+
+/**
+ * FSP settings form 
+ */
+function fsp_admin_settings() {
+	$form = array();
+	$form['fsp_greeter_email_to'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Who gets email to greet new users.  Hi Liz.'),
+			'#default_value' => variable_get('fsp_greeter_email_to', 'thefreestate@gmail.com'),
+			);
+	$form['fsp_greeter_email_from'] = array(
+			'#type' => 'textfield',
+			'#title' => t('From field for greeter email'),
+			'#default_value' => variable_get('fsp_greeter_email_from', 'webadmin@freestatproject.org'),
+			);
+	$form['fsp_member_report_path'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Where monthly user dumps are kept'),
+			'#default_value' => variable_get('fsp_member_report_path', '/home/webadmin'),
+			);
+	$form['fsp_register_email_to'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Who gets email when new user signs up'),
+			'#default_value' => variable_get('fsp_register_email_to', 'registrationadmin@freestateproject.org'),
+			);
+	$form['fsp_approved_role'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Obsolete role for approval'),
+			'#default_value' => variable_get('fsp_approved_role', 'approved user'),
+			);
+	$form = system_settings_form($form);
+	return $form;
+}
+
+function _fsp_DISABLED_liberty_forum_report() {
+  // This is a quick report by dgarthwaite
+  // This code and the corresponding crontab entry should be removed after LF2010
+  //   -- and the ~webadmin/bin/send-LF2010-* script
+  //   -- and the entry above on line 326 or so in this file
+	/* DISABLED UNTIL NEXT YEAR - dgarthwaite */
+  global $conf;
+
+  $result = db_query("SELECT * FROM libertyforum_reg WHERE forum_year = 2010 ORDER BY reg_id ASC");
+
+  $csv_file = $conf["fsp_member_report_path"] . "/LF2010_reg.csv";
+  $fp = fopen($csv_file,'w');
+  if (!$fp) {
+    watchdog("fsp", "Unable to open '$csv_file' for writing member report", $severity = WATCHDOG_ERROR);
+    return;
+  }
+
+  $numfields = mysql_num_fields( $result );
+  for ( $i = 0; $i < $numfields; $i++ )
+	  $names[] = mysql_field_name( $result, $i );
+  fwrite($fp, implode(',', $names) . "\r\n");
+
+  while ($registrant = db_fetch_array($result)) {
+    $nextline = implode( ',', $registrant );
+    fwrite($fp, $nextline . "\r\n"); // Ewww, dos line feeds
+  }
+  fclose($fp);
+  
+}
+
+/**
+ * Function to tweet a single string argument, and log it
+ */
+function _fsp_send_tweet( $msg ){
+	// insert code here to actually send tweet
+	module_load_include('inc','twitter');
+	if( ! function_exists('twitter_set_status') ) {
+		watchdog('fsp', 'Unable to find twitter_set_status' , $severity = WATCHDOG_ERROR);
+	} elseif( "" != $msg ) {
+		$res=twitter_set_status(FSP_TWITTER_COUNTER_NAME, FSP_TWITTER_COUNTER_PASS, $msg);
+		watchdog('fsp', sprintf('Tweeting: %s',$msg), $severity = WATCHDOG_NOTICE);
+	} else {
+		watchdog('fsp', 'Attempt to tweet an empty message' , $severity = WATCHDOG_ERROR);
+	}
+}
+
+/**
+ * User_Import_record_alter hook
+ * These are used for Free State Now CSV uploads of users
+ **/
+
+function fsp_user_import_record_alter(&$fields) {
+
+	if( empty($fields['user']['email'][0]) ) {
+		$firstname = preg_replace('#\W#', '', $fields['content_profile']['rolodex cck:field_fsp_first_name:value'][0]);
+		$lastname  = preg_replace('#\W#', '', $fields['content_profile']['rolodex cck:field_fsp_last_name:value'][0]);
+
+		if(empty($firstname)) $firstname = 'nofirstname';
+		if(empty($lastname)) $lastname = 'nolastname';
+
+		$value = sprintf('%s.%s@fsn.freestateproject.org', $firstname, $lastname);
+		$fields['user']['email'][0] = $value;
+	}
+
+  $referrer = $fields['content_profile']['rolodex cck:field_fsp_referral:value'][0];
+  $fields['content_profile']['rolodex cck:field_fsp_referral:value'][0] = 'FSN ' . drupal_strtoupper($referrer);
+
+  $soi = drupal_strtoupper($fields['content_profile']['participant cck:field_fsp_soi:value'][0]);
+	if( substr( $soi,0,1 ) == 'S' ) {
+    $fields['content_profile']['participant cck:field_fsp_soi:value'][0] = 1;
+	} elseif ( substr( $soi,0,1)  == 'F' ) {
+    $fields['content_profile']['participant cck:field_fsp_soi:value'][0] = 0;
+	}
+}

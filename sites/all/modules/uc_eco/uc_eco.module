@@ -1,0 +1,99 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Main file for the ECO module
+ *
+ * Provides enhanced features and options for Ubercart checkout including integration with
+ * other contributed modules like UC_coupon and Webform
+ *
+ * @ingroup uc_eco
+ */
+
+/**
+ * Implementation of hook_help().
+ *
+ */
+function uc_eco_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#uc_eco':
+// Help is incorporated in this manner as initial module development has been done in a manner
+// to make it simpler to add Advanced Help module support in the near future.
+      include('help/help.php');
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_eco_menu() {
+  $items = array();
+
+  $items['admin/store/settings/eco'] = array(
+    'title' => 'ECO settings',
+    'description' => 'Settings for the Ubercart ECO (Extra Customization Options) module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_eco_admin_settings'),
+    'access arguments' => array('administer store'),
+    'file' => 'uc_eco.admin.inc',
+    );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_product_description_alter().
+ *
+ * Provides customization option of cart content display
+ * based on settings and situations from the ECO sub-modules, including
+ *
+ */
+function uc_eco_product_description_alter(&$description, $product) {
+  if (module_exists('uc_attribute')) {
+    $description = array(
+      'attributes' => array(
+        '#product' => array(
+          '#type' => 'value',
+          '#value' => $product,
+        ),
+        '#theme' => 'uc_product_attributes',
+        '#weight' => 1,
+      ),
+    );
+    $desc =& $description['attributes'];
+
+    if (empty($product->order_id)) {
+      foreach (_uc_cart_product_get_options($product) as $option) {
+        if (!isset($desc[$option['aid']])) {
+          if (variable_get('uc_eco_main_cart_remove_empty_attributes', 0) == 1) {
+            if (!empty($option['name'])) {
+              $desc[$option['aid']]['#attribute_name'] = $option['attribute'];
+              $desc[$option['aid']]['#options'] = array($option['name']);
+            }
+          }
+          else {
+            $desc[$option['aid']]['#attribute_name'] = $option['attribute'];
+            $desc[$option['aid']]['#options'] = array($option['name']);
+          }
+          if (module_exists('uc_eco_attribute')) {
+            if (substr($desc[$option['aid']]['#options'][0], -8, 8) == '00:00:00') {
+              $desc[$option['aid']]['#options'][0] = substr($desc[$option['aid']]['#options'][0], 0, -9);
+            }
+          }
+        }
+      }
+    }
+    else {
+      foreach ((array)$product->data['attributes'] as $attribute => $option) {
+        $desc[] = array(
+          '#attribute_name' => $attribute,
+          '#options' => $option,
+        );
+      }
+    }
+
+    return $description;
+  }
+}

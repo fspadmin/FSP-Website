@@ -1,0 +1,11 @@
+You need to download Bluff files from: 
+http://bluff.jcoglan.com/
+
+Bluff contains all necessary JavaScript files for drawing charts.
+You need to extract downloaded archive and copy following files:
+
+bluff-min.js
+excanvas.js
+js-class.js
+
+and place them in the "bluff" folder of the module.
