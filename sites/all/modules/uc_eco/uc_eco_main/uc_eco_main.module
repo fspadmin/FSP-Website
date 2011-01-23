@@ -1,0 +1,724 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Main file for the ECO module
+ *
+ * Provides enhanced features and options for Ubercart checkout including integration with
+ * other contributed modules like UC_Coupon and Webform
+ *
+ * @ingroup uc_eco_main
+ */
+
+
+/**
+ * Implementation of hook_footer().
+ */
+function uc_eco_main_footer() {
+  if (variable_get('uc_eco_main_coupon_activate', 0) == 1) {
+    return _uc_eco_main_coupon_cookie_code();
+  }
+}
+
+function _uc_eco_main_coupon_cookie_code() {
+  $coupon_keyword = variable_get('uc_eco_main_coupon_keyword', 'coupon');
+  if (isset($_GET[$coupon_keyword]) && $_GET[$coupon_keyword] != "") {
+    $coupon_url = $_GET[$coupon_keyword];
+    setcookie('coupon', $coupon_url, time()+86400, "/");
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function uc_eco_main_theme() {
+  return array(
+    'uc_eco_main_billing_pane' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'uc_eco_main_legal_pane' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_checkout_pane_alter().
+ *
+ */
+function uc_eco_main_checkout_pane_alter(&$panes) {
+  foreach ($panes as &$pane) {
+    if ($pane['id'] == 'customer' && variable_get('uc_eco_main_customer_activate', 0) == 1) {
+      $pane['callback'] = 'uc_eco_main_customer_information_pane';
+    }
+    if ($pane['id'] == 'coupon' && module_exists('uc_coupon') && variable_get('uc_eco_main_coupon_activate', 0) == 1) {
+      $pane['callback'] = 'uc_eco_main_coupon_pane';
+    }
+    if ($pane['id'] == 'billing' && variable_get('uc_eco_main_billing_pane_activate', 0) == 1) {
+      $pane['callback'] = 'uc_eco_main_billing_pane';
+    }
+  }
+}
+
+/**
+ * Implementation of hook_checkout_pane().
+ *
+ */
+function uc_eco_main_checkout_pane() {
+  if (module_exists('legal')) {
+    $panes[] = array(
+      'id' => 'uc_eco_main_legal',
+      'callback' => 'uc_eco_main_legal_pane',
+      'title' => t('Terms and Conditions'),
+      'desc' => t("Please confirm if you agree with our terms and conditions that apply on all our purchases."),
+      'weight' => 6,
+      'collapsible' => TRUE,
+      'enabled' => FALSE,
+    );
+  }
+
+  return $panes;
+}
+
+/*******************************************************************************
+ * Checkout panes callback functions
+ ******************************************************************************/
+
+/**
+ * Callback function for the Customer Information Pane
+ *
+ */
+function uc_eco_main_customer_information_pane($op, &$arg1, $arg2) {
+  global $user;
+
+  switch ($op) {
+    case 'view':
+      if (variable_get('uc_eco_main_customer_email_activate', 0) == 1) {
+        $webform_cookie = $_COOKIE['customer'];
+        $webform_email = $webform_cookie['email'];
+        $email = $user->uid ? $user->mail : $webform_email;
+      }
+      else {
+        $email = (is_null($arg1) || empty($arg1->primary_email)) ? $webform_email : $arg1->primary_email;
+      }
+
+      if ($user->uid) {
+        $description = t('Order information will be sent to your account e-mail listed below.');// .'<br />'
+        $contents['primary_email'] = array('#type' => 'hidden', '#value' => check_plain($email));
+        $contents['email_text'] = array(
+          '#value' => '<div>'. t('<b>E-mail address:</b> @email (<a href="!url">edit</a>)', array('@email' => $email, '!url' => url('user/'. $user->uid .'/edit', array('query' => 'destination=cart/checkout')))) .'</div>',
+        );
+      }
+      else {
+        $description = t('Enter a valid email address for this order or <a href="!url">click here</a> to login with an existing account and return to checkout.', array('!url' => url('user/login')));
+        $contents['primary_email'] = uc_textfield(t('E-mail address'), $email, TRUE, NULL, 64);
+      }
+
+      if (variable_get('uc_cart_email_validation', FALSE) && !$user->uid) {
+        $contents['primary_email_confirm'] = uc_textfield(t('Confirm e-mail address'), $_SESSION['email_match'] === FALSE ? '' : $email, TRUE, NULL, 64);
+        if ($_SESSION['email_match'] === FALSE) {
+          $contents['primary_email_confirm']['#attributes'] = array('class' => 'error');
+          unset($_SESSION['email_match']);
+        }
+      }
+
+      if ($user->uid == 0 && variable_get('uc_eco_main_new_account_creation_disable', 0) == 0) {
+        $contents['new_account'] = array();
+
+        if (variable_get('uc_cart_new_account_name', FALSE)) {
+          $contents['new_account']['name'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Username'),
+            '#default_value' => $arg1->data['new_user']['name'],
+            '#maxlength' => 60,
+            '#size' => 32,
+          );
+        }
+        if (variable_get('uc_cart_new_account_password', FALSE)) {
+          $contents['new_account']['pass'] = array(
+            '#type' => 'password',
+            '#title' => t('Password'),
+            '#maxlength' => 32,
+            '#size' => 32,
+            '#required' => variable_get('uc_eco_main_new_account_password_require', FALSE) ? variable_get('uc_eco_main_new_account_password_requir', TRUE) : FALSE,
+          );
+          $contents['new_account']['pass_confirm'] = array(
+            '#type' => 'password',
+            '#title' => t('Confirm password'),
+            '#description' => t('Passwords must match to proceed.'),
+            '#maxlength' => 32,
+            '#size' => 32,
+            '#required' => variable_get('uc_eco_main_new_account_password_require', FALSE) ? variable_get('uc_eco_main_new_account_password_requir', TRUE) : FALSE,
+          );
+        }
+
+        if (!empty($contents['new_account'])) {
+          $array = array(
+            '#type' => 'fieldset',
+            '#title' => t('New account details'),
+            '#description' => variable_get('uc_cart_new_account_details', t('<b>Optional.</b> New customers may supply custom account details.<br />We will create these for you if no values are entered.')),
+            '#collapsible' => FALSE,
+          );
+          $contents['new_account'] = array_merge($array, $contents['new_account']);
+        }
+      }
+
+      return array('description' => $description, 'contents' => $contents);
+
+    case 'process':
+      if (!empty($arg2['primary_email']) && !valid_email_address($arg2['primary_email'])) {
+        drupal_set_message(t('You must enter a valid e-mail address.'), 'error');
+        return FALSE;
+      }
+
+      $arg1->primary_email = $arg2['primary_email'];
+
+      if (variable_get('uc_cart_email_validation', FALSE) && !$user->uid &&
+          $arg2['primary_email'] !== $arg2['primary_email_confirm']) {
+        drupal_set_message(t('The e-mail address did not match.'), 'error');
+        $_SESSION['email_match'] = FALSE;
+        return FALSE;
+      }
+      unset($_SESSION['email_match']);
+
+      // If new users can specify names or passwords then...
+      if ((variable_get('uc_cart_new_account_name', FALSE) ||
+          variable_get('uc_cart_new_account_password', FALSE)) &&
+          $user->uid == 0) {
+        // Skip if an account already exists for this e-mail address.
+        if (db_fetch_object(db_query("SELECT uid FROM {users} WHERE LOWER(mail) = LOWER('%s')", $arg2['primary_email'])) > 0) {
+          drupal_set_message(t('An account already exists for your e-mail address. The new account details you entered will be disregarded.'));
+        }
+        else {
+          // Validate the username.
+          if (variable_get('uc_cart_new_account_name', FALSE) && !empty($arg2['new_account']['name'])) {
+            $message = user_validate_name($arg2['new_account']['name']);
+            if (!empty($message)) {
+              drupal_set_message($message, 'error');
+              return FALSE;
+            }
+            if (db_fetch_object(db_query("SELECT uid FROM {users} WHERE LOWER(name) = LOWER('%s')", $arg2['new_account']['name'])) > 0) {
+              drupal_set_message(t('The username %name is already taken. Please enter a different name or leave the field blank for your username to be your e-mail address.', array('%name' => $arg2['new_account']['name'])), 'error');
+              return FALSE;
+            }
+            $arg1->data['new_user']['name'] = $arg2['new_account']['name'];
+          }
+          // Validate the password.
+          if (variable_get('uc_cart_new_account_password', FALSE)) {
+            if (strcmp($arg2['new_account']['pass'], $arg2['new_account']['pass_confirm'])) {
+              drupal_set_message(t('The passwords you entered did not match. Please try again.'), 'error');
+              return FALSE;
+            }
+            $arg1->data['new_user']['pass'] = $arg2['new_account']['pass'];
+          }
+        }
+      }
+
+      if ($user->uid) {
+        $arg1->uid = $user->uid;
+      }
+      return TRUE;
+
+    case 'review':
+      $review[] = array('title' => t('E-mail'), 'data' => check_plain($arg1->primary_email));
+      return $review;
+
+    case 'settings':
+      $form['uc_cart_email_validation'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Require e-mail confirmation in checkout for anonymous customers.'),
+        '#default_value' => variable_get('uc_cart_email_validation', FALSE),
+      );
+      $form['uc_cart_new_account_name'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Allow anonymous customers to specify a new user account name.'),
+        '#default_value' => variable_get('uc_cart_new_account_name', FALSE),
+      );
+      $form['uc_cart_new_account_password'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Allow anonymous customers to specify a new user account password.'),
+        '#default_value' => variable_get('uc_cart_new_account_password', FALSE),
+      );
+      $form['uc_eco_main_new_account_password_require'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Require anonymous customers to specify a new user account password.'),
+        '#default_value' => variable_get('uc_eco_main_new_account_password_require', TRUE),
+        '#description' => t('Please note that this option requires the option above to be selected.'),
+      );
+      $form['uc_eco_main_new_account_creation_disable'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Disable Drupal account creation for anonymous users / new customers.'),
+        '#default_value' => variable_get('uc_eco_main_new_account_creation_disable', 0),
+        '#description' => t('This option allows you to disable the Drupal account creation process for anonymous users / new customers.  <b>Please Note</b>: this overrides the other options above, and you will likely need to update your checkout messaging and order confirmation email template to remove references to new accounts and logging in etc. in order to avoid confusing customers.'),
+      );
+      $form['uc_cart_new_account_details'] = array(
+        '#type' => 'textarea',
+        '#title' => t('New account details help message'),
+        '#description' => t('Enter the help message displayed in the new account details fieldset when shown.'),
+        '#default_value' => variable_get('uc_cart_new_account_details', t('<b>Optional.</b> New customers may supply custom account details.<br />We will create these for you if no values are entered.')),
+      );
+      return $form;
+  }
+}
+
+/**
+ * Callback function for the Coupon Pane
+ *
+ */
+function uc_eco_main_coupon_pane($op, &$arg1, $arg2) {
+  switch ($op) {
+    case 'view':
+      $coupon_cookie = $_COOKIE['coupon'];
+      if ($coupon_cookie != 'no') {
+        drupal_add_js(drupal_get_path('module', 'uc_eco_main') .'/uc_eco_main.js');
+        $code = $arg1->data['coupon'];
+        $coupon = uc_coupon_validate($code);
+        if ($coupon->valid) {
+          drupal_add_js('$(document).ready(function() {
+            if (window.set_line_item) {
+              set_line_item("coupon", "'. $coupon->title .'", '. -$coupon->amount .', 2);
+            }
+          });', 'inline');
+        }
+
+        $description = variable_get('uc_coupon_pane_description', 'Enter a coupon code for this order.');
+
+        $contents['code'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Coupon code'),
+          '#default_value' => $coupon_cookie,
+          '#size' => 25,
+        );
+        $contents['apply'] = array(
+          '#type' => 'button',
+          '#value' => t('Apply to order'),
+          '#attributes' => array('onclick' => "getCoupon(); return false;"),
+        );
+        return array('description' => $description, 'contents' => $contents);
+      }
+
+    case 'process':
+      if ($arg2['code']) {
+        if ($coupon_cookie != 'no') {
+          $arg1->data['coupon'] = strtoupper(check_plain($arg2['code']));
+          $coupon = uc_coupon_validate($arg1->data['coupon']);
+          if (!$coupon->valid) {
+            drupal_set_message($coupon->message, 'error');
+            return FALSE;
+          }
+          _uc_coupon_apply_to_order($arg1->order_id, $coupon);
+        }
+        return TRUE;
+      }
+
+    case 'settings':
+      $form['uc_coupon_pane_description'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Checkout pane message'),
+        '#default_value' => variable_get('uc_coupon_pane_description', 'Enter a coupon code for this order.'),
+      );
+      return $form;
+  }
+}
+
+
+/**
+ * Callback function for the Billing Information Pane
+ *
+ */
+function uc_eco_main_billing_pane($op, &$arg1, $arg2) {
+  global $user;
+  switch ($op) {
+    case 'view':
+      if ($_COOKIE['review']) {
+        $output = '$(document).ready(function() {
+          $("#billing-pane .address-pane-table table.edit").show();
+          $("#billing-pane .address-pane-table table.non-edit").hide();
+        })';
+        drupal_add_js($output, 'inline');
+      }
+      else {
+        $output = '$(document).ready(function() {
+          $("#billing-pane .address-pane-table table.edit").hide();
+          $("#billing-pane .address-pane-table table.non-edit").show();
+          $("#click-to-edit-billing").click(function(){
+            $("#billing-pane .address-pane-table table.edit").toggle();
+            $("#billing-pane .address-pane-table table.non-edit").toggle();
+            $("#click-to-edit-billing").hide();
+          });
+        })';
+        drupal_add_js($output, 'inline');
+      }
+
+      $webform_cookie = $_COOKIE['customer'];
+      $webform_firstname = $webform_cookie['first_name'];
+      $webform_lastname = $webform_cookie['last_name'];
+      $webform_company = $webform_cookie['company'];
+      $webform_street = $webform_cookie['street'];
+      $webform_street2 = $webform_cookie['street2'];
+      $webform_city = $webform_cookie['city'];
+      $webform_state = $webform_cookie['state'];
+      $webform_country = $webform_cookie['country'];
+      $webform_zipcode = $webform_cookie['zipcode'];
+      $webform_phone = $webform_cookie['phone'];
+
+      $description = t('Enter your billing address and information here.');
+
+      if ($user->uid) {
+        $addresses = uc_select_address($user->uid, 'billing', 'apply_address(\'billing\', this.value);', t('Saved addresses'), TRUE);
+        if (!empty($addresses)) {
+          $contents['billing_address_select'] = $addresses;
+        }
+      }
+
+      if (uc_address_field_enabled('first_name')) {
+        $contents['billing_first_name'] = uc_textfield(uc_get_field_name('first_name'), ($_COOKIE['review'] ? $arg1->billing_first_name : $webform_firstname), uc_address_field_required('first_name'));
+      }
+      if (uc_address_field_enabled('last_name')) {
+        $contents['billing_last_name'] = uc_textfield(uc_get_field_name('last_name'), ($_COOKIE['review'] ? $arg1->billing_last_name : $webform_lastname), uc_address_field_required('last_name'));
+      }
+      if (uc_address_field_enabled('company')) {
+        $contents['billing_company'] = uc_textfield(uc_get_field_name('company'), ($_COOKIE['review'] ? $arg1->billing_company : $webform_company), uc_address_field_required('company'), NULL, 64);
+      }
+
+      if (uc_address_field_enabled('street1')) {
+        $contents['billing_street1'] = uc_textfield(uc_get_field_name('street1'), ($_COOKIE['review'] ? $arg1->billing_street1 : $webform_street), uc_address_field_required('street1'), NULL, 64);
+      }
+
+      if (uc_address_field_enabled('street2')) {
+        $contents['billing_street2'] = uc_textfield(uc_get_field_name('street2'), ($_COOKIE['review'] ? $arg1->billing_street2 : $webform_street2), uc_address_field_required('street2'), NULL, 64);
+      }
+      if (uc_address_field_enabled('city')) {
+        $contents['billing_city'] = uc_textfield(uc_get_field_name('city'), ($_COOKIE['review'] ? $arg1->billing_city : $webform_city), uc_address_field_required('city'));
+      }
+      if (uc_address_field_enabled('country')) {
+        $contents['billing_country'] = uc_country_select(uc_get_field_name('country'), ($_COOKIE['review'] ? $arg1->billing_country : $webform_country), NULL, 'name', uc_address_field_required('country'));
+
+      }
+      if (uc_address_field_enabled('zone')) {
+        if (isset($_POST['panes']['billing']['billing_country'])) {
+          $country_id = intval($_POST['panes']['billing']['billing_country']);
+        }
+        else {
+          $country_id = $webform_country;
+        }
+        $contents['billing_zone'] = uc_zone_select(uc_get_field_name('zone'), ($_COOKIE['review'] ? $arg1->billing_zone : $webform_state), NULL, ($_COOKIE['review'] ? $arg1->billing_country : $webform_country), 'name', uc_address_field_required('zone'));
+        if (isset($_POST['panes']) && count($contents['billing_zone']['#options']) == 1) {
+          $contents['billing_zone']['#required'] = FALSE;
+        }
+      }
+      if (uc_address_field_enabled('postal_code')) {
+        $contents['billing_postal_code'] = uc_textfield(uc_get_field_name('postal_code'), ($_COOKIE['review'] ? $arg1->billing_postal_code : $webform_zipcode), uc_address_field_required('postal_code'), NULL, 10, 10);
+      }
+      if (uc_address_field_enabled('phone')) {
+        $contents['billing_phone'] = uc_textfield(uc_get_field_name('phone'), ($_COOKIE['review'] ? $arg1->billing_phone : $webform_phone), uc_address_field_required('phone'), NULL, 32, 16);
+      }
+
+      return array('description' => $description, 'contents' => $contents, 'theme' => 'uc_eco_main_billing_pane');
+
+    case 'process':
+      $arg1->billing_first_name = $arg2['billing_first_name'];
+      $arg1->billing_last_name = $arg2['billing_last_name'];
+      $arg1->billing_company = $arg2['billing_company'];
+      $arg1->billing_street1 = $arg2['billing_street1'];
+      $arg1->billing_street2 = $arg2['billing_street2'];
+      $arg1->billing_city = $arg2['billing_city'];
+      $arg1->billing_zone = $arg2['billing_zone'];
+      $arg1->billing_postal_code = $arg2['billing_postal_code'];
+      $arg1->billing_country = $arg2['billing_country'];
+      $arg1->billing_phone = $arg2['billing_phone'];
+      return TRUE;
+
+    case 'review':
+      setcookie("review", 1, time()+600);
+
+      $review[] = array('title' => t('Address'), 'data' => uc_order_address($arg1, 'billing', FALSE));
+      if (uc_address_field_enabled('phone') && !empty($arg1->billing_phone)) {
+        $review[] = array('title' => t('Phone'), 'data' => check_plain($arg1->billing_phone));
+      }
+      return $review;
+  }
+}
+
+/**
+ * Callback function for the Legal Pane
+ * 
+ */
+function uc_eco_main_legal_pane($op) {
+  switch ($op) {
+    case 'view':
+      $contents['terms_text'] = array(
+        '#title' => t('Terms and Conditions'),
+        '#value' => _uc_eco_main_legal_get_tac(),
+      );
+      $contents['terms_agree'] = array(
+        '#type' => 'checkboxes',
+        '#label' => Terms,
+        '#title' => t('Terms and Conditions'),
+        '#options' => array('agreed' => t('I agree with the terms above')),
+        '#required' => variable_get('uc_eco_main_legal_required', 1)
+      );
+
+      return array('contents' => $contents, 'next-button' => FALSE, 'theme' => 'uc_eco_main_legal_pane');
+
+    case 'settings':
+      $form['uc_eco_main_legal_required'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Terms and conditions agreement is required'),
+        '#default_value' => variable_get('uc_eco_main_legal_required', 0),
+        '#weight' => -2,
+      );
+      if (module_exists('modalframe')) {
+        $form['uc_eco_main_legal_popup'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Open terms and conditions in a popup modal window.'),
+          '#default_value' => variable_get('uc_eco_main_legal_popup', 0),
+          '#weight' => -1,
+        );
+      }
+      return $form;
+
+  }
+}
+
+/*******************************************************************************
+ * Theme functions
+ ******************************************************************************/
+
+/**
+ * Theme function for the Billing Information Pane
+ *
+ */
+function theme_uc_eco_main_billing_pane($form) {
+  $req = '<span class="form-required">*</span>';
+  if (isset($form['copy_address'])) {
+    $output = drupal_render($form['copy_address']);
+  }
+  $output .= '<div class="address-pane-table">';
+  if ($_COOKIE['review'] != 1) { 
+    $output .= '<div id="click-to-edit-billing"> <a href="javascript:void(0);">Click to Edit</a></div>';
+    $output .= '<table class="non-edit"> ';
+    $form_non_edit = $form;
+    foreach (element_children($form_non_edit) as $field) {
+      $form_non_edit[$field]['#type'] = 'markup';
+      $title = $form_non_edit[$field]['#title'] .':';
+      unset($form_non_edit[$field]['#title']);
+      if (substr($field, -7) == 'street1') {
+        $title = uc_get_field_name('street') .':';
+      }
+      elseif (substr($field, -7) == 'street2') {
+        $title = ' ';
+      }
+      $output .= '<tr><td class="field-label">';
+      if ($form_non_edit[$field]['#required']) {
+        $output .= $req;
+      }
+      if (substr($field, -7) == 'country' || substr($field, -4) == 'zone') {
+        $selected = $form_non_edit[$field]['#value'];
+        $form_non_edit[$field]['#value'] = $form_non_edit[$field]['#options'][$selected];
+      }
+      if (substr($field, -4) != 'next' && substr($field, -14) != 'address_select') {
+        $output .= $title .'</td><td>'. drupal_render($form_non_edit[$field]) . '</td></tr>';
+      }
+    }
+    $output .= '</table>';
+  }
+  $output .= '<table class="edit" style="display: none;">';
+  foreach (element_children($form) as $field) {
+    if (substr($field, 0, 9) == 'delivery_' || substr($field, 0, 8) == 'billing_') {
+      $title = $form[$field]['#title'] .':';
+      unset($form[$field]['#title']);
+      if (substr($field, -7) == 'street1') {
+        $title = uc_get_field_name('street') .':';
+      }
+      elseif (substr($field, -7) == 'street2') {
+        $title = ' ';
+      }
+      $output .= '<tr><td class="field-label">';
+      if ($form[$field]['#required']) {
+        $output .= $req;
+      }
+      $output .= $title .'</td><td>'. drupal_render($form[$field]) .'</td></tr>';
+    }
+  }
+  $output .= '</table></div>';
+  foreach (element_children($form) as $element) {
+    $output .= drupal_render($form[$element]);
+  }
+  return $output;
+}
+
+/**
+ * Theme function for the Legal Pane
+ *
+ */
+function theme_uc_eco_main_legal_pane($form) {
+  drupal_add_css(drupal_get_path('module', 'uc_eco_main') .'/uc_eco_main.css', 'theme', 'all');
+
+  $output = '<div class="terms-text">';
+  $output .= drupal_render($form['terms_text']);
+  $output .= '</div><div class ="terms-agree">';
+  $output .= drupal_render($form['terms_agree']);
+  $output .= '</div>';
+
+  return $output;
+
+}
+
+/*******************************************************************************
+ * Additional functions and form alterations
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ * Adds some jQuery on Checkout form to auto click the apply coupon button
+ * and adds sample webform processing php for settings cookies to ECO
+ *
+ */
+function uc_eco_main_form_alter(&$form, $form_state, $form_id) {
+  if ('uc_cart_checkout_form' == $form_id) {
+    drupal_add_js('$(document).ready(function() {
+      var coupon_button = $("input#edit-panes-coupon-apply");
+      coupon_button.click();
+    });', 'inline');
+  }
+
+  if ($form_id == 'webform_configure_form' && module_exists('webform_php')) {
+
+    $sample_code_intro = t('The following is a sample of code that could be used in the additional processing section above. 
+    The cookie portion (example: customer[phone]) should not be changed unless making corresponding changes to ECO: Main module.
+    <br /><br />
+    You can copy and paste the code below, and there are a few things you will likely need to modify.
+    The portion immediately after "submitted tree" corresponds to the field key value for your Webform component in question.
+    The number after "time()" can be changed.  This corresponds to how long you want to set the cookie before it expires. The
+    number is in seconds.  In the sample code, the cookie is being set for 30 days (60 * 60 * 24 * 30).
+    The last line tells the system to add a particular product to the cart when the webform is submitted.  The format is the
+    Product number first and the quantity second.  The Product id number is the same as the Node ID.  You can use the Webform
+    URL redirect field to send the customer directly to the cart (/cart) or checkout (/cart/checkout) after submitting the form.
+    <br /><br />');
+
+    $sample_code = t('&lt;?php setcookie("customer[first_name]", $form_state["values"]["submitted_tree"]["first_name"], time()+2592000, "/"); <br />
+    setcookie("customer[last_name]", $form_state["values"]["submitted_tree"]["last_name"], time()+2592000, "/"); <br />
+    setcookie("customer[company]", $form_state["values"]["submitted_tree"]["company"], time()+2592000, "/"); <br />
+    setcookie("customer[street]", $form_state["values"]["submitted_tree"]["street_address"], time()+2592000, "/"); <br />
+    setcookie("customer[street2]", $form_state["values"]["submitted_tree"]["street_address_2"], time()+2592000, "/"); <br />
+    setcookie("customer[city]", $form_state["values"]["submitted_tree"]["city"], time()+2592000, "/"); <br />
+    setcookie("customer[country]", $form_state["values"]["submitted_tree"]["country"], time()+2592000, "/"); <br />
+    setcookie("customer[zipcode]", $form_state["values"]["submitted_tree"]["zip_code"], time()+2592000, "/"); <br />
+    setcookie("customer[email]", $form_state["values"]["submitted_tree"]["email_address"], time()+2592000, "/"); <br />
+    setcookie("customer[phone]", $form_state["values"]["submitted_tree"]["phone"], time()+259200, "/"); <br />
+    if ($form_state["values"]["submitted_tree"]["state"]) { <br />
+    &nbsp;&nbsp; setcookie("customer[state]", $form_state["values"]["submitted_tree"]["state"], time()+2592000, "/"); <br />
+    } <br />
+    else if ($form_state["values"]["submitted_tree"]["province"]) { <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;setcookie("customer[state]", $form_state["values"]["submitted_tree"]["province"], time()+2592000, "/"); <br />
+    } <br />
+    uc_cart_add_item(4, 1); ?>');
+
+    $form['uc_eco_main'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Sample Processing Code for Ubercart Checkout'),
+      '#weight' => 50,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#description' => ($sample_code_intro . $sample_code),
+    );
+  }
+}
+
+/*
+ * Retrieves the Terms and Conditions from Legal module
+ */
+function _uc_eco_main_legal_get_tac() {
+  $conditions = db_fetch_array(db_query_range("SELECT * FROM {legal_conditions} ORDER BY tc_id DESC", 0, 1));
+  $tac = filter_xss_admin($conditions['conditions']);
+  return $tac;
+}
+
+/**
+ * Implementation of hook_menu_alter().
+ *
+ * Intercept Ubercart callback to direct to alternate functions to
+ * allow anoymous checkout without Drupal account creation
+ *
+ */
+function uc_eco_main_menu_alter(&$callbacks) {
+  if (variable_get('uc_eco_main_new_account_creation_disable', 0) == 1) {
+    $callbacks['cart/checkout/complete']['page callback'] = 'uc_eco_main_checkout_complete';
+  }
+}
+
+
+function uc_eco_main_checkout_complete() {
+  if (!$_SESSION['do_complete']) {
+    drupal_goto('cart');
+  }
+  $order = uc_order_load(intval($_SESSION['cart_order']));
+  if (empty($order)) {
+    drupal_set_message(t("We're sorry.  An error occurred while processing your order that prevents us from completing it at this time. Please contact us and we will resolve the issue as soon as possible."), 'error');
+    watchdog('uc_cart', 'An empty order made it to checkout! Cart order ID: @cart_order', array('@cart_order' => $_SESSION['cart_order']), WATCHDOG_ERROR);
+    drupal_goto('cart');
+  }
+  $output = uc_eco_main_complete_sale($order, variable_get('uc_new_customer_login', FALSE));
+  uc_order_comment_save($order->order_id, 0, t('Order created through website.'), 'admin');
+  $page = variable_get('uc_cart_checkout_complete_page', '');
+  if (!empty($page)) {
+    drupal_goto(variable_get('uc_cart_checkout_complete_page', ''));
+  }
+
+  return $output;
+}
+
+
+function uc_eco_main_complete_sale($order, $login = FALSE) {
+  global $user;
+
+  if ($order->uid == 0) {
+    $result = db_query("SELECT uid FROM {users} WHERE mail = '%s'", $order->primary_email);
+    if ($account = db_fetch_object($result)) {
+      $order->uid = $account->uid;
+      $account = user_load($account->uid);
+      db_query("UPDATE {uc_orders} SET uid = %d WHERE order_id = %d", $order->uid, $order->order_id);
+      $message_type = 'existing_user';
+    }
+    else {
+      $fields = array(
+        'mail' => $order->primary_email,
+      );
+      $account = (object)$fields;
+    }
+  }
+  else {
+    if ($order->uid == $user->uid) {
+      $message_type = 'logged_in';
+      $account = clone $user;
+    }
+    else {
+      $message_type = 'existing_user';
+      $account = user_load($order->uid);
+    }
+  }
+
+  $output = '<p>'. check_markup(variable_get('uc_msg_order_submit', uc_get_message('completion_message')),
+                         variable_get('uc_msg_order_submit_format', FILTER_FORMAT_DEFAULT), FALSE) .'</p>';
+  $show_message = check_markup(variable_get('uc_msg_order_'. $message_type, uc_get_message('completion_'. $message_type)), variable_get('uc_msg_order_'. $message_type .'_format', FILTER_FORMAT_DEFAULT), FALSE);
+
+  $output .= '<p>'. check_markup(variable_get('uc_msg_continue_shopping', uc_get_message('continue_shopping')),
+                      variable_get('uc_msg_continue_shopping_format', FILTER_FORMAT_DEFAULT),
+                      FALSE) .'</p>';
+
+  $output_message = token_replace_multiple($output, array('global' => NULL, 'order' => $order));
+  $themed_output = theme('uc_cart_complete_sale', $output_message);
+  $status = db_result(db_query("SELECT order_status FROM {uc_orders} WHERE order_id = %d", $order->order_id));
+  if (uc_order_status_data($status, 'state') == 'in_checkout') {
+    uc_order_update_status($order->order_id, uc_order_state_default('post_checkout'));
+  }
+  uc_cart_empty(uc_cart_get_id());
+  unset($_SESSION['cart_order'], $_SESSION['do_complete'], $_SESSION['new_user']);
+  module_invoke_all('uc_checkout_complete', $order, $account);
+  ca_pull_trigger('uc_checkout_complete', $order, $account);
+
+  return $themed_output;
+}

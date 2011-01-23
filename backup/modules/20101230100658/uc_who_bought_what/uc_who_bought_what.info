@@ -1,0 +1,14 @@
+; $Id: 
+name = Who Bought What
+description = A shows a list of users who purchased a selected product
+core = 6.x
+dependencies[] = uc_reports
+package = "Ubercart - extra"
+
+
+; Information added by drupal.org packaging script on 2010-02-16
+version = "6.x-2.10"
+core = "6.x"
+project = "uc_who_bought_what"
+datestamp = "1266334818"
+

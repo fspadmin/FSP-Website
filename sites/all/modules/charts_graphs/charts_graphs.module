@@ -1,0 +1,150 @@
+<?php
+// $Id: charts_graphs.module,v 1.1.2.15 2010/06/28 22:55:42 rsevero Exp $
+
+/**
+ * @File
+ *   Charts and Graphs module file.
+ */
+
+/**
+ * Implementation of hook_init().
+ */
+function charts_graphs_init() {
+  require_once(dirname(__FILE__) . '/charts_graphs.class.inc');
+  $api_providers = array();
+
+  $hook = 'chartgraph_provider';
+  foreach (module_implements($hook) as $module) {
+    $function = $module . '_' . $hook;
+    $result = call_user_func_array($function, array());
+    if (!empty($result) && is_object($result)) {
+      $result->modulename = $module;
+      //save it as a provider;
+      chart_graphs_apis($result); 
+    }
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ *
+ */
+function charts_graphs_menu() {
+  $items = array();
+
+  // For testing and Advanced Help examples.
+  $items['charts_graphs/test'] = array(
+    'page callback' => 'charts_graphs_test',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * For testing and Advanced Help examples.
+ *
+ * @return <string> 
+ */
+function charts_graphs_test($submodule = 'open-flash', $type = 'bar', $title = 'The Title') {
+  $canvas = chart_graphs_get_graph($submodule);
+
+  if (($type == 'pie') || ($type == 'donut')) {
+    $series = array(
+      'Some Value' => array(91, 60, 70, 90, 5, 72, 63, 9, 72),
+    );
+  }
+  else {
+    $series = array(
+      'Some Value' => array(91, 60, 70, 90, 5, 72, 63, 9, 72),
+      'Page Views' => array(63, 70, 94, 50, 7, 62, 93, 71, 3),
+    );
+  }
+  $canvas->title = check_plain($title);
+  $canvas->type = $type;
+  $canvas->y_legend = 'Y Legend';
+  $canvas->colour = 'white';
+  $canvas->series = $series;
+  $canvas->x_labels = array('one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine');
+
+  $out = $canvas->get_chart();
+
+  return $out;
+}
+
+/**
+ * Return the list of graphing implementations available if no parameter is
+ * passed or add a new implementation to the static list.
+ *
+ * @staticvar <array> $apis
+ * @param <ChartCanvas> $api_class
+ * @return <string>
+ */
+function chart_graphs_apis($api_class = NULL) {
+  static $apis = array();
+
+  if (!empty($api_class)) {
+    $apis[$api_class->name] = $api_class;
+  }
+  else {
+    return $apis;
+  }
+}
+
+/**
+ * Factory method that allows instantiating of a
+ * charting implementation class by implementation
+ * name.
+ * 
+ * @param <ChartCanvas> $name
+ * @return <type> 
+ */
+function chart_graphs_get_graph($name) {
+  $apis = chart_graphs_apis();
+  $api = $apis[$name];
+
+  if (!empty($api) && is_object($api)) {
+    require_once($api->path);
+    $canvas = new $api->clazz($api->modulename);
+    return $canvas;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Sequential generator of IDs, guaranteeing unique value per HTTP request.
+ * 
+ * @staticvar <int> $id
+ * @return <int> 
+ */
+function chart_graphs_chart_id_generator() {
+  static $id = 0;
+
+  $id++;
+
+  return $id;
+}
+
+/**
+ * Random, unique string generator, to be used for cache_id in async data 
+ * retrieval.
+ * 
+ * @return <string> 
+ */
+function chart_graphs_random_hash() {
+  list($usec, $sec) = explode(' ', microtime());
+  $seed = (float) $sec + ((float) $usec * 100000);
+  mt_srand($seed);
+
+  $randval1 = (string) mt_rand();
+  $randval2 = (string) mt_rand();
+  $randval3 = (string) mt_rand();
+
+  $rand = $randval1 . $randval2 . $randval3;
+  $randhash = md5($rand);
+
+  return 'chgr_' . (string) $randhash;
+}

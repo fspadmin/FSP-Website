@@ -1,0 +1,47 @@
+<?php
+// $Id: revision_moderation.install,v 1.5.2.2 2008/12/19 22:10:23 add1sun Exp $
+
+/**
+ * Implementation of hook_schema().
+ */ 
+function revision_moderation_schema() {
+  $schema['revision_moderation'] = array(
+    'description' => 'holds the last approved revision of the node',
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Node ID',
+        'default' => 0
+      ),
+      'revision_moderation' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'last approved revision for the {nid}'
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function revision_moderation_install() {
+  // Create table
+  drupal_install_schema('revision_moderation');
+}
+  
+/**
+ * Implementation of hook_uninstall().
+ */
+function revision_moderation_uninstall() {
+  // Drop the table
+  drupal_uninstall_schema('revision_moderation');
+  variable_del('revision_moderation_exempt');
+}

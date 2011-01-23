@@ -1,0 +1,26 @@
+<?php
+// $Id: util.module,v 1.14 2008/05/30 19:23:46 litwol Exp $
+
+/**
+ * @file
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function util_menu() {
+  $menu['admin/settings/util'] = array(
+    'title'         => 'Utilities',
+    'description'   => "Helper Utilities for yur Drupal site.",
+    'page callback' => 'util_page',
+    'access arguments' => array('administer site configuration'),
+  );
+  return $menu;
+}
+
+function util_page() {
+  $output = "The Utility module is a grouping of commonly-needed utilities that are simple to code, everyone wants, but nobody actually codes them.";
+  menu_rebuild();
+  //for now output empty page, this is purely to reserve space for future development
+  return $output;
+}

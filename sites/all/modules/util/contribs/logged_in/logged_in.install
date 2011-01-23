@@ -1,0 +1,12 @@
+<?php
+// $Id: logged_in.install,v 1.1.2.1 2009/09/18 00:31:56 nancyw Exp $
+
+/**
+ * @file
+ * Adds a "Logged In As" block.
+ */
+
+function logged_in_uninstall() {
+  variable_del('logged_in_show_roles');
+  variable_del('logged_in_show_perms');
+}

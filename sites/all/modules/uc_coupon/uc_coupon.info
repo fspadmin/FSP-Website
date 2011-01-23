@@ -1,0 +1,13 @@
+; $Id: uc_coupon.info,v 1.4 2010/12/18 00:21:40 longwave Exp $
+name = Discount Coupons
+description = Allow administrators to manage store coupons
+dependencies[] = uc_cart
+package = Ubercart - payment
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-12-29
+version = "6.x-1.5"
+core = "6.x"
+project = "uc_coupon"
+datestamp = "1293641772"
+

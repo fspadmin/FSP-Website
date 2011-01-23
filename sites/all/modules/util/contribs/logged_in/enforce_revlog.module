@@ -1,0 +1,25 @@
+<?php
+// $Id: enforce_revlog.module,v 1.1.2.1 2010/06/16 16:56:06 nancyw Exp $
+
+/**
+ * @file
+ * Enforces the use of the revision log field.
+ */
+
+/**
+ * Implements hook_nodeapi().
+ */
+function enforce_revlog_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'validate':
+      // If revision is checked and log message is empty, complain.
+      // An empty log for new content will be ignored.
+      if ($node->revision && empty($node->log) && $node->nid) {
+        if (user_access('administer nodes'))
+          form_set_error('log', t('Please enter a revision log message or uncheck the revision checkbox.'));
+        else
+          form_set_error('log', t('Please enter a revision log message.'));
+      }
+      return;
+  }
+}

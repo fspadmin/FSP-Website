@@ -1,0 +1,15 @@
+; $Id: charts_bluff.info,v 1.1.2.7 2010/06/25 23:53:57 rsevero Exp $
+
+name = "Charts and Graphs: Bluff"
+description = "Bluff (Beautiful Graphs in JavaScript) implementation for Charts and Graphs API."
+dependencies[] = charts_graphs
+package = "Charts"
+core = 6.x
+php = 5.1
+
+; Information added by drupal.org packaging script on 2010-07-07
+version = "6.x-1.0"
+core = "6.x"
+project = "charts_graphs"
+datestamp = "1278464702"
+

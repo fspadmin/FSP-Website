@@ -1,0 +1,16 @@
+diff -u -p -r1.4.2.3 views_groupby_handler_field_groupfields.inc
+--- handlers/views_groupby_handler_field_groupfields.inc	23 Oct 2009 20:43:33 -0000	1.4.2.3
++++ handlers/views_groupby_handler_field_groupfields.inc	12 Jan 2010 18:08:13 -0000
+@@ -260,7 +260,11 @@ class views_groupby_handler_field_groupf
+         $count++;
+         $sz_to_group .= $field;
+       }
+-      $this->query->add_groupby($sz_to_group);    
++      $this->query->add_groupby($sz_to_group);
++      if($count) {
++          $this->query->distinct = TRUE;
++          $this->query->no_distinct = 'views_groupby';
++      }
+     }
+     
+     $views_fields = $this->_get_views_fields($just_aliases=TRUE);

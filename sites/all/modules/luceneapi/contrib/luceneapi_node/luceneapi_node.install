@@ -1,0 +1,87 @@
+<?php
+// $Id: luceneapi_node.install,v 1.11.2.14 2009/10/03 19:25:38 cpliakas Exp $
+
+/**
+ * @file
+ * Installation functions for the Search Lucene Content module.
+ *
+ * @ingroup luceneapi
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function luceneapi_node_uninstall() {
+
+  // clears all cached luceneapi_node search results
+  if (db_table_exists('cache_luceneapi')) {
+    cache_clear_all('luceneapi_node', 'cache_luceneapi', TRUE);
+  }
+
+  // deletes index directory
+  $index_path = variable_get(
+    'luceneapi_node:index_path',
+    file_directory_path() . DIRECTORY_SEPARATOR .'luceneapi_node'
+  );
+  if (is_dir($index_path)) {
+    $nomask = array('RCS', 'SCCS', 'CVS', 'CVS.adm', 'RCSLOG', 'tags', 'TAGS', '.git', '.bzr');
+    $files = file_scan_directory($index_path, '.*', $nomask);
+    foreach ($files as $file) {
+      @unlink($file->filename);
+    }
+    @unlink(sprintf('%s/.htaccess', $index_path));
+    @rmdir($index_path);
+  }
+
+  // removes all variables that start with "luceneapi_node:"
+  $result = db_query("SELECT name FROM {variable} WHERE name LIKE 'luceneapi_node:%%'");
+  while ($row = db_fetch_object($result)) {
+    variable_del($row->name);
+  }
+}
+
+/**
+ * Implementation of hook_requirements().
+ */
+function luceneapi_node_requirements($phase) {
+  // Ensure translations don't break at install time
+  $t = get_t();
+
+  // if requirements fail for Search Lucene API, this module will still get
+  // installed breaking the site.  This code double checks the requirements to
+  // get around this bug.  Requirements are only returned on failure.
+  // @see http://drupal.org/node/592182
+  // @see http://drupal.org/node/592800
+  if ('install' == $phase) {
+
+    // bails if Drupal is in the process of being installed
+    if (!function_exists('db_query') || (function_exists('install_verify_drupal') && !install_verify_drupal())) {
+      return array();
+    }
+
+    // makes sure path to luceneapi exists, formats path to "lib" dir
+    if ($luceneapi_path = drupal_get_path('module', 'luceneapi')) {
+      $lib_dir = sprintf('%s/lib', $luceneapi_path);
+    }
+    else {
+      return array(
+        'luceneapi_node' => array(
+          'title' => t('Search Lucene Content'),
+          'severity' => REQUIREMENT_ERROR,
+          'description' => t('Search Lucene Content depends on Search Lucene API.'),
+        ),
+      );
+    }
+
+    // re-tests Search Lucene API requirements
+    if (!is_dir("$lib_dir/Zend") || !is_dir("$lib_dir/LuceneAPI") || !extension_loaded('iconv')) {
+      return array(
+        'luceneapi_node' => array(
+          'title' => t('Search Lucene Content'),
+          'severity' => REQUIREMENT_ERROR,
+          'description' => t('Search Lucene Content depends on Search Lucene API.'),
+        ),
+      );
+    }
+  }
+}

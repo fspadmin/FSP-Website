@@ -1,0 +1,54 @@
+/*
+// $Id: sheetnode.css,v 1.2.2.1.2.9 2010/08/25 19:24:00 kratib Exp $
+*/
+
+.sheetview {
+  padding-top: 10px;
+  margin-bottom: 30px;
+}
+
+.sheetview table, .sheetview td, .sheetview th {
+  padding: 0;
+  margin: 0;
+  line-height: normal;
+  border-width: 0;
+  border-collapse: separate;
+  width: auto;
+  background: transparent;
+  vertical-align: top;
+}
+
+.sheetview tr:hover {
+  background: transparent;
+}
+
+.sheetview img {
+  display: inline !important;
+}
+
+.sheetview input {
+  display: inline !important;
+  width: auto !important;
+}
+
+.sheetview #te_griddiv {
+  background-image: url('images/stripe.png');
+}
+
+.sheetview #te_griddiv table {
+  background: #fff;
+}
+
+.sheetview-fullscreen {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  margin: 0;
+  padding: 0;
+  background: inherit;
+}
+

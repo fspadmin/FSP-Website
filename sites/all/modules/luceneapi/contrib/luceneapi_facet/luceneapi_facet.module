@@ -1,0 +1,1142 @@
+<?php
+// $Id: luceneapi_facet.module,v 1.1.2.64 2010/02/20 15:02:41 cpliakas Exp $
+
+/**
+ * @file
+ * Provides Search Lucene API modules with faceted searching.
+ *
+ * @ingroup luceneapi
+ */
+
+/**
+ * Implementation of hook_forms().
+ */
+function luceneapi_facet_forms() {
+  foreach (luceneapi_searchable_module_list() as $module => $name) {
+    $forms[$module .'_admin_settings_facet_form'] = array(
+      'callback' => 'luceneapi_facet_admin_settings_form',
+      'callback arguments' => array($module),
+    );
+  }
+  return $forms;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function luceneapi_facet_menu() {
+  $items = array();
+  foreach (luceneapi_searchable_module_list() as $module => $name) {
+    $items['admin/settings/'. $module .'/facets'] = array(
+      'title' => 'Facets',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array($module .'_admin_settings_facet_form'),
+      'access arguments' => array('administer search'),
+      'type' => MENU_LOCAL_TASK,
+      'file' => 'luceneapi_facet.admin.inc',
+      'weight' => 8,
+    );
+  }
+  return $items;
+}
+
+/**
+ * Invokes hook_luceneapi_facet(), validates and returns facets.
+ *
+ * @param $module
+ *   A string containing the module handling the search.
+ * @param $type
+ *   A string containing the type of content $module indexes, NULL if no type.
+ * @param $rebuild
+ *   A boolean flagging whether the static should be rebuilt.
+ * @return
+ *   An array containing the facet arrays.
+ */
+function luceneapi_facet_facets_get($module, $type = NULL, $rebuild = FALSE) {
+  static $facets;
+  $module = (string)$module;
+  if (!isset($facets[$module])) {
+    $reserved_names = luceneapi_facet_reserved_names_get();
+    $facets[$module] = module_invoke_all('luceneapi_facet', $module, $type);
+    foreach ($facets[$module] as $name => $facet) {
+      try {
+
+        // makes sure "element" is passed and valid
+        if (empty($facet['element'])) {
+          throw new LuceneAPI_Exception(t(
+            'Element not defined in facet %facet.', array('%facet' => $name)
+          ));
+        }
+        else {
+          $facets[$module][$name]['element'] = (string)$facet['element'];
+          if (in_array($facets[$module][$name]['element'], $reserved_names)) {
+            throw new LuceneAPI_Exception(t(
+              '%name is reserved and cannot be used as a facet element.',
+              array('%name' => $name)
+            ));
+          }
+        }
+
+        // sets defaults on optional keys
+        if (!isset($facet['field'])) {
+          $facets[$module][$name]['field'] = NULL;
+        }
+        if (!isset($facet['type'])) {
+          $facets[$module][$name]['type'] = 'checkboxes';
+        }
+        if (!isset($facet['title'])) {
+          $facets[$module][$name]['title'] = $facet['element'];
+        }
+        if (!isset($facet['callback'])) {
+          $facets[$module][$name]['callback'] = NULL;
+        }
+        else {
+          $facets[$module][$name]['callback'] = (string)$facet['callback'];
+          if (!function_exists($facets[$module][$name]['callback'])) {
+            throw new LuceneAPI_Exception(t(
+              'Facet rendering function %function not defined.',
+              array('%function' => sprintf('%s()', $facets[$name]['callback']))
+            ));
+          }
+        }
+        if (!isset($facet['callback arguments']) || !is_array($facet['callback arguments'])) {
+          $facets[$module][$name]['callback arguments'] = array();
+        }
+        if (!isset($facet['description'])) {
+          $facets[$module][$name]['description'] = '';
+        }
+
+      }
+      catch (LuceneAPI_Exception $e) {
+        luceneapi_throw_error($e, WATCHDOG_ERROR, $module);
+        unset($facets[$module][$name]);
+      }
+    }
+  }
+  return $facets[$module];
+}
+
+/**
+ * Tests whether a facet is enabled in a given realm or at least one realm.
+ *
+ * @param $name
+ *   A string containing the name of the facet.
+ * @param $module
+ *   A string containing the name of the module handling the search.
+ * @param $realm
+ *   A string containing the realm.  Passing NULL will check all realms and
+ *   return TRUE if the module is enabled in at least one relam.
+ * @return
+ *   A boolean flagging whether the facet is enabled for a realm.
+ */
+function luceneapi_facet_enabled($name, $module, $realm = NULL) {
+  if (NULL === $realm) {
+    $realms = array_keys(luceneapi_facet_realms_get());
+  }
+  else {
+    $realms = array((string)$realm);
+  }
+  foreach ($realms as $cur_realm) {
+    $variable = sprintf('luceneapi_facet:%s:%s', $module, $cur_realm);
+    $facets = variable_get($variable, array());
+    if (!empty($facets[$name])) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Returns all facets enabled in a given realm.  If a realm is passed, the
+ * facets are sorted by their weight and the values associated with the facet
+ * are attached.
+ *
+ * @param $module
+ *   A string containing the name of the module handling the search.
+ * @param $realm
+ *   A string containing the realm.  Passing NULL will check all realms and
+ *   return the facet if it is enabled in at least one realm.
+ * @return
+ *   An array of facets.
+ * @see luceneapi_facet_facets_get()
+ * @see luceneapi_facet_enabled()
+ */
+function luceneapi_facet_enabled_facets_get($module, $realm = NULL) {
+  $facets = array();
+
+  // gets the type of content $module is indexing, gets enabled facets
+  $type = luceneapi_index_type_get($module);
+  foreach (luceneapi_facet_facets_get($module, $type) as $name => $facet) {
+    if (luceneapi_facet_enabled($name, $module, $realm)) {
+      $facets[$name] = $facet;
+      if (NULL !== $realm) {
+        $variable = sprintf('luceneapi_facet:%s:%s:%s:weight', $module, $realm, $name);
+        $facets[$name]['weight'] = variable_get($variable, 0);
+      }
+    }
+  }
+
+  // sorts facets by weight if realm was passed, gets facet values
+  if (NULL !== $realm) {
+    uasort($facets, 'luceneapi_weight_sort');
+  }
+
+  return $facets;
+}
+
+/**
+ * Returns names that cannot be used for facet form elements.
+ *
+ * @return
+ *   An array of reserved names.
+ */
+function luceneapi_facet_reserved_names_get() {
+  return array(
+    'q', 'page', 'lucenesort', 'module', 'keys', 'processed_keys', 'op',
+    'submit', 'form_token', 'form_id', 'form_build_id', 'search_theme_form',
+    'search_block_form', 'lucenefacet',
+  );
+}
+
+/**
+ * Gets a facet value passed by the user through the query string.  If the value
+ * returned doesn't match what was passed in $_GET, it was probably overridden
+ * by luceneapi_facet_value_set().
+ *
+ * @param $element
+ *   A string containing the name of facet form element, NULL if an associative
+ *   array of all elements excluding the reserved names should be returned.
+ * @param $default
+ *   A default value if the element was not found in $_GET.
+ * @return
+ *   An mixed value, the value of the element or $default.  An array if $element
+ *   is NULL.
+ */
+function luceneapi_facet_value_get($element = NULL, $default = '') {
+  global $_luceneapi_facet_values;
+  if (NULL === $_luceneapi_facet_values) {
+    $_luceneapi_facet_values = $_GET;
+    foreach (luceneapi_facet_reserved_names_get() as $name) {
+      unset($_luceneapi_facet_values[$name]);
+    }
+  }
+  if (NULL !== $element) {
+    $element = (string)$element;
+    if (isset($_luceneapi_facet_values[$element])) {
+      return $_luceneapi_facet_values[$element];
+    }
+    else {
+      return $default;
+    }
+  }
+  else {
+    return $_luceneapi_facet_values;
+  }
+}
+
+/**
+ * Overrides a facet value returned in the query string.
+ *
+ * @param $element
+ *   A string containing name of the facet element.
+ * @param $value
+ *   A mixed value containing the value of the facet.
+ * @return
+ *   NULL
+ */
+function luceneapi_facet_value_set($element, $value) {
+  global $_luceneapi_facet_values;
+  if (NULL === $_luceneapi_facet_values) {
+    luceneapi_facet_value_get();
+  }
+  $element = (string)$element;
+  $_luceneapi_facet_values[$element] = $value;
+}
+
+/**
+ * Extracts facets from passed array, usually $_GET or $form_state['values'].
+ * Strips reserved named from the array.
+ *
+ * @param $facets
+ *   An associative array of facets passed through the query string.
+ * @return
+ *   An associative array of non-empty facet values.
+ */
+function _luceneapi_facet_values_extract($facets) {
+  if (!is_array($facets)) {
+    return array();
+  }
+  foreach (luceneapi_facet_reserved_names_get() as $key) {
+    unset($facets[$key]);
+  }
+  $return = array();
+  foreach ($facets as $element => $value) {
+    $add = FALSE;
+    if (is_array($value)) {
+      foreach ($value as $cur) {
+        if (!empty($cur)) {
+          $add = TRUE;
+          break;
+        }
+      }
+    }
+    else {
+      $value = (string)$value;
+      $add = (!empty($value));
+    }
+    if ($add) {
+      $return[$element] = $value;
+    }
+  }
+  return $return;
+}
+
+/**
+ * Converts processed_keys to an array so we can add our facets along with the
+ * keys passed by the user.  Strips standard form values so we only pass our
+ * facets.  As in search_form_validate(), we use form_set_value() to set
+ * processed_keys.
+ *
+ * @param $form
+ *   A nested array of form elements that comprise the form.
+ * @param &$form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *   NULL
+ */
+function luceneapi_facet_search_form_validate($form, &$form_state) {
+  $value = array(
+    'keys'   => trim($form_state['values']['keys']),
+    'facets' => _luceneapi_facet_values_extract($form_state['values']),
+  );
+  form_set_value($form['basic']['inline']['processed_keys'], $value, $form_state);
+}
+
+/**
+ * Processes a search submission.  As in search_form_submit(), validation of the
+ * processed_keys element occurs in this function.  Returns keys with facets
+ * appended to query string.
+ *
+ * @param $form
+ *   A nested array of form elements that comprise the form.
+ * @param &$form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *   NULL
+ */
+function luceneapi_facet_search_form_submit($form, &$form_state) {
+  $keys = '';
+  $facets = array();
+
+  // performs sanity check on processed keys
+  if (!is_array($form_state['values']['processed_keys'])) {
+    luceneapi_throw_error(t(
+      'Processed keys must be an array, %type given.',
+      array('%type' => gettype($form_state['values']['processed_keys']))
+    ));
+  }
+  else {
+    // validates and gets processed keys
+    if (isset($form_state['values']['processed_keys']['keys'])) {
+      $keys = (string)$form_state['values']['processed_keys']['keys'];
+    }
+    else {
+      luceneapi_throw_error(t('Keys not found in processed keys.'));
+    }
+    // validates and gets facets
+    if (!isset($form_state['values']['processed_keys']['facets'])) {
+      luceneapi_throw_error(t('Facets not found in processed keys.'));
+    }
+    elseif (!is_array($form_state['values']['processed_keys']['facets'])) {
+      luceneapi_throw_error(t(
+        'Facets must be an array, %type given.',
+        array('%type' => gettype($form_state['values']['processed_keys']['facets']))
+      ));
+    }
+    else {
+      $facets = $form_state['values']['processed_keys']['facets'];
+    }
+  }
+
+  // sets form errors
+  if (luceneapi_is_error()) {
+    form_set_error('keys', t('Error processing the query.'));
+  }
+  elseif ('' == $keys) {
+    form_set_error('keys', t('Please enter some keywords.'));
+  }
+
+  // gets default search
+  if ($form_state['values']['module']) {
+    $type = $form_state['values']['module'];
+  }
+  else {
+    if (!$type = luceneapi_setting_get('default_search')) {
+      $type = 'node';
+    }
+  }
+
+  // returns search path
+  $path = sprintf('search/%s/%s', $type, luceneapi_keys_encode($keys));
+  if (empty($facets)) {
+    $form_state['redirect'] = $path;
+  }
+  else {
+    $form_state['redirect'] = array($path, drupal_query_string_encode($facets));
+  }
+}
+
+/**
+ * Uses helper function to append a query string to the redirect path.
+ *
+ * @param $form
+ *   A nested array of form elements that comprise the form.
+ * @param &$form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *   NULL
+ * @see _luceneapi_facet_form_submit()
+ */
+function luceneapi_facet_search_box_form_submit($form, &$form_state) {
+  _luceneapi_facet_form_submit('search_theme_form', $form_state);
+}
+
+/**
+ * Uses helper function to append a query string to the redirect path.
+ *
+ * @param $form
+ *   A nested array of form elements that comprise the form.
+ * @param &$form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *   NULL
+ * @see _luceneapi_facet_form_submit()
+ */
+function luceneapi_facet_search_block_form_submit($form, &$form_state) {
+  _luceneapi_facet_form_submit('search_block_form', $form_state);
+}
+
+/**
+ * Adds functionality that allows us to add a query string to the redirect path.
+ *
+ * @param $key_element
+ *   A string containing the name of the element storing the keys.
+ * @param $form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *  NULL
+ * @see _luceneapi_form_submit()
+ */
+function _luceneapi_facet_form_submit($key_element, &$form_state) {
+  if (!$module = luceneapi_setting_get('default_search')) {
+    return;
+  }
+  if (array_key_exists($module, luceneapi_searchable_module_list())) {
+    $keys = trim($form_state['values'][$key_element]);
+    $facets = _luceneapi_facet_values_extract($form_state['values']);
+    $path = sprintf('search/%s/%s', $module, luceneapi_keys_encode($keys));
+    if (empty($facets)) {
+      $form_state['redirect'] = $path;
+    }
+    else {
+      $form_state['redirect'] = array($path, drupal_query_string_encode($facets));
+    }
+  }
+  else {
+    module_load_include('inc', 'luceneapi', 'luceneapi.error');
+    luceneapi_throw_error(_luceneapi_hook_error_get($module), WATCHDOG_ERROR, 'luceneapi_facet');
+  }
+}
+
+/**
+ * Invokes hook_luceneapi_facet_realm(), validates realm arrays and stores as
+ * a static variable within the function.
+ *
+ * @param $rebuild
+ *   A boolean flagging whether or not to force a rebuild of the list.
+ * @return
+ *   An array of realm definitions.
+ */
+function luceneapi_facet_realms_get($rebuild = FALSE) {
+  static $realms;
+  if (NULL === $realms || $rebuild) {
+    $realms = module_invoke_all('luceneapi_facet_realm');
+    foreach ($realms as $name => $realm) {
+      try {
+        if (!isset($realm['title'])) {
+          $realms[$realm]['title'] = $name;
+        }
+        if (!isset($realm['allow empty'])) {
+          $realms[$name]['allow empty'] = FALSE;
+        }
+        if (isset($realm['callback']) && function_exists((string)$realm['callback'])) {
+          $realms[$name]['callback'] = (string)$realm['callback'];
+        }
+        else {
+          throw new LuceneAPI_Exception(t(
+            'Realm rendering function %function not defined.',
+            array('%function' => sprintf('%s()', $realms[$name]['callback']))
+          ));
+        }
+        if (!isset($realm['callback arguments']) || !is_array($realm['callback arguments'])) {
+          $realms[$name]['callback arguments'] = array();
+        }
+        if (!isset($realm['theme hook'])) {
+          $realms[$name]['theme hook'] = NULL;
+        }
+        if (!isset($realm['theme arguments']) || !is_array($realm['theme arguments'])) {
+          $realms[$name]['theme arguments'] = array();
+        }
+      }
+      catch (LuceneAPI_Exception $e) {
+        unset($realms[$name]);
+        luceneapi_throw_error($e, WATCHDOG_ERROR, 'luceneapi_facet');
+      }
+    }
+  }
+  return $realms;
+}
+
+/**
+ * Renders a facet realm.  In this instance, rendering simply means converting
+ * the facet array to something consistent that can be passed to a theme
+ * function or form building function.
+ *
+ * @param $realm
+ *   A string containing a realm.
+ * @param $module
+ *   A string containing the module handling the search.
+ * @param $type
+ *   A string containing the type of content $module indexes, NULL if no type.
+ * @param $empty
+ *   A boolean flagging whether or not to invoke hook_luceneapi_facet_empty()
+ *   as the callback function.  Defaults to FALSE.
+ * @return
+ *   A rendered set of facets.
+ */
+function luceneapi_facet_realm_render($realm, $module, $type = NULL, $empty = FALSE) {
+  $rendered = '';
+  $realms = luceneapi_facet_realms_get();
+  $realm = (string)$realm;
+
+  if (isset($realms[$realm])) {
+
+    // normalizes facets to a consistent format though the rendering function
+    $facets = luceneapi_facet_enabled_facets_get($module, $realm);
+
+    if (!empty($facets)) {
+
+      // allows modules to alter the facet array
+      drupal_alter('luceneapi_facet', $facets, $realm, $module, $type);
+
+      if (!$empty) {
+        $rendered = call_user_func_array(
+          $realms[$realm]['callback'],
+          array_merge(array($facets, $realm, $module), $realms[$realm]['callback arguments'])
+        );
+      }
+      elseif ($realms[$realm]['allow empty']) {
+        $rendered = module_invoke_all('luceneapi_facet_empty', $facets, $realm, $module, $type);
+      }
+      else {
+        $rendered = array();
+      }
+
+      // allows modules to alter the rendered facets
+      drupal_alter('luceneapi_facet_postrender', $rendered, $realm, $module, $type);
+
+      // if a theme function is defined, themes the normalized array
+      if (NULL !== $realms[$realm]['theme hook']) {
+        $param_arr = array($realms[$realm]['theme hook'], $rendered, $module);
+        if (isset($realms[$realm]['theme arguments'])) {
+          $param_arr = array_merge($param_arr, (array)$realms[$realm]['theme arguments']);
+        }
+        $rendered = call_user_func_array('theme', $param_arr);
+      }
+    }
+  }
+  else {
+    luceneapi_throw_error(t('Realm %realm not defined.', array('%realm' => $realm)));
+  }
+
+  // returns rendered items
+  return $rendered;
+}
+
+/**
+ * Invokes facet callbacks, returns an array of subqueries.
+ *
+ * @param $module
+ *   A string containing the module handling the search.
+ * @param $reset
+ *   A boolean flagging whether the static variable should be reset.
+ * @return
+ *   An array of Zend_Search_Lucene_Search_Query objects
+ */
+function luceneapi_facet_callbacks_invoke($module, $reset = FALSE) {
+  static $queries = array();
+  if (!isset($queries[$module])) {
+    $queries[$module] = array();
+    foreach (luceneapi_facet_enabled_facets_get($module) as $name => $facet) {
+      if (NULL !== $facet['callback']) {
+        try {
+          $query = call_user_func_array($facet['callback'], $facet['callback arguments']);
+          if (NULL !== $query) {
+            if ($query instanceof Zend_Search_Lucene_Search_Query) {
+              $queries[$module][] = $query;
+            }
+            else {
+              throw new LuceneAPI_Exception(t(
+                'Query object not returned by facet callback %function',
+                array('%function' => sprintf('%s()', $facet['callback']))
+              ));
+            }
+          }
+        }
+        catch (LuceneAPI_Exception $e) {
+          luceneapi_throw_error($e, WATCHDOG_ERROR, 'luceneapi_facet');
+        }
+      }
+    }
+  }
+  return $queries[$module];
+}
+
+/**
+ * Implementation of hook_luceneapi_query_alter().
+ */
+function luceneapi_facet_luceneapi_query_alter($query, $module, $type = NULL) {
+  try {
+    foreach (luceneapi_facet_callbacks_invoke($module) as $subquery) {
+      luceneapi_subquery_add($query, $subquery, 'required', TRUE);
+    }
+  }
+  catch (LuceneAPI_Exception $e) {
+    luceneapi_throw_error($e, WATCHDOG_ERROR, 'luceneapi_facet');
+  }
+}
+
+/**
+ * Callback for multiterm facets.
+ *
+ * @param $values
+ *   An array containing the values passed through the query string, usually
+ *   the return of luceneapi_facet_value_get().
+ * @param $field
+ *   A string containing the name of the Lucene field.
+ * @param $sign
+ *   A string, boolean, or NULL determining the operator used for the terms
+ *   in the query.
+ * @return
+ *   A Zend_Search_Lucene_Search_Query_MultiTerm object, NULL if no value
+ *   passed.
+ */
+function luceneapi_facet_multiterm_callback($values, $field, $sign = NULL) {
+  $values = (array)$values;
+  if (empty($values)) {
+    return;
+  }
+  try {
+    if (!$query = luceneapi_query_get('multiterm')) {
+      throw new LuceneAPI_Exception(t(
+        'Error instantiating multiterm query.'
+      ));
+    }
+    foreach ($values as $value) {
+      if ($value) {
+        $term = luceneapi_term_get($value, $field, TRUE);
+        luceneapi_term_add($query, $term, $sign, TRUE);
+      }
+    }
+    if (count($query->getTerms())) {
+      $query->setBoost(LUCENEAPI_IRRELEVANT);
+      return $query;
+    }
+  }
+  catch (LuceneAPI_Exception $e) {
+    luceneapi_throw_error($e, WATCHDOG_ERROR, 'luceneapi_facet');
+  }
+}
+
+/**
+ * Implementation of hook_luceneapi_facet_realm().
+ */
+function luceneapi_facet_luceneapi_facet_realm() {
+  $realms = array();
+
+  // adds a faceted search block similar to the Faceted Search module
+  $realms['block'] = array(
+    'title' => t('Block'),
+    'callback' => 'luceneapi_facet_block_realm_render',
+    'callback arguments' => array(),
+    'allow empty' => TRUE,
+    'description' => t(
+      'The <i>Block</i> realm displays facets as a list of links in the <i>Search Lucene Facets</i> <a href="@block-page">block</a>. Users are able to refine their searches in a drill-down fassion similar to the Faceted Search module\'s <i>Guided search</i> block.',
+      array('@block-page' => url('admin/build/block/list'))
+    ),
+  );
+
+  // adds a fieldset similar to the core search's "Advanced search" fieldset
+  $realms['fieldset'] = array(
+    'title' => t('Fieldset'),
+    'callback' => 'luceneapi_facet_fieldset_realm_render',
+    'callback arguments' => array(),
+    'description' => t('The <i>Fieldset</i> realm displays facets as form elements in a fieldset below the search form that is similar in appearance to the core Search module\'s <i>Advanced search</i> fieldset.'),
+  );
+
+  return $realms;
+}
+
+/**
+ * Implementation of hook_luceneapi_facet().
+ */
+function luceneapi_facet_luceneapi_facet($module, $type = NULL) {
+  $facets = array();
+
+  // original search keys
+  $facets['original_keys'] = array(
+    'title' => t('Original search'),
+    'element' => 'original_keys',
+    'type' => 'markup',
+    'description' => t('Clear all facets and go back to the original search.'),
+  );
+
+  return $facets;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function luceneapi_facet_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $blocks = array();
+      foreach (luceneapi_searchable_module_list() as $module => $name) {
+        $blocks[$module] = array(
+          'info' => sprintf('Search Lucene Facets: %s', $name),
+          'cache' => BLOCK_NO_CACHE,
+        );
+      }
+      return $blocks;
+    case 'view':
+      if (user_access('use advanced search')) {
+        module_load_include('inc', 'luceneapi_facet', 'luceneapi_facet.block');
+        luceneapi_facet_css_js_add();
+        return array(
+          'subject' => t('Faceted search'),
+          'content' => luceneapi_facet_block_view($delta),
+        );
+      }
+      break;
+  }
+}
+
+/**
+ * Returns facet items sorted by counts.
+ *
+ * @param $items
+ *   An array of items as returned by luceneapi_facet_block_realm_render().
+ * @return
+ *   A sorted array of items.
+ * @see luceneapi_facet_block_realm_render()
+ */
+function luceneapi_facet_sorted_counts_get($items) {
+  foreach ($items as $name => $item) {
+    arsort($items[$name]['count']);
+    $tmp_items = $items[$name]['items'];
+    $items[$name]['items'] = array_intersect_key($items[$name]['count'], $tmp_items);
+    foreach ($items[$name]['items'] as $option => $count) {
+      $items[$name]['items'][$option] = $tmp_items[$option];
+    }
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_[form_id]_alter().
+ *
+ * NOTE: This is called earlier than hook_form_alter(). We want this to be
+ * added as early as possible so that modules with a lighter weight can access
+ * the form via a normal form_alter().
+ */
+function luceneapi_facet_form_search_form_alter(&$form, &$form_state) {
+  if (!array_key_exists($form['module']['#value'], luceneapi_searchable_module_list()) || !user_access('use advanced search')) {
+    return;
+  }
+
+  // adds rendered facets in the "fieldset" relam to the search form.
+  $type = luceneapi_index_type_get($form['module']['#value']);
+  $elements = luceneapi_facet_realm_render('fieldset', $form['module']['#value'], $type);
+  if (!empty($elements)) {
+
+    // builds the "Faceted search" fieldset
+    $form['facets'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Faceted search'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#attributes' => array('class' => 'search-advanced'),
+    );
+    $form['facets'] = array_merge($form['facets'], $elements);
+    $form['facets']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Search'),
+      '#prefix' => '<div class="action">',
+      '#suffix' => '</div>',
+      '#weight' => 100,
+    );
+
+    // expands fieldset if option is set and facets were passed
+    $variable = sprintf('luceneapi_facet:%s:fieldset:expand', $form['module']['#value']);
+    if (variable_get($variable, 1)) {
+      $form['facets']['#collapsed'] = !luceneapi_node_facet_value_passed($form['facets']);
+    }
+  }
+}
+
+/**
+ * Checks if at least one element's default value is not empty.
+ *
+ * @param $element
+ *   An array containing a form element.
+ * @return
+ *   Returns TRUE if at least one default value is not empty.
+ */
+function luceneapi_node_facet_value_passed($element) {
+  if (in_array('#default_value', element_properties($element))) {
+    return !empty($element['#default_value']);
+  }
+  foreach (element_children($element) as $child) {
+    if (luceneapi_node_facet_value_passed($element[$child])) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function luceneapi_facet_form_alter(&$form, &$form_state, $form_id) {
+  if ('search_theme_form' == $form_id) {
+    $form['#submit'][] = 'luceneapi_facet_search_box_form_submit';
+  }
+  if ('search_block_form' == $form_id) {
+    $form['#submit'][] = 'luceneapi_facet_search_block_form_submit';
+  }
+  if ('search_form' == $form_id && array_key_exists($form['module']['#value'], luceneapi_searchable_module_list())) {
+    $form['#validate'][] = 'luceneapi_facet_search_form_validate';
+    $form['#submit'][] = 'luceneapi_facet_search_form_submit';
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function luceneapi_facet_theme() {
+  return array(
+    'luceneapi_facet_block' => array(
+      'arguments' => array('items' => NULL, 'module' => NULL),
+    ),
+    'luceneapi_facet_count' => array(
+      'arguments' => array('count' => NULL),
+    ),
+    'luceneapi_facet_admin_settings_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'luceneapi_facet_link' => array(
+      'arguments' => array('text' => NULL, 'path' => NULL, 'options' => NULL),
+    ),
+    'luceneapi_facet_link_selected' => array(
+      'arguments' => array('text' => NULL, 'path' => NULL, 'options' => NULL),
+    ),
+    'luceneapi_facet_markup' => array(
+      'arguments' => array('title' => NULL, 'markup' => NULL, 'type' => NULL),
+      'template' => 'luceneapi_facet-markup',
+    ),
+  );
+}
+
+/**
+ * Themes a facet link with an optional count.
+ *
+ * @param $text
+ *   A string containing the facet title.
+ * @param $path
+ *   A string containing the Drupal path being linked to, usually $_GET['q'].
+ * @param $options
+ *   An associative array of additional options.
+ * @param $count
+ *   An optional integer containing the count of the facet item.
+ * @return
+ *   A string containing the themed link.
+ * @see l()
+ */
+function theme_luceneapi_facet_link($text, $path, $options = array(), $count = 0) {
+  $link = luceneapi_l($text, $path, $options);
+  if ($count) {
+    $link .= ' '. theme('luceneapi_facet_count', $count);
+  }
+  return $link;
+}
+
+/**
+ * Themes the count for the facet item.  For example, this number shows how many
+ * results will be returned after clicking on a link.
+ *
+ * @param $count
+ *   An integer containing the count.
+ * @return
+ *   The themes number.
+ */
+function theme_luceneapi_facet_count($count) {
+  return sprintf(' (%d)', $count);
+}
+
+/**
+ * Themes a facet link for a value that is currently being searched.
+ *
+ * @param $text
+ *   A string containing the facet title.
+ * @param $path
+ *   A string containing the Drupal path being linked to, usually $_GET['q'].
+ * @param $options
+ *   An associative array of additional options.
+ * @return
+ *   A string containing the themed link.
+ * @see l()
+ */
+function theme_luceneapi_facet_link_selected($text, $path, $options = array()) {
+  return luceneapi_l(sprintf('(-) %s', $text), $path, $options);
+}
+
+/**
+ * Themes facets displayed in the block realm.
+ *
+ * @param $items
+ *   An array of items being themed.
+ * @param $module
+ *   A string containing the module handling the search.
+ * @return
+ *   A string containing the themed list.
+ */
+function theme_luceneapi_facet_block($items, $module) {
+  $output = '';
+  foreach ($items as $item) {
+    foreach ($item['items'] as $value => $args) {
+      $item['items'][$value] = theme(
+        $args['function'], $args['text'], $args['path'], $args['options'], $args['count']
+      );
+    }
+    $output .= theme('item_list', $item['items'], check_plain($item['title']));
+  }
+  return $output;
+}
+
+/**
+ * Converts a facet to a FAPI array.
+ *
+ * @param $facet
+ *   An array containing a facet retrieved from hook_luceneapi_facet().
+ * @return
+ *   A FAPI array.
+ * @todo add some sanity checks
+ */
+function luceneapi_facet_to_fapi_convert($facet) {
+  $base_form = array(
+    '#type' => $facet['type'],
+    '#title' => check_plain($facet['title']),
+    '#weight' => $facet['weight'],
+    '#description' => filter_xss($facet['description']),
+  );
+  switch ($facet['type']) {
+    case 'checkbox':
+    case 'date':
+    case 'textarea':
+    case 'textfield':
+      $form[$facet['element']] = array_merge($base_form, array(
+        '#default_value' => (string)luceneapi_facet_value_get($facet['element'], '')
+      ));
+      break;
+    case 'checkboxes':
+    case 'radios':
+    case 'select':
+      $form[$facet['element']] = array_merge($base_form, array(
+        '#options' => array(),
+        '#default_value' => (array)luceneapi_facet_value_get($facet['element'], array())
+      ));
+      break;
+    case 'markup':
+      $form[$facet['element']] = array_merge($base_form, array(
+        '#value' => $base_form['#title']
+      ));
+      break;
+    default:
+      $form = array();
+      break;
+  }
+  return $form;
+}
+
+/**
+ * Converts facet into a normalized FAPI array for the "fieldset" realm.
+ *
+ * @param $facets
+ *   An array of facets returned from hook_luceneapi_facet() implementations.
+ * @param $realm
+ *   A string containing the realm.
+ * @param $module
+ *   A string containing the name of the module handling the search.
+ * @return
+ *   An array of FAPI elements.
+ */
+function luceneapi_facet_fieldset_realm_render($facets, $realm, $module) {
+  $form = array();
+  foreach ($facets as $name => $facet) {
+    $form = array_merge_recursive($form, luceneapi_facet_to_fapi_convert($facet));
+  }
+  return $form;
+}
+
+/**
+ * Converts facet into a normalized array for the "block" realm.
+ *
+ * @param $facets
+ *   An array of enabled facets.
+ * @param $realm
+ *   A string containing the realm.
+ * @param $module
+ *   A string containing the name of the module handling the search.
+ * @return
+ *   The normalized array ready to pass to a theme function.
+ */
+function luceneapi_facet_block_realm_render($facets, $realm, $module) {
+  $items = array();
+  try {
+
+    // instantiates query containers, parses user query
+    if (!$query = luceneapi_query_get('boolean')) {
+      throw new LuceneAPI_Exception(t('Error instantiating boolean query.'));
+    }
+    if (!$user_query = luceneapi_query_parse(search_get_keys(), $module)) {
+      return array();
+    }
+
+    // adds user query to query container
+    luceneapi_subquery_add($query, $user_query, 'required', TRUE);
+
+    // invokes hook_luceneapi_query_alter() so modules can alter the query
+    $type = luceneapi_index_type_get($module);
+    module_invoke_all('luceneapi_query_alter', $query, $module, $type);
+
+    // checks cache for counted items
+    $results_cached = FALSE;
+    if ($caching_enabled = luceneapi_variable_get($module, 'caching_enabled')) {
+      $cid = sprintf('%s:luceneapi_facet:%s:%s', $module, $realm, sha1((string)$query));
+      if ($cache = cache_get($cid, 'cache_luceneapi')) {
+        if (is_array($cache->data)) {
+          $items = $cache->data;
+          if (luceneapi_log_level_compare(WATCHDOG_DEBUG)) {
+            $vaiables = array('@query' => (string)$query);
+            watchdog($module, 'Facet count cache hit: @query', $vaiables, WATCHDOG_DEBUG);
+          }
+          $results_cached = TRUE;
+        }
+      }
+    }
+
+    // builds items if not cached
+    if (!$results_cached) {
+      if ($index = luceneapi_index_open($module, $errstr)) {
+        module_load_include('inc', 'luceneapi_facet', 'luceneapi_facet.block');
+        $items = luceneapi_facet_counts_get($index, $query, $facets);
+      }
+      else {
+        throw new LuceneAPI_Exception($errstr);
+      }
+    }
+
+    // caches data if caching is enabled
+    if ($caching_enabled && !$results_cached) {
+      cache_set($cid, $items, LUCENEAPI_CACHE_TABLE);
+    }
+
+    // Adds query string variables.  We don't want query string data to be
+    // cached otherwise the sort data won't persist.
+    // @see http://drupal.org/node/664440
+    foreach ($items as $name => $item) {
+      foreach ($item['count'] as $value => $count) {
+        if ($count) {
+          $qstring = $_GET;
+          if (!isset($item['selected'][$value])) {
+            if (empty($qstring[$item['element']]) || is_array($qstring[$item['element']])) {
+              $qstring[$item['element']][$value] = $value;
+            }
+            else {
+              $qstring[$item['element']] = array($value => $value);
+            }
+          }
+          else {
+            if (is_array($qstring[$item['element']])) {
+              unset($qstring[$item['element']][$value]);
+            }
+            else {
+              unset($qstring[$item['element']]);
+            }
+          }
+
+          // formats the query string, adds to options
+          $items[$name]['items'][$value]['options']['query'] = drupal_query_string_encode(
+            $qstring, array('q', 'page')
+          );
+        }
+
+        // sets current page as the link's path
+        $items[$name]['items'][$value]['path'] = $_GET['q'];
+      }
+    }
+
+  }
+  catch (LuceneAPI_Exception $e) {
+    luceneapi_throw_error($e, WATCHDOG_ERROR, 'luceneapi_facet');
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_luceneapi_facet_postrander_alter()
+ */
+function luceneapi_facet_luceneapi_facet_postrender_alter(&$items, $realm, $module, $type = NULL) {
+  if ('fieldset' == $realm && isset($items['original_keys'])) {
+    $keys = search_get_keys();
+    if (!empty($keys)) {
+      $items['original_keys'] = array_merge($items['original_keys'], array(
+        '#prefix' => '<div class="criterion">',
+        '#suffix' => '</div>',
+        '#value' => theme(
+          'luceneapi_facet_markup',
+          $items['original_keys']['#title'],
+          luceneapi_l(search_get_keys(), $_GET['q']),
+          $module
+        ),
+      ));
+    }
+    else {
+      $items['original_keys'] = array();
+    }
+  }
+}
+
+/**
+ * Adds template hints for the markup facet type.
+ *
+ * @param &$variables
+ *   An array containing the template variables.
+ * @return
+ *   NULL
+ * @see luceneapi_facet-markup.tpl.php
+ */
+function template_preprocess_luceneapi_facet_markup(&$variables) {
+  $variables['template_files'][] = 'luceneapi_facet-markup-'. $variables['type'];
+}

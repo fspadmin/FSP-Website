@@ -1,0 +1,16 @@
+; $Id$
+name = ECO (Extra Customization Options for Ubercart)
+description = Provides extra customization options and features for Ubercart, including some integration with other contributed modules
+core = 6.x
+dependencies[] = uc_cart
+suggests[] = webform
+suggests[] = webform_php
+suggests[] = webform_conditional
+suggests[] = uc_coupon
+package = Ubercart - extra
+; Information added by drupal.org packaging script on 2010-07-28
+version = "6.x-1.0-beta2"
+core = "6.x"
+project = "uc_eco"
+datestamp = "1280356508"
+

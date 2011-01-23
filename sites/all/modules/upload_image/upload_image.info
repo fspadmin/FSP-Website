@@ -1,0 +1,14 @@
+; $Id: upload_image.info,v 1.4.2.1 2009/05/16 20:41:09 killes Exp $
+name = Upload image
+description = Image nodes will be created from images uploaded as attachments.
+dependencies[] = image
+dependencies[] = upload
+dependencies[] = taxonomy
+package = Image
+core = 6.x
+; Information added by drupal.org packaging script on 2009-05-16
+version = "6.x-1.0"
+core = "6.x"
+project = "upload_image"
+datestamp = "1242514260"
+

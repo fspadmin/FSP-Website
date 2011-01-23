@@ -1,0 +1,11 @@
+; $Id: themer.info,v 1.6 2008/07/07 23:56:00 tjholowaychuk Exp $
+name = Themer
+description = Body classes and helpful theme utility functions 
+package = Themeing
+core = 6.x
+; Information added by drupal.org packaging script on 2008-07-08
+version = "6.x-2.0-3"
+core = "6.x"
+project = "themer"
+datestamp = "1215475222"
+

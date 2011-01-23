@@ -1,0 +1,88 @@
+<?PHP
+// $Id: phplist.install,v 1.1.2.4 2009/08/02 16:55:45 paulbeaney Exp $
+function phplist_schema() {
+  $schema['phplist_access'] = array(
+      'description' => t('The table for tracking role access to lists.'),
+      'fields' => array(
+        'lid' => array(
+          'description' => t('The list identifier.'),
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE),
+        'rid' => array(
+          'description' => t('The current {role}.rid role identifier.'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0),
+         ),
+      'primary key' => array('lid', 'rid'),
+      );
+  return $schema;
+}
+
+function phplist_install() {
+  // Create my tables.
+  drupal_install_schema('phplist');
+}
+
+function phplist_uninstall() {
+  // Drop my tables.
+  drupal_uninstall_schema('phplist');
+
+  variable_del('phplist_dbhost');
+  variable_del('phplist_dbname');
+  variable_del('phplist_dbuser');
+  variable_del('phplist_dbpass');
+  variable_del('phplist_prefix');
+  variable_del('phplist_user_prefix');
+  variable_del('phplist_profilefirstname');
+  variable_del('phplist_plfirstname');
+  variable_del('phplist_profilelastname');
+  variable_del('phplist_pllastname');
+  variable_del('phplist_roles');
+  variable_del('phplist_register_preamble');
+  variable_del('phplist_descriptions');
+  variable_del('phplist_email_confirm');
+  variable_del('phplist_subscribe_on_register');
+  variable_del('phplist_autosubscribe_on_register');
+  variable_del('phplist_subscribe_url');
+  variable_del('phplist_preamble');
+  variable_del('phplist_register_preamble');
+  variable_del('phplist_subscribe_block_header');
+  variable_del('phplist_email_width');
+  variable_del('phplist_format_block');
+  variable_del('phplist_format_default');
+  variable_del('phplist_debug');
+  variable_del('phplist_connection');
+  variable_del('phplist_anonymous_redirect_register');
+}
+
+/*
+ * Create list access table
+ */
+function phplist_update_6000() {
+  $ret = array();
+  
+  $schema['phplist_access'] = array(
+    'description' => t('The table for tracking role access to lists.'),
+    'fields' => array(
+      'lid' => array(
+        'description' => t('The list identifier.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'rid' => array(
+        'description' => t('The current {role}.rid role identifier.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+       ),
+    'primary key' => array('lid', 'rid'),
+  );
+  db_create_table($ret, 'phplist_access', $schema['phplist_access']);
+  
+  return $ret;
+}
+

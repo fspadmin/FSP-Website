@@ -1,0 +1,293 @@
+<?php
+/**
+ * @file fsp.install
+ * Contains install and update functions for fsp.module.
+ */
+
+/**
+ * Create FSP roles
+ */
+function fsp_update_6000() {
+  $ret   = array();
+  $ret[] = update_sql("REPLACE INTO {role} (name) VALUES ('participant')"); 
+  $ret[] = update_sql("REPLACE INTO {role} (name) VALUES ('pioneer')"); 
+  $ret[] = update_sql("REPLACE INTO {role} (name) VALUES ('friend')"); 
+  return $ret;
+}
+
+/**
+ * Set profile categories
+ */
+function fsp_update_6001() {
+  $ret   = array();
+  $ret[] = update_sql("UPDATE profile_fields SET category = 'rolodex' WHERE category = 'FSP Registration Information'; "); 
+  $ret[] = update_sql("UPDATE profile_fields SET category = 'participant' WHERE category = 'Move Triggers'; "); 
+  $ret[] = update_sql("UPDATE profile_fields SET category = 'participant' WHERE name = 'field_when_move';" );
+  $ret[] = update_sql("UPDATE profile_fields SET category = 'obsolete' WHERE name IN
+      ( 'profile_member_type', 'profile_subscribe_newsletter','profile_subscribe_events'
+        'profile_subscribe_press', 'profile_import_old', 'profile_pending_conf' );"); 
+  return $ret;
+}
+
+/**
+ * Rename profile fields
+ */
+function fsp_update_6002() {
+	$ret   = array();
+	$updates = array(
+	  "UPDATE profile_fields SET name=REPLACE(name, 'profile_', 'profile_fsp_');",
+	  "UPDATE profile_fields SET name=REPLACE(name, 'profile_profile_fsp', 'profile_fsp_');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_commit_', '_');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_request_', '_');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_employment_', '_job_');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_where_heard_of', '_referral');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_president', '_pres');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_open_issue', '_issue');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_participants', '_movers');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_statement_of_intent', '_soi');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_subscribe', '_sub');",
+		"UPDATE profile_fields SET name=REPLACE(name, '_newsletter', '_news');",
+	 );
+	foreach( $updates as $update )
+		$ret[] = update_sql($update);
+	return $ret;
+}
+
+/**
+ * Insert profile dummy fields
+ */
+function fsp_update_6003() {
+	$query = "REPLACE INTO profile_fields VALUES
+	(DEFAULT,'profile_dummy',    'profile_profile_dummy',     'dummy value','profile',    DEFAULT,'textfield',-10,0,0,2,0,0),
+	(DEFAULT,'obsolete_dummy',   'profile_obsolete_dummy',    'dummy value','obsolete',   DEFAULT,'textfield',-10,0,0,2,0,0),
+	(DEFAULT,'participant_dummy','profile_participant_dummy', 'dummy value','participant',DEFAULT,'textfield',-10,0,0,2,0,0),
+	(DEFAULT,'rolodex_dummy',    'profile_rolodex_dummy',     'dummy value','rolodex',    DEFAULT,'textfield',-10,0,0,2,0,0);";
+  return update_sql($query);
+}
+
+/**
+ * Configure logintoboggan
+ */
+function fsp_update_6004() {
+	// logintoboggan settings
+	variable_set('logintoboggan_confirm_email_at_registration', 1);
+	variable_set('logintoboggan_immediate_login_on_register', 1);
+	variable_set('logintoboggan_login_block_message', '');
+	variable_set('logintoboggan_login_block_type', 0);
+	variable_set('logintoboggan_login_successful_message', '0');
+	variable_set('logintoboggan_login_with_email', '1');
+	variable_set('logintoboggan_minimum_password_length', '8');
+	variable_set('logintoboggan_override_destination_parameter',0);
+	variable_set('logintoboggan_pre_auth_role', '13');
+	variable_set('logintoboggan_purge_unvalidated_user_interval', '0');
+	variable_set('logintoboggan_redirect_on_confirm', '');
+	variable_set('logintoboggan_redirect_on_register','user/%uid/edit/rolodex');
+	return array();
+}
+
+/**
+ * Configure theme_fsp960_settings
+ */
+function fsp_update_6005() {
+	$theme_fsp960_settings = array (
+			'front_page_title_display' => 'title_slogan', 'page_title_display_custom' => '',
+			'other_page_title_display' => 'ptitle_slogan', 'other_page_title_display_custom' => '',
+			'configurable_separator' => '', 'fsp960_breadcrumb' => 'yes',
+			'fsp960_breadcrumb_separator' => ' / ', 'fsp960_breadcrumb_home' => '1',
+			'fsp960_breadcrumb_trailing' => '1', 'fsp960_breadcrumb_title' => '1',
+			'mission_statement_pages' => 'home', 'sidebar_combine' => '1',
+			'sidebar_contain_pages' => '', 'fsp960_default_container_width' => '16',
+			'fsp960_branding_wrapper_width' => '16', 'fsp960_header_logo_width' => '8',
+			'fsp960_header_menu_width' => '8', 'fsp960_header_wrapper_width' => '16',
+			'fsp960_header_first_width' => '8', 'fsp960_header_last_width' => '8',
+			'fsp960_internal_nav_wrapper_width' => '16', 'fsp960_breadcrumb_slogan_width' => '10',
+			'fsp960_search_width' => '6', 'fsp960_preface_wrapper_grids' => '16',
+			'fsp960_preface_first_width' => '8', 'fsp960_preface_middle_width' => '4',
+			'fsp960_preface_last_width' => '4', 'fsp960_content_layout' => 'first_content_last',
+			'fsp960_content_container_width' => '16', 'fsp960_sidebar_first_width' => '3',
+			'fsp960_content_main_width' => '7', 'fsp960_sidebar_last_width' => '6',
+			'fsp960_postscript_container_width' => '16', 'fsp960_postscript_one_width' => '4',
+			'fsp960_postscript_two_width' => '4', 'fsp960_postscript_three_width' => '4',
+			'fsp960_postscript_four_width' => '4', 'fsp960_footer_container_width' => '16',
+			'fsp960_footer_first_width' => '16', 'fsp960_footer_last_width' => '16',
+			'mission' => '', 'default_logo' => 0,
+			'logo_path' => 'sites/all/themes/fsp960/images/header-logo.jpg', 'default_favicon' => 1,
+			'favicon_path' => '', 'primary_links' => 1, 'secondary_links' => 1, 'toggle_logo' => 1,
+			'toggle_favicon' => 1, 'toggle_name' => 0, 'toggle_search' => 0, 'toggle_slogan' => 0,
+			'toggle_mission' => 0, 'toggle_node_user_picture' => 0,
+			'toggle_comment_user_picture' => 0, 'toggle_primary_links' => 1,
+			'toggle_secondary_links' => 1, 'toggle_node_info_event' => 1,
+			'toggle_node_info_flexinode-1' => 1, 'toggle_node_info_flexinode-2' => 1,
+			'toggle_node_info_survey' => 1, 'logo_upload' => '',
+			'favicon_upload' => '', 'form_token' => '84a0d85db6580312e096dc9c55aab6c4',
+			'omega_breadcrumb' => 'yes', 'omega_breadcrumb_separator' => '',
+			'omega_breadcrumb_home' => 0, 'omega_breadcrumb_trailing' => 0,
+			'omega_breadcrumb_title' => 0, 'omega_default_container_width' => '16',
+			'omega_branding_wrapper_width' => '16', 'omega_header_menu_width' => '8',
+			'omega_header_logo_width' => '8', 'omega_header_wrapper_width' => '16',
+			'omega_header_first_width' => '8', 'omega_header_last_width' => '8',
+			'omega_internal_nav_wrapper_width' => '16', 'omega_breadcrumb_slogan_width' => '8',
+			'omega_search_width' => '8', 'omega_preface_wrapper_grids' => '16',
+			'omega_preface_first_width' => '4', 'omega_preface_first_prefix' => '0',
+			'omega_preface_first_suffix' => '0', 'omega_preface_middle_width' => '4',
+			'omega_preface_middle_prefix' => '0', 'omega_preface_middle_suffix' => '0',
+			'omega_preface_last_width' => '4', 'omega_preface_last_prefix' => '0',
+			'omega_preface_last_suffix' => '0', 'omega_content_layout' => 'first_content_last',
+			'omega_content_container_width' => '16', 'omega_sidebar_first_width' => '3',
+			'omega_content_main_width' => '7', 'omega_sidebar_last_width' => '6',
+			'omega_postscript_container_width' => '16', 'omega_postscript_one_width' => '3',
+			'omega_postscript_one_prefix' => '0', 'omega_postscript_one_suffix' => '0',
+			'omega_postscript_two_width' => '3', 'omega_postscript_two_prefix' => '0',
+			'omega_postscript_two_suffix' => '0', 'omega_postscript_three_width' => '3',
+			'omega_postscript_three_prefix' => '0', 'omega_postscript_three_suffix' => '0',
+			'omega_postscript_four_width' => '3', 'omega_postscript_four_prefix' => '0',
+			'omega_postscript_four_suffix' => '0', 'omega_footer_container_width' => '16',
+			'omega_footer_first_width' => '6', 'omega_footer_last_width' => '6',
+			'popups_content_selector' => 'div.left-corner > div.clear-block:last', 'popups_theme' => 'fsp960',
+			);
+	variable_set('theme_fsp960_settings', $theme_fsp960_settings);
+	return array();
+}
+
+/**
+ * Configure fsp960 blocks
+ */
+function fsp_update_6006(){
+  $ret = array();
+	$updates = array(
+	"REPLACE INTO `blocks` (`module`, `delta`, `status`, `weight`, `region`, `custom`,
+	 `throttle`, `visibility`, `pages`, `theme`, `title`, `bid`, `cache`)
+	    values('fsp_counter','0','1','-43','counter','0','0','0','','fsp960','','352','1');",
+	"REPLACE INTO `blocks` (`module`, `delta`, `status`, `weight`, `region`, `custom`,
+	 `throttle`, `visibility`, `pages`, `theme`, `title`, `bid`, `cache`)
+	    values('search','0','1','28','counter','0','0','1','','fsp960','<none>','310','-1');",
+	"REPLACE INTO `blocks` (`module`, `delta`, `status`, `weight`, `region`, `custom`,
+	 `throttle`, `visibility`, `pages`, `theme`, `title`, `bid`, `cache`)
+	    values('adminblock','0','1','-43','sidebar_first','1','0','1','admin/*\r\nmerchandise*','fsp960','','321','1');",
+	"REPLACE INTO `blocks` (`module`, `delta`, `status`, `weight`, `region`, `custom`,
+	 `throttle`, `visibility`, `pages`, `theme`, `title`, `bid`, `cache`)
+	    values('menu','menu-main','1','-42','sidebar_first','0','0','0','merchandise*','fsp960','','317','-1');",
+	"REPLACE INTO `blocks` (`module`, `delta`, `status`, `weight`, `region`, `custom`,
+	 `throttle`, `visibility`, `pages`, `theme`, `title`, `bid`, `cache`)
+	    values('user','1','1','-41','sidebar_first','0','0','0','merchandise*\r\nstore*','fsp960','','315','-1');",
+	"REPLACE INTO `blocks` (`module`, `delta`, `status`, `weight`, `region`, `custom`,
+	 `throttle`, `visibility`, `pages`, `theme`, `title`, `bid`, `cache`)
+	    values('fsp','0','1','-29','sidebar_first','0','0','0','','fsp960','','350','1');",
+	"REPLACE INTO `blocks` (`module`, `delta`, `status`, `weight`, `region`, `custom`,
+	 `throttle`, `visibility`, `pages`, `theme`, `title`, `bid`, `cache`)
+	    values('fsp','1','1','-43','sidebar_last','0','0','1','<front>','fsp960','<none>','351','1');",
+	"REPLACE INTO `blocks` (`module`, `delta`, `status`, `weight`, `region`, `custom`,
+	 `throttle`, `visibility`, `pages`, `theme`, `title`, `bid`, `cache`)
+	    values('views','blogs_frontpage-block_1','1','-42','sidebar_last','0','0','1','<front>',
+		'fsp960','News and Stories of Interest','301','1');",
+	"REPLACE INTO `blocks` (`module`, `delta`, `status`, `weight`, `region`, `custom`,
+	 `throttle`, `visibility`, `pages`, `theme`, `title`, `bid`, `cache`)
+	    values('views','news-block_1','1','-41','sidebar_last','0','0','1','<front>','fsp960','Latest News','302','1');",
+
+	);
+
+	foreach( $updates as $update )
+		$ret[] = update_sql($update);
+
+	return $ret;
+}
+
+/**
+ * Configure user_admin_roll
+ */
+function fsp_update_6007(){
+	return variable_set('user_admin_role','3');
+}
+
+/**
+ * Give admin user all available permissions
+ */
+function fsp_update_6008(){
+	/**
+	 * Update the admin role with all current available permissions.
+	  */
+	if ($rid = variable_get('user_admin_role', 0)) {
+		$perms = module_invoke_all('perm');
+		db_query('DELETE FROM {permission} WHERE rid = %d', $rid);
+		if ($perms) {
+			db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $rid, implode(', ', $perms));
+		}   
+	}
+
+	return array();
+}
+
+/**
+ * Set site slogan and frontpage
+ */
+function fsp_update_6009(){
+	$ret = array();
+	$ret[] = variable_set('site_slogan',' - Liberty in Our Lifetime');
+	$ret[] = variable_set('site_frontpage','front');
+	return $ret;
+}
+
+/**
+ * Set auto_nodetitle for participant,rolodex,obsolete,profile
+ */
+function fsp_update_6010(){
+	$ret = array();
+	$ret[] = variable_set('ant_participant',1);
+	$ret[] = variable_set('ant_pattern_participant','[type]');
+	$ret[] = variable_set('ant_php_participant','1');
+	$ret[] = variable_set('ant_rolodex',1);
+	$ret[] = variable_set('ant_pattern_rolodex','[type]');
+	$ret[] = variable_set('ant_php_rolodex','1');
+	$ret[] = variable_set('ant_obsolete',1);
+	$ret[] = variable_set('ant_pattern_obsolete','[type]');
+	$ret[] = variable_set('ant_php_obsolete','1');
+	$ret[] = variable_set('ant_profile',1);
+	$ret[] = variable_set('ant_pattern_profile','[type]');
+	$ret[] = variable_set('ant_php_profile','1');
+	return $ret;
+}
+
+/**
+ * Turn of comments on participant,rolodex,obsolete,profile
+ */
+function fsp_update_6011(){
+	$ret = array();
+	$ret[] = variable_set('comment_participant','0');
+	$ret[] = variable_set('comment_rolodex','0');
+	$ret[] = variable_set('comment_obsolete','0');
+	$ret[] = variable_set('comment_profile','0');
+	return $ret;
+}
+
+/**
+ * Fix some profile categories
+ */
+function fsp_update_6012() {
+  $ret   = array();
+  $ret[] = update_sql("UPDATE profile_fields SET category = 'obsolete' WHERE name IN
+      (
+			 'profile_fsp_sub_news',
+			 'profile_fsp_sub_events',
+			 'profile_fsp_sub_press',
+			 'profile_fsp_import_old',
+			 'profile_fsp_member_type',
+			 'profile_fsp_pending_conf',
+			 'profile_fsp_ronpaul',
+			 'profile_fsp_pres',
+			 'profile_fsp_pres_year',
+			 'profile_fsp_pres_person',
+			 'profile_obsolete_dummy'
+				);"); 
+  return $ret;
+}
+
+
+/**
+ * Move anticipate to move profile field to obsolete
+ */
+function fsp_update_6013() {
+  $ret   = array();
+  $ret[] = update_sql("UPDATE profile_fields SET category = 'obsolete' WHERE name IN ( 'profile_fsp_when_move' )"); 
+  return $ret;
+}
+

@@ -1,0 +1,14 @@
+<?php
+// $Id: uc_2checkout.install,v 1.1.2.4 2010/07/12 01:57:43 tr Exp $
+
+/**
+ * @file
+ * Install file for uc_2checkout.module.
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function uc_2checkout_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_2checkout_%%'");
+}

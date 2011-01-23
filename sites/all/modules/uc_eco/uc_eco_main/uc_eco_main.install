@@ -1,0 +1,27 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Install, update and uninstall functions for the ECO: Main module
+ *
+ * @ingroup uc_eco
+ */
+
+
+/**
+ * Implementation of hook_install().
+ */
+function uc_eco_main_install() {
+  drupal_set_message(t('ECO: Main module installed successfully.'), 'warning');
+}
+
+/**
+ * Implementations hook_uninstall().
+ */
+function uc_eco_main_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_eco_main_%'");
+  cache_clear_all('variables', 'cache');
+  drupal_set_message(t('ECO: Main module uninstalled successfully.'), 'warning');
+}
+

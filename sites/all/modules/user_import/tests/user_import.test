@@ -1,0 +1,152 @@
+<?php 
+/**
+ *  Create Invoice node test for Invoices module.
+ */
+
+class UserImportTest extends DrupalTestCase {
+
+
+  // A global user who may import users and administer configuration.
+  var $user_importer; 
+
+  // A global user who may import users only with a pre-set configuration.
+  var $user_limited_importer; 
+
+  function setUp() {
+
+    /* Prepare users */
+    $this->admin_user = $this->drupalCreateUserRolePerm(array('administer users', 'access administration pages', 'administer site configuration')); 
+    $this->user_importer = $this->drupalCreateUserRolePerm(array('import users'));
+    $this->user_limited_importer = $this->drupalCreateUserRolePerm(array('limited user import'));
+    parent::setUp();
+  }
+
+  /**
+   *  enable necessary modules
+   * @param array  $modules      module file names (without .module)
+   */
+  function enableModules($modules = array()) {    
+    foreach ($modules as $module) {
+      $this->drupalModuleEnable($module);
+    }
+  }
+
+  /**
+   *  Select CSV file (the included example file) 
+  */ 
+  function settingsFileSelect() {
+    $edit = array('file_ftp' => 1);
+    $this->drupalPostRequest('admin/user/user_import/add', $edit, 'Next');
+
+    /* Check file was selected */
+    $this->assertText(t('Use Different CSV File'), '[assert] File was selected');
+  }
+
+  function settingsEmailMatch(&$edit) {
+    $edit['field_match[5][field_match]'] = 'user-email';
+  }
+  
+  function settingsIgnoreFirstLine(&$edit) {
+    $edit['first_line_skip'] = 1;
+  }
+  
+  function checkAccountsExist($list_failures = FALSE) {
+    $users_email = $this->usersList();
+    $failed = array();
+    
+    foreach ($users_email as $mail) {
+      $user = user_load(array('mail' => $mail));
+      if (empty($user)) $failed[] = $mail; 
+    }
+    
+    if (!empty($failed) && $list_failures) {
+      $failures_list = t('. Failed accounts: %failures', array('%failures' => implode(', ', $failed)));
+    }
+    
+    $this->assertTrue(empty($failed), t('Accounts created for users imported') . $failures_list);
+    
+  }
+  
+  /**
+   *  List of users (email addresses) being imported
+   *  To Do - Generate this dynamically, bearing in mind it could be used for stress testing
+   */
+  function usersList() {
+    return array(
+        'john@example.com', 
+        'mandy@example.com', 
+        'charles@example.com', 
+        'sarah@example.com', 
+        'sarah_smith@example.com', 
+        'helen@example.com', 
+        'claire@example.com', 
+        'victoria@example.com', 
+        'james@example.com',
+        'anna@example.com',
+        'tino@example.com',
+        'sofia@example.com',
+        'steve@example.com',
+        'lucy@example.com',
+        'angie@example.com',
+        'carmen@example.com',
+        'paul@example.com',
+        'jason@example.com',
+        'mike@example.com',
+        'mary@example.com',
+        'simon@example.com',
+        'kieran@example.com',
+        'arthur@example.com',
+        'gwen@example.com',
+        'chester@example.com',
+        'dorothy@example.com',
+        'cameron@example.com',
+        'trisha@example.com',
+        'david@example.com',
+        'peter@example.com',
+        'saul@example.com',
+        'noel@example.com',
+        'matt@example.com',
+        'aston@example.com',
+        'mille@example.com',
+        'ernest@example.com',
+      );
+  }
+
+  /**
+   * Store import ID
+   * - set on import settings page, retrieve on later tasks
+   */
+  function importID($url = NULL) {
+    static $import_id = 0;
+    
+    if (empty($import_id) && !empty($url)) {
+      $args = explode('/', $url);
+      $import_id = $args[7];
+    }
+    
+    return $import_id;
+  } 
+  
+  /**
+   * SimpleTest core method: code run after each and every test method.
+  */
+  function tearDown() {
+    // delete accounts of users imported
+    $users_email = $this->usersList();
+
+    foreach ($users_email as $mail) {
+      $account = user_load(array('mail' => $mail));
+      if (!empty($account)) user_delete(array(), $account->uid); 
+    }
+    
+    // delete the import
+    $import_id = $this->importID();   
+    $this->assertTrue(!empty($import_id), t('Import ID: !id', array('!id' => $import_id))); 
+    _user_import_settings_deletion($import_id);
+
+    // Always call the tearDown() function from the parent class.
+    parent::tearDown();
+  }
+
+
+}

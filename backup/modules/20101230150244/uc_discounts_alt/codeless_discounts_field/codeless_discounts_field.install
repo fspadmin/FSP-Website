@@ -1,0 +1,45 @@
+<?php
+//$Id: codeless_discounts_field.install,v 1.3 2009/08/22 21:30:39 ryangroe Exp $
+
+
+/**
+ * @file
+ * Install hooks for codeless_discounts_field.module.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function codeless_discounts_field_install() {
+  drupal_load("module", "content");
+  content_notify("install", "codeless_discounts");
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function codeless_discounts_field_uninstall() {
+  drupal_load("module", "content");
+  content_notify("uninstall", "codeless_discounts");
+}
+
+/**
+ * Implementation of hook_enable().
+ *
+ * Notify content module when this module is disabled.
+ */
+function codeless_discounts_field_enable() {
+  drupal_load("module", "content");
+  content_notify("enable", "codeless_discounts");
+}
+
+/**
+ * Implementation of hook_disable().
+ *
+ * Notify content module when this module is disabled.
+ */
+function codeless_discounts_field_disable() {
+  drupal_load("module", "content");
+  content_notify("disable", "codeless_discounts");
+}
+

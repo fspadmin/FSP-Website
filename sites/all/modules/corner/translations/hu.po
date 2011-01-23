@@ -1,0 +1,498 @@
+# Hungarian translation of corner (6.x-2.0)
+# Copyright (c) 2009 by the Hungarian translation team
+# Generated from files:
+#  corner.admin.inc,v 1.5 2009/01/11 13:49:11 kirie
+#  corner.module,v 1.5 2009/01/11 13:49:11 kirie
+#  corner.info,v 1.2 2008/12/15 15:59:42 kirie
+#  corner.install,v 1.4 2009/01/06 21:45:19 kirie
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: corner (6.x-2.0)\n"
+"POT-Creation-Date: 2009-05-05 16:46+0200\n"
+"PO-Revision-Date: 2009-05-05 15:28+0200\n"
+"Last-Translator: Balogh Zoltán\n"
+"Language-Team: Hungarian http://forditas.mindworks.hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: corner.admin.inc:30
+msgid "delete"
+msgstr "törlés"
+
+#: corner.admin.inc:36
+msgid "Operations"
+msgstr "Műveletek"
+
+#: corner.admin.inc:250,310,386
+msgid "Delete"
+msgstr "Törlés"
+
+#: corner.admin.inc:244,386
+msgid "Cancel"
+msgstr "Mégsem"
+
+#: corner.admin.inc:240,256,276
+msgid "Save"
+msgstr "Mentés"
+
+#: corner.module:78
+msgid "List"
+msgstr "Lista"
+
+#: corner.admin.inc:29; corner.module:21
+msgid "configure"
+msgstr "beállítás"
+
+#: corner.admin.inc:186
+msgid "Role specific visibility settings"
+msgstr "Felhasználói csoportoktól függő megjelenítés"
+
+#: corner.admin.inc:199
+msgid "Page specific visibility settings"
+msgstr "Oldalaktól függő megjelenítés"
+
+#: corner.admin.inc:216
+msgid "Show on every page except the listed pages."
+msgstr "A felsorolt oldalak kivételével mindenütt jelenjen meg."
+
+#: corner.admin.inc:216
+msgid "Show on only the listed pages."
+msgstr "Csak a felsorolt oldalakon jelenjen meg."
+
+#: corner.admin.inc:217
+msgid ""
+"Enter one page per line as Drupal paths. The '*' character is a "
+"wildcard. Example paths are %blog for the blog page and %blog-wildcard "
+"for every personal blog. %front is the front page."
+msgstr ""
+"Soronként egy Drupal elérési útvonalat kell megadni. A „*” "
+"használható speciális helyettesítőként. Példák: „%blog” a "
+"blogok főoldalához és „%blog-wildcard” a személyes blogok "
+"főoldalaihoz. „%front” a címlapot jelenti."
+
+#: corner.admin.inc:220
+msgid ""
+"Show if the following PHP code returns <code>TRUE</code> (PHP-mode, "
+"experts only)."
+msgstr ""
+"Csak abban az esetben jelenik meg, ha a következő PHP kód "
+"<code>TRUE</code> értékkel tér vissza (PHP-módban, csak "
+"tapasztaltaknak ajánlott)."
+
+#: corner.admin.inc:221
+msgid ""
+"If the PHP-mode is chosen, enter PHP code between %php. Note that "
+"executing incorrect PHP-code can break your Drupal site."
+msgstr ""
+"Ha a PHP-mód lett kiválasztva, a PHP kód megadható %php "
+"jelölések között. Hibásan megadott PHP kód "
+"működésképtelenné teheti a webhelyet!"
+
+#: corner.admin.inc:231
+msgid "Pages"
+msgstr "Oldalak"
+
+#: corner.admin.inc:36
+msgid "Location"
+msgstr "Hely"
+
+#: corner.admin.inc:28
+msgid "clone"
+msgstr "klónozás"
+
+#: corner.module:394
+msgid "Fixed"
+msgstr "Rögzített"
+
+#: corner.admin.inc:36
+msgid "Position"
+msgstr "Elhelyezkedés"
+
+#: corner.admin.inc:36
+msgid "Image"
+msgstr "Kép"
+
+#: corner.admin.inc:27
+msgid "disable"
+msgstr "letiltás"
+
+#: corner.admin.inc:27
+msgid "enable"
+msgstr "engedélyezés"
+
+#: corner.admin.inc:36; corner.info:0
+msgid "Corner"
+msgstr "Szögletkép"
+
+#: corner.admin.inc:56,147,155
+msgid "--- select ---"
+msgstr "--- kiválasztás ---"
+
+#: corner.admin.inc:70
+msgid "Corner info"
+msgstr "Szögletkép információ"
+
+#: corner.admin.inc:75
+msgid "Enable corner"
+msgstr "Szögletkép engedélyezése"
+
+#: corner.admin.inc:77
+msgid ""
+"If this setting is enabled, the current corner is shown on the "
+"configured pages (see specific options below)."
+msgstr ""
+"Ha ez az opció engedélyezve van, akkor az aktuális szögletkép meg "
+"fog jelenni a beállított lapokon (a szükséges beállításokat "
+"lásd alant)."
+
+#: corner.admin.inc:81
+msgid "Corner name"
+msgstr "Szögletkép neve"
+
+#: corner.admin.inc:83
+msgid "The name of the corner."
+msgstr "A szögletkép neve."
+
+#: corner.admin.inc:91
+msgid "Corner details"
+msgstr "Szögletkép részletei"
+
+#: corner.admin.inc:96
+msgid "Corner image"
+msgstr "Kép a szögletképhez"
+
+#: corner.admin.inc:99
+msgid ""
+"Select which corner to show. You can add additional images (PNG-24) to "
+"the %images directory inside the module."
+msgstr ""
+"Itt választható ki a megjelenítésre szánt szögletkép. "
+"Lehetőség van további képek hozzáadására is a "
+"<em>Szögletkép</em> modul %images könyvtárában."
+
+#: corner.admin.inc:154
+msgid "Corner position"
+msgstr "Szögletkép elhelyezkedése"
+
+#: corner.admin.inc:104
+msgid "Corner title"
+msgstr "Szögletkép címe"
+
+#: corner.admin.inc:106
+msgid ""
+"If you enter a title, the corner will use it in its title propery. "
+"Leave empty for none."
+msgstr ""
+"Ha ide valamilyen szöveg kerül beírásra, akkor a szögletkép azt "
+"használni fogja cím gyanánt. Ha erre nincs szükség, a mező "
+"üresen hagyható."
+
+#: corner.admin.inc:118
+msgid "Corner link URI"
+msgstr "Szögletképben szereplő hivatkozás (URI)"
+
+#: corner.admin.inc:120
+msgid ""
+"If you enter a URI, the corner will be made clickable. Use "
+"&lt;front&gt; for the front page of the site. Leave empty to disable "
+"making the corner into a link."
+msgstr ""
+"Ha ide egy webcím kerül, akkor a szögletkép bannerként fog "
+"működni. A &lt;front&gt; megadásával ennek a webhelynek a "
+"kezdőlapjára fog mutatni a hivatkozás. Üresen hagyva nem fog "
+"hivatkozást tartalmazni."
+
+#: corner.admin.inc:191
+msgid "Show corner for specific roles"
+msgstr "Szögletkép megjelenítése meghatározott jogosultságúaknak"
+
+#: corner.admin.inc:194
+msgid ""
+"Show the corner only for the selected role(s). If you select no roles, "
+"the corner will be visible to all users."
+msgstr ""
+"A szögletkép megjelenítése csak a kiválasztott jogosultságokkal "
+"rendelkező felhasználóknak. Ha egyik jogosultság sincs bejelölve, "
+"akkor mindenki számára látható lesz."
+
+#: corner.admin.inc:225
+msgid "Show corner on specific pages"
+msgstr "Szögletkép megjelenítése meghatározott lapokon"
+
+#: corner.admin.inc:266,269
+msgid "!field field is required."
+msgstr "!field mező szükséges."
+
+#: corner.admin.inc:307
+msgid "The corner %name has been saved."
+msgstr "%name nevű szögletkép elmentve."
+
+#: corner.admin.inc:351
+msgid "The corner %name has been created."
+msgstr "%name nevű szögletkép létrehozva."
+
+#: corner.admin.inc:386
+msgid "Are you sure you want to delete the corner %name?"
+msgstr "%name nevű szögletkép valóban törölhető?"
+
+#: corner.admin.inc:392
+msgid "The corner %name has been removed."
+msgstr "%name nevű szögletkép eltávolítva."
+
+#: corner.module:19
+msgid "Shows configurable corner corners on your site."
+msgstr "Beállítható szögletképek megjelenítése az oldalon."
+
+#: corner.module:21
+msgid "add corner page"
+msgstr "szögletkép hozzáadása"
+
+#: corner.module:22
+msgid ""
+"Corners are images which are shown at the top of pages - in the left "
+"or right 'corner'.  Create new corners on the !add_new or configure "
+"existing corners by clicking the %configure link next to each one."
+msgstr ""
+"A szögletképek olyan képek, amelyek a lap tetején - a bal vagy "
+"jobb oldali sarokban, „szögletben” - jelennek meg. Új "
+"szögletképet a !add_new oldalon lehet létrehozni, illetve a "
+"létező szögletképek beállítása az adott sorban lévő "
+"%configure hivatkozásra kattintva érhető el."
+
+#: corner.module:72
+msgid ""
+"Configure corners, including what they are and where they appear on "
+"the site."
+msgstr ""
+"Szögletképek beállítása, beleértve azt is, hogy mikor és hol "
+"tünjenek fel a webhelyen."
+
+#: corner.module:62
+msgid "administer corners"
+msgstr "szögletképek adminisztrációja"
+
+#: corner.module:62
+msgid "use PHP for corner visibility"
+msgstr "PHP kód használata a szögletkép láthatóságához"
+
+#: corner.module:71
+msgid "Corners"
+msgstr "Szögletképek"
+
+#: corner.module:83
+msgid "Add corner"
+msgstr "Szögletkép hozzáadása"
+
+#: corner.module:91
+msgid "Configure corner"
+msgstr "Szögletkép beállítása"
+
+#: corner.module:99
+msgid "Clone corner"
+msgstr "Szögletkép klónozása"
+
+#: corner.module:107
+msgid "Delete corner"
+msgstr "Szögletkép törlése"
+
+#: corner.module:115
+msgid "Disables corner"
+msgstr "Szögletkép tiltása"
+
+#: corner.module:123
+msgid "Enables corner"
+msgstr "Szögletkép engedélyezése"
+
+#: corner.module:0
+msgid "corner"
+msgstr "szögletkép"
+
+#: corner.install:45
+msgid "Stores corner settings, such as image and visibility settings."
+msgstr ""
+"Tárolja a szögletkép beállításait, mint kép és láthatósági "
+"beállítások."
+
+#: corner.install:50
+msgid "Primary Key: Unique corner ID."
+msgstr "Elsődleges kulcs: egyedi szögletkép azonosító."
+
+#: corner.install:57
+msgid ""
+"Name of the corner. The name will be added to the corner class to "
+"enable custom theming."
+msgstr ""
+"A szögletkép neve. A név hozzá lesz adva a corner osztályhoz, "
+"hogy engedélyezze az egyedi sminkelést."
+
+#: corner.install:64
+msgid "The filename of the corner to be shown."
+msgstr "A szögletkép fájlneve meg fog jelenni."
+
+#: corner.install:71
+msgid "The title of the corner image."
+msgstr "A szögletkép címe."
+
+#: corner.install:78
+msgid "Link URI of corner."
+msgstr "A szögletkép által hivatkozott webcím."
+
+#: corner.install:85
+msgid "Corner enabled status. (1 = enabled, 0 = disabled)"
+msgstr "Szögletkép engedélyezési állapot (1 = engedélyezve, 0 = tiltva)"
+
+#: corner.install:106
+msgid ""
+"Flag to indicate how to show corners on pages. (0 = Show on all pages "
+"except listed pages, 1 = Show only on listed pages, 2 = Use custom PHP "
+"code to determine visibility)"
+msgstr ""
+"Jelző, mely mutatja, hogyan jelenjenek meg a szögletképek az "
+"oldalakon. (0 = Mutassa minden oldalon, kivéve a felsoroltakat, 1 = "
+"Csak a felsorolt oldalakon mutassa, 2 = Használjon egyedi PHP kódot "
+"a láthatóság megállapításához)"
+
+#: corner.install:111
+msgid ""
+"Contents of the \"Pages\" textarea; contains either a list of paths on "
+"which to include/exclude the corner or PHP code, depending on "
+"\"visibility\" setting."
+msgstr ""
+"Az „Oldalak” szövegdoboz tartalma. Tartalmazza az útvonalak "
+"listáját, melyekkel megadható, hogy azokon a szögletkép "
+"megjelenjen, illetve eltűnjön, vagy a PHP kód, függően a "
+"„láthatósági” beállítástól."
+
+#: corner.info:0
+msgid "Shows configurable image corners on your site."
+msgstr "Beállítható szögletképek megjelenítése a webhelyen."
+
+#: corner.admin.inc:113
+msgid "Linking"
+msgstr "Hivatkozás"
+
+#: corner.admin.inc:125
+msgid "Image map shape"
+msgstr "Képtérkép forma"
+
+#: corner.admin.inc:126
+msgid "--- none ---"
+msgstr "--- nincs ---"
+
+#: corner.admin.inc:126
+msgid "Circle"
+msgstr "Kör"
+
+#: corner.admin.inc:126
+msgid "Polygon"
+msgstr "Sokszög"
+
+#: corner.admin.inc:126
+msgid "Rectangle"
+msgstr "Téglalap"
+
+#: corner.admin.inc:128
+msgid ""
+"Turn the link into an image map by selecting a shape here and provide "
+"the appropritate image map coordates below."
+msgstr ""
+"A hivatkozásra egy képtérképet lehet húzni. Ehhez ki kell "
+"választani itt egy formát, és lejjebb meg kell adni a megfelelő "
+"képtérkép korrdinátákat."
+
+#: corner.admin.inc:132
+msgid "Image map coordinates"
+msgstr "Képtérkép koordináták"
+
+#: corner.admin.inc:134
+msgid ""
+"Image map coordinates on the form: [Cirle]: centerX,centerY,radius, "
+"[Polygon]: X1,Y1,X2,Y2,..,Xn,Yn, [Rectangle]: X1,Y1,X2,Y2."
+msgstr ""
+"Képtérkép koordináták az űrlapon: [Kör]: "
+"origóX,origóY,rádiusz, [Sokszög]: X1,Y1,X2,Y2,..,Xn,Yn, "
+"[Téglalap]: X1,Y1,X2,Y2."
+
+#: corner.admin.inc:141
+msgid "Positioning"
+msgstr "Elhelyezés"
+
+#: corner.admin.inc:146
+msgid "Corner location"
+msgstr "Szögletkép helye"
+
+#: corner.admin.inc:149
+msgid "The location of the corner on the page (left/right/top/bottom)."
+msgstr "A szögletkép helyzete a lapon (bal/jobb/fenn/lenn)."
+
+#: corner.admin.inc:157
+msgid ""
+"The position of the corner, relative to browser (fixed) or absolute "
+"(absolute). Usually, images located at the top of a page uses "
+"'absolute' while images at the bottom of the page uses 'fixed'."
+msgstr ""
+"A szögletkép elhelyezkedése a böngészőhöz rögzítetten, vagy "
+"abszolút módon történjen. A lap tetején elhelyezkedő képek "
+"általában abszolút, míg a lap alján elhelyezkedők rögzítettek "
+"szoktak lenni."
+
+#: corner.admin.inc:165
+msgid "Language specific visibility settings"
+msgstr "Nyelvfüggő láthatósági beállítások"
+
+#: corner.admin.inc:171
+msgid "Show corner for specific languages"
+msgstr "A szögletképet a megadott nyelveknek mutassa"
+
+#: corner.admin.inc:174
+msgid ""
+"Show the corner only for the selected language(s). If you select no "
+"languages, the corner will be visible for all languages."
+msgstr ""
+"A szögletképet csak a megadott nyelveknek mutassa. Ha nincs "
+"kiválasztott nyelv, akkor a szögletkép látható lesz minden nyelv "
+"számára."
+
+#: corner.module:391
+msgid "Top left"
+msgstr "Fenn balra"
+
+#: corner.module:391
+msgid "Top right"
+msgstr "Fenn jobbra"
+
+#: corner.module:391
+msgid "Bottom left"
+msgstr "Lenn balra"
+
+#: corner.module:391
+msgid "Bottom right"
+msgstr "Lenn jobbra"
+
+#: corner.module:394
+msgid "Absolute"
+msgstr "Abszolút"
+
+#: corner.install:92,135
+msgid ""
+"The language visibility of the corner. Comma separated string of "
+"language names."
+msgstr ""
+"A szögletkép nyelvi láthatósága. A nyelvek vesszővel "
+"elválasztott listája."
+
+#: corner.install:99
+msgid ""
+"The role visibility of the corner. Comma separated string of role ids "
+"(rid)."
+msgstr ""
+"A szögletkép csoporti láthatósága. A csoportazonosítók "
+"vesszővel elválasztott listája."
+
+#: corner.install:116,136
+msgid "Serialized array of various corner options."
+msgstr "A szögletkép különböző beállításainak gépiesített tömbje."
+

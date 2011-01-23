@@ -1,0 +1,15 @@
+; $Id: user_import.info,v 1.8 2009/09/20 01:59:29 MegaGrunt Exp $ 
+name = User Import
+description = Import users into Drupal from a CSV file.
+core = 6.x 
+
+
+
+
+
+; Information added by drupal.org packaging script on 2009-10-24
+version = "6.x-2.3"
+core = "6.x"
+project = "user_import"
+datestamp = "1256419908"
+

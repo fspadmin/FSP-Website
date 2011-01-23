@@ -1,0 +1,424 @@
+<?php
+// $Id: themer.module,v 1.16 2008/07/07 23:56:00 tjholowaychuk Exp $
+ 
+/**
+ * @file 
+ * Theme utility functions and helpful themeing functionality. 
+ * @author Tj Holowaychuk <tj@vision-media.ca>
+ * @link http://vision-media.ca
+ */
+ 
+/* -----------------------------------------------------------------
+
+  Hook Implementations 
+
+------------------------------------------------------------------ */
+
+/**
+ * Implementation of hook_perm();
+ */
+function themer_perm(){
+  return array('administer themer');
+}
+
+/**
+ * Implementation of hook_menu().
+ */  
+function themer_menu(){
+  $items = array();
+  
+  $items['admin/settings/themer'] = array(
+      'title' => 'Themer', 
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('themer_settings'),
+      'access callback' => 'user_access',
+      'access arguments' => array('administer themer'),
+      'type' => MENU_NORMAL_ITEM,
+    ); 
+  
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme();
+ */
+function themer_theme() {
+  return array(
+    'themer_copyright' => array(
+        'arguments' => array('date' => NULL, 'site_name' => ''),
+      ),
+  );
+}
+
+/* -----------------------------------------------------------------
+
+  Page Callbacks 
+
+------------------------------------------------------------------ */
+
+function themer_settings() {      
+  $form = array();                       
+  $theme_funcs = themer_class_funcs();   
+  
+  $form['body_classes'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Body Classes'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+  $form['body_classes']['enabled'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Enabled'),                                                      
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+  
+  // Body class functions  
+  if (count($theme_funcs)){
+    foreach($theme_funcs AS $name => $info){
+      $form['body_classes']['enabled']['themer_body_class_' . $name] = array(
+          '#type' => 'checkbox',
+          '#title' => $info['name'],
+          '#description' => $info['desc'],
+          '#default_value' => variable_get('themer_body_class_' . $name, 1),
+        );  
+    }
+  }
+  
+  // Random
+  $form['body_classes']['random'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Random'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+  $form['body_classes']['random']['themer_body_class_random_max'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Max'),
+      '#description' => t('Max number of random classes.'),
+      '#default_value' => variable_get('themer_body_class_random_max', 2),
+    );
+    
+  // Options  
+  $form['body_classes']['options'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Options'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+  $form['body_classes']['options']['themer_body_class_aggregate'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Aggregate'),
+      '#description' => t('Aggregate path classes. Ex: %ex1 will become %ex2. This allows for even greated flexibility when styling based on paths.', array('%ex1' => 'node/1/edit', '%ex2' => "'path-node path-node-1 path-node-1-edit'")),
+      '#default_value' => variable_get('themer_body_class_aggregate', FALSE),
+    );
+    
+  // Tokens
+  if (module_exists('token')){
+    $form['body_classes']['tokens'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Tokens'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+    $form['body_classes']['tokens']['themer_body_class_tokens'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Tokens'),
+        '#description' => t('Entry comma seperated tokens available below which you wish to include as body classes. Example \'[user-name], [user-id]\'.'),
+        '#default_value' => variable_get('themer_body_class_tokens', ''),
+     );  
+    $form['body_classes']['tokens']['display'] = array(
+        '#type' => 'markup',
+        '#value' => theme('token_help', 'node'),   
+      );   
+  }
+    
+  return system_settings_form($form);
+}
+
+/* -----------------------------------------------------------------
+
+  Public API 
+
+------------------------------------------------------------------ */  
+
+/**
+ * Returns all enabled body classes generated from enabled class functions.
+ */
+function themer_body_class() {   
+  global $themer_body_classes;  
+  $class_funcs = themer_class_funcs();
+  
+  // Regular theme functions
+  if (count($class_funcs)){                         
+    foreach($class_funcs AS $name => $info){    
+      $function = 'themer_class_' . $name; 
+      if (variable_get('themer_body_class_' . $name, 0) && function_exists($function)){     
+        $themer_body_classes[] = $function();
+      }
+    }
+  }
+  
+  // Tokens
+  if ($tokens = variable_get('themer_body_class_tokens', FALSE)){
+    $tokens = explode(',', $tokens);
+    foreach((array) $tokens AS $token){
+      // Node
+      if (arg(0) == 'node' && is_numeric(arg(1))){
+        $node = node_load(arg(1));
+        $themer_body_classes[] =  trim($token, '[] ') . '-' . themer_string_to_css(token_replace(trim($token), 'node', $node));  
+      }  
+      // Global
+      else {
+        $themer_body_classes[] =  trim($token, '[] ') . '-' . themer_string_to_css(token_replace(trim($token)));
+      }
+    }
+  }   
+       
+  return implode(' ', (array) $themer_body_classes);
+}
+
+/**
+ * Add a body class. 
+ */
+function themer_add_class($class) {
+  global $themer_body_classes; 
+  
+  $themer_body_classes[] = (string) $class;
+}
+
+/**
+* Add an array of classes.
+*/
+function themer_add_classes($classes) {
+  global $themer_body_classes;
+  
+  if (is_array($classes) && count($classes)){
+    foreach($classes AS $class){
+      $themer_body_classes[] = (string) $class;
+    }
+  }
+}    
+
+/* -----------------------------------------------------------------
+
+  Class Generators 
+
+------------------------------------------------------------------ */
+
+/**
+ * Return all available class functions and information.
+ */
+function themer_class_funcs() {
+  return array(
+      'path' => array(
+          'name' => t('Path'),
+          'desc' => t('Classes based on the current path.'),
+        ),
+      'role' => array(
+          'name' => t('Role'),
+          'desc' => t('Classes based on the currently authenticated users roles.'),
+        ),
+      'random' => array(
+          'name' => t('Random'),
+          'desc' => t('Random classes within a specified range.'),
+        ),
+      'locale' => array(
+          'name' => t('Locale'),
+          'desc' => t('Language the site is currently being viewed in.'),
+        ),
+    );      
+}
+
+/**
+ *  Creates class(es) based on the current path.
+ */
+function themer_class_path() {
+  $aggregate = variable_get('themer_body_class_aggregate', FALSE);
+  
+  if (drupal_is_front_page()){
+    $output = 'front';
+  }
+  else {
+    $classes  = array();
+    $url      = drupal_get_path_alias($_GET['q']);
+    $segments = explode('/', trim($url, '/'));
+    if (count($segments)){
+      foreach($segments AS $i => $segment){
+        $classes[] = 'path-' . themer_string_to_css($segment);  
+           
+        // Aggregate                
+        if ($aggregate && $i){ 
+          $classes[] = 'path-' . themer_string_to_css(@implode('-', array_slice($segments, 0, ($i + 1))));   
+        }
+      }
+    }   
+    $output = check_plain(implode(' ', $classes));
+  }
+  
+  return $output;
+}
+
+/**
+ * Random class.
+ */
+function themer_class_random() {
+  return 'random-' . rand(1, variable_get('theme_body_class_random_max', 2));
+}
+
+/**
+ * Role based class.
+ */
+function themer_class_role() {
+  global $user;
+  $output = '';
+  
+  if (count($user->roles)){
+    foreach($user->roles AS $role){
+      $output .= ' role-' . themer_string_to_css($role);
+    }   
+  }
+  
+  return $output;
+}
+
+/**
+ * Language class based on the currently set language.
+ */
+function themer_class_locale() {
+  global $language;       
+                        
+  return 'locale-' . $language->language;
+}
+
+/**
+ * Generate Class(es) based on the proximity of one date to another.
+ * 
+ * In the following example $classes will result in 'warm':
+ * @code
+ *   $now = time();
+ *   $event_date = strtotime('-2 days');
+ *   $classes = themer_class_date_prox($event_date, array(1 => 'hot', 2 => 'warm', 5 => 'cold'), 'inherit', $now);
+ * @endcode
+ * 
+ * @param int $timestamp
+ *   Unix timestamp to which $timestamp2 is compared.
+ * 
+ * @param array $classes
+ *   Days => Class, Ex:     
+ *   @code
+ *     array(
+ *         1  => 'upcomming',
+ *         5  => 'soon',
+ *         10 => 'far',
+ *       );
+ *   @endcode
+ * 
+ * @param string $mode 
+ *   (optional) Use one of the following values:
+ *     - 'normal': returns first class applied, ex: 'new'  
+ *     - 'inherit': returns all classes within range, ex: 'old recent'
+ *     - 'glue': returns classes within range and aggregates, ex: 'old-recent'
+ * 
+ * @param int $timestamp2
+ *   (optional) Second timestamp, when NULL the current date will be assumed.
+ * 
+ * @param string $prefix
+ *   (optional) Provide a prefix which is applied to each class.
+ * 
+ * @returns string
+ *   Class(es)
+ */  
+function themer_class_date_prox($timestamp, $classes, $mode = 'normal', $timestamp2 = NULL, $prefix = NULL) {
+  $output       = '';
+  $classes_tmp  = array();
+  $timestamp2   = isset($timestamp2) ? $timestamp2 : time(); 
+  
+  // Create a positive diff in days
+  if ($timestamp > $timestamp2){
+    $diff_in_days = (($timestamp - $timestamp2) / 86400);  
+  }
+  else {
+    $diff_in_days = (($timestamp2 - $timestamp) / 86400);
+  }
+  
+  // Generate classes
+  if (count($classes)){  
+    foreach($classes AS $days => $class){
+      if ($diff_in_days <= $days){
+        $classes_tmp[] = $prefix ? $prefix . '-' . $class : $class;
+      }  
+    }
+  }
+  
+  // Vary results based on $mode
+  if (count($classes_tmp)){
+    switch($mode){
+      case 'normal':
+        $output = $classes_tmp[0];
+        break;
+        
+      case 'inherit':
+        $output = implode(' ', $classes_tmp);
+        break;
+      
+      case 'glue':          
+      default:  
+        $output = implode('-', $classes_tmp);
+    }
+  }
+        
+  return $output;  
+}
+
+/* -----------------------------------------------------------------
+
+  Misc Utils 
+
+------------------------------------------------------------------ */
+
+/**
+ * Convert any string into a css friendly string.
+ */
+function themer_string_to_css($string) {
+  return preg_replace('/[^a-zA-Z0-9\-]/is', '-', strtolower($string));
+}
+
+/**
+ * Formatted copyright information.
+ *
+ * @param string $starting_year
+ *   Must be 4 characters in length.
+ *
+ * @param string $name
+ *   Alternative 'name' for the sites copyright holder.
+ * 
+ * @returns string
+ *   Markup
+ */                   
+function themer_copyright($starting_year = '', $name = '') {
+  $site_name    = ($name) ? $name : variable_get('site_name', NULL);
+  $current_year = date('Y'); 
+  
+  if ($starting_year != $current_year){
+    $date = $starting_year . '-' . $current_year;
+  }
+  elseif($starting_year == $current_year){
+    $date = $current_year;
+  }
+  else{
+    $date = $current_year;
+  }     
+                                                
+  return theme('themer_copyright', $date, $site_name);
+}
+
+/**
+ * Theme dynamic copyright information.
+ * 
+ * @returns string
+ *   markup
+ */
+function theme_themer_copyright($date, $site_name) {
+  return '<span class="copyright">Copyright &copy; ' . $date . ' ' . $site_name . ' All rights reserved.</span>';
+}

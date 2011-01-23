@@ -1,0 +1,11 @@
+/* $Id: upload_image.css,v 1.4 2007/03/17 15:19:53 killes Exp $ */
+.upload-image-images img {
+  border: 1px solid #000;
+  margin: 5px;
+}
+
+.upload-image-images ul li {
+  list-style: none;
+  display: inline;
+  float: left;
+}

@@ -1,0 +1,77 @@
+# $Id: adminblock-module.pot,v 1.1.2.1 2008/08/11 12:57:27 frjo Exp $
+#
+# LANGUAGE translation of Drupal (adminblock.module)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  adminblock.module,v 1.14 2006/12/26 21:28:59 frjo
+#  adminblock.info,v 1.1 2006/11/05 12:26:14 frjo
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2007-03-02 11:32+0100\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: adminblock.module:24;72
+msgid "Admin block"
+msgstr ""
+
+#: adminblock.module:40
+msgid "node"
+msgstr ""
+
+#: adminblock.module:40;54;68
+msgid "edit"
+msgstr ""
+
+#: adminblock.module:40;54;68
+msgid "delete"
+msgstr ""
+
+#: adminblock.module:54
+msgid "By @user"
+msgstr ""
+
+#: adminblock.module:74
+msgid "Comments queue"
+msgstr ""
+
+#: adminblock.module:75;79;83
+msgid "more"
+msgstr ""
+
+#: adminblock.module:75
+msgid "Administer the approval queue"
+msgstr ""
+
+#: adminblock.module:78
+msgid "Content queue"
+msgstr ""
+
+#: adminblock.module:79
+msgid "Administer content"
+msgstr ""
+
+#: adminblock.module:82
+msgid "Trackback queue"
+msgstr ""
+
+#: adminblock.module:83
+msgid "Administer trackbacks"
+msgstr ""
+
+#: adminblock.info:0
+msgid "Admin Block"
+msgstr ""
+
+#: adminblock.info:0
+msgid "Block that display the comments approval queue, the node moderation queue and the trackback queue."
+msgstr ""
+

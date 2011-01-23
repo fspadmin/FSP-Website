@@ -1,0 +1,13 @@
+; $Id: perms_fieldsets.info,v 1.3 2008/05/30 15:26:00 litwol Exp $
+name = Access Permissions Fieldsets Manager
+description = Set default collapsed/expanded state for Access Permissions
+dependencies[] = util
+package = Util
+core = 6.x
+
+; Information added by drupal.org packaging script on 2008-06-05
+version = "6.x-2.3"
+core = "6.x"
+project = "util"
+datestamp = "1212682516"
+

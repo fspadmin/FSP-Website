@@ -1,0 +1,10 @@
+; $Id: revision_moderation.info,v 1.3 2007/12/18 03:14:40 webchick Exp $
+name = Revision Moderation
+description = Allows moderation of new node revisions while existing approved revisions stay visible.
+core = "6.x"
+; Information added by drupal.org packaging script on 2009-12-17
+version = "6.x-1.0-alpha2"
+core = "6.x"
+project = "revision_moderation"
+datestamp = "1261065433"
+

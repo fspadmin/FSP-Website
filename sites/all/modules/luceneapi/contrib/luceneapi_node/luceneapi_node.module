@@ -1,0 +1,1012 @@
+<?php
+// $Id: luceneapi_node.module,v 1.40.2.93 2010/07/13 21:34:35 cpliakas Exp $
+
+/**
+ * @file
+ * Allows for Lucene searches of nodes.
+ *
+ * @ingroup luceneapi
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function luceneapi_node_menu() {
+  $items = array();
+
+  $items['admin/settings/luceneapi_node/bias'] = array(
+    'title' => 'Content bias',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('luceneapi_node_admin_settings'),
+    'access arguments' => array('administer search'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'luceneapi_node.admin.inc',
+    'weight' => 8,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_menu_alter().
+ */
+function luceneapi_node_menu_alter(&$items) {
+  if (luceneapi_node_variable_get('hide_core_search')) {
+    $items['search/node']['access arguments'] = array(FALSE);
+    $items['search/node/%menu_tail']['access arguments'] = array(FALSE);
+  }
+}
+
+/**
+ * Old menu callback. The existence of this function prevents errors when
+ * upgrading from RC1 to RC2.
+ *
+ * @return
+ *   NULL
+ * @deprecated
+ */
+function luceneapi_node_core_search_redirect() {
+}
+
+/**
+ * Implementation of hook_luceneapi_node_bias_fields().
+ */
+function luceneapi_node_luceneapi_node_bias_fields() {
+  $fields = array(
+    'contents' => array(
+      'title' => t('Body text'),
+      'default' => '1.0',
+      'description' => t('The full rendered content of the page.'),
+    ),
+    'title' => array(
+      'title' => t('Title'),
+      'default' => '5.0',
+      'description' => t('Text in node titles.'),
+    ),
+    'name' => array(
+      'title' => t('Author'),
+      'default' => '3.0',
+      'description' => t("The node author's username."),
+    ),
+  );
+  if (module_exists('taxonomy')) {
+    $fields['taxonomy'] = array(
+      'title' => t('Taxonomy terms'),
+      'default' => '2.0',
+      'description' => t('Taxonomy term names.'),
+    );
+  }
+  if (module_exists('comment')) {
+    $fields['comment'] = array(
+      'title' => t('Comments'),
+      'default' => '1.0',
+      'description' => t('Text in comments.'),
+    );
+  }
+  return $fields;
+}
+
+/**
+ * Implementation of hook_luceneapi_node_bias_tags().
+ */
+function luceneapi_node_luceneapi_node_bias_tags() {
+  return array(
+    'tags_heading_large' => array(
+      'title' => t('Large headings'),
+      'tags' => array('h1'),
+      'default' => '5.0',
+      'description' => t('Text in H1 tags.'),
+    ),
+    'tags_heading_medium' => array(
+      'title' => t('Medium headings'),
+      'tags' => array('h2', 'h3'),
+      'default' => '3.0',
+      'description' => t('Text in H2, H3 tags.'),
+    ),
+    'tags_heading_small' => array(
+      'title' => t('Small headings'),
+      'tags' => array('h4', 'h5', 'h6'),
+      'default' => '2.0',
+      'description' => t('Text in H4, H5, H6 tags.'),
+    ),
+    'tags_inline' => array(
+      'title' => t('Inline tags'),
+      'tags' => array('u', 'b', 'i', 'strong', 'em'),
+      'default' => '1.0',
+      'description' => t('Text in U, B, I, STRONG, EM tags.'),
+    ),
+    'tags_a' => array(
+      'title' => t('Anchor links'),
+      'tags' => array('a'),
+      'default' => '0',
+      'description' => t('Text in A tags.'),
+    ),
+  );
+}
+
+/**
+ * A wrapper around variable_get for luceneapi_node specific variables.
+ *
+ * @param $name
+ *   A string containing the variable name.
+ * @return
+ *   A mixed value containing the variable.
+ * @see luceneapi_common_settings_get()
+ */
+function luceneapi_node_variable_get($name) {
+  switch ($name) {
+    case 'search_name':
+      $default = t('Search Lucene');
+      break;
+    case 'hide_core_search':
+      $default = 0;
+      break;
+    case 'language':
+    case 'nodeaccess':
+      $default = 1;
+      break;
+    case 'redirect_code':
+      $default = 302;
+      break;
+    case 'excluded_types':
+      $default = array();
+      break;
+    default:
+      $err = t(
+        'Search Lucene Content variable %name not valid.',
+        array('%name' => $name)
+      );
+      luceneapi_throw_error($err, WATCHDOG_ERROR, 'luceneapi_node');
+      return NULL;
+  }
+  $variable = sprintf('luceneapi_node:%s', $name);
+  return variable_get($variable, $default);
+}
+
+/**
+ * Appends a WHERE statement for excluded node types to a SQL query.
+ *
+ * @param $sql
+ *   A string containing the SQL query.
+ * @return
+ *   A string containing the SQL query with the type statement added.
+ */
+function luceneapi_node_type_condition_add($sql) {
+  $types = array();
+  foreach (luceneapi_node_excluded_types_get() as $excluded) {
+    $types[] = sprintf("'%s'", db_escape_string($excluded));
+  }
+  if (!empty($types)) {
+    $pattern = '/WHERE\\s+(n\\.)?status\\s*=\\s*1/';
+    $replace = 'WHERE n.status = 1 AND n.type NOT IN ('. join(', ', $types) .') ';
+    $sql = preg_replace($pattern, $replace, (string)$sql, 1);
+  }
+  return $sql;
+}
+
+/**
+ * Returns array of machine readable types that are excluded from the index.
+ *
+ * @return
+ *   An array containing the excluded content types.
+ */
+function luceneapi_node_excluded_types_get() {
+  return array_values(array_filter((array)luceneapi_node_variable_get('excluded_types')));
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function luceneapi_node_form_alter(&$form, &$form_state, $form_id) {
+  if ('node_configure_rebuild_confirm' == $form_id) {
+    $form['#submit'][] = 'luceneapi_node_nodeaccess_rebuild';
+  }
+
+  // adds additional administrative settings
+  if ($form_id == 'luceneapi_node_admin_settings_general_form') {
+    module_load_include('inc', 'luceneapi_node', 'luceneapi_node.admin');
+    luceneapi_node_admin_settings_general_form($form);
+  }
+
+  // adds option to rebuild index via Batch API after it is wiped or reindexed
+  // NOTE: the isset() is a safety guard in cases where the index cannot be
+  // opened.  See the issue at http://drupal.org/node/629178
+  if ($form_id == 'luceneapi_node_admin_settings_statistics_form' && isset($form['reindex'])) {
+
+    // buttin to index remaining content
+    $form['index']['remaining'] = array(
+      '#type' => 'submit',
+      '#value' => t('Index remaining nodes'),
+    );
+    $form['index']['remaining-desc'] = array(
+      '#type' => 'item',
+      '#description' => t('Index the remaining content via the <em>Batch API</em>. Since the documents are added to the index one node at a time, this method is far less efficient than indexing content via cron.'),
+    );
+
+    // rebuilds via batch API after operation
+    $form['reindex']['rebuild'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Rebuild index after operation'),
+      '#description' => t('Rebuild the entire index via the <em>Batch API</em> after the operation selected above has completed. Since the documents are added to the index one node at a time, this method is far less efficient than building the index via cron.'),
+    );
+
+    // overrides core validation handler, adds custom submit handler
+    array_unshift($form['#validate'], 'luceneapi_node_admin_settings_form_validate');
+  }
+
+  // adds separate submit handler to confirmation form to start the batch
+  if ('luceneapi_admin_confirm' == $form_id) {
+    if (!empty($_GET['rebuild'])) {
+      $form['#submit'][] = 'luceneapi_node_confirm_submit';
+    }
+  }
+}
+
+/**
+ * Intercepts validation function, adds param to query string which flags that
+ * the index should be rebuilt via the batch API.
+ *
+ * @param $form
+ *   A FAPI array modeling the submitted form.
+ * @param &$form_state
+ *   An array containing the current state of the form.
+ * @return
+ *   NULL
+ */
+function luceneapi_node_admin_settings_form_validate($form, &$form_state) {
+  if (!empty($form_state['values']['rebuild'])) {
+    if ($form_state['values']['op'] == t('Re-index')) {
+      drupal_goto('admin/settings/luceneapi_node/reindex', 'rebuild=1');
+    }
+    if ($form_state['values']['op'] == t('Wipe index')) {
+      drupal_goto('admin/settings/luceneapi_node/wipe', 'rebuild=1');
+    }
+  }
+}
+
+/**
+ * If the "Index remaining nodes" button is pressed, starts the batch
+ * process.
+ *
+ * @param $form
+ *   A FAPI array modeling the submitted form.
+ * @param &$form_state
+ *   An array containing the current state of the form.
+ * @return
+ *   NULL
+ */
+function luceneapi_node_admin_settings_statistics_form_submit($form, &$form_state) {
+  if ($form_state['values']['op'] == t('Index remaining nodes')) {
+    module_load_include('inc', 'luceneapi_node', 'luceneapi_node.index');
+    _luceneapi_node_batch_set(TRUE);
+  }
+}
+
+/**
+ * Rebuilds the index via the batch API.
+ *
+ * @param $form
+ *   A FAPI array modeling the submitted form.
+ * @param &$form_state
+ *   An array containing the current state of the form.
+ * @return
+ *   NULL
+ */
+function luceneapi_node_confirm_submit($form, &$form_state) {
+  module_load_include('inc', 'luceneapi_node', 'luceneapi_node.index');
+  _luceneapi_node_batch_set();
+}
+
+/**
+ * If we choose to change the state of the hide core search, we notify Drupal
+ * that the menu should be rebuilt on the next page load.
+ *
+ * @param $form
+ *   A FAPI array modeling the submitted form.
+ * @param &$form_state
+ *   An array containing the current state of the form.
+ * @return string
+ *   NULL
+ */
+function luceneapi_node_admin_settings_form_submit($form, &$form_state) {
+  $passed_value = $form_state['values']['luceneapi_node:hide_core_search'];
+  $original_value = $form_state['values']['original_hide_core_search'];
+  if ($passed_value != $original_value) {
+    variable_set('menu_rebuild_needed', TRUE);
+  }
+
+  // initializes flag for rebuild, array of content types to delete from index
+  $rebuild_index = FALSE;
+  $delete_types = array();
+
+  // checks for changes in settings, gets types to be deleted, whether to rebuild index
+  $original_value = (array)$form_state['values']['original_excluded_types'];
+  foreach ((array)$form_state['values']['luceneapi_node:excluded_types'] as $type => $selected) {
+    if ($type) {
+      if ($selected && empty($original_value[$type])) {
+        $delete_types[] = $type;
+      }
+      elseif (!$rebuild_index && !$selected && !empty($original_value[$type])) {
+        $rebuild_index = TRUE;
+      }
+    }
+  }
+
+  // deletes selected content types from the index
+  try {
+    if (!empty($delete_types)) {
+      if (!$index = luceneapi_index_open('luceneapi_node', $errstr)) {
+        throw new LuceneAPI_Exception($errstr);
+      }
+      if (!$query = luceneapi_query_get('multiterm')) {
+        throw new LuceneAPI_Exception(t('Error instantiating multiterm query.'));
+      }
+      foreach ($delete_types as $type) {
+        if ($term = luceneapi_term_get($type, 'type')) {
+          luceneapi_term_add($query, $term, 'neither', TRUE);
+        }
+      }
+      $hits = $index->find($query);
+      $clear_cache = (bool)count($hits);
+      foreach ($hits as $hit) {
+        // NOTE: this is more efficient than $hit->nid
+        $nid = $index->getDocument($hit->id)->getFieldValue('nid');
+        // loads node, deletes document
+        $node = node_load($nid);
+        luceneapi_document_delete($index, $nid, 'nid', $node, TRUE);
+      }
+      if ($clear_cache) {
+        cache_clear_all('luceneapi_node:', LUCENEAPI_CACHE_TABLE, TRUE);
+      }
+    }
+  }
+  catch (LuceneAPI_Exception $e) {
+    luceneapi_throw_error($e, WATCHDOG_ERROR, 'luceneapi_node');
+  }
+
+  // invokes hook_search('reset'), index will be rebuilt
+  if ($rebuild_index) {
+    luceneapi_node_search('reset');
+    drupal_set_message(t('The Search Lucene Content index will be rebuilt.'));
+  }
+}
+
+/**
+ * Submit handler, forces an index rebuild.
+ *
+ * @param $form
+ *   A nested array of form elements that comprise the form.
+ * @param &$form_state
+ *   A keyed array containing the current state of the form.
+ * @return
+ *   NULL
+ */
+function luceneapi_node_nodeaccess_rebuild($form, &$form_state) {
+  drupal_set_message(t('The Search Lucene Content index will be rebuilt.'));
+  luceneapi_node_search('reset');
+}
+
+/**
+ * Implementation of hook_luceneapi_index().
+ */
+function luceneapi_node_luceneapi_index($op) {
+  switch ($op) {
+    case 'path':
+      return luceneapi_variable_get('luceneapi_node', 'index_path');
+    case 'type':
+      return 'node';
+  }
+}
+
+/**
+ * Implementation of hook_luceneapi_node_sortable_fields().
+ */
+function luceneapi_node_luceneapi_sortable_fields($module, $type = NULL) {
+  if ('node' == $type) {
+    return array(
+      'name' => array(
+        'title' => t('Author'),
+        'type' => SORT_REGULAR,
+      ),
+      'title_sort' => array(
+        'title' => t('Title'),
+        'type' => SORT_REGULAR,
+      ),
+      'type' => array(
+        'title' => t('Content type'),
+        'type' => SORT_REGULAR,
+      ),
+      'created' => array(
+        'title' => t('Date created'),
+        'type' => SORT_NUMERIC,
+      ),
+      'changed' => array(
+        'title' => t('Last modified'),
+        'type' => SORT_NUMERIC,
+      ),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_search().
+ */
+function luceneapi_node_search($op, $keys = NULL) {
+  switch ($op) {
+    case 'name':
+      return luceneapi_node_variable_get('search_name');
+
+    case 'reset':
+      variable_del('luceneapi_node:last_change');
+      variable_del('luceneapi_node:last_nid');
+      return;
+
+    case 'search':
+      $results = array();
+      try {
+        if (!$index = luceneapi_index_open('luceneapi_node', $errstr)) {
+          throw new LuceneAPI_Exception($errstr);
+        }
+
+        // Whether or not to add comments.
+        $add_comments = (module_exists('comment') && user_access('access comments'));
+
+        // executes search, builds results array
+        $hits = luceneapi_do_search($index, $keys, $positive_keys, TRUE);
+        foreach ($hits as $hit) {
+          try {
+
+            // loads the body of the node, throws exception on errors
+            // NOTE: this is more efficient than $hit->nid
+            $nid = $index->getDocument($hit->id)->getFieldValue('nid');
+            if (!$node = node_load($nid)) {
+              throw new LuceneAPI_Exception(t('Error loading node.'));
+            }
+
+            // gets the contents of the node from the database
+            $node->build_mode = NODE_BUILD_SEARCH_RESULT;
+            $node = node_build_content($node, FALSE, FALSE);
+            $node->body = drupal_render($node->content);
+
+            // fetch comments, taxonomy terms for snippet
+            if ($add_comments) {
+              $node->body .= comment_nodeapi($node, 'update index');
+            }
+            $node->body .= taxonomy_nodeapi($node, 'update index');
+
+            // returns standard result item array
+            $result = array(
+              'link' => url('node/'. $node->nid, array('absolute' => TRUE)),
+              'type' => node_get_types('name', $node),
+              'title' => $node->title,
+              'user' => theme('username', $node),
+              'date' => $node->changed,
+              'node' => $node,
+              'extra' => node_invoke_nodeapi($node, 'search result'),
+              'score' => $hit->score,
+              'snippet' => luceneapi_excerpt($positive_keys, $node->body),
+              'positive_keys' => $positive_keys,
+            );
+          }
+          catch (Exception $e) {
+            $result = array(
+              'type' => '',
+              'title' => t('Error loading page'),
+              'score' => $hit->score,
+              'snippet' => t('The contents of the page could not be retrieved.'),
+              'positive_keys' => array(),
+            );
+          }
+
+          // allows modules to alter the item's result array, adds to results
+          drupal_alter('luceneapi_result', $result, 'luceneapi_node', 'node');
+          $results[] = $result;
+        }
+
+      }
+      catch (Exception $e) {
+        luceneapi_throw_error($e, WATCHDOG_ERROR, 'luceneapi_node');
+      }
+      return $results;
+
+    case 'status':
+      $total = db_result(db_query(luceneapi_node_type_condition_add(
+        'SELECT COUNT(*) FROM {node} n WHERE n.status = 1'
+      )));
+
+      $last_nid = variable_get('luceneapi_node:last_nid', 0);
+      $last = variable_get('luceneapi_node:last_change', 0);
+      $params = array($last, $last_nid, $last, $last, $last);
+
+      // SQL that gets nodes that have changed since the last Lucene index update
+      $sql = 'SELECT COUNT(*)'
+           .' FROM {node} n'
+           .' LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid'
+           .' WHERE n.status = 1'
+           .'   AND ('
+           .'     (GREATEST(n.changed, c.last_comment_timestamp) = %d AND n.nid > %d) OR'
+           .'     (n.changed > %d OR c.last_comment_timestamp > %d)'
+           .'   )';
+
+      // adds statement to ignore excluded content types, gets num remaining
+      $sql = luceneapi_node_type_condition_add($sql);
+      $remaining = db_result(db_query($sql, $params));
+
+      return array(
+        'remaining' => $remaining,
+        'total' => $total
+      );
+  }
+}
+
+/**
+ * Implementation of hook_luceneapi_query_rebuild().
+ */
+function luceneapi_node_luceneapi_query_rebuild($query, $module, $type) {
+  if ('node' != $type) {
+    return;
+  }
+  try {
+    module_load_include('inc', 'luceneapi_node', 'luceneapi_node.query');
+    $new_query = _luceneapi_node_luceneapi_query_rebuild($query);
+  }
+  catch (Exception $e) {
+    luceneapi_throw_error($e, WATCHDOG_ERROR, 'luceneapi_node');
+    $new_query = luceneapi_query_get('empty');
+  }
+
+  return $new_query;
+}
+
+/**
+ * Implementation of hook_luceneapi_query_alter().
+ */
+function luceneapi_node_luceneapi_query_alter($query, $module, $type) {
+  if ('node' != $type) {
+    return;
+  }
+  try {
+
+    // adds nodeaccess subquery if options set
+    if (luceneapi_node_variable_get('nodeaccess')) {
+      luceneapi_node_rewrite_query($query, TRUE);
+    }
+
+    // adds language restrictions
+    if (luceneapi_node_variable_get('language')) {
+      global $language;
+      if (!$multiterm = luceneapi_query_get('multiterm')) {
+        throw new LuceneAPI_Exception(t('Error instantiating multiterm query.'));
+      }
+      foreach (array($language->language, '') as $language_code) {
+        $term = luceneapi_term_get($language_code, 'language', TRUE);
+        luceneapi_term_add($multiterm, $term, 'neither', TRUE);
+      }
+      luceneapi_subquery_add($query, $multiterm, 'required', TRUE);
+    }
+
+  }
+  catch (Exception $e) {
+    luceneapi_throw_error($e, WATCHDOG_ERROR, $module);
+    if ($empty_query = luceneapi_query_get('empty')) {
+      luceneapi_subquery_add($query, $empty_query, 'required');
+    }
+    else {
+      luceneapi_throw_error(
+        t('Error instantiating empty query.'), WATCHDOG_ERROR, $module
+      );
+    }
+  }
+}
+
+/**
+ * Adds appends nodeaccess subquery.
+ *
+ * NOTE: The node access problem was identified by Seth Cohn, who also pointed
+ * me to the solution.  The fix was forked from code written by the very smart
+ * developers of the apachesolr project.
+ *
+ * @param $query
+ *   A Zend_Search_Lucene_Search_Query_Boolean object the nodeaccess subquery
+ *   is being appended to.
+ * @param $throw_exceptions
+ *   A boolean flagging whether exceptions should be thrown.
+ * @return
+ *   NULL
+ * @throws LuceneAPI_Exception
+ */
+function luceneapi_node_rewrite_query(Zend_Search_Lucene_Search_Query_Boolean $query, $throw_exceptions = FALSE) {
+  global $user;
+  if (user_access('administer nodes', $user) || !count(module_implements('node_grants'))) {
+    return;
+  }
+  try {
+
+    // makes sure the user has grants
+    $grants = node_access_grants('view', $user);
+    if (empty($grants)) {
+      throw new LuceneAPI_Exception(t(
+        'User %uid cannot access any content.',
+        array('%uid' => $user->uid)
+      ));
+    }
+
+    // instantiates node access subquery
+    if ($access_query = luceneapi_query_get('boolean')) {
+
+      // appends grant term subqueries
+      foreach ($grants as $realm => $gids) {
+        $field = sprintf('nodeaccess_%s', $realm);
+        foreach ($gids as $gid) {
+          luceneapi_subquery_add($access_query, luceneapi_query_get(
+            'term', $gid, $field
+          ));
+        }
+      }
+
+      // if grant term queries were added, appends access subquery
+      if (count($access_query->getSubqueries())) {
+        $access_query->setBoost(LUCENEAPI_IRRELEVANT);
+        luceneapi_subquery_add($query, $access_query, 'required');
+      }
+    }
+  }
+  catch (LuceneAPI_Exception $e) {
+    luceneapi_handle_error($e, $throw_exceptions, 'luceneapi_node');
+  }
+}
+
+/**
+ * Implementation of hook_update_index().
+ */
+function luceneapi_node_update_index() {
+  module_load_include('inc', 'luceneapi_node', 'luceneapi_node.index');
+  _luceneapi_node_update_index();
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function luceneapi_node_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  static $cur_status;
+
+  // gets node status before it is changed
+  if ('load' == $op) {
+    $cur_status = $node->status;
+  }
+
+  // removes document from index if deleting or unpublishing a node
+  if ('delete' == $op || ('update' == $op && $cur_status && !$node->status)) {
+    try {
+      if ($index = luceneapi_index_open('luceneapi_node', $errstr)) {
+        module_load_include('inc', 'luceneapi_node', 'luceneapi_node.index');
+        luceneapi_document_delete($index, $node->nid, 'nid', $node, TRUE);
+        cache_clear_all('luceneapi_node:', LUCENEAPI_CACHE_TABLE, TRUE);
+        luceneapi_index_commit($index, TRUE);
+      }
+      else {
+        throw new LuceneAPI_Exception($errstr);
+      }
+    }
+    catch (Exception $e) {
+      luceneapi_throw_error($e, WATCHDOG_ERROR, 'luceneapi_node');
+    }
+  }
+}
+
+/**
+ * Implementation of hook_luceneapi_facet().
+ */
+function luceneapi_node_luceneapi_facet($module, $type = NULL) {
+  if ($type != 'node') {
+    return;
+  }
+  $facets = array();
+
+  // gets node types, defines content type facet
+  $facets['type'] = array(
+    'title' => t('Content type'),
+    'element' => 'type',
+    'field' => 'type',
+    'type' => 'checkboxes',
+    'callback' => 'luceneapi_facet_multiterm_callback',
+    'callback arguments' => array(luceneapi_facet_value_get('type', array()), 'type'),
+    'description' => t('Filter by content type.'),
+  );
+
+  // filters by author
+  $facets['author'] = array(
+    'title' => t('Author'),
+    'element' => 'uid',
+    'field' => 'uid',
+    'type' => 'textfield',
+    'callback' => 'luceneapi_node_author_callback',
+    'callback arguments' => array(luceneapi_facet_value_get('uid', array())),
+    'description' => t('Filter by node author. Wildcard characters are allowed.'),
+  );
+
+  // adds taxonomy facets, breaks up into separate vocabularies
+  if (module_exists('taxonomy')) {
+    foreach (taxonomy_get_vocabularies() as $vocabulary) {
+      $facets['category_'. $vocabulary->vid] = array(
+        'title' => $vocabulary->name,
+        'element' => 'category',
+        'field' => 'category_'. $vocabulary->vid,
+        'type' => 'select',
+        'callback' => 'luceneapi_facet_multiterm_callback',
+        'callback arguments' => array(
+          luceneapi_facet_value_get('category', array()), 'category', TRUE
+        ),
+        'delimiter' => ' ',
+        'description' => t(
+          'Filter by terms in the %vocabulary vocabulary.',
+          array('%vocabulary' => $vocabulary->name)
+        ),
+      );
+    }
+  }
+
+  return $facets;
+}
+
+/**
+ * Implementation of hook_luceneapi_facet_empty().
+ */
+function luceneapi_node_luceneapi_facet_empty($facets, $realm, $module) {
+  $type = luceneapi_index_type_get($module);
+  if ($type != 'node') {
+    return;
+  }
+
+  // gets "empty search" settings
+  $variable = sprintf('luceneapi_facet:%s:empty', $module);
+  $empty_settings = variable_get($variable, array());
+
+  // gets "hard limit"
+  $variable = sprintf('luceneapi_facet:%s:hard_limit', $module);
+  $limit = variable_get($variable, 20);
+
+  $items = array();
+  foreach ($facets as $name => $facet) {
+    if ('author' == $name) {
+      $sql = 'SELECT u.uid AS id, u.name, COUNT(*) AS num'
+           .' FROM {users} u'
+           .' INNER JOIN {node} n ON u.uid = n.uid'
+           .' WHERE u.uid <> 0 AND n.status = 1'
+           .' GROUP BY u.uid'
+           .' ORDER BY num DESC';
+    }
+    elseif ('type' == $name) {
+      $sql = 'SELECT n.type AS id, t.name, COUNT(*) AS num'
+           .' FROM {node} n'
+           .' LEFT JOIN {node_type} t ON n.type = t.type'
+           .' WHERE n.status = 1'
+           .' GROUP BY n.type'
+           .' ORDER BY num DESC';
+      $sql = luceneapi_node_type_condition_add($sql);
+    }
+    elseif (preg_match('/^category_(\d+)$/', $name, $matches)) {
+      $sql = 'SELECT tn.tid AS id, td.name, COUNT(*) AS num'
+           .' FROM {node} n'
+           .' LEFT JOIN {term_node} tn ON n.vid = tn.vid'
+           .' LEFT JOIN {term_data} td ON tn.tid = td.tid'
+           .' WHERE n.status = 1 AND td.vid = '. db_escape_string($matches[1])
+           .' GROUP BY tn.tid'
+           .' ORDER BY num DESC';
+      $sql = luceneapi_node_type_condition_add($sql);
+    }
+    else {
+      continue;
+    }
+
+    // ads limit clause if one is set
+    if ($limit) {
+      $sql .= sprintf(' LIMIT %d', $limit);
+    }
+
+    // initializes array containing facet information
+    $rows = array();
+    if ($result = db_query(db_rewrite_sql($sql))) {
+      while ($row = db_fetch_object($result)) {
+        $path = sprintf('search/%s/%s:%s', $module, $facet['element'], $row->id);
+        $rows[$row->id] = array(
+          'function' => 'luceneapi_facet_link',
+          'text' => $row->id,
+          'path' => $path,
+          'options' => array(),
+        );
+        if ($empty_settings['counts']) {
+          $rows[$row->id]['count'] = $row->num;
+        }
+        else {
+          $rows[$row->id]['count'] = 0;
+        }
+      }
+    }
+
+    // if there are items ($rows), appends to $items[$name]
+    if (!empty($rows)) {
+      $items[$name] = array(
+        'title' => $facet['title'],
+        'field' => $facet['field'],
+        'element' => $facet['element'],
+        'selected' => array(),
+        'count' => array(),
+        'items' => $rows,
+      );
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Callback for the author facet.  Returns a string if the facet is a wildcard
+ * query, multiterm query if an array of uids are passed.
+ *
+ * @param $values
+ *   An array containing the author uids, or a string containing a pattern to
+ *   search authors against.
+ * @return
+ *   A Zend_Search_Lucene_Search_Query object.
+ */
+function luceneapi_node_author_callback($values) {
+  if (empty($values)) {
+    return;
+  }
+  if (is_array($values)) {
+    return luceneapi_facet_multiterm_callback($values, 'uid');
+  }
+  else {
+    try {
+      $name = drupal_strtolower((string)$values);
+      if (!$query = luceneapi_query_get('wildcard', $name, 'name')) {
+        throw new LuceneAPI_Exception(t('Error instantiating wildcard query.'));
+      }
+      $query->setBoost(LUCENEAPI_IRRELEVANT);
+      return $query;
+    }
+    catch (Exception $e) {
+      luceneapi_throw_error(e, WATCHDOG_ERROR, 'luceneapi_node');
+    }
+  }
+}
+
+/**
+ * Implementation of hook_luceneapi_postrender_alter().
+ */
+function luceneapi_node_luceneapi_facet_postrender_alter(&$items, $realm, $module, $type = NULL) {
+  if ('block' == $realm) {
+    $taxonomy_exists = module_exists('taxonomy');
+
+    // converts values pulled from index to human readable names
+    foreach ($items as $name => $item) {
+      $values = array_keys($item['items']);
+      if (empty($values)) {
+        continue;
+      }
+
+      // formats SQL to convert IDs to disaply names
+      switch (TRUE) {
+        case ('type' == $name):
+          $sql = 'SELECT type AS id, name'
+               .' FROM {node_type}'
+               .' WHERE type IN ('. db_placeholders($values, 'varchar') .')';
+          break;
+
+        case ('author' == $name):
+          $sql = 'SELECT uid AS id, name'
+               .' FROM {users}'
+               .' WHERE uid IN ('. db_placeholders($values, 'varchar') .')';
+          break;
+
+        case ($taxonomy_exists && preg_match('/^category_(\d+)$/', $name)):
+          $sql = 'SELECT tid AS id, name'
+               .' FROM {term_data}'
+               .' WHERE tid IN ('. db_placeholders($values) .')';
+          break;
+
+        default:
+          // we need the continue to act on the foreach
+          continue 2;
+          break;
+      }
+
+      // adds display names to items
+      if ($result = db_query($sql, $values)) {
+        while ($row = db_fetch_object($result)) {
+          if (isset($items[$name]['items'][$row->id])) {
+            $items[$name]['items'][$row->id]['text'] = $row->name;
+          }
+        }
+      }
+    }
+  }
+
+  if ('fieldset' == $realm) {
+
+    // taxonomy facets
+    if (isset($items['category']) && $taxonomy = module_invoke('taxonomy', 'form_all', 1)) {
+
+      // "weights" the categories
+      $weights = array();
+      foreach (luceneapi_facet_facets_get($module, $type) as $name => $facet) {
+        if (preg_match('/^category_(\d+)$/', $name, $match)) {
+          if ($vocabulary = taxonomy_vocabulary_load($match[1])) {
+            if (luceneapi_facet_enabled($match[0], $module, 'fieldset')) {
+              $variable = sprintf('luceneapi_facet:%s:%s:%s:weight', $module, $realm, $name);
+              $weights[$vocabulary->name] = variable_get($variable, 0);
+            }
+          }
+        }
+      }
+
+      // gets weighted taxonomy array
+      asort($weights);
+      $taxonomy_weighted = array();
+      foreach ($weights as $vocab_name => $weight) {
+        $taxonomy_weighted[$vocab_name] = $taxonomy[$vocab_name];
+      }
+
+      // builds taxonomy form
+      $items['category'] = array_merge($items['category'], array(
+        '#type' => 'select',
+        '#title' => t('Containing the category(s)'),
+        '#prefix' => '<div class="criterion">',
+        '#size' => 10,
+        '#suffix' => '</div>',
+        '#options' => $taxonomy_weighted,
+        '#multiple' => TRUE,
+        '#default_value' => luceneapi_facet_value_get('category', array()),
+      ));
+      unset($items['category']['#description']);
+
+      // sets weight as the lowest weight of all taxonomy facets
+      if (is_array($items['category']['#weight'])) {
+        $items['category']['#weight'] = min($items['category']['#weight']);
+      }
+    }
+
+    // content type facet
+    if (isset($items['type'])) {
+
+      // gets content type minus the excluded ones
+      $types = array_map('check_plain', node_get_types('names'));
+      foreach (luceneapi_node_excluded_types_get() as $excluded) {
+        unset($types[$excluded]);
+      }
+
+      // if there are still content types, finalizes form element
+      if (!empty($types)) {
+        $items['type'] = array_merge($items['type'], array(
+          '#title' => t('Only of the type(s)'),
+          '#prefix' => '<div class="criterion">',
+          '#suffix' => '</div>',
+          '#options' => $types,
+        ));
+        unset($items['type']['#description']);
+      }
+      else {
+        unset($items['type']);
+      }
+    }
+
+    // author facet
+    if (isset($items['uid'])) {
+
+      // only sets default value if name was passed
+      $default_value = luceneapi_facet_value_get('uid', array());
+      if (!is_string($default_value)) {
+        $default_value = '';
+      }
+
+      // finalizes
+      $items['uid'] = array_merge($items['uid'], array(
+        '#title' => t('Authored by'),
+        '#prefix' => '<div class="criterion">',
+        '#suffix' => '</div>',
+        '#default_value' => $default_value,
+      ));
+    }
+  }
+}

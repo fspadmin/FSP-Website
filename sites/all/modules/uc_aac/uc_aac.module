@@ -1,0 +1,271 @@
+<?php
+// $Id: uc_aac.module,v 1.10.2.21 2010/08/09 17:59:35 cyu Exp $
+
+/**
+ * @file
+ * Ajax Attribute Calculations
+ *
+ * Updates product information using AJAX whenever a product attribute is
+ * altered. Also updates the attribute adjustments dynamically if they are
+ * configured to display.
+ */
+
+
+/******************************************************************************
+ * Drupal Hooks
+ *****************************************************************************/
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_aac_menu() {
+  $items['uc_aac'] = array(
+    'title' => t('Product Adjustments'),
+    'description' => t('Calculate the price of your product.'),
+    'page callback' => '_uc_aac_calculate',
+    'access arguments' => array('access content'),
+    'weight' => 5,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_aac_form_alter(&$form, $form_state, $form_id) {
+  if (strstr($form_id, 'uc_product_add_to_cart_form')) {
+    static $uc_aac_js = FALSE;
+
+    // Add a class to the cart form. This will allow us to easily identify it for binding ajax stuff.
+    $form['#attributes']['class'] .= ' uc-aac-cart';
+
+    if (!$uc_aac_js) {
+      $uc_aac_js = TRUE;
+
+      drupal_add_js('misc/jquery.form.js');
+      drupal_add_js(drupal_get_path('module', 'uc_aac') .'/uc_aac.js');
+      // Call uc_aac_calculate once for each form on page load
+      drupal_add_js("$('.attributes').find('[name^=attributes]:first').each(function(i) { ucAacCalculate(this); });", 'inline', 'footer');
+      // Best that I can do until http://drupal.org/node/481560 goes in.
+      drupal_add_js(array('uc_aac_path' => url('uc_aac')), 'setting');
+    }
+
+    // If the product has attributes.
+    if (isset($form['#parameters'][2]->attributes)) {
+      $nid = $form['nid']['#value'];
+      $product =& $form['#parameters'][2];
+
+      // Add the products nid to the form, to avoid parsing formid's for an NID that may not exist.
+      $form['aac_nid'] = array(
+        '#type' => 'hidden',
+        '#value' => $nid,
+      );
+
+      // Use qty from post or use default qty
+      if (isset($_POST['qty'])) {
+        $form['qty']['#default_value'] = check_plain($_POST['qty']);
+      }
+      else {
+        $form['qty']['#default_value'] = $product->default_qty;
+      }
+
+      $context = array(
+        'revision' => 'formatted',
+        'type' => 'product',
+        'class' => array(
+          'product',
+        ),
+        'subject' => array(
+          'node' => $product,
+        ),
+      );
+
+      foreach (element_children($form['attributes']) as $aid) {
+        // Reset options for each $aid
+        $options = array();
+        $selected_oid = array();
+
+        if (isset($_POST['attributes'][$aid])) {
+          if (is_array($_POST['attributes'][$aid])) {
+            foreach ($_POST['attributes'][$aid] as $key => $value) {
+              $selected_oid[] = check_plain($value);
+            }
+          }
+          else {
+            $selected_oid = check_plain($_POST['attributes'][$aid]);
+          }
+        }
+        else {
+          $selected_oid = $product->attributes[$aid]->default_option;
+        }
+
+        // TODO: Find out why the default checkbox option is not always an array.
+        if ($form['attributes'][$aid]['#type'] == 'checkboxes' && !is_array($selected_oid)) {
+          $selected_oid = array();
+        }
+        // TODO: Find out why the default text option is not always an empty string.
+        if ($form['attributes'][$aid]['#type'] == 'textfield') {
+          $selected_oid = ($selected_oid === '0' ? '' : $selected_oid);
+        }
+        $form['attributes'][$aid]['#default_value'] = $selected_oid;
+
+        // If reprice is enabled and price adjustments are to be displayed
+        if (variable_get('uc_aac_reprice', 1) == 1 && (variable_get('uc_attribute_option_price_format', 'adjustment') == 'adjustment'
+            || (count(uc_attribute_priced_attributes($nid)) > 1) && variable_get('uc_attribute_option_price_format', 'adjustment') != 'none')) {
+          foreach ($product->attributes[$aid]->options as $option) {
+            if ($form['attributes'][$aid]['#type'] == 'checkboxes') {
+              // Negate selected options
+              if (in_array($option->oid, $selected_oid)) {
+                $price = -$option->price;
+              }
+              else {
+                $price = $option->price;
+              }
+            }
+            else {
+              $price = $option->price - $product->attributes[$aid]->options[$selected_oid]->price;
+            }
+
+            // Rebuild option text
+            $oid_text = '';
+            if ($price != 0) {
+              $oid_text = ', ';
+              if ($price > 0) {
+                $oid_text .= '+'. uc_price($price, $context);
+              }
+              else {
+                $oid_text .= '('. uc_price($price, $context) .')';
+              }
+            }
+            $options[$option->oid] = $option->name . $oid_text;
+          }
+        }
+
+        // If options have been reconfigured
+        if (!empty($options)) {
+          $form['attributes'][$aid]['#options'] = $options;
+        }
+      }
+    }
+  }
+  elseif ($form_id == 'uc_attribute_admin_settings') {
+    $form['uc_attribute_option_price_format']['uc_aac_reprice'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Ajax Attribute Calculations dynamically adjusts product information as a product\'s attribute options are changed.'),
+      '#default_value' => variable_get('uc_aac_reprice', 1),
+      '#weight' => 0,
+      '#description' => t('When checked, a customer\'s selected attributes will display no price adjustment and all other attribute prices will be relative to the current price.'),
+    );
+  }
+}
+
+
+/******************************************************************************
+ * Module Functions
+ *****************************************************************************/
+
+/**
+ * Calculate product adjustments based on attribute option selections.
+ */
+function _uc_aac_calculate() {
+  //@todo use filter_input_array() instead of is_array and check_plain and require PHP 5.2
+  // If the nid is not set, we can't do anything.
+  if (!is_numeric($_POST['aac_nid'])) {
+    return;
+  }
+  $nid = $_POST['aac_nid'];
+  $form_id = $_POST['form_id'];
+  // $_POST['attributes'] can be empty if only checkbox attributes are on the product and none are checked.
+  $attributes = isset($_POST['attributes']) ? $_POST['attributes'] : array();
+
+  $output['nid'] = $nid;
+
+  // Load the node and store the submitted data for later.
+  $product = node_load($nid);
+
+  // Create a fake cart item with the submitted node, quantity and attributes.
+  $item = new stdClass();
+  $item->nid = $nid;
+  $item->qty = check_plain($_POST['qty']);
+  $item->model = $product->model;
+  $item->cost = $product->cost;
+  $item->price = $product->sell_price;
+  $item->weight = $product->weight;
+  $item->data = unserialize($product->data);
+  $item->data['nid'] = $nid;
+  foreach ($attributes as $key => $value) {
+    $key = check_plain($key);
+    if (is_array($value)) {
+      foreach ($value as $array_key => $array_value) {
+        $item->data['attributes'][$key][check_plain($array_key)] = check_plain($array_value);
+      }
+    }
+    else {
+      $item->data['attributes'][$key] = check_plain($value);
+    }
+  }
+
+  // Let other modules adjust our cart item as needed.
+  $item->data = module_invoke_all('add_to_cart_data', $item->data);
+
+  // Invoke hook_cart_item() with $op = 'load' in enabled modules.
+  foreach (module_list() as $module) {
+    $func = $module .'_cart_item';
+    if (function_exists($func)) {
+      // $item must be passed by reference.
+      $func('load', $item);
+    }
+  }
+
+  $context = array(
+    'revision' => 'themed',
+    'type' => 'product',
+    'class' => array(
+      'product',
+    ),
+    'subject' => array(
+      'node' => $product,
+    ),
+  );
+
+  // Render the updated display price
+  $context['class'][1] = 'display';
+  $context['field'] = 'sell_price';
+  $output['replacements']['display'] = theme('uc_product_price', $item->price, $context);
+
+  // Render the updated model
+  $output['replacements']['model'] = theme('uc_product_model', $item->model, 0, 0);
+
+  // Render the updated cost
+  $context['class'][1] = 'cost';
+  $context['field'] = 'cost';
+  $output['replacements']['cost'] = theme('uc_product_price', $item->cost, $context);
+
+  // Render the updated sell price
+  $context['class'][1] = 'sell';
+  $context['field'] = 'sell_price';
+  $output['replacements']['sell'] = theme('uc_product_price', $item->price, $context, array('label' => 1));
+
+  // Render the updated weight
+  $output['replacements']['weight'] = theme('uc_product_weight', $item->weight, $product->weight_units, 0, 0);
+
+  // Unset the form id to ensure Drupal doesn't attempt to process it.
+  unset($_POST['form_id']);
+  // Render the updated form
+  // If the original form used the nid, then add it.
+  if (strstr($form_id, 'uc_product_add_to_cart_form_')) {
+    $output['form'] = drupal_get_form('uc_product_add_to_cart_form_'. $nid, $product);
+  }
+  // Otherwise use the non-standard form.
+  else {
+    $output['form'] = drupal_get_form('uc_product_add_to_cart_form', $product);
+  }
+
+  // TODO: Fix bug where multiple add_to_cart forms on a single page have
+  // elements with identical css id's after regenerating the forms
+  // http://drupal.org/node/384992
+  drupal_json($output);
+  exit;
+}

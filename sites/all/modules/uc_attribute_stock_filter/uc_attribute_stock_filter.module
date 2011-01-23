@@ -1,0 +1,110 @@
+<?php
+// $Id: uc_attribute_stock_filter.module,v 1.1.2.3 2010/03/04 11:31:16 klavs Exp $
+
+/**
+ * @file
+ * Hides out-of-stock attribute combinations on Ubercart product pages
+ *
+ * This module checks stock levels and filters out any out-of-stock attribute
+ * option combinations from the product page select boxes.
+ *
+ */
+
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function uc_attribute_stock_filter_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'view':
+
+      // Get attribute count for this product
+      $attrib = db_fetch_object(db_query("SELECT COUNT(aid) AS count FROM {uc_product_attributes} WHERE nid = %d", $node->nid));
+
+      // Only proceed if we have more than one attribute (otherwise we do the filtering with hook_form_alter())
+      if ($attrib->count > 1) {
+        // Grab serialized options and stock levels
+        $result = db_query("SELECT a.combination AS combination, s.stock AS stock FROM {uc_product_adjustments} a, {uc_product_stock} s WHERE a.nid = %d AND s.sku = a.model AND s.active = 1", $node->nid);
+
+        // This builds an array where each option is a key containing its available combinations as elements
+        $available = array();
+        while ($data = db_fetch_object($result)) {
+          $combo = unserialize($data->combination);
+          if ($data->stock > 0) { // Stock is available
+            foreach ($combo as $key => $option) { // Grab possible combinations
+              foreach ($combo as $avail_key => $avail_opt) {
+                if ($avail_key != $key) {
+                  $available[$option][] = $avail_opt;
+                }
+              }
+            }
+          }
+        }
+        if (!empty($available)) { // If there are no stock levels at all, we assume stocks aren't used and skip filtering.
+
+          // Encode the array as JSON and add the JavaScript
+          $js_array = "var uc_asf_AvailableOptions = ". json_encode($available);
+          drupal_add_js($js_array, 'inline');
+          drupal_add_js(drupal_get_path('module', 'uc_attribute_stock_filter') .'/uc_attribute_stock_filter.js', 'module');
+        }
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_attribute_stock_filter_form_alter(&$form, $form_state, $form_id) {
+
+  if (ereg('^uc_product_add_to_cart_form_', $form_id)) {
+
+    $stock = db_fetch_object( db_query("SELECT COUNT(s.stock) AS count FROM {uc_product_adjustments} a, {uc_product_stock} s WHERE a.nid = %d AND s.sku = a.model AND s.active = 1 AND stock > 0", $form['nid']['#value']));
+
+    // Does the product have attributes?
+    $product_attributes = db_fetch_object( db_query("SELECT COUNT(nid) as count FROM {uc_product_adjustments} WHERE nid = %d", $form['nid']['#value']));
+    if ($product_attributes->count < 1) {
+      $stock = db_fetch_object( db_query("SELECT s.stock as count, s.active FROM {uc_product_stock} s WHERE s.nid = %d", $form['nid']['#value']));
+    }
+    else {
+      $stock = db_fetch_object( db_query("SELECT COUNT(s.stock) AS count, s.active FROM {uc_product_adjustments} a, {uc_product_stock} s WHERE a.nid = %d AND s.sku = a.model AND s.active = 1 AND stock > 0 group by s.stock", $form['nid']['#value']));
+    }
+    if ($stock->count < 1 && $stock->active) {
+       // We're all out, kill the 'Add to cart' submit button and disable any attribute select boxes
+      $form['submit']['#attributes']['disabled'] = 'disabled';
+      $form['submit']['#value'] = t('Out of stock');
+      if (is_array($form['attributes'])) {
+        foreach ($form['attributes'] as $key => $attribute) {
+          if (is_numeric($key)) {
+            $form['attributes'][$key]['#attributes']['disabled'] = 'disabled';
+          }
+        }
+      }
+    }
+    else if ($product_attributes->count > 0) { // The product has at least one attribute
+      $result = db_query("SELECT a.combination AS combination, s.stock AS stock, s.active FROM {uc_product_adjustments} a LEFT JOIN {uc_product_stock} s ON a.model = s.sku WHERE a.nid = %d", $form['nid']['#value']);
+
+      // This builds an array containing the available options
+      $available = array();
+      while ($data = db_fetch_object($result)) {
+        $combo = unserialize($data->combination);
+        if ($data->stock || !$data->active) { // Stock is available or stock tracking is NOT active
+          $available = array_merge($available, array_values($combo)); // Merge value into array
+        }
+      }
+
+      // Traverse through $form and unset any options that are not on the list
+      foreach ($form['attributes'] as $key => $attribute) {
+        if (is_numeric($key)) {
+          foreach ($form['attributes'][$key]['#options'] as $opt_key => $option) {
+            // Make sure it's numeric, don't kill the "Select..." option
+            if (is_numeric($opt_key) && !in_array($opt_key, $available)) {
+              unset($form['attributes'][$key]['#options'][$opt_key]);
+            }
+          }
+        }
+      }
+    }
+
+  }
+}

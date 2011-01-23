@@ -1,0 +1,27 @@
+// $Id: uc_coupon.css,v 1.2 2010/12/22 00:57:41 longwave Exp $
+
+.view-uc-coupon-purchase-view .uc-coupon-code-used {
+  text-decoration: line-through;
+}
+.view-uc-coupon-purchase-view .views-field-base-name {
+  width: 20%;
+}
+.view-uc-coupon-purchase-view td {
+  vertical-align: top;
+}
+
+div.uc-coupon-certificate {
+  page-break-after: always;
+  background: white;
+  width: 90%;
+  margin: auto;
+  border: 1px solid blue;
+  padding: 2%;
+}
+
+#uc-coupon-add-form #edit-valid-from-wrapper label,
+#uc-coupon-add-form #edit-valid-until-wrapper label {
+  float: left;
+  width: 8em;
+  margin-top: 2px;
+}

@@ -1,0 +1,238 @@
+<?php
+// $Id: corner.test,v 1.2.2.1 2009/06/08 09:23:07 kirie Exp $
+
+/**
+ * This class tests access permissions, and since several different users
+ * must be created (i.e. can not use setUp()), its split into its own test case.
+ */
+class CorneraAccessTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Corner access rules'),
+      'desc' => t('Test that all access restrictions are correct.'),
+      'group' => t('Corner'),
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    parent::setUp('corner');
+  }
+
+  /**
+   * Implementation of tearDown().
+   */
+  function tearDown() {
+    parent::tearDown();
+  }
+
+  /**
+   * Test that various users have or have not access the corner admin page.
+   */
+  function testCornerAdminAccess() {
+  
+    // Check that the user can not access the corner admin page
+    $admin_user1 = $this->drupalCreateUser(array('administer site configuration'));
+    $this->drupalLogin($admin_user1);
+    $this->drupalGet('admin/build/corner');
+    $this->assertResponse(403, t('Verified that access is denied to the administration page'));
+    $this->drupalGet('logout');
+
+    // Check that the user can access the corner admin page
+    $admin_user2 = $this->drupalCreateUser(array('administer site configuration', 'administer corners'));
+    $this->drupalLogin($admin_user2);
+    $this->drupalGet('admin/build/corner');
+    $this->assertResponse(200, t('Verified that access is granted to the administration page'));
+    $this->drupalGet('logout');
+
+    // Check that the user does not have a PHP visibility option
+    $admin_user3 = $this->drupalCreateUser(array('administer site configuration', 'administer corners'));
+    $this->drupalLogin($admin_user3);
+    $this->drupalGet('admin/build/corner/add');
+    $this->assertNoRaw(t('Show if the following PHP code returns <code>TRUE</code> (PHP-mode, experts only).'), t('Verified that the user does not have PHP visibility option'));
+    $this->drupalGet('logout');
+
+    // Check that the user has a PHP visibility option
+    $admin_user4 = $this->drupalCreateUser(array('administer site configuration', 'administer corners', 'use PHP for corner visibility'));
+    $this->drupalLogin($admin_user4);
+    $this->drupalGet('admin/build/corner/add');
+    $this->assertRaw(t('Show if the following PHP code returns <code>TRUE</code> (PHP-mode, experts only).'), t('Verified that the user has PHP visibility option'));
+    $this->drupalGet('logout');
+  }
+}
+
+/**
+ * Testing various add/configure/clone/delete etc functionalities.
+ */
+class CornerFunctionalityTestCase extends DrupalWebTestCase {
+
+  var $corner;
+  var $admin_user;
+
+  function getInfo() {
+    return array(
+      'name' => t('Corner functionality'),
+      'desc' => t('Test that administrator functionality is correct.'),
+      'group' => t('Corner'),
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    parent::setUp('corner');
+    $roles = array('administer corners', 'use PHP for corner visibility');
+    $this->admin_user = $this->drupalCreateUser($roles);
+  }
+
+  /**
+   * Implementation of tearDown().
+   */
+  function tearDown() {
+    // Perform any clean-up tasks.
+    parent::tearDown();
+  }
+
+  /**
+   * Test all admin operations on corners.
+   */
+  function testCornerOperations() {
+    $this->drupalLogin($this->admin_user);
+
+    $name = $this->randomName(10);
+    $title = $this->randomName(10);
+
+    // Get and verify available corner images
+    $images = corner_get_images();
+    $this->assertTrue(count($images), t('Verified that there are images available'));
+    $imagekeys = array_keys($images);
+    $image = $images[$imagekeys[0]]->basename;
+
+    // Setup simple corner
+    $edit = array(
+      'name' => $name,
+      'image' => $image,
+      'image_title' => $title,
+      'image_uri' => 'http://drupal.org',
+      'status' => 1,
+      'roles[1]' => '0',
+      'roles[2]' => '0',
+      'visibility' => 0,
+      'pages' => '',
+      'location' => 'top-left',
+      'position' => 'fixed',
+      'image_map_shape' => '',
+      'image_map_coords' => '',
+    );
+    // Submit a valid corner
+    $this->drupalPost('admin/build/corner/add', $edit, t('Save'));
+
+    // Verify the add success message
+    $expectation = t('The corner %name has been created.', array('%name' => $name));
+    $this->assertRaw($expectation, t('Verified the add success message'));
+
+    // Verify that the corner has been stored in database
+    $this->corner = corner_load(array('name' => $name));
+    $this->assertTrue($this->corner->cid, t('Verified that the corner has been stored in the database'));
+
+    // Verifying that the corner is displayed
+    $this->corner = corner_prepare($this->corner);
+    $html = theme('corner_image', $this->corner);
+    $output = theme('corner_corner', $html, $this->corner);
+    //$this->assertRaw($html, t('Verified that the corner is displayed'));
+    $this->assertRaw($output, t('Verified that the corner is displayed'));
+
+    // Functionality: configure corner
+    // Access the configuration page
+    $this->drupalGet('admin/build/corner/'. $this->corner->cid .'/configure');
+    $this->assertResponse(200, t('Verified access to the configuration page'));
+
+    // Submit a changed corner
+    $edit = array();
+    $edit['name'] = $this->randomName(10);
+    $this->drupalPost('admin/build/corner/'. $this->corner->cid .'/configure', $edit, t('Save'));
+
+    // Verify result in database
+    $corner = corner_load(array('cid' => $this->corner->cid));
+    $this->assertEqual($edit['name'], $corner->name, t('Verified that the edited corner has been saved in the database'));
+
+    // Functionality: clone corner
+    // Access the cloning page
+    $this->drupalGet('admin/build/corner/'. $this->corner->cid .'/clone');
+    $this->assertResponse(200, t('Verified that access to the cloning page'));
+
+    // Submit cloned corner
+    $edit = array();
+    $edit['name'] = $this->randomName(10);
+    $this->drupalPost('admin/build/corner/'. $this->corner->cid .'/clone', $edit, t('Save'));
+
+    // Verify result from database
+    $corner = corner_load(array('name' => $edit['name']));
+    $this->assertEqual($edit['name'], $corner->name, t('Verified that the edited corner has been saved in the database'));
+    $this->corner = $corner;
+
+    // Functionality: disable corner
+    $this->drupalGet('admin/build/corner/'. $this->corner->cid .'/disable');
+    $this->assertResponse(200, t('Verified that that the page request was ok'));
+    $corner = corner_load(array('cid' => $this->corner->cid));
+    $this->assertFalse($corner->status, t('Verified that the corner has been disabled'));
+
+    // Functionality: enable corner
+    $this->drupalGet('admin/build/corner/'. $this->corner->cid .'/enable');
+    $this->assertResponse(200, t('Verified that that the page request was ok'));
+    $corner = corner_load(array('cid' => $this->corner->cid));
+    $this->assertTrue($corner->status, t('Verified that the corner has been enabled'));
+
+    // Functionality: delete corner
+    // Access the delete confirm page
+    $this->drupalGet('admin/build/corner/'. $this->corner->cid .'/delete');
+    $this->assertResponse(200, t('Verified access to the delete confirm page'));
+    
+    // Delete confirmation page title
+    $expectation = t('Are you sure you want to delete the corner %name?', array('%name' => $this->corner->name));
+    $this->assertRaw($expectation, t('Verified the title on the delete page'));
+
+    // Submit the deletion form
+    $this->drupalPost('admin/build/corner/'. $this->corner->cid .'/delete', array(), t('Confirm'));
+    
+    // Verify the delete success message
+    $expectation = t('The corner %name has been removed.', array('%name' => $this->corner->name));
+    $this->assertRaw($expectation, t('Verified the delete success message'));
+
+    // Verify result in database
+    $corner = corner_load(array('cid' => $this->corner->cid));
+    $this->assertFalse($corner, t('Verified that corner has been deleted from the database'));
+    
+    $this->drupalLogout();
+  }
+
+  /**
+   * Test the various visibility options of corners.
+   */
+  function testCornerVisibility() {
+    //$this->drupalLogin($this->admin_user);
+
+    // Language visibility - enable locale and set up additional language...
+    // Create new corner: visible in one language
+    // Create new corner: visible in one language
+
+    // Role visibility
+    // Create new corner: visible to all roles, on all pages
+    // Create new corner: visible to 'authenticated user' role only, on all pages
+    // Create new corner: visible to 'anonymous user' role only, on all pages
+
+    // Page visibility (paths) - create and use two nodes plus <front>
+    // Create new corner: visible on all pages except on one node page
+    // Create new corner: visible only on one node page
+
+    // Page visibility (PHP)
+    // Create new corner: visible if PHP returns TRUE
+    // Create new corner: hidden if PHP returns FALSE
+
+    //$this->drupalLogout();
+  }
+}

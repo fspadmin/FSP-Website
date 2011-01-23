@@ -1,0 +1,13 @@
+; $Id: enforce_revlog.info,v 1.1.2.1 2010/06/16 16:56:06 nancyw Exp $
+name = Enforce Revlog
+description = Enforces the use of the revision log field.
+dependencies[] = util
+package = Util
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-10-28
+version = "6.x-3.0"
+core = "6.x"
+project = "util"
+datestamp = "1288295149"
+

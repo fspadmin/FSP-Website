@@ -1,0 +1,14 @@
+; $Id: sheetnode_text.info,v 1.1.2.1 2010/11/14 23:33:12 kratib Exp $
+name = Sheetnode Text
+description = Provides text table import/export support for Sheetnode.
+package = Sheetnode
+dependencies[] = sheetnode
+dependencies[] = format_number
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-12-29
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "sheetnode"
+datestamp = "1293582330"
+

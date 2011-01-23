@@ -1,0 +1,13 @@
+; $Id$
+name = Feedburner
+description = "Integrates with FeedBurner services, primarily feed redirection."
+core = 6.x
+suggests[] = commentrss
+suggests[] = advanced_help
+
+; Information added by drupal.org packaging script on 2009-04-19
+version = "6.x-1.0-beta4"
+core = "6.x"
+project = "feedburner"
+datestamp = "1240182938"
+

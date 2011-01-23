@@ -1,0 +1,38 @@
+<?php
+// $Id: uc_aac.install,v 1.1.2.1 2009/11/11 23:00:47 antoinesolutions Exp $
+
+/**
+ * @file
+ * Install hooks for uc_aac.module.
+ */
+
+/**
+ * Implementation of hook install().
+ */
+function uc_aac_install() {
+  db_query("UPDATE {system} SET weight = 10 WHERE name = 'uc_aac'");
+}
+
+/**
+ * Implementation of hook uninstall().
+ */
+function uc_aac_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_aac%'");
+}
+
+function uc_aac_update_1() {
+  $ret = array();
+  $ret[] = update_sql("UPDATE {system} SET weight = 10 WHERE name = 'uc_aac'");
+  return $ret;
+}
+
+function uc_aac_update_6200() {
+  $ret = array();
+
+  // Clean up duplicate reprice variables
+  $reprice = variable_get('uc_aac_attribute_reprice', 1);
+  $ret[] = update_sql("DELETE FROM {variable} WHERE name LIKE 'uc_aac%reprice'");
+  variable_set('uc_aac_reprice', $reprice);
+
+  return $ret;
+}

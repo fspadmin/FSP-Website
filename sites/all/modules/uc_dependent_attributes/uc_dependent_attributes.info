@@ -1,0 +1,13 @@
+; $Id: uc_dependent_attributes.info,v 1.1 2009/11/04 23:22:42 antoinesolutions Exp $
+name = Dependent Attributes
+description = Specify which attribute/option combinations to enable/disable on a per product basis.
+dependencies[] = uc_aac
+package = "Ubercart - core (optional)"
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-01-11
+version = "6.x-1.0"
+core = "6.x"
+project = "uc_dependent_attributes"
+datestamp = "1263185406"
+

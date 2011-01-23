@@ -1,0 +1,52 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Main file for the UC ECO Webform
+ *
+ * Provides some ehancements to the Webform module for Ubercart users that can be used with UC ECO or independently
+ *
+ *
+ * @ingroup uc_eco
+ */
+
+
+/**
+ * Implementation of hook_webform_select_options_info().
+ *
+ * (hook in the Webform module to provide a pre-built list for select list form elements)
+ */
+function uc_eco_webform_webform_select_options_info() {
+  module_load_include('inc', 'uc_eco_webform', 'uc_eco_webform.options');
+  return _uc_eco_webform_webform_options_info();
+}
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ */
+function uc_eco_webform_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'webform_component_edit_form') {
+    $uc_eco_webform_select_element_message = t('<p>ECO Module Note: Additional pre-built option lists have been provided by the ECO: Webform module.
+    These begin with "Ubercart" and the data is pulled directly from your Ubercart settings (countries, US States, and Canadian provinces), i.e.
+    if in your Ubercart settings you only ship to certain states, these are the states included in the pre-built list.
+    Since you have the Webform Conditional module installed on your system, you may find it useful when
+    creating webforms for use with ECO or mirroring the conditional country/zone select lists in Ubercart checkout.</p>');
+    if (module_exists('webform_conditional')) {
+      $uc_eco_webform_conditional_module_message = t('<p>Since you have the Webform Conditional module installed on your system, you may find it useful when
+      creating webforms for use with ECO or mirroring the conditional country/zone select lists in Ubercart checkout.</p>');
+    }
+    else {
+      $uc_eco_webform_conditional_module_message = t('<p>The <a href="http://drupal.org/project/webform_conditional" target="_blank">Webform Conditional
+      </a> module is currently not installed on your system.  You may find this module to be useful when creating webforms for use with ECO or mirroring
+      the conditional country/zone select lists in Ubercart checkout.</p>');
+    }
+    if ($form['type']['#value'] == 'select') {
+      $form['extra']['uc_eco_webform_message'] = array(
+        '#weight' => 50,
+        '#value' => ($uc_eco_webform_select_element_message . uc_eco_webform_conditional_module_message),
+      );
+    }
+  }
+}

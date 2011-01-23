@@ -1,0 +1,21 @@
+6.x-2.1
+#478148 by Razorraser: Miscellaneous code improvements and cleanup 
+#469496 by manfer: Bug on description of image select in details fieldset
+#441006 by kirie: Target and Rel Attributes for Corner Link
+#454178 by Pasqualle: Remove t() from schema descriptions
+by Zoltan Balogh: Updated Hungarian translation
+by Domokos Endre Janos: Hungarian translation
+
+6.x-2.0
+#356674 by eMPee584: Fixed undefined object property $corner->cid and code style
+Replaced right 'I Love Drupal' image with one sporting better shadows
+#349634: Added support for image maps
+#354664: Added support for bottom left and right corners
+#352723: Added support for fixed or absolute positioning
+#349553: Added language visibility options (i.e. only show corner for specific languages)
+
+6.x-1.0
+#348431 by Hilalsuhaib: New RSS corner images (top-left & top-right)
+
+6.x-1.0-BETA
+by kirie: Initial release

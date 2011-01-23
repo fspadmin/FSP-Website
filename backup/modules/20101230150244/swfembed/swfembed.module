@@ -1,0 +1,466 @@
+<?php
+// $Id: swfembed.module,v 1.2 2009/03/18 20:46:34 mbutcher Exp $
+
+/**
+ * The main file for swfembed.
+ * @file
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function swfembed_help($path, $args) {
+  if ($path == 'admin/help#swfembed') {
+    return t('This is a tool for adding ShockWave Flash files to your Drupal site. It is intended for developers.');
+  }
+}
+
+/**
+ * Add the necessary JavaScript.
+ */
+function swfembed_add_js() {
+  static $added = FALSE;
+
+  if ($added) {
+    return;
+  }
+  $added = TRUE;
+
+  $path = drupal_get_path('module', 'swfembed');
+  drupal_add_js($path . '/jquery.swfembed.js');
+  drupal_add_js($path . '/behavior.swfembed.js');
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function swfembed_theme($existing, $type, $theme, $path) {
+  return array(
+    'swfembed_embed' => array(
+      //'function' => 'theme_swfembed_embed',
+      'arguments' => array('swf_object' => NULL),
+    ),
+  );
+}
+
+/**
+ * Insert the div for the object and prepare JavaScript.
+ *
+ * @param $swf_object
+ *   An SWFObject object.
+ */
+function theme_swfembed_embed(SWFObject $swf_object) {
+  static $id_counter = 1;
+
+  swfembed_add_js();
+
+  // We use an underscore so that this can be accessed as an object
+  // property in JS.
+  $id = 'swf_' . $id_counter++;
+
+  $settings['swfembed']['swf'][$id] = $swf_object->toArray();
+  drupal_add_js($settings, 'setting');
+
+  return '<div id="' . $id . '">' . $swf_object->getNoFlash() . '</div>';
+}
+
+
+////// Example usage:
+/*
+function swfembed_menu() {
+  $items = array();
+
+  $items['swfembed'] = array(
+    'title' => t('Title'),
+    'description' => t('Description'),
+    'page callback' => 'swfembed_test',
+    'page arguments' => array(),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+function swfembed_test() {
+  $swf = new SWFObject('/sites/default/modules/flashy/flashy/videoPlayer.swf');
+  $swf->param('allowFullScreen', 'true')
+    ->param('type','movie')
+    ->flashVar('maintainAspectRation', 'true')
+    ->flashVar('volume', 50)
+    ->flashVar('loop', 'true')
+    ->flashVar('autoplay', 'true')
+    ->flashVar("video", "http://example.com/sites/default/modules/flashy/flashy/a.flv")
+    ->height(342)
+    ->width(510)
+    ->noFlash('Boo-ya!')
+    ->minimumVersion('9.0.28');
+
+  $swf2 = new SWFObject('/sites/default/modules/flashy/flashy/videoPlayer.swf');
+  $swf2->param('allowFullScreen', 'true')
+    ->param('type','movie')
+    ->flashVar('maintainAspectRation', 'true')
+    ->flashVar('volume', 50)
+    ->flashVar('loop', 'true')
+    ->flashVar('autoplay', 'true')
+    ->flashVar("video", "http://example.com/sites/default/modules/flashy/flashy/b.flv")
+    ->height(342)
+    ->width(700)
+    ->minimumVersion('9.0.28');
+  return theme('swfembed_embed', $swf) . 'Test' . theme('swfembed_embed', $swf2);
+}
+*/
+
+/**
+ * Generic data object for describing an SWF configuration.
+ */
+class SWFObject {
+
+  /**
+   * List of parameters to send to the HTML embed or object tag.
+   *
+   * @var array
+   */
+  protected $params = array();
+
+  /**
+   * List of flashVars to send to the SWF file.
+   *
+   * @var array
+   */
+  protected $flashVars = array();
+
+  /**
+   * HTML fragment to display if Flash is not enabled.
+   *
+   * @var string
+   */
+  protected $noFlash = '';
+
+  /**
+   * Height and width of the SWF file.
+   *
+   * @var int
+   */
+  protected $dimensions = array(
+    'height' => NULL,
+    'width' => NULL,
+  );
+
+
+  /**
+   * The path to the flash object.
+   * @var string
+   */
+  protected $flashObject = '';
+
+  /**
+   * The path or full URL for the express installation SWF object.
+   * @var string
+   */
+  protected $expressRedirectURL = NULL;
+
+  /**
+   * The minimum version number required by the flash player.
+   *
+   * Format: '1.2.3'
+   *
+   * @var string
+   */
+  protected $minimumVersion = '';
+
+  /**
+   * Constructor
+   *
+   * @param $flash_object
+   *   The path to the flash object (swf). No checking is done on this path.
+   */
+  function __construct($flash_object) {
+    $this->flashObject = $flash_object;
+  }
+
+  /**
+   * Get the flash object file path.
+   */
+  function getFlashObject() {
+    return $this->flashObject;
+  }
+
+  /**
+   * Set the flash object file path.
+   *
+   * @param $flash_object
+   *   The path to the flash object.
+   */
+  function setFlashObject($flash_object) {
+    $this->flashObject = $flash_object;
+    return $this;
+  }
+
+  /**
+   * Set the height of this swf object.
+   *
+   * If not specified, the system will try to determine the height of the file
+   * if it can.
+   *
+   * @param $height
+   *   The height in pixels of the file.
+   * @return
+   *   The called object.
+   */
+  public function height($height) {
+    $this->dimensions['height'] = $height;
+    return $this;
+  }
+
+  /**
+   * Set the width of this swf object.
+   *
+   * If not specified, the system will try to determine the width of the file
+   * if it can.
+   *
+   * @param $width
+   *   The width in pixels of the file.
+   * @return
+   *   The called object.
+   */
+  public function width($width) {
+    $this->dimensions['width'] = $width;
+    return $this;
+  }
+
+  /**
+   * Returns the height the SWF file should use.
+   *
+   * If no height has been specified explicitly, the system will try to determine
+   * the proper height based on the file if it can.
+   *
+   * @return
+   *   The height of the SWF file in pixels.
+   */
+  public function getHeight() {
+    return $this->getDimension('height');
+  }
+
+  /**
+   * Returns the width the SWF file should use.
+   *
+   * If no width has been specified explicitly, the system will try to determine
+   * the proper width based on the file if it can.
+   *
+   * @return
+   *   The width of the SWF file in pixels.
+   */
+  public function getWidth() {
+    return $this->getDimension('width');
+  }
+
+  /**
+   * Get a single dimension for this SWF file.
+   *
+   * If an explicitly dimension is specified, that will be used.  If not,
+   * the dimensions will be derived from the SWF file, if possible.
+   *
+   * If the dimension is not explicitly specified, it will be specified by this
+   * function.
+   *
+   * @param $key
+   *   The dimension to use, either height or width.
+   * @return
+   *   The value in pixels of that dimension.
+   */
+  protected function getDimension($key) {
+    $derived = array();
+    if (empty($this->dimensions[$key])) {
+      list($derived['width'], $derived['width']) = getimagesize($this->getFlashObject());
+
+      // We only want to bother analyzing the image once, but if a dimension
+      // has already been set explicitly then we don't want to overwrite it.
+      foreach (array('height', 'width') as $field) {
+        if (empty($this->dimensions[$field])) {
+          $this->dimensions[$field] = $derived[$field];
+        }
+      }
+    }
+    return $this->dimensions[$key];
+  }
+
+  /**
+   * Specify a flash variable to pass along to the player.
+   *
+   * Flash variables are specific to each SWF file. These are passed in using
+   * a single parameter. The flashvars are compacted and URL encoded.
+   * Example:
+   * <code>
+   * <param name="flashvars" value="name=value&name2=value2"/>
+   * </code>
+   *
+   * @param $name
+   *   The name of the flash variable.
+   * @param $val
+   *   The value for this variable.
+   * @return
+   *   The called object.
+   */
+  public function flashVar($name, $val) {
+    $this->flashVars[$name] = $val;
+    return $this;
+  }
+
+  /**
+   * Specify a parameter to pass to the HTML object or embed tag.
+   *
+   * These will be converted into a name/value pair encoded in a param tag.
+   *
+   * Example:
+   * <code>
+   * <param name="NAME" value="VALUE"/>
+   * </code>
+   *
+   * @param $name
+   *   The param to define.
+   * @param $val
+   *   The value of the param.
+   * @return
+   *   The called object.
+   */
+  public function param($name, $val) {
+    $this->params[$name] = $val;
+    return $this;
+  }
+
+  /**
+   * Gets a list of all flash variables relevant to this SWF file.
+   *
+   * @return
+   *   An array of flashVars as an associative array.
+   */
+  public function getFlashVars() {
+    return $this->flashVars;
+  }
+
+  /**
+   * Gets a list of all parameters.
+   *
+   * @return
+   *   An array of params as an associative array.
+   */
+  public function getParams() {
+    return $this->params;
+  }
+
+  /**
+   * Specify the text that will be used if Flash is disabled or not available.
+   *
+   * This may be any HTML fragment.  WARNING: This fragment is assumed to already
+   * be filtered.  It will not be filtered again.  It is up to you to ensure
+   * that any HTML has been run through filter_xss(), check_plain(), or similar
+   * before you use it.
+   *
+   * @param $html
+   *   The HTML fragment to use.
+   * @return
+   *   The flashy object.
+   */
+  public function noFlash($html) {
+    $this->noFlash = $html;
+    return $this;
+  }
+
+  /**
+   * Retrieves the HTML fragment to use if Flash is not available.
+   *
+   * @return
+   *   The HTML fragment to use.
+   */
+  public function getNoFlash() {
+    return $this->noFlash;
+  }
+
+  /**
+   * Set a URL for express installation.
+   *
+   * If you want to use express install, you should read the Adobe documentation
+   * and/or find a suitable SWF express installer.
+   * @see http://www.adobe.com/products/flashplayer/download/detection_kit/
+   *
+   * @param $url
+   *   The URL for the express installer. No manipulation of the URL is done.
+   */
+  public function expressRedirectURL($url) {
+    $this->expressRedirectURL = $url;
+    return $this;
+  }
+
+  /**
+   * Get the express installer redirect URL.
+   *
+   * @return
+   *   The URL.
+   */
+  public function getExpressRedirectURL() {
+    return $this->expressRedirectURL;
+  }
+
+  /**
+   * Set the minimum version of the Flash player.
+   * This will check the client flash player to make sure it is at least at the
+   * minimum version. A version number can be of any of these three forms:
+   * - Major: 9
+   * - Major.Minor: 9.1
+   * - Major.Minor.Release: 9.1.124
+   *
+   * @param $version
+   *   The version string.
+   * @return
+   *   The called object.
+   */
+  public function minimumVersion($version) {
+    $this->minimumVersion = $version;
+    return $this;
+  }
+
+  /**
+   * Get the minimum Flash player version.
+   *
+   * @return
+   *   Flash player version as a string.
+   */
+  public function getMinimumVersion() {
+    return $this->minimumVersion;
+  }
+
+  /**
+   * Convert this to an array ready for serializing.
+   * This is a special-purpose method for turning this object into a configuration
+   * array. It is not a general purpose serialization method.
+   *
+   * @return
+   *  An associative array for serializing to JavaScript.
+   */
+  public function toArray() {
+    return array(
+      'height' => $this->getHeight(),
+      'width' => $this->getWidth(),
+      'flashvars' => $this->getFlashVars(),
+      'params' => $this->getParams(),
+      //'noflash' => $this->getNoFlash(),
+      'url' => $this->getFlashObject(),
+      'expressInstall' => $this->getExpressRedirectURL(),
+      'version' => $this->getMinimumVersion(),
+    );
+  }
+
+  /**
+   * Render this flash object using the theme system.
+   *
+   * The HTML returned from this method will be just the no-flash placeholder.
+   * The theme function also handles enquing the necessary Javascript to make
+   * the Flash swap-out work client-side.
+   *
+   * @return unknown
+   */
+  public function render() {
+    return theme('swfembed_embed', $this);
+  }
+
+}

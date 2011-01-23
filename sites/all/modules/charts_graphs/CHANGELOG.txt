@@ -1,0 +1,72 @@
+; $Id: CHANGELOG.txt,v 1.1.2.36 2010/07/07 00:57:20 rsevero Exp $
+
+
+Charts and Graphs 6.x-1.0, 2010-07-06
+---------------------------
+task: by rsevero: Fixed information on README.txt about which libraries need
+  extra downloads to work.
+task by rsevero: Renamed to 6.x-1.0.
+
+
+Charts and Graphs 6.x-1.0-RC5, 2010-06-29
+---------------------------
+bug by rsevero: Fixed chart type in Bluff help page.
+
+
+Charts and Graphs 6.x-1.0-RC4, 2010-06-29
+---------------------------
+task #840898 by rsevero: Changed standardized chart types from "horizontal bar"
+  to "side bar".
+bug #840888 by rsevero: Fixed announced chart types.
+task by rsevero: Fixed minor README.txt text issues.
+task by rsevero: Fixed release date for 6.x-1.0-RC3 in CHANGELOG.txt.
+
+
+Charts and Graphs 6.x-1.0-RC3, 2010-06-28
+---------------------------
+task by rsevero: Documented available graph types for Open Charts Flash 2.
+feature by rsevero: Implemented new chart types for Bluff.
+feature by rsevero: Implemented several new chart types in amCharts.
+task 839664 by rsevero: Improved documentation mentioning standardize graph
+  types and including links to each charting library home and reference pages on
+  help pages.
+task by rsevero: Included "general reference" Advanced Help page.
+bug by rsevero: amCharts implementation presenting y legend.
+task by rsevero: Created "General Reference" Advanced Help page.
+bug #803654 by seanr, rsevero: Fixed (?) by attaching a behavior to the page
+  that recalls the chart drawing function.
+task by rsevero: Gave proper credit for bug #711486 resolution in CHANGELOG.txt.
+bug #711486 by un11imig, seanr, rsevero: Fixed presentation of Bluff graphs on
+  IE.
+task #836588 by rsevero: Standardized module names and submodule nice names.
+task by rsevero: Ignored non-distributable files in bluff directory.
+bug #837126 by rsevero: Fixed data series and legend color mismatch in Bluff.
+bug #831970 by rsevero: Removed automatic data sorting by Bluff.
+feature #831962 by rsevero: Improved Bluff's Advanced Help page "transpose"
+  definition.
+feature #831962 by rsevero: Patch applied and included definition of Bluff's
+  special parameter "transpose" in Bluff's Advanced Help page.
+task by rsevero: Applied the right fix for NOTICEs on pie charts by Open Flash:
+  only they have series as an array of objects and only they don't need min and
+  max values for y axis. Removed min and max values search and attribution for
+  pie charts.
+task by rsevero: Fixed NOTICEs generated when looking for min and max values for
+  pie charts in Open Flash. These values aren't even useful for pie charts but
+  it might affect other types of graphs so I didn't disabled this search for pie
+  graphs.
+task by rsevero: Included live examples in Advanced Help submodule pages.
+task by rsevero: Implemented option parameters on charts_graphs_test() so it can
+  be used also for Advanced Help examples.
+task by rsevero: Included CVS Id in some more files.
+task #835964 by rsevero: Made amCharts files Coder compliant.
+task #835964 by rsevero: Made Open Charts Flash 2 files Coder compliant.
+task by rsevero: Fixing which graphing libraries work out of the box in
+  README.txt file.
+task #835964 by rsevero: Made Bluff files Coder compliant.
+task #835964 by rsevero: Made Charts and Graphs files Coder compliant.
+task #835960 by rsevero: Created Advanced Help pages.
+task #835956 by rsevero: Created CHANGELOG.txt and README.txt files.
+
+
+Charts and Graphs 6.x-1.0-RC2, 2010-01-12
+---------------------------

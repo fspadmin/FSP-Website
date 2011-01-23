@@ -1,0 +1,12 @@
+; $Id: luceneapi_test.info,v 1.1.2.2 2009/09/21 23:33:16 cpliakas Exp $
+name = "Search Lucene API Test"
+description = "Support module for Search Lucene API unit tests."
+package = Search Lucene API
+core = 6.x
+hidden = TRUE
+; Information added by drupal.org packaging script on 2009-11-10
+version = "6.x-2.0-beta4"
+core = "6.x"
+project = "luceneapi"
+datestamp = "1257827487"
+

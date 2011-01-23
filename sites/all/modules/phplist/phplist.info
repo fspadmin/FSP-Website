@@ -1,0 +1,12 @@
+; $Id: phplist.info,v 1.1.2.1 2008/09/03 16:33:16 paulbeaney Exp $
+name = "phpList"
+description = "A phpList integration interface"
+version = "6.x.dev"
+
+core = 6.x
+; Information added by drupal.org packaging script on 2009-11-18
+version = "6.x-1.1"
+core = "6.x"
+project = "phplist"
+datestamp = "1258566675"
+

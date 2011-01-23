@@ -1,0 +1,172 @@
+<?php
+
+
+function system_module_menu() {
+  $menu['admin/settings/util/sysmods'] = array(
+    'title'          => 'System Modules Settings',
+    'description'    => 'Customize System Modules fieldsets.',
+    'page callback'  => 'drupal_get_form',
+    'page arguments' => array('system_module_settings'),
+    'access arguments' => array('administer site configuration'),
+  );
+  return $menu;
+}
+
+function system_module_settings() {
+  global $user;
+  //get all available packages
+  $modules = module_rebuild_cache();
+  foreach ($modules as $module) {
+    if (!isset($module->info['package']) || !$module->info['package']) {
+      $module->info['package'] = t('Other');
+    }
+    $packages[$module->info['package']] = $module->info['package'];
+  }
+  ksort($packages);
+  //build settings form
+
+ $result = db_fetch_array(db_query("SELECT data FROM {system_module_users} WHERE uid = %d}", $user->uid));
+ $result = unserialize($result['data']);
+
+
+  $form['system_module_cfg'] = array(
+    '#type' => 'checkboxes',
+    '#description' => t('Check the box if you want that package to be collapsed in <a href="@url">system modules</a> page, uncheck to expand', array('@url' => url('admin/build/modules'))),
+    '#default_value' => (isset($result) && is_array($result)?array_keys($result):array()),
+    '#options' => $packages,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Customize --->',
+  );
+  return $form;
+}
+
+function system_module_settings_submit($form, &$form_state) {
+  global $user;
+
+  $values = $form_state['values'];
+  foreach ($values['system_module_cfg'] as $index => $value) {
+    if ($value === 0) {
+      unset($values['system_module_cfg'][$index]);
+    }
+  }
+
+  $data = serialize($values['system_module_cfg']);
+  // Update.
+  db_query("UPDATE {system_module_users} SET data = '%s' WHERE uid = %d", $data, $user->uid);
+  if (!db_affected_rows()) {
+    // Insert.
+    @db_query("INSERT INTO {system_module_users} (uid, data) VALUES (%d, '%s')", $user->uid, $data);
+  }
+
+  // Save user settings.
+  user_save($user, array('system_module_cfg' => $values['system_module_cfg']));
+}
+
+// the theme registry
+function system_module_theme() {
+  return array(
+    'system_modules_theme' => array(
+      'arguments' => array('form' => null),
+    ),
+  );
+}
+
+function system_module_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'system_modules':
+      //a neat idea to allow access to the important module settings directly from the modules page, saves page loads from navigting to site configuration etc etc.
+      $form['#theme'] = 'system_modules_theme';
+      $form['description']['system_module']['#value'] = t('<a href="@url">Set default</a> collapsed/expanded state for system modules fieldsets', array('@url' => url('admin/settings/util/sysmods')));
+      break;
+  }
+}
+
+//most of this function was copied from system.module
+function theme_system_modules_theme($form) {
+  global $user;   //needed to enable
+//print 'what the hell';
+  if (isset($form['confirm'])) {
+    return drupal_render($form);
+  }
+
+  // Individual table headers.
+  $header = array(t('Enabled'));
+  if (module_exists('throttle')) {
+    $header[] = t('Throttle');
+  }
+  $header[] = t('Name');
+  $header[] = t('Version');
+  $header[] = t('Description');
+
+  //allow other modules to alter headers
+  drupal_alter('system_module_headers', $header);
+  
+  // Pull package information from module list and start grouping modules.
+  $modules = $form['validation_modules']['#value'];
+  foreach ($modules as $module) {
+    if (!isset($module->info['package']) || !$module->info['package']) {
+      $module->info['package'] = t('Other');
+    }
+    $packages[$module->info['package']][$module->name] = $module->info;
+  }
+  ksort($packages);
+
+  // Display packages.
+  $output = '';
+  foreach ($packages as $package => $modules) {
+    $rows = array();
+
+    $enabled_count = 0;
+    foreach ($modules as $key => $module) {
+      if (isset($form['status'][$key]['#default_value']) && $form['status'][$key]['#default_value']) {
+        $enabled_count++;
+      }
+      $row = array();
+      $description = drupal_render($form['description'][$key]);
+      if (isset($form['status']['#incompatible_modules_core'][$key])) {
+        unset($form['status'][$key]);
+        $status = theme('image', 'misc/watchdog-error.png', t('incompatible'), t('Incompatible with this version of Drupal core'));
+        $description .= '<div class="incompatible">'. t('This version is incompatible with the !core_version version of Drupal core.', array('!core_version' => VERSION)) .'</div>';
+      }
+      elseif (isset($form['status']['#incompatible_modules_php'][$key])) {
+        unset($form['status'][$key]);
+        $status = theme('image', 'misc/watchdog-error.png', t('incompatible'), t('Incompatible with this version of PHP'));
+        $php_required = $form['status']['#incompatible_modules_php'][$key];
+        if (substr_count($php_required, '.') < 2) {
+          $php_required .= '.*';
+        }
+        $description .= '<div class="incompatible">'. t('This module requires PHP version @php_required and is incompatible with PHP version !php_version.', array('@php_required' => $php_required, '!php_version' => phpversion())) .'</div>';
+      }
+      else {
+        $status = drupal_render($form['status'][$key]);
+      }
+      $row[] = array('data' => $status, 'align' => 'center');
+      if (module_exists('throttle')) {
+        $row[] = array('data' => drupal_render($form['throttle'][$key]), 'align' => 'center');
+      }
+      $row[] = '<strong>'. drupal_render($form['name'][$key]) .'</strong>';
+      $row[] = drupal_render($form['version'][$key]);
+      $row[] = array('data' => $description, 'class' => 'description');
+      
+      //allow other modules to alter table rows
+      $row['__drupal_alter_by_ref'][] = $key;
+      $row['__drupal_alter_by_ref'][] = &$form;
+      drupal_alter('system_module_weights', $row);
+      
+      $rows[] = $row;
+    }
+    $fieldset = array(
+      '#title' => $package .' ['. $enabled_count .'] of ['. sizeof($modules) .']',
+      '#collapsible' => TRUE,
+      '#collapsed' => (isset($user->system_module_cfg[$package])? true:false), //here we influence the fieldset to be collapsed or expanded by default.
+      '#value' => theme('table', $header, $rows, array('class' => 'package')),
+    );
+    $output .= theme('fieldset', $fieldset);
+  }
+
+  $output .= drupal_render($form);
+  return $output;
+}

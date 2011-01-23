@@ -1,0 +1,7 @@
+/* $Id: corner-admin.css,v 1.1 2008/12/08 20:58:37 kirie Exp $ */
+.corner-admin-list tr.enabled {
+  background: #DDFFDD none repeat scroll 0 0;
+}
+.corner-admin-list tr.disabled {
+  background: #FFFFDD none repeat scroll 0 0;
+}
