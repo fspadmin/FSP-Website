@@ -1,0 +1,176 @@
+/* $Id: gray-rtl.css 7881 2010-08-28 17:00:48Z jeremy $ */
+
+
+/* Search
+/-------------------------------------------------------------- */
+.search-box-inner form#search-theme-form {
+  background: url(images/rtl/search-bg.png) no-repeat 50% 0 !important;
+}
+
+
+/* Primary Menu
+/-------------------------------------------------------------- */
+.primary-menu-inner ul.menu li a:link,
+.primary-menu-inner ul.menu li a:visited {
+  border-right: 1px solid #5b5b5b;
+  margin-right: -1px;
+}
+
+.primary-menu-inner ul li.last a,
+.primary-menu-inner ul.sf-menu li.last {
+  border-right: none;
+}
+
+.primary-menu-inner ul.menu li ul li a:link,
+.primary-menu-inner ul.menu li ul li a:visited {
+  border-right: none;
+  margin-right: 0;
+}
+
+
+/* Fieldsets
+/-------------------------------------------------------------- */
+html.js fieldset.collapsed legend a {
+  background: transparent url(images/rtl/menu-collapsed.png) no-repeat 0% 50%;
+}
+
+html.js #uc-cart-checkout-form fieldset.collapsed legend a {
+  background: transparent url(images/rtl/menu-collapsed-uc.png) no-repeat 0% 50%;
+}
+
+
+/* Pagers
+-------------------------------------------------------------- */
+/* Pager - First */
+ul.pager li.pager-first a {
+  background: url(images/pager-last.png) no-repeat;
+}
+
+/* Pager - Previous */
+ul.pager li.pager-previous a {
+  background: url(images/pager-next.png) no-repeat;
+}
+
+/* Pager - Next */
+ul.pager li.pager-next a {
+  background: url(images/pager-previous.png) no-repeat;
+}
+
+/* Pager - Last */
+ul.pager li.pager-last a {
+  background: url(images/pager-first.png) no-repeat;
+}
+
+/* Pager Hovers */
+ul.pager li.pager-first a:hover,
+ul.pager li.pager-first a:focus,
+ul.pager li.pager-previous a:hover,
+ul.pager li.pager-previous a:focus,
+ul.pager li.pager-next a:hover,
+ul.pager li.pager-next a:focus,
+ul.pager li.pager-last a:hover,
+ul.pager li.pager-last a:focus  {
+  background-position: 0 -22px;
+}
+
+
+/* Skinr
+/-------------------------------------------------------------- */
+/* Shopping cart - dark */
+.prosper-shoppingcart-dark .cart-block-icon-empty {
+  background: url(images/rtl/icon-shoppingcart-dark.png) no-repeat 0 50%;
+}
+
+.prosper-shoppingcart-dark .cart-block-icon-full {
+  background: url(images/rtl/icon-shoppingcart-full-dark.png) no-repeat 0 50%;
+}
+
+/* Shopping cart - light */
+.prosper-shoppingcart-light .cart-block-icon-empty {
+  background: url(images/rtl/icon-shoppingcart.png) no-repeat 0 50%;
+}
+
+.prosper-shoppingcart-light .cart-block-icon-full {
+  background: url(images/rtl/icon-shoppingcart-full.png) no-repeat 0 50%;
+}
+
+/* Gray Rounded - Style */
+.prosper-gray-rounded-style ul li,
+.prosper-gray-rounded-style ul li.leaf {
+  background: transparent url(images/menu-block-leaf.png) no-repeat 98% 10px;
+}
+
+.prosper-gray-rounded-style ul li ul li,
+.prosper-gray-rounded-style ul li ul li.leaf{
+  background: transparent url(images/menu-block-leaf-2.png) no-repeat 98% 10px;
+}
+
+.prosper-gray-rounded-style ul li.collapsed {
+  background: transparent url(images/rtl/menu-block-collapsed.png) no-repeat 98% 10px;
+}
+
+.prosper-gray-rounded-style ul li.expanded {
+  background: transparent url(images/menu-block-expanded.png) no-repeat 98% 10px;
+}
+
+/* Gray border - dark background */
+.prosper-grayborder-darkbackground ul li,
+.prosper-grayborder-darkbackground ul li.leaf {
+  background: transparent url(images/menu-block-leaf.png) no-repeat 98% 10px;
+}
+
+.prosper-grayborder-darkbackground ul li ul li,
+.prosper-grayborder-darkbackground ul li ul li.leaf{
+  background: transparent url(images/menu-block-leaf-2.png) no-repeat 98% 10px;
+}
+
+.prosper-grayborder-darkbackground ul li.collapsed {
+  background: transparent url(images/rtl/menu-block-collapsed.png) no-repeat 98% 10px;
+}
+
+.prosper-grayborder-darkbackground ul li.expanded {
+  background: transparent url(images/menu-block-expanded.png) no-repeat 98% 10px;
+}
+
+/* Menu list */
+.inner .prosper-menu-list ul li a:link,
+.inner .prosper-menu-list ul li a:visited,
+.inner .prosper-menu-list ul li .nolink {
+  background: url(images/menu-block-leaf.png) no-repeat 98% 10px;
+}
+
+.inner .prosper-menu-list ul li.collapsed a:link,
+.inner .prosper-menu-list ul li.collapsed a:visited,
+.inner .prosper-menu-list ul li.collapsed .nolink {
+  background: url(images/menu-block-collapsed.png) no-repeat 98% 8px;
+}
+
+.inner .prosper-menu-list ul li.expanded a:link,
+.inner .prosper-menu-list ul li.expanded a:visited,
+.inner .prosper-menu-list ul li.expanded .nolink {
+  background: url(images/menu-block-expanded.png) no-repeat 98% 9px;
+}
+
+.inner .prosper-menu-list ul li ul li a:link,
+.inner .prosper-menu-list ul li ul li a:visited,
+.inner .prosper-menu-list ul li.collapsed ul li a:link,
+.inner .prosper-menu-list ul li.collapsed ul li a:visited,
+.inner .prosper-menu-list ul li.expanded ul li a:link,
+.inner .prosper-menu-list ul li.expanded ul li a:visited,
+.inner .prosper-menu-list ul li ul li .nolink,
+.inner .prosper-menu-list ul li.collapsed ul li .nolink,
+.inner .prosper-menu-list ul li.expanded ul li .nolink {
+  background: url(images/menu-block-leaf-2.png) no-repeat 98% 0;
+}
+
+.inner .prosper-menu-list ul li ul li ul li a:link,
+.inner .prosper-menu-list ul li ul li ul li a:visited,
+.inner .prosper-menu-list ul li ul li.collapsed ul li a:link,
+.inner .prosper-menu-list ul li ul li.collapsed ul li a:visited,
+.inner .prosper-menu-list ul li ul li.expanded ul li a:link,
+.inner .prosper-menu-list ul li ul li.expanded ul li a:visited,
+.inner .prosper-menu-list ul li ul li ul li .nolink,
+.inner .prosper-menu-list ul li ul li.collapsed ul li .nolink,
+.inner .prosper-menu-list ul li ul li.expanded ul li .nolink {
+  background: url(images/menu-block-leaf.png) no-repeat 98% 0;
+}

@@ -1,0 +1,306 @@
+/* $Id: acquia-prosper-style-rtl.css 7878 2010-08-28 16:29:50Z jeremy $ */
+
+
+/* Header
+/-------------------------------------------------------------- */
+#header-group-inner .block {
+  float: left;
+}
+
+#header-group-inner #header-site-info.block {
+  float: right;
+}
+
+
+/* Site Info
+-------------------------------------------------------------- */
+#logo {
+  float: right;
+  margin: 0 0 0 10px;
+}
+
+
+/* Search box
+/-------------------------------------------------------------- */
+.search-box {
+  float: left;
+}
+
+#search-input {
+  float: right;
+}
+
+.search-box-inner #search-input {
+  padding: 8px 10px 0 0;
+}
+
+.search-box-inner .searchButtonPng {
+  margin: 7px 10px 0 0;
+}
+
+
+/* Primary menu
+/-------------------------------------------------------------- */
+.primary-menu-inner ul.menu li ul li a:link,
+.primary-menu-inner ul.menu li ul li a:visited {
+  float: right;
+}
+
+
+/* Nodes
+/-------------------------------------------------------------- */
+.node .content .picture {
+  float: right;
+  margin: 0 0 15px 15px;
+}
+
+
+/* Tables
+/-------------------------------------------------------------- */
+.profile dd {
+  margin-left: 0;
+  margin-right: 115px;
+}
+
+
+/* Pagers
+-------------------------------------------------------------- */
+ul.pager li {
+  float: right;
+  margin: 0 0 0 5px;
+}
+
+ul.pager li.pager-current {
+  margin: -10px 0 0 5px;
+}
+
+
+/* Ubercart
+/-------------------------------------------------------------- */
+img.category {
+  margin: -40px 10px 10px 0;
+}
+
+/* Ubercart - product node */
+.product-group .images {
+  float: left;
+}
+
+.product-group #price-group {
+  float: right;
+  margin-left: 20px;
+  margin-right: 0;
+}
+
+.product-group #field-group {
+  float: right;
+  margin-left: 20px;
+  margin-right: 0;
+}
+
+.product-image {
+  float: right;
+  margin: 0 0 20px 20px;
+}
+
+#cart-form-products table td.desc .item-list ul.product-description {
+  margin: 0 20px 0 0;
+}
+
+#cart-form-products table td.subtotal strong {
+  margin-left: 20px;
+  margin-right: 0;
+}
+
+/* Ubercart - cart quotes */
+#uc-cart-pane-quotes .form-item label {
+  float: right;
+  margin: 0 0 0 10px;
+}
+
+#uc-cart-checkout-form fieldset legend a:link,
+#uc-cart-checkout-form fieldset legend a:visited {
+  padding: 0 15px 0 0;
+}
+
+#uc-cart-checkout-form .item-list .product-description {
+  margin: 0 20px 0 0;
+}
+
+#uc-cart-checkout-form .address-pane-table .field-label {
+  padding-left: 20px;
+  padding-right: 0;
+}
+
+#uc-cart-checkout-form .address-pane-table .form-required {
+  float: left;
+  padding: 0 3px 0 0;
+}
+
+.order-review-table .pane-title-row {
+  text-align: right;
+}
+
+.order-review-table .title-col {
+  text-align: right;
+}
+
+.order-review-table .review-button-row td {
+  padding: 5px 0 5px 3px;
+}
+
+
+/* Skinr
+/-------------------------------------------------------------- */
+/* Gray Rounded - Style */
+.prosper-gray-rounded-style ul li {
+  padding: 5px 25px 5px 5px;
+}
+
+.prosper-gray-rounded-style ul li ul {
+  margin: 5px -25px -6px -5px;
+}
+
+/* Gray border - dark background */
+.prosper-grayborder-darkbackground ul li {
+  padding: 5px 25px 5px 5px;
+}
+
+.prosper-grayborder-darkbackground ul li ul {
+  margin: 5px -25px -6px -5px;
+}
+
+/* Menu list */
+.inner .prosper-menu-list ul li a:link,
+.inner .prosper-menu-list ul li a:visited,
+.inner .prosper-menu-list ul li .nolink {
+  padding: 0 20px 0 10px;
+}
+
+.prosper-menu-list ul li ul {
+  padding: 5px 5px 5px 0;
+}
+
+.inner .prosper-menu-list ul li ul li a:link,
+.inner .prosper-menu-list ul li ul li a:visited,
+.inner .prosper-menu-list ul li.collapsed ul li a:link,
+.inner .prosper-menu-list ul li.collapsed ul li a:visited,
+.inner .prosper-menu-list ul li.expanded ul li a:link,
+.inner .prosper-menu-list ul li.expanded ul li a:visited,
+.inner .prosper-menu-list ul li ul li .nolink,
+.inner .prosper-menu-list ul li.collapsed ul li .nolink,
+.inner .prosper-menu-list ul li.expanded ul li .nolink {
+  padding: 0 20px 0 10px;
+}
+
+.prosper-menu-list ul li ul li ul {
+  margin: 5px 10px -10px 0;
+}
+
+.inner .prosper-menu-list ul li ul li ul li a:link,
+.inner .prosper-menu-list ul li ul li ul li a:visited,
+.inner .prosper-menu-list ul li ul li.collapsed ul li a:link,
+.inner .prosper-menu-list ul li ul li.collapsed ul li a:visited,
+.inner .prosper-menu-list ul li ul li.expanded ul li a:link,
+.inner .prosper-menu-list ul li ul li.expanded ul li a:visited,
+.inner .prosper-menu-list ul li ul li ul li .nolink,
+.inner .prosper-menu-list ul li ul li.collapsed ul li .nolink,
+.inner .prosper-menu-list ul li ul li.expanded ul li .nolink {
+  padding: 0 20px 0 10px;
+}
+
+/* Shopping cart - light */
+.prosper-shoppingcart-light .cart-block-icon-empty,
+.prosper-shoppingcart-light .cart-block-icon-full {
+  float: right;
+  margin-left: 5px;
+}
+
+.prosper-shoppingcart-light table td {
+  border: none;
+  padding: 0 0 0 5px;
+}
+
+.prosper-shoppingcart-light #cart-block-contents ul.product-description {
+  margin: 0 20px 0 0;
+}
+
+.prosper-shoppingcart-light .cart-block-summary-links ul li {
+  float: right;
+  margin: 0 5px 0 0;
+}
+
+/* Shopping cart - dark */
+.prosper-shoppingcart-dark .cart-block-icon-empty,
+.prosper-shoppingcart-dark .cart-block-icon-full {
+  float: right;
+  margin-left: 5px;
+}
+
+.prosper-shoppingcart-dark #cart-block-contents ul.product-description {
+  margin: 0 20px 0 0;
+}
+
+.prosper-shoppingcart-dark .cart-block-summary-links ul {
+  float: right;
+}
+
+.prosper-shoppingcart-dark .cart-block-summary-links ul li {
+  float: right;
+  margin: 0 5px 0 0;
+}
+
+/* Prosper quicktabs */
+.prosper-quicktabs .quicktabs_wrapper ul.quicktabs_tabs li {
+  float: right;
+  margin: 0 0 0 2px;
+}
+
+/* Prosper comments - edgy */
+.prosper-comments-edgy .comment-wrapper .withpicture .withpicture-column-left {
+  float: right;
+}
+
+.prosper-comments-edgy .comment-wrapper .withpicture .withpicture-column-right {
+  float: left;
+}
+
+.prosper-comments-edgy .comment-wrapper .odd .content-inner {
+  margin-right: 10px;
+}
+
+.prosper-comments-edgy .comment-wrapper .odd .comment-top-left {
+  float: right;
+}
+
+.prosper-comments-edgy .comment-wrapper .even .content-inner {
+  margin-right: 10px;
+}
+
+.prosper-comments-edgy .comment-wrapper .even .comment-top-left {
+  float: right;
+}
+
+.prosper-comments-edgy .comment-wrapper .links ul.links {
+  float: left;
+  text-align: left;
+}
+
+/* Prosper comments - clean */
+.prosper-comments-clean .comment-wrapper .withpicture .withpicture-column-left {
+  float: right;
+}
+
+.prosper-comments-clean .comment-wrapper .withpicture .withpicture-column-right {
+  float: left;
+}
+
+.prosper-comments-clean .comment-wrapper .links ul.links {
+  float: left;
+  text-align: left;
+}
+
+/* Footer - single column list */
+.footer .fusion-inline-menu ul li {
+  float: right;
+}
