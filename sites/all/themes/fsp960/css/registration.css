@@ -23,6 +23,8 @@ left: 0;
 
 #sidebar-first .block-uc_ajax_cart hr { display: none; }
 #sidebar-first .block-uc_ajax_cart .cart-block-item-desc { text-align: right; }
+ 
+
 
 /* styling of event registration form and views */
 .view-fsp-registration table.views-table {
@@ -68,7 +70,3 @@ left: 0;
   margin:10px 100px 0;
   padding:5px 0;
 }
-
-/* porcfest 2011 */
-xbody.page-registration-porcfest-2011 .view-fsp-registration .view-content .views-table {display: none; }
-xbody.page-registration-porcfest-2011 .view-fsp-registration .view-content .views-table:first-child {display: block; }

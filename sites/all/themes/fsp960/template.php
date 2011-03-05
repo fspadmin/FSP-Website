@@ -141,3 +141,8 @@ function fsp960_menu_item_link($link) {
 	return l($link['title'], $link['href'], $link['localized_options']);
 }
 
+function fsp960_preprocess_uc_ajax_cart_block_content( &$vars ) {
+	for( $i=0; $i < count($vars['items']); $i++ ){
+		$vars['items'][$i]['remove_link'] = preg_replace( '/Remove product/', '[X]', $vars['items'][$i]['remove_link'] );
+	}
+}
