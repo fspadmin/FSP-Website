@@ -89,9 +89,13 @@
  *   $db_url = 'mysqli://username:password@localhost/databasename';
  *   $db_url = 'pgsql://username:password@localhost/databasename';
  */
-$db_url = 'mysql://freestat_dru:n00d1350up@67.207.149.16/freestat_drupal6';
-#$db_url = 'mysqli://freestat_dru:n00d1350up@67.207.149.16/freestat_drupal6';
-$db_prefix = '';
+$db_url = 'mysql://username:password@67.207.149.16/porcfest';
+
+$db_prefix = array(
+  'default' => '',
+  'users' => 'freestat_drupal6.',
+  'authmap' => 'freestat_drupal6.'
+);
 
 /**
  * Access control for update.php script
@@ -103,7 +107,6 @@ $db_prefix = '';
  * and change the TRUE back to a FALSE!
  */
 $update_free_access = FALSE;
-//$update_free_access = TRUE;
 
 /**
  * Base URL (optional).
@@ -124,7 +127,7 @@ $update_free_access = FALSE;
  * It is not allowed to have a trailing slash; Drupal will add it
  * for you.
  */
-# $base_url = 'http://dev5.freestateproject.orghttp://dev5.freestateproject.org';  // NO trailing slash!
+# $base_url = 'http://www.example.com';  // NO trailing slash!
 
 /**
  * PHP settings:
@@ -239,7 +242,3 @@ ini_set('url_rewriter.tags',        '');
 #   'forum'      => 'Discussion board',
 #   '@count min' => '@count minutes',
 # );
-
-// Disable vertical tabs on a form.
-$conf['vertical_tabs_forms']['rolodex_node_form'] = FALSE;
-$conf['vertical_tabs_forms']['participant_node_form'] = FALSE;
