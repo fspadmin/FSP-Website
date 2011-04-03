@@ -1,0 +1,89 @@
+/* $Id: layout.css,v 1.1.2.13 2009/05/21 16:23:51 jmburnz Exp $ */
+
+/**
+ * @file layout.css
+ * 
+ * See layout-uncompressed.css For a more human readable version of this 
+ * file with instructions and comments.
+ * @see layout-uncompressed.css
+ */
+#genesis-1a .two-sidebars .content-inner{margin:0 22em;}
+#genesis-1a .sidebar-left .content-inner{margin-left:22em;}
+#genesis-1a .sidebar-right .content-inner{margin-right:22em;}
+#genesis-1a #sidebar-left{width:20em;margin-left:-100%;}
+#genesis-1a #sidebar-right{width:20em;margin-left:-20em;}
+#genesis-1b .two-sidebars .content-inner{margin:0 25.25%;}
+#genesis-1b .sidebar-left .content-inner{margin-left:25.25%;}
+#genesis-1b .sidebar-right .content-inner{margin-right:25.25%;}
+#genesis-1b #sidebar-left{width:24.25%;margin-left:-100%;}
+#genesis-1b #sidebar-right{width:24.25%;margin-left:-24.25%;}
+#genesis-1c .two-sidebars .content-inner{margin:0 260px;}
+#genesis-1c .sidebar-left .content-inner{margin-left:260px;}
+#genesis-1c .sidebar-right .content-inner{margin-right:260px;}
+#genesis-1c #sidebar-left{width:240px;margin-left:-100%;}
+#genesis-1c #sidebar-right{width:240px;margin-left:-240px;}
+#genesis-2a .two-sidebars .content-inner{margin-right:44em;}
+#genesis-2a .sidebar-left .content-inner{margin-right:22em;}
+#genesis-2a .sidebar-right .content-inner{margin-right:22em;}
+#genesis-2a #sidebar-left{width:20em;margin-left:-42em;}
+#genesis-2a #sidebar-right{width:20em;margin-left:-20em;}
+#genesis-2a .sidebar-left #sidebar-left{width:20em;margin-left:-20em;}
+#genesis-2b .two-sidebars .content-inner{margin-right:50.5%;}
+#genesis-2b .sidebar-left .content-inner{margin-right:25.25%;}
+#genesis-2b .sidebar-right .content-inner{margin-right:25.25%;}
+#genesis-2b #sidebar-left{width:24.25%;margin-left:-49.5%;}
+#genesis-2b #sidebar-right{width:24.25%;margin-left:-24.25%;}
+#genesis-2b .sidebar-left #sidebar-left{width:24.25%;margin-left:-24.25%;}
+#genesis-2c .two-sidebars .content-inner{margin-right:520px;}
+#genesis-2c .sidebar-left .content-inner{margin-right:260px;}
+#genesis-2c .sidebar-right .content-inner{margin-right:260px;}
+#genesis-2c #sidebar-left{width:240px;margin-left:-500px;}
+#genesis-2c #sidebar-right{width:240px;margin-left:-240px;}
+#genesis-2c .sidebar-left #sidebar-left{width:240px;margin-left:-240px;}
+#genesis-3a .two-sidebars .content-inner{margin-left:44em;}
+#genesis-3a .sidebar-left .content-inner{margin-left:22em;}
+#genesis-3a .sidebar-right .content-inner{margin-left:22em;}
+#genesis-3a #sidebar-left{width:20em;margin-left:-100%;}
+#genesis-3a #sidebar-right{width:20em;margin-left:-100%;}
+#genesis-3a .two-sidebars #sidebar-right{width:20em;position:relative;left:22em;}
+#genesis-3b .two-sidebars .content-inner{margin-left:50.5%;}
+#genesis-3b .sidebar-left .content-inner{margin-left:25.25%;}
+#genesis-3b .sidebar-right .content-inner{margin-left:25.25%;}
+#genesis-3b #sidebar-left{width:24.25%;margin-left:-100%;}
+#genesis-3b #sidebar-right{width:24.25%;margin-left:-100%;}
+#genesis-3b .two-sidebars #sidebar-right{width:24.25%;position:relative;left:25.25%;}
+#genesis-3c .two-sidebars .content-inner{margin-left:520px;}
+#genesis-3c .sidebar-left .content-inner{margin-left:260px;}
+#genesis-3c .sidebar-right .content-inner{margin-left:260px;}
+#genesis-3c #sidebar-left{width:240px;margin-left:-100%;}
+#genesis-3c #sidebar-right{width:240px;margin-left:-100%;}
+#genesis-3c .two-sidebars #sidebar-right{width:240px;position:relative;left:260px;}
+#genesis-4 .two-sidebars .content-inner{margin-right:40%;}
+#genesis-4 .sidebar-left .content-inner{margin-right:40%;}
+#genesis-4 .sidebar-right .content-inner{margin-right:40%;}
+#genesis-4 #sidebar-left{width:37%;margin-left:-37%;}
+#genesis-4 #sidebar-right{width:37%;margin-left:-37%;}
+#genesis-4 .sidebar-left #sidebar-left{width:37%;margin-left:-37%;}
+.gpanel{clear:both;margin:.75em 0;}
+.gpanel .region{display:inline;position:relative;}
+.two-col-50 .region{width:49.5%;}
+.two-col-50 .col-1{float:left;}
+.two-col-50 .col-2{float:right;}
+.two-col-50 .gpanel{margin:0;}
+#two-col-50-nested .col-2{width:48.5%;}
+.col-1 #two-col-50-nested .region,.col-2 #two-col-50-nested .col-2{width:49%;}
+.three-col-33 .region{float:left;width:32%;}
+.three-col-33 .col-2{right:-1%;width:34%;}
+.three-col-33 .col-3{right:-2%;}
+.four-col-25 .section-1{float:left;width:49.5%;}
+.four-col-25 .section-2{float:right;width:49.5%;}
+.four-col-25 .col-1,.four-col-25 .col-3{float:left;width:49%;}
+.four-col-25 .col-2,.four-col-25 .col-4{float:right;width:49%;}
+.gpanel .region .inner{margin:0;}
+.gpanel .last .inner{margin-right:0;}
+#container{position:relative;margin:0 auto;}
+#columns{display:inline-block;margin-bottom:1em;}
+#container > #columns{display:block;}
+#content-column,#sidebar-left,#sidebar-right{float:left;}
+#content-column{width:100%;margin-bottom:1em;}
+.clear,#nav,#columns,#breadcrumb,#content-bottom,#secondary-content,#tertiary-content,#footer-wrapper,#footer,#footer-message{clear:both;}

@@ -1,0 +1,128 @@
+/* $Id: tables.css,v 1.1.2.2 2009/05/21 16:23:51 jmburnz Exp $ */
+
+/**
+ * @file tables.css
+ * Set styles for tables.
+ */
+
+/**********************************************************
+ *                   Tables
+ **********************************************************/
+ 
+/** 
+ * The selector groupings are from Garland which offers a
+ * sensible starting point for styling Drupal tables.
+ */
+ 
+table {
+  border-color: #C0C0C0;
+  border-spacing: 0;
+  margin: 1em 0; 
+  padding: 0;
+}
+
+caption, th, td {
+  text-align: left; /* LTR */
+}
+
+caption, th {
+  font-weight: bold;
+}
+
+table, td, th {
+  vertical-align: middle;
+}
+
+tbody, tfoot, thead, tr {
+  margin: 0; 
+  padding: 0;
+}
+
+thead th {
+  border-bottom: 0.1875em solid #C0C0C0; 
+  color: #494949;
+  font-weight: bold; 
+}
+
+td, th {
+  border-bottom: 1px solid #CCC;
+  margin: 0;
+  padding: 0.375em 0.5em; 
+}
+
+tr.even,
+tr.odd,
+tbody th {
+  /* border-bottom: 1px solid #CCC; System default */
+}
+
+tr.odd, 
+tr.info {
+  background-color: #F5F5F5;
+}
+
+tr.even {
+  background-color: #FFF;
+}
+
+tr.drag {
+  background-color: #FFFFF0;
+}
+
+tr.drag-previous  {
+  background-color: #FFD;
+}
+
+tr.odd td.active  {
+  background-color: #EEE;
+}
+
+tr.even td.active {
+  background-color: #F7F7F7;
+}
+
+td.region, 
+td.module, 
+td.container td.category {
+  background-color: #EEE;
+  border-bottom: 1px solid #CCC;
+  border-top: 1.5em solid #FFF;
+  color: #222;
+  font-weight: bold;
+}
+
+tr:first-child td.region,
+tr:first-child td.module, 
+tr:first-child td.container {
+  border-top-width: 0;
+}
+
+
+/**********************************************************
+ *                     Forum tables
+ **********************************************************/
+#forum table {
+  width: 100%;
+}
+
+/* Position forum icons. */
+#forum tr td.forum { 
+  background-position: 5px 5px!important;
+  padding-left: 1.67em; 
+}
+
+/* Add padding left to the forum name. */
+#forum tr td.forum .name {
+  padding-left: 0.375em;
+}
+
+#forum div.indent  {
+  margin-left: 0.5em;
+}
+
+/**********************************************************
+ *                     Admin tables
+ **********************************************************/
+.section-admin table {width: 100%;}
+
+

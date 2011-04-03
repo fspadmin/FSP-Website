@@ -1,0 +1,50 @@
+/* $Id: ie6nomore.css,v 1.1.2.2 2010/06/06 02:31:28 jonathanhunt Exp $ */
+#ie6nomore {
+  border: 1px solid #F7941D;
+  background: #FEEFDA;
+  text-align: center;
+  height: 75px;
+  position: relative;
+  display: none;
+}
+
+#ie6nomore-wrapper {
+  width: 715px;
+  margin: 0 auto;
+  text-align: left;
+  padding: 0;
+  overflow: hidden;
+  color: black;
+}
+
+#ie6nomore-warning {
+  width: 75px; 
+  float: left;
+}
+
+#ie6nomore-message {
+  width: 265px;
+  float: left;
+  font-family: Arial, sans-serif;
+}
+
+#ie6nomore-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin-top: 12px;
+}
+
+#ie6nomore-description {
+  font-size: 12px;
+  margin-top: 6px;
+  line-height: 12px;
+}
+
+.ie6nomore-browser-wrapper {
+  width: 75px;
+  float: left;
+}
+
+.ie6nomore-browser-image {
+  border: none;
+}

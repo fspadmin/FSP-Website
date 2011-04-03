@@ -1,0 +1,146 @@
+; $Id: genesis.info,v 1.1.2.19 2009/06/12 12:41:06 jmburnz Exp $
+
+
+;----------// Theme Information
+
+  name         = Genesis
+  description  = An elegant, flexible and powerful starter theme by <a href="http://adaptivethemes.com">Adaptivethemes</a>.
+  core         = 6.x
+  engine       = phptemplate
+  screenshot   = images/screenshot_base.png
+
+
+
+;----------// Regions
+
+  ; The regions defined in the page.tpl.php files. The name in brackets is the 
+  ; name of the variable. The text after the = sign is the short description 
+  ; you see on the block configuration page.
+
+  regions[leaderboard]        = Leaderboard
+  regions[header]             = Header Blocks
+  regions[secondary_content]  = Secondary Content
+  regions[content_top]        = Content top
+  regions[content]            = Main Content
+  regions[content_bottom]     = Content bottom
+  regions[tertiary_content]   = Tertiary Content
+  regions[left]               = Sidebar Left
+  regions[right]              = Sidebar Right
+  regions[footer]             = Footer
+
+
+  ; Gpanel Regions - Added here for completedness only, you should
+  ; control these via your subthemes info file.
+  ; Use in conjunction with the gpanel snippets.
+  ; See /genesis/genesis/gpanels
+  ; Uncomment the required regions in your subhtemes info file.
+
+  ; 2 col Gpanel
+  ;regions[two_col_first]     = 2col Gpanel column 1
+  ;regions[two_col_second]    = 2col Gpanel column 2
+
+  ; 2 col, 2 col Nested Gpanel
+  ;regions[two_col_nested_first]  = 2col Nested Gpanel col 1
+  ;regions[two_col_nested_second] = 2col Nested Gpanel col 2
+
+  ; 3 col Gpanel
+  ;regions[three_col_first]   = 3col Gpanel column 1
+  ;regions[three_col_second]  = 3col Gpanel column 2
+  ;regions[three_col_third]   = 3col Gpanel column 3
+
+  ; 4 col Gpanel
+  ;regions[four_col_first]    = 4col Gpanel column 1
+  ;regions[four_col_second]   = 4col Gpanel column 2
+  ;regions[four_col_third]    = 4col Gpanel column 3
+  ;regions[four_col_fourth]   = 4col Gpanel column 4
+
+
+
+;----------// Genesis core styles
+
+  stylesheets[all][] = css/base.css
+  stylesheets[all][] = css/layout.css
+
+  ; Use the uncompressed stylesheets; useful during development.
+  ;stylesheets[all][] = css/uncompressed/base.css
+  ;stylesheets[all][] = css/uncompressed/layout.css
+
+  ; Alternatively use the modular stylesheets.
+  ;stylesheets[all][] = css/modular/admin-styles.css
+  ;stylesheets[all][] = css/modular/forms.css
+  ;stylesheets[all][] = css/modular/lists.css
+  ;stylesheets[all][] = css/modular/messages.css
+  ;stylesheets[all][] = css/modular/tables.css
+  ;stylesheets[all][] = css/modular/typography.css
+
+	
+		
+;----------// Optional stylesheets
+
+  ; Add styles for the hover edit block and views links. On by default.
+  stylesheets[all][] = css/edit-links.css
+
+  ; Uncomment to show the grid, add the grid class in page.tpl.php also.
+  ;stylesheets[all][] = css/dev/grid.css
+
+
+
+;----------// IE Conditional Stylesheets
+
+  ; Support for the Conditional Styles module. This module allows themes 
+  ; to specify conditional stylesheets in their .info file and the conditional 
+  ; comments will be automatically included at the end of the standard $styles 
+  ; variable. http://drupal.org/project/conditional_styles
+  ;
+  ; Note: You do not need to install the module, it is now included in Genesis.
+
+  ; Example only: see the README in the Conditional Styles module
+  ;conditional-stylesheets[if lt IE 7][all][] = css/ie/ie-example.css
+		
+
+		
+;----------// jQuery Plugins and JavaScripts
+
+  ; Insert WAI ARIA Landmark Roles. Uncomment to use.
+  scripts[] = js/aria-roles.js
+
+  ; Equal Height Columns
+  ; This will set first child divs in the #columns division
+  ; to the same height (#sidebar-left, #sidebar-right, #content-column).
+  ; To use uncomment and clear cache data in Performance settings.
+  ;scripts[] = js/jquery.equalizeheights.minified.js
+
+  : Preload CSS Images
+  ; jQuery plugin that automatically preloads all images referenced in CSS files.
+  ; http://www.filamentgroup.com
+  ;scripts[] = js/preloadCssImages.jQuery_v5_minfied.js
+
+
+
+;----------// Theme Congiruation features
+
+  ; The "features" control which check boxes display on the admin/build/themes 
+  ; configuration page. This is useful for suppressing check boxes for elements 
+  ; not used by your theme.
+ 
+  features[] = logo
+  features[] = name
+  features[] = slogan
+  features[] = mission
+  features[] = node_user_picture
+  features[] = comment_user_picture
+  features[] = search
+  features[] = favicon
+  features[] = primary_links
+  features[] = secondary_links
+
+
+
+
+
+; Information added by drupal.org packaging script on 2009-06-12
+version = "6.x-2.4"
+core = "6.x"
+project = "genesis"
+datestamp = "1244821869"
+

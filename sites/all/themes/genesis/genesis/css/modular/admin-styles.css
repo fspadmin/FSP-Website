@@ -1,0 +1,174 @@
+/* $Id: admin-styles.css,v 1.1.2.9 2009/06/12 15:44:25 jmburnz Exp $ */
+
+/**
+ * @file admin.css
+ * Basic styles for admin sections.
+ */
+
+/*********************************************************
+*                        Admin
+**********************************************************/
+/**
+ * Admin panels.
+ */
+div.admin-panel {
+  border: 1px solid #DDD;
+  margin: 0 0 0.75em;
+  padding: 0;
+}
+
+div.admin .left,
+div.admin .right {
+  margin-left: 0;
+  margin-right: 0;
+  width:49%;
+}
+
+.admin-panel h3 {
+  background: #EEE;
+  color: #222;
+  padding: 0 0 0 0.5em;
+}
+
+.admin-panel .body {
+  padding: 0 1em;
+}
+
+.admin-panel p  {
+  margin: 0; 
+  padding: 1em 0 0;
+}
+
+.admin-panel ul,
+.admin-panel ul.menu,
+.admin-panel .item-list ul { 
+  padding: 0 0 1em 0;
+}
+
+.admin-panel .item-list ul { 
+  margin: 0;
+}
+
+.admin-panel ul li {
+  color: #555;
+}
+
+.admin-panel dl {
+  margin: 0; 
+  padding: 1em 0;
+}
+
+.admin-panel dt {
+  font-weight: normal;
+}
+
+.admin-panel dd {
+  color: #555; 
+  font-size: 0.94em;
+  margin-left: 0;
+}
+
+.admin .compact-link {
+  margin: 0 0 1em;
+}
+
+.page-admin-by-module .admin-panel .body {
+  margin: 0;
+}
+
+.page-admin-by-module .admin-panel .body p {  
+  color: #555; 
+  font-size: 0.94em; 
+}
+
+/* Misc */
+#user-admin-filter ul li,
+#node-admin-filter ul li {
+  list-style: none;
+}
+
+.more-help-link {
+  font-size: 0.94em;	
+  line-height: 1.667em;
+}
+
+#permissions td.permission {
+  padding-left:0.5em;
+}
+
+#permissions td.module {
+  background: #EEE; 
+  color: #222; 
+  font-weight: bold;
+}
+
+tr .block {
+  border: 0; /* Blocks page table. */
+}
+
+/**********************************************************
+ *                 Local tasks tabs
+ **********************************************************/
+.local-tasks {
+  margin-bottom: 0.75em;
+}
+
+ul.primary {
+  border-bottom-color: #CCC;
+  margin: 1.5em 0 0 0; 
+  padding: 0 0 0.2em 0.3em;
+}
+
+ul.primary li a {
+  background-color: #EEE;
+  border-color: #CCC;
+  margin-right: 0.08em;
+  padding: 0.1em 0.75em 0.2em;
+}
+
+.local-tasks ul.primary li a:hover  {
+  background-color: #F5F5F5;
+  border-color: #DDD;
+}
+
+.local-tasks ul.primary li a:focus  {
+  background-color: #FFF2CF;
+  border-color: #FFCC00;
+}
+
+.local-tasks ul.primary li.active a {
+  background-color: #FFF;		
+  border-bottom-color: #FFF;
+}
+
+ul.secondary {
+  border-bottom: 1px solid #CCC;
+  margin: 1em 0 0 0;
+  padding: 0 0.3em 1em;
+}
+
+ul.secondary li {
+  border-right: 0;
+  list-style: none;
+  padding: 0 2em 0 0;
+}
+
+ul.secondary li a:hover,
+ul.secondary li a.active {
+  border-bottom: 0;
+  text-decoration: underline;
+}
+
+/**********************************************************
+ *                 Admin menu
+ **********************************************************/
+/* Make the margin relative so it resizes */
+body.admin-menu {
+  margin-top: 2em !important;
+}
+
+/* Bump the font size, I can't read 9px lucida grande */
+#admin-menu {
+  font: 0.9em Arial, Helvetica, sans-serif;
+}
+

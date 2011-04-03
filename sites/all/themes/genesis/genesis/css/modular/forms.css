@@ -1,0 +1,182 @@
+/* $Id: forms.css,v 1.1.2.11 2009/06/12 12:41:05 jmburnz Exp $ */
+
+/**
+ * @file forms.css
+ * Basic styles for forms.
+ */
+
+/*********************************************************
+*                     Forms
+**********************************************************/
+form {
+  margin: 0 0 1.5em 0; 
+  padding: 0;
+}
+
+input {
+  margin: 0.375em 0.1875em 0 0.1875em;
+}
+
+input.text, 
+input.title,
+textarea, 
+select {
+  margin:0.375em 0; 
+  border: 1px solid #C0C0C0;
+}
+
+input.form-text:focus,
+input.text:focus, 
+input.title:focus, 
+select:focus {
+  border: 1px solid #FFCC00;
+  background: #FFFFDF;
+}
+
+textarea:focus {
+  border: 1px solid #FFCC00;
+}
+
+input.text, 
+input.title {
+  padding: 0.375em;
+}
+
+input.title {
+  font-size: 1.5em;
+}
+
+input.form-text, 
+textarea {
+  border: 1px solid #CCC;
+  height: auto; 
+  padding: 0.1875em;
+}
+
+div.form-item {
+  margin-bottom: 1em; 
+  margin-top: 1em;
+}
+
+.form-item textarea.error {
+  padding: 0.1875em;
+}
+
+.form-item .description {
+  font-size: 0.9em; 
+  line-height: 1.667em;
+}
+
+span.form-required, 
+span.marker {
+  color: #8A1F11;
+}
+
+div.form-item div.description img {
+  margin: 0;
+}
+
+#node-admin-filter ul {
+  padding: 0.375em 0;
+}
+
+#edit-operation-wrapper select {
+  margin: 0.375em;
+}
+
+div.resizable-textarea textarea {
+  margin-top: 0;
+}
+
+.tips {
+  font-size: 1em;
+  margin-left: 3em; /* LTR */
+  padding: 0.1875em 0.375em 0.1875em 1.5em; /* LTR */
+}
+
+label, legend {
+  margin: 0; 
+  padding: 0;
+}
+
+/*********************************************************
+*                     Fieldsets
+**********************************************************/
+fieldset {
+  background: transparent;
+  border: 1px solid #dadada;
+  margin: 1.5em 0;
+  padding: 0.75em;
+
+}
+
+/* Targets IE 7. Fixes background image in field sets (if one is set). */
+*:first-child+html fieldset {
+  background-color: transparent;
+  background-position: 0 .75em;
+  padding: 0 1em 0.75em;
+}
+
+*:first-child+html fieldset > .description, *:first-child+html fieldset .fieldset-wrapper .description {
+  padding-top: 1.5em;
+}
+
+/* Fix legend in Firefox */
+fieldset legend {
+  display: block;
+  font-weight: bold;
+  padding: 0 1em 0 0;
+}
+
+*:first-child+html fieldset legend, *:first-child+html fieldset.collapsed legend {
+  display: inline;
+}
+
+html.js fieldset.collapsed {
+  background: transparent;
+  padding-bottom: .75em;
+  padding-top: 0;
+}
+
+
+/*********************************************************
+*              OpenID icon fix for Drupal 6
+**********************************************************/
+#user-login-form li.openid-link,
+#user-login-form li.user-link {
+  text-align: center;
+}
+
+html.js #user-login-form li.openid-link,
+html.js #user-login li.openid-link {
+  list-style: none;
+}
+
+#user-login-form ul {
+  margin-top: 0;
+}
+
+#user-login ul {
+  margin: 0 0 5px;
+}
+
+#user-login ul li {
+  margin: 0;
+}
+
+#user-login-form li.openid-link,
+#user-login li.openid-link {
+  background: none;
+}
+
+#user-login-form li.openid-link a,
+#user-login li.openid-link a {
+  background: transparent url("../images/openid.png") no-repeat 0 0;
+  padding: 0 20px;
+}
+
+/* Remove bullets from other user login list items. */
+#user-login-form .item-list li {
+  list-style:none;
+}
+

@@ -1,0 +1,168 @@
+/* $Id: base.css,v 1.1.2.17 2009/06/12 12:41:05 jmburnz Exp $ */
+
+/**
+ * @file base.css
+ * Base is the master reset for browsers and Drupal.
+ * 
+ * Base contains a compressed copy of the modular stylsheets.
+ *
+ * typography.css
+ * tables.css
+ * messages.css
+ * lists.css
+ * forms.css
+ * admin-styles.css
+ *
+ * By default Genesis uses base.css, mainly because Drupal can 
+ * load a ridiculus number of stylesheets depending on what modules
+ * you have enabled; base.css is an effort to reduce http requests and 
+ * mitigate triggering IE's max 30 linked stylesheets issue.
+ *
+ * To gain more control over the stylesheets you can unset this and load
+ * a subset of the modular stylesheets.
+ */
+html{font-size:75%;}
+body{line-height:1.5;}
+h1{font-size:2em;margin:0 0 .5em;padding:0;}
+h2{font-size:1.5em;}
+h3{font-size:1.25em;}
+h4{font-size:1.17em;}
+h5,h6{font-size:1em;}
+h1,h2,h3,h4,h5,h6,h1 img,h2 img,h3 img,h4 img,h5 img,h6 img,em,dfn,del,ins{margin:0;padding:0;}
+p{margin:0 0 1.5em;padding:0;}
+blockquote p{margin:0;}
+strong{font-weight:bold;}
+em,dfn{font-style:italic;}
+dfn{font-weight:bold;}
+del{color:#666;}
+ins{border-bottom:none;text-decoration:none;}
+pre,code,tt,samp,kbd,var{font: 1em "Lucida Console",Monaco,"DejaVu Sans Mono",monospace;}
+blockquote,q{font-style:italic;quotes:"" "";}
+blockquote{margin:0 0 1.5em;padding:0 0 0 3em;}
+blockquote:before,blockquote:after,q:before,q:after{content:"";}
+table{border-color:#C0C0C0;border-spacing:0;margin:1em 0;padding:0;}
+caption,th,td{text-align:left;}
+caption, th{font-weight:bold;}
+table,td,th{vertical-align:middle;}
+tbody,tfoot,thead,tr{margin:0;padding:0;}
+thead th{border-bottom:.1875em solid #C0C0C0;color:#494949;font-weight:bold;}
+td,th{border-bottom:1px solid #CCC;margin:0;padding:.375em .5em;}
+tr.odd,tr.info{background-color:#F5F5F5;}
+tr.even{background-color:#FFF;}
+tr.drag{background-color:#FFFFF0;}
+tr.drag-previous{background-color:#FFD;}
+tr.odd td.active{background-color:#EEE;}
+tr.even td.active{background-color:#F7F7F7;}
+td.region,td.module,td.container td.category{background-color:#EEE;border-bottom:1px solid #CCC;border-top:1.5em solid #FFF;color:#222;font-weight:bold;}
+tr:first-child td.region,tr:first-child td.module,tr:first-child td.container{border-top-width:0;}
+#forum table{width:100%;}
+#forum tr td.forum{background-position:5px 5px!important;padding-left:1.67em;}
+#forum tr td.forum .name{padding-left:.375em;}
+#forum div.indent{margin-left:.5em;}
+.section-admin table {width:100%;}
+.description{color:#555;}
+div.messages{font-weight:normal;margin:1em 0;}
+div.messages ul{margin:0 0 0 1.25em;}
+div.error{background:#FFF3F6 url(../images/error.png) no-repeat .5em .45em;border:1px solid #C00000;color:#C00000;}
+tr.error{background:#FFEFF3;color:#E41F0B;}
+div.notice{background:#FFF6BF;color:#514721;border-color:#FFD324;}
+.error a,.notice a,.success a{text-decoration:underline;}
+div.status{background:#F1FFCF url(../images/ok.png) no-repeat .75em .6em;border:1px solid #4DA449;color:#2A6827;}
+div.help{background:#F7F8F8 url(../images/info.png) no-repeat .5em .45em;border:1px solid #66BEF4;color:#000D2F;margin:1em 0;}
+div.warning{background:#FFF6DF url(../images/warning.png) no-repeat .5em .45em;border:1px solid #FFB900;color:#9F3800;}
+div.messages,div.warning,div.help,div.status,div.error{padding:.6em 1em .6em 3em;}
+div.help code,div.messages code{font-weight: bold;}
+table tr.warning{background-color:#F7E8C5;}
+table tr.warning td{color:#9F3800;}
+table tr.warning.merge-up td{color:#514721;}
+div.ok,tr.ok,table tr.ok td{color:#222;padding:1em .5em;}
+.update tr.ok{background:#F1FFCF;}
+.update tr.error{background:#FFEFF3;}
+.update tr.warning{background:#FFF6DF;}
+.update tr.error .version-recommended {background:#FFEFF4;}
+.update .info{padding:0 0 0 1em;}
+.includes{color:#222;}
+div.help p:last-child,div.help ul:last-child{margin-bottom:0;}
+.form-item input.error,.form-item textarea.error,.form-item select.error{border:2px solid #C00000;}
+.form-item strong.error em{font-weight:bold;color:#E41F0B;font-size:1.2em;}
+.block-region{border:1px dotted #000;color:#000;font: 1.25em "Lucida Console",Monaco,"DejaVu Sans Mono",monospace;padding:3px 6px 1px;}
+.node-unpublished,.comment-unpublished{background-color:#FFF6DF;}
+.unpublished{visibility:hidden;}
+.node-unpublished .unpublished,.comment-unpublished .unpublished{background:transparent url(../images/warning-small.png) no-repeat 0 .1em;color:#FFB900;font-size:.94em;margin-left:.5em;padding-left:18px;visibility:visible;}
+.admin-dependencies,.admin-required,.admin-enabled,.admin-disabled,.admin-missing{font-weight:bold;}
+ul,ol{margin:0 0 1.5em 1.75em;padding:0;}
+li{margin:0;padding:0;}
+ul ul,ul ol,ol ol,ol ul,.block ul ul,.block ul ol,.block ol ol,.block ol ul,.item-list ul ul,.item-list ul ol,.item-list ol ol,.item-list ol ul{margin:0 0 0 1.75em;}
+ul{list-style-type:disc;}
+ul ul{list-style-type:circle;}
+ul ul ul{list-style-type:square;}
+ul ul ul ul{list-style-type:circle;}
+ol{list-style-type:decimal;}
+ol ol{list-style-type:lower-alpha;}
+ol ol ol{list-style-type:lower-roman;}
+dt{font-weight:bold;}
+dd{margin:0 0 1.5em 1.75em;}
+.item-list ul,.item-list ol{margin:0 0 0 1.75em;padding:0;}
+form{margin:0 0 1.5em;padding:0;}
+input{margin:.375em .1875em 0;}
+input.text,input.title,textarea,select{border:1px solid #C0C0C0;margin:.375em 0;}
+.form-text:focus,.form-checkbox:focus, .form-radio:focus, .form-select:focus{border:1px solid #FFCC00;background:#FFFFDF;}
+textarea:focus{border:1px solid #FFCC00;background:#FFF;}
+input.text,input.title{padding:.375em;}
+input.title{font-size:1.5em;}
+input.form-text,textarea{border:1px solid #CCC;height:auto;padding:.1875em;}
+textarea,input{font:1em normal Arial, Helvetica, sans-serif;}
+div.form-item{margin-bottom:1em;margin-top:1em;}
+.form-item textarea.error{padding:.1875em;}
+.form-item .description{font-size:.9em;line-height:1.667em;}
+span.form-required,span.marker{color:#8A1F11;}
+div.form-item div.description img{margin:0;}
+#node-admin-filter ul{padding:.375em 0;}
+#edit-operation-wrapper select{margin:.375em;}
+div.resizable-textarea textarea{margin-top:0;}
+.tips{font-size:1em;margin-left:3em;padding:.1875em .375em .1875em 1.5em;}
+label,legend{margin:0;padding:0;}
+fieldset{background:transparent;border:1px solid #dadada;margin:1.5em 0;padding:.75em;}
+*:first-child+html fieldset{background-color:transparent;background-position:0 .75em;padding:0 1em .75em;}
+*:first-child+html fieldset > .description,*:first-child+html fieldset .fieldset-wrapper .description{padding-top:1.5em;}
+fieldset legend{display:block;font-weight:bold;padding:0 1em 0 0;}
+*:first-child+html fieldset legend,*:first-child+html fieldset.collapsed legend{display:inline;}
+html.js fieldset.collapsed{background:transparent;padding-bottom:.75em;padding-top:0;}
+#user-login-form li.openid-link,#user-login-form li.user-link{text-align:center;}
+html.js #user-login-form li.openid-link,html.js #user-login li.openid-link{list-style:none;}
+#user-login-form ul{margin-top:0;}
+#user-login ul{margin:0 0 5px;}
+#user-login ul li{margin:0;}
+#user-login-form li.openid-link,#user-login li.openid-link{background:none;}
+#user-login-form li.openid-link a,#user-login li.openid-link a{background:transparent url(../images/openid.png) no-repeat 0 0;padding:0 20px;}
+#user-login-form .item-list li{list-style:none;}
+div.admin-panel{border:1px solid #DDD;margin:0 0 .75em;padding:0;}
+div.admin .left,div.admin .right{margin-left:0;margin-right:0;width:49%;}
+.admin-panel h3{background:#EEE;color:#222;padding:0 0 0 .5em;}
+.admin-panel .body{padding:0 1em;}
+.admin-panel p{margin:0;padding:1em 0 0;}
+.admin-panel ul,.admin-panel ul.menu,.admin-panel .item-list ul{padding:0 0 1em;}
+.admin-panel .item-list ul{margin:0;}
+.admin-panel ul li{color:#555;}
+.admin-panel dl{margin:0;padding:1em 0;}
+.admin-panel dt{font-weight:normal;}
+.admin-panel dd{color:#555;font-size:.94em;margin-left:0;}
+.admin .compact-link{margin:0 0 1em;}
+.page-admin-by-module .admin-panel .body{margin:0;}
+.page-admin-by-module .admin-panel .body p{color:#555;font-size:.94em;}
+#user-admin-filter ul li,#node-admin-filter ul li{list-style:none;}
+.more-help-link{font-size:.94em;line-height:1.667em;}
+#permissions td.permission{padding-left:.5em;}
+#permissions td.module{background:#EEE;color:#222;font-weight:bold;}
+tr .block{border:0;}
+.local-tasks{margin-bottom:1em;}
+ul.primary{border-bottom-color:#CCC;margin:1.5em 0 0;padding:0 0 .2em .3em;}
+ul.primary li a{background-color:#F5F5F5;border-color:#CCC;margin-right:.08em;padding:.1em .75em .2em;}
+.local-tasks ul.primary li a:hover{background-color:#F7F7F7;border-color:#DDD;}
+.local-tasks ul.primary li.active a{background-color:#FFF;border-bottom-color:#FFF;}
+ul.secondary{border-bottom:1px solid #CCC;margin:1em 0 0 0;padding:0 .3em 1em;}
+ul.secondary li{border-right:0;list-style:none;padding:0 2em 0 0;}
+ul.secondary li a:hover,ul.secondary li a.active{border-bottom:none;text-decoration:underline;}
+body.admin-menu{margin-top: 2em !important;}
+#admin-menu{font: 0.9em Arial, Helvetica, sans-serif;}
+#admin-menu ul li a:focus{color:#000;border:0;background:#FFFF00;}

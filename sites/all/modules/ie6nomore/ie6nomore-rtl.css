@@ -1,0 +1,17 @@
+/* $Id: ie6nomore-rtl.css,v 1.1.2.1 2010/06/06 02:31:28 jonathanhunt Exp $ */
+
+#ie6nomore-wrapper {  
+  text-align: right;  
+}
+
+#ie6nomore-warning { 
+  float: right;
+}
+
+#ie6nomore-message {  
+  float: right;  
+}
+
+.ie6nomore-browser-wrapper {  
+  float: right;
+}

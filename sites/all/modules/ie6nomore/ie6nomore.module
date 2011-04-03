@@ -1,0 +1,95 @@
+<?php
+// $Id: ie6nomore.module,v 1.1.2.8 2010/12/09 22:00:24 jonathanhunt Exp $
+/**
+ * @file
+ * Adds a banner prompting Internet Explorer 6 users to upgrade to a better or newer browser.
+ * Based on code from http://www.ie6nomore.com/
+ *
+ * @author Jonathan Hunt ie6nomore.module@huntdesign.co.nz
+ *
+ * The IE6 upgrade banner is injected to the page via javascript. If you wish to have a non-js solution, you can use the $ie6nomore
+ * variable in your page template.
+ *
+ * Firefox logo sourced from http://www.mozilla.com/en-US/about/logo/download.html
+ * Opera logo sourced from http://www.opera.com/press/resources/
+ * Safari logo sourced from http://en.wikipedia.org/wiki/File:Apple_Safari.png
+ */
+
+/**
+ * Ensure our CSS and javascript are available.
+ * Implementation of hook_init().
+ */
+function ie6nomore_init() {
+  $path = drupal_get_path('module', 'ie6nomore');
+  drupal_add_css($path .'/ie6nomore.css');
+  drupal_add_js($path .'/ie6nomore.js');
+}
+
+/**
+ * Inject banner markup into page.
+ * Implementation of hook_footer().
+ */
+function ie6nomore_footer($main) {
+  return theme('ie6nomore_banner');
+}
+
+/**
+ * Implementation of hook_theme();
+ */
+function ie6nomore_theme() {
+  return array(
+    'ie6nomore_banner' => array(
+      'arguments' => array(),
+    ),
+    'ie6nomore_browser' => array(
+      'arguments' => array(),
+    ),
+  );
+}
+
+/**
+ * Theme for IE6 No more banner.
+ */
+function theme_ie6nomore_banner() {
+  $path = base_path() . drupal_get_path('module', 'ie6nomore') .'/images';
+
+  $output = '<!--[if lt IE 7]>';
+  $output .= '<div id="ie6nomore" class="clear-block">';
+  $output .= '<div id="ie6nomore-wrapper">';
+  $output .= '  <div id="ie6nomore-warning"><img src="'. $path .'/ie6nomore-warning.jpg" alt="Warning!" /></div>';
+  $output .= '  <div id="ie6nomore-message">';
+  $output .= '    <div id="ie6nomore-title">'. t('You are using an outdated browser') .'</div>';
+  $output .= '    <div id="ie6nomore-description">'. t('For a better experience using this site, please upgrade to a modern web browser.') .'</div>';
+  $output .= '  </div>';
+
+  $output .= theme('ie6nomore_browser', 'ie6nomore-firefox-3.6.png', 'http://www.firefox.com', 'Get Firefox');
+  $output .= theme('ie6nomore_browser', 'ie6nomore-ie8.jpg', 'http://www.browserforthebetter.com/download.html', 'Get Internet Explorer');
+  $output .= theme('ie6nomore_browser', 'ie6nomore-safari5.jpg', 'http://www.apple.com/safari/download/', 'Get Safari');
+  $output .= theme('ie6nomore_browser', 'ie6nomore-chrome.jpg', 'http://www.google.com/chrome', 'Get Chrome');
+  $output .= theme('ie6nomore_browser', 'ie6nomore-opera.png', 'http://www.opera.com/', 'Get Opera');
+
+  $output .= '</div>';
+  $output .= '</div>';
+  $output .= '<![endif]-->';
+  return $output;
+}
+
+/**
+ * Theme each browser icon.
+ */
+function theme_ie6nomore_browser($image, $url, $title) {
+  $path = base_path() . drupal_get_path('module', 'ie6nomore') .'/images/';
+  $img = '<img class="ie6nomore-browser-image" src="'. $path . check_plain($image) .'" alt="'. check_plain($title) .'"/>';
+
+  $output = '<div class="ie6nomore-browser-wrapper">';
+  $output .= l($img, $url, array('html' => TRUE, 'attributes' => array('title' => $title)));
+  $output .= '</div>';
+  return $output;
+}
+
+/**
+ * Make the upgrade banner markup available in the page template via $ie6nomore variable (for non-js solution).
+ */
+function ie6nomore_preprocess_page(&$vars) {
+  $vars['ie6nomore'] = '<!--[if lt IE 7]>'. theme('ie6nomore_banner') .'<![endif]-->';
+}

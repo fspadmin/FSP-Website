@@ -1,0 +1,18 @@
+/* $Id: ie-example.css,v 1.1.2.2 2009/06/12 15:44:26 jmburnz Exp $ */
+
+/**
+ * @file ie-example.css
+ *
+ * Support for the Conditional Styles module. This module allows themes 
+ * to specify conditional stylesheets in their .info file and the conditional 
+ * comments will be automatically included at the end of the standard $styles variable. 
+ * 
+ * http://drupal.org/project/conditional_styles
+ *
+ * The module is included in Genesis, you do not need to download and install it.
+ */
+
+
+
+
+

@@ -1,0 +1,96 @@
+/* $Id: comments.css,v 1.1.2.1 2009/06/05 17:54:53 jmburnz Exp $ */
+
+/**
+ * @file comments.css
+ * Basic styles for comments.
+ */
+
+/**********************************************************
+ *                     Comments
+ **********************************************************/
+/* Comment wrapper */
+#comments {}
+#comments-title {}
+	
+.comment {
+  margin: 0 0 1em; 
+}
+
+.comment .indented {
+  margin-left: 2em; /* LTR */
+}
+
+/* The title of each comment. */
+.comment .title {
+  margin-bottom: 0;
+}
+.comment-id {}
+.comment h3.title .new {
+  color: #FF8000;
+}
+
+.comment .title a:link,
+.comment .title a:visited,
+.comment .title a:active {
+  text-decoration: none;
+}
+
+.comment .title a:hover {
+  text-decoration: underline;
+}
+
+.comment .user-picture {}
+.comment .user-picture img {}
+
+.comment .submitted {}
+.comment .submitted a {}
+.comment .submitted a:hover {}
+
+.comment ul.links {
+  display: block;
+  padding: 0 1em 0 0;
+  text-align: right; /* LTR */
+}
+.comment ul.links li {}
+.comment ul.links li a {}
+
+/* Core comment link classes. */
+ul.links li.comment_reply a {}
+ul.links li.comment_edit a {}
+ul.links li.comment_delete a {}
+
+/* Comment ul link first and last classes. */
+.comment ul.links li.first {}
+.comment ul.links li.last  {}
+
+/**
+ * Comment Classes - extra classes to help out themers.
+ */
+/* Comment author. */
+.comment-by-anonymous   {}
+.comment-by-node-author {}
+.comment-by-viewer      {}
+
+/* Comment is new. */
+.comment-new {}
+
+/* Zebra odd/even classes. */
+.comment.odd  {}
+.comment.even {}
+
+/* Comment status. */
+.comment-unpublished {}
+
+/* Themes the "Unpublished" text. */
+.comment-unpublished .unpublished {}
+
+/* Comment form on a seperate page. */
+.section-comment .box {}
+.section-comment .box .title {}
+
+/* Comment form below content. */
+#comments .box {}
+#comments .box .title {}
+
+
+

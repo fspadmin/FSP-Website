@@ -1,0 +1,549 @@
+/* $Id: page.css,v 1.1.2.7 2009/06/12 15:44:26 jmburnz Exp $ */
+
+/**
+ * @file page.css
+ * This stylesheet provides the main page styles for this theme.
+ */
+
+/**
+ * Remove unused styles for performace.
+ */
+
+/**********************************************************
+ *              Section, Page and Body Classes
+ **********************************************************/
+/**
+ * Normally you will use these in combination with other
+ * selectors. I include them here for completedness.
+ */
+	
+/** 
+ * Section Class
+ * The section class takes the 2nd part of the URL and
+ * builds a section-[path-part] class from it. If you emulate
+ * site sections using the Pathauto module this can be a 
+ * powerful way to style site sections.
+ */
+/* .section-[path-part] {}  replace [path-part] */
+
+/* Front or not front. */
+.front {}
+.not-front {}
+
+/* Is the user logged in. */
+.logged-in {}
+.not-logged-in {}
+
+/* Node type body classes */
+.node-type-book  {}
+.node-type-blog  {}
+.node-type-forum {}
+.node-type-page  {}
+.node-type-poll  {}
+.node-type-story {}
+
+/**
+ * Warning! 
+ * The sidebar body classes are integral to how genesis
+ * applies the layout - do not add margin, padding, borders,
+ * or positioning styles to these classes! @see layout.css. 
+ */
+.one-sidebar   {}
+.two-sidebars  {}
+.sidebar-right {}
+.sidebar-left  {}
+
+/** 
+ * Optional Region body classes
+ * When any of the following regions are active a body class can be set.
+ * To use you need to uncomment the conditional statements in 
+ * genesis_preprocess_page(), @see template.php.
+ */
+/*
+.leaderboard       {}
+.header-blocks     {}
+.secondary-content {}
+.tertiary-content  {}
+.footer            {}
+*/
+
+/** 
+ * Page Path Class
+ * The page path class takes the entire URL and
+ * builds a page-[path] class from it. See example
+ * below. You need to use Firebug or view source to
+ * find out what the actual class will be, and be aware
+ * that this will change if your URL alias changes!
+ */
+/* .page-[example-node-path] {}  replace [example-node-path] */
+
+
+/**********************************************************
+ *                  The wrapper divs
+ *    Be careful how you modify these, see layout.css
+ **********************************************************/
+/**
+ * Width Setting
+ *
+ * Genesis supports Elastic, Fluid and Fixed width values.
+ * Elastic layouts are dynamic and will expand or contract when 
+ * the font size is changed. Fluid widths change when the browser 
+ * is resized and fixed width layouts stay the same width even 
+ * when the broswer is resized or the font size is changed.
+ *
+ * Elastic layouts use ems,       e.g. 80em
+ * Fluid layouts use percentages, e.g. 85%
+ * Fixed widths use pixels,       e.g. 960px
+ */
+#container {
+  width: 980px;     /* Width for IE6 */
+}
+body > #container {
+  width: 100%;      /* Width for all other browsers */
+  max-width: 980px; /* set a maximum width */
+  min-width: 760px; /* set a minimum width */
+}
+
+/* Column wrappers */
+#columns {}
+.columns-inner {}
+
+/* Content wrappers */
+#content-column {}
+.content-inner {}
+
+/* Main content wrappers*/
+#main-content {}
+
+
+/**********************************************************
+ *                       Regions
+ **********************************************************/
+/* Target all regions with this low specifity selector. */
+.region {}
+
+/**
+ * Most regions have an .inner div to set paddings or other
+ * design contingencies.
+ */
+ 
+/* Leaderboard is a full width region at the very top, 
+   ideal for displaying banners. */
+#leaderboard {}
+
+/* Header blocks region is embedded in the header, 
+   usefull for displaying small banners. */
+#header-blocks {
+  float: left;
+  margin-left: 2em; /* LTR */
+}
+
+/* Secondary content is a full width region between 
+   the header and the main columns. */
+#secondary-content {}
+
+/* Tertiary content is a full width region above the footer, 
+   below the main content. */
+#tertiary-content {}
+
+/* Content top and bottom are above and below the main content, 
+   within the main content column. */
+#content-top {}
+#content-bottom {}
+
+
+/**********************************************************
+ *                      Sidebars
+ **********************************************************/
+/* Target both sidebars with this low specifity selector. */
+.sidebar {}
+
+/* Target a specific sidebar, inner or sidebar-inner. */
+#sidebar-left  {}
+#sidebar-right {}
+
+
+/*********************************************************
+*                     GPanel Regions
+**********************************************************/
+.two-col-50 {}
+.two-col-50 .col-1 {}
+.two-col-50 .col-2 {}
+
+.two-col-50.with-nested {}
+#two-col-50-nested {}
+.two-col-50.with-nested .col-1 {}
+.two-col-50.with-nested .col-2 {}
+.two-col-50.with-nested #two-col-50-nested .col-1 {}
+.two-col-50.with-nested #two-col-50-nested .col-2 {}
+
+.three-col-33 {}
+.three-col-33 .col-1 {}
+.three-col-33 .col-2 {}
+.three-col-33 .col-3 {}
+
+.four-col-25 {}
+.four-col-25 .col-1 {}
+.four-col-25 .col-2 {}
+.four-col-25 .col-3 {}
+.four-col-25 .col-4 {}
+
+
+/**********************************************************
+ *                   Skip navigation
+ **********************************************************/
+/**
+ * To hide the skip-nav you can use: 
+ * 
+ * height: 0; 
+ * overflow: hidden;
+ * 
+ * Do not use display:none as this hides it from screen readers!
+ */
+#skip-nav {
+   text-align: right; /* LTR */
+}
+
+/* Override default pseudo class styles */
+#skip-nav a:link    {}
+#skip-nav a:visited {}
+#skip-nav a:hover   {}
+#skip-nav a:focus   {}
+#skip-nav a:active  {}
+
+/**
+ * An alternative method is to position the skip-nav link offscreen
+ * until the user tabs the link into focus. Uncomment the following to use.
+ * 
+ * Adjust the style of the active/focused link to suit.
+ */
+/*
+#skip-nav {
+   text-align: left;
+}
+#skip-nav a:link, 
+#skip-nav a:hover, 
+#skip-nav a:visited {
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  top: -999em;
+}
+#skip-nav a:active,
+#skip-nav a:focus {
+  background: #FFF;
+  color: #C00000;
+  height: 1.5em;
+  overflow: visible;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: auto;
+  z-index: 1000;
+}
+*/
+
+
+/**********************************************************
+ *                 Header Elements
+ **********************************************************/
+/* #header wraps #branding, #search-box-top and #header-blocks. */
+#header {}
+
+/* #branding wraps #logo, #site-name and #site-slogan. */
+#branding {
+  float: left; /* LTR */
+}
+
+/* h1 is for the front page only, all others use the div. */
+#branding h1 {font-size: 1em;} /* reset h1, do not change! */
+
+/* Logo and site_name wrapper. */
+.logo-site-name {}
+div.logo-site-name {}
+h1.logo-site-name  {}
+
+/* DIV/strong combo when when title is set. */
+div.logo-site-name strong {}
+
+/* Remove display:block if you want the site name inline with the logo. */
+.logo-site-name span {
+  display: block;
+}
+
+/* Logo. */
+#logo {}
+
+#site-name {
+  font-weight: bold; /* Bold or else the line heights vary. */
+  font-size: 2em;
+  line-height: 1.5;
+}
+
+/* Override default pseudo class styles. */
+#site-name a:link    {}
+#site-name a:visited {}
+#site-name a:hover   {}
+#site-name a:focus   {}
+#site-name a:active  {}
+
+/* Site slogan. */
+#site-slogan {}
+
+
+/**********************************************************
+ *    Search box, Advanced search form, Search results
+ *          For the search block see blocks.css
+ **********************************************************/
+/* Reset form element margins and float the search form. */
+#search-theme-form {
+  float:right;
+  margin: 1.5em 0;
+}
+
+/* Use the child selector because the inner div has no class. */
+#search-theme-form > div {}
+
+/* #search and .container-inline apply to the same div. */
+#search-theme-form #search {}
+#search-theme-form .container-inline {}
+
+#search-theme-form label {}
+#search-theme-form input {}
+#search-theme-form .form-item {}
+#search-theme-form .form-submit {}
+
+#edit-search-theme-form-1 {}
+
+/* Override forms.css focus style */
+#edit-search-theme-form-1:hover,
+#edit-search-theme-form-1:focus {}
+
+
+/**
+ * Advanced search form
+ */
+/* Advanced search-form id. */
+#search-form {}
+
+/* Use the child selector because the inner div has no class. */
+#search-form > div {}
+#search-form .container-inline {}
+#search-form #edit-keys-wrapper {}
+
+#search-form label {}
+#search-form input {}
+#search-form .form-item {}
+#search-form .form-submit {}
+
+/* Override forms.css text field focus style. */
+#search-form #edit-keys-wrapper input:hover,
+#search-form #edit-keys-wrapper input:focus {}
+
+/* Advanced search fieldset. */
+fieldset #search-advanced {}
+
+/**
+ * Search results
+ */
+/* Box styles for the results page. */
+.section-search .box {}
+.section-search .box-title {}
+
+/* Style the no results messages. */
+.section-search .box ul {}
+.section-search .box ul li {}
+
+/* Search results document list. */
+dl.search-results {}
+dl.search-results dt {}
+dl.search-results dd {}
+dl.search-results dd p {}
+dl.search-results dd .search-snippet {}
+dl.search-results dd .search-info {}
+
+
+/**********************************************************
+ *               Primary & Secondary Links
+ **********************************************************/
+/**
+ * Implimentation of Primary and Secondary Links.
+ *
+ * Primary & Secondary Links are colored by default so you 
+ * can easily identify them.
+ */
+
+/**
+ * #nav is the containing div for Primary & Secondary Links.
+ */
+#nav {
+  clear: both; 
+  margin: 0.75em 0;
+}
+
+/**
+ * Primary Links Style
+ * Example styles to get you started.
+ */
+#nav .primary-links {
+  background: #DDD; /* Default gray for dev only. */
+  font-weight: bold;
+  margin: 0;
+  padding: 0;
+}
+
+/* Modify the margin to set tab spacings. */
+#nav .primary-links li {
+  display: inline;
+  line-height: 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#nav .primary-links li a {
+  padding: 0 1em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Set pseudo class styles. */
+#nav .primary-links li a:hover {}
+#nav .primary-links li a:focus {}
+#nav .primary-links li a:active {}
+#nav .primary-links li a:visited {}
+
+/* Primary first and last classes. */
+#nav .primary-links li.first {}
+#nav .primary-links li.last {}
+
+/* Active trail classes. */
+#nav .primary-links li.active {}
+#nav .primary-links li.active-trail {}
+#nav .primary-links li.active-trail a {}
+
+
+/**
+ * Secondary Links Style
+ */
+#nav .secondary-links {
+  background: #EEE; /* Default gray for dev only. */
+  font-weight: bold;
+  margin: 0;
+  padding: 0;
+}
+
+/* Modify the margin to set tab spacings. */
+#nav .secondary-links li {
+  display: inline;
+  line-height: 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#nav .secondary-links li a {
+  padding: 0 1em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Set pseudo class styles. */
+#nav .secondary-links li a:hover {}
+#nav .secondary-links li a:focus {}
+#nav .secondary-links li a:active {}
+#nav .secondary-links li a:visited {}
+
+/* Secondary first and last classes. */
+#nav .secondary-links li.first {}
+#nav .secondary-links li.last {}
+
+/* Active trail classes. */
+#nav .secondary-links li.active {}
+#nav .secondary-links li.active-trail {}
+#nav .secondary-links li.active-trail a {}
+
+
+/**********************************************************
+ *                      Breadcrumb
+ **********************************************************/
+/**
+ * Genesis places the breadcrumb directly below the header, 
+ * giving it the full width of theme to expand into.
+ * You can eaisly drag the breadcrumb html to the main 
+ * content column if you need to.
+ */
+#breadcrumb {
+  margin: 0 0 0.75em; /* LTR */
+}
+
+
+/**********************************************************
+ *                       Mission
+ **********************************************************/
+#mission {
+  font-weight: bold;
+  margin: 0 0 1.5em;
+}
+
+
+/**********************************************************
+ *                    H1 Page Title
+ **********************************************************/
+/* The main title on each page. */
+h1#page-title {}
+
+
+/**********************************************************
+ *                     Pager 
+ **********************************************************/
+/* The first 2 classes provide the base pager styles. */
+.item-list ul.pager    {}
+.item-list ul.pager li {
+  margin: 0;
+}
+
+/* Theme the various states of pager links. */
+.item-list ul.pager li a:link    {}
+.item-list ul.pager li a:visited {}
+.item-list ul.pager li a:hover   {}
+
+/* Note: .pager-current is for the current page. */
+.item-list ul.pager li.pager-item     {}
+.item-list ul.pager li.first          {}
+.item-list ul.pager li.last           {}
+.item-list ul.pager li.pager-current  {}
+.item-list ul.pager li.pager-first    {}
+.item-list ul.pager li.pager-previous {}
+.item-list ul.pager li.pager-next     {}
+.item-list ul.pager li.pager-last     {}
+
+
+/**********************************************************
+ *               Footer, Footer Message
+ **********************************************************/
+#footer,
+#footer-message {
+  clear: both;
+}
+
+#footer {}
+#footer-message {}
+
+#footer a, 
+#footer-message a {}
+
+
+/**********************************************************
+ *                 RSS Feed Icon
+ **********************************************************/
+.feed-icon {}
+.feed-icon img {
+  padding:0 0.5em;
+}
+#footer-message a.feed-icon {}
+
+
+
+
+

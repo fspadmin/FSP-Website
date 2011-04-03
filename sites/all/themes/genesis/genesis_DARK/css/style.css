@@ -1,0 +1,154 @@
+/* $Id: style.css,v 1.1.2.6 2009/06/12 15:44:25 jmburnz Exp $ */
+
+/**
+ * @file style.css
+ *
+ * Use this file to override the Genesis core modular styles 
+ * (such as the HTML elements in typography.css), module CSS 
+ * and other Drupal styles. Anything that doesn't fit logically
+ * into page.css, nodes.css, blocks.css or comments.css can go here.
+ */
+
+/**********************************************************
+ *                    Body
+ **********************************************************/
+body {
+  background: #292929;
+  color: #FFF;
+  font-family: Verdana, Geneva, "DejaVu Sans", sans-serif;
+}
+
+
+/**********************************************************
+ *                 HTML Elements
+ **********************************************************/
+
+h1 {}
+h2 {}
+h3 {}
+h4 {}
+h5 {}
+h6 {}
+
+p {}
+
+strong {}
+em, dfn {}
+dfn {}
+
+sup, sub {}
+
+del {}
+ins {}
+
+blockquote {}
+cite {}
+q {}
+
+address {}
+
+ul {}
+ol {}
+li {}
+
+dl {}
+dd {}
+dt {}
+
+
+abbr {}
+acronym {}
+
+pre, code, tt {}
+p code {}
+samp {}
+kbd {}
+var {}
+
+
+/**********************************************************
+ *                 Global Link Styles
+ **********************************************************/
+a {
+  margin: 0; 
+  padding: 0;
+}
+
+a:link    {color: #027AC6;}
+a:visited {color: #027AC6;}
+a:hover   {color: yellow;}
+a:active  {}
+a.active  {}
+
+/* Set global a:focus styles. */
+a:focus {
+  color: yellow;
+  border: 0;
+}
+
+/* Drupal sets this to black. */
+li a.active {
+  color: yellow;
+  text-decoration: underline;
+}
+
+/* Remove borders on linked images. */
+a img {
+  border: none;
+}
+
+/* Protect admin section link readability. 
+   Warning: this will override many other admin message
+   link styles, use with caution. */
+.section-admin #content a:link,
+.section-admin #content a:visited {}
+.section-admin #content a:hover,
+.section-admin #content a:active,
+.section-admin #content a.active  {}
+
+
+/**********************************************************
+ *                 Accessibility Classes
+ **********************************************************/
+
+/* Hide content without positioning issues. */
+.invisible {
+  height: 0;
+  overflow: hidden;
+}
+
+/* Move content off screen where appropriate. */
+.offscreen {
+  position: absolute;
+  left: -999em;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Completely remove content for all users.
+   DO NOT use this for Skip links, display:none 
+   hides content from screen readers! */
+.remove {
+  display: none;
+}
+
+
+/**********************************************************
+ *                 Custom Styles
+ **********************************************************/
+/**
+ * Here you can add custom stles for your theme that do not fit
+ * into one if the modular stylesheets (such as the nodes, blocks,
+ * page and comments stylesheets).
+ */
+	
+	
+	
+	
+	
+	
+	
+	
+	

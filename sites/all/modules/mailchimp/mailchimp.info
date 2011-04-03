@@ -1,0 +1,11 @@
+; $Id:
+name = Mailchimp
+description = Mailchimp email service integration.
+package = MailChimp
+core = 6.x
+; Information added by drupal.org packaging script on January 1, 1970 - 00:00
+version = "6.x-2.4"
+core = "6.x"
+project = "mailchimp"
+datestamp = "1295912842"
+

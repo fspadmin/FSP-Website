@@ -1,0 +1,131 @@
+; $Id: genesis_SUBTHEME.info,v 1.7.2.13 2009/06/12 15:44:26 jmburnz Exp $
+
+
+;----------// Theme Information
+
+ ; Change the name to match your new subthemes name. Modify the optional description.
+
+  name        = Genesis SUBTHEME
+  description = My Kickn' Sub-theme
+
+
+
+;----------// Required Theme Information
+
+  ; Do not change core, engine or base theme - these are required.
+
+  core         = 6.x
+  engine       = phptemplate
+  screenshot   = images/screenshot_subtheme.png
+  base theme   = genesis
+
+
+
+;----------// Modular Stylesheets
+
+  ; block, comment, node, page and style CSS.
+
+  stylesheets[all][] = css/blocks.css
+  stylesheets[all][] = css/comments.css
+  stylesheets[all][] = css/nodes.css
+  stylesheets[all][] = css/page.css
+  stylesheets[all][] = css/style.css
+
+
+
+;----------// IE Max 30 Stylesheet Workaround
+
+  ; To work-around IE's max 30 linked stylesheets issue comment out
+  ; the Modular Stylesheets (above) and uncomment the following.
+
+  ;stylesheets[all][] = css/_all-subtheme.css
+
+  ; Optionally use the CSSTidy compressed version.
+
+  ;stylesheets[all][] = css/_all-subtheme-tidy.css
+
+
+
+;----------// IE Conditional Stylesheets
+
+  ; Support for the Conditional Styles module. This module allows themes 
+  ; to specify conditional stylesheets in their .info file and the conditional 
+  ; comments will be automatically included at the end of the standard $styles 
+  ; variable. http://drupal.org/project/conditional_styles
+  ;
+  ; Note: You do not need to install the module, it is now included in Genesis.
+
+  ; Example only: see the README in the Conditional Styles module
+  ;conditional-stylesheets[if lte IE 7][all][] = css/ie/ie-example.css
+
+
+
+;----------// Regions
+
+  ; You can define new regions here.
+
+  regions[leaderboard]        = Leaderboard
+  regions[header]             = Header Blocks
+  regions[secondary_content]  = Secondary Content
+  regions[content_top]        = Content top
+  regions[content]            = Main Content
+  regions[content_bottom]     = Content bottom
+  regions[tertiary_content]   = Tertiary Content
+  regions[left]               = Sidebar Left
+  regions[right]              = Sidebar Right
+  regions[footer]             = Footer
+
+
+  ; Gpanel Regions - use in conjunction with the Gpanel snippets.
+  ; See /genesis/genesis/gpanels and the README in that folder.
+  ; Uncomment the required regions.
+
+  ; 2 col Gpanel
+  ;regions[two_col_first]     = 2col Gpanel col 1
+  ;regions[two_col_second]    = 2col Gpanel col 2
+
+  ; 2 col, 2 col Nested Gpanel
+  ;regions[two_col_nested_first]  = 2col Nested Gpanel col 1
+  ;regions[two_col_nested_second] = 2col Nested Gpanel col 2
+
+  ; 3 col Gpanel
+  ;regions[three_col_first]   = 3col Gpanel col 1
+  ;regions[three_col_second]  = 3col Gpanel col 2
+  ;regions[three_col_third]   = 3col Gpanel col 3
+
+  ; 4 col Gpanel
+  ;regions[four_col_first]    = 4col Gpanel col 1
+  ;regions[four_col_second]   = 4col Gpanel col 2
+  ;regions[four_col_third]    = 4col Gpanel col 3
+  ;regions[four_col_fourth]   = 4col Gpanel col 4
+
+		
+
+;----------// Features
+
+  ; The "features" control which of these check boxes display on the
+  ; admin/build/themes configuration page. This is useful for 
+  ; suppressing check boxes for elements not used by your theme.
+
+  features[] = logo
+  features[] = name
+  features[] = slogan
+  features[] = mission
+  features[] = node_user_picture
+  features[] = comment_user_picture
+  features[] = search
+  features[] = favicon
+  features[] = primary_links
+  features[] = secondary_links
+
+
+
+
+
+
+; Information added by drupal.org packaging script on 2009-06-12
+version = "6.x-2.4"
+core = "6.x"
+project = "genesis"
+datestamp = "1244821869"
+

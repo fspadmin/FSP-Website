@@ -1,0 +1,192 @@
+/* $Id: messages.css,v 1.1.2.11 2009/06/12 15:44:25 jmburnz Exp $ */
+
+/**
+ * @file messages.css
+ * Basic styles for messages.
+ */
+
+/*********************************************************
+*                   Messages
+**********************************************************/
+/**
+ * @see messages.css
+ * Basic styles for messages.
+ */
+
+.description {
+  color: #555;
+}
+
+div.messages {
+  font-weight: normal; 
+  margin: 1em 0; 
+}
+
+div.messages ul {
+  margin: 0 0 0 1.25em;
+}
+
+div.error {
+  background: #FFEFF3 url(../images/error.png) no-repeat 0.5em 0.45em;
+  border: 1px solid #E41F0B;
+  color: #E41F0B;
+}
+
+tr.error {
+  background: #FFEFF3;
+  color: #E41F0B;
+}
+
+div.notice  {
+  background: #FFF6BF; 
+  border-color: #FFD324;
+  color: #514721;
+}
+
+.error a, .notice a, .success a {
+  text-decoration: underline;
+}
+
+div.status  {
+  background: #F1FFCF url(../images/ok.png) no-repeat 0.75em 0.6em;
+  border: 1px solid #4DA449;
+  color: #2A6827;
+}
+
+div.help {
+  background: #EFF0FF url(../images/info.png) no-repeat 0.5em 0.45em;
+  border: 1px solid #66BEF4;
+  margin: 1em 0;
+  color: #000D2F;
+}
+
+div.warning {
+  background: #FFF6DF url(../images/warning.png) no-repeat 0.5em 0.45em;
+  border: 1px solid #FFB900;
+  color: #9F3800;
+}
+
+div.messages, 
+div.warning,
+div.help,
+div.status,
+div.error {
+  padding: 0.6em 1em 0.6em 3em;
+}
+
+div.help code,
+div.messages code {
+  font-weight: bold;
+}
+
+table tr.warning {
+  background-color: #F7E8C5;
+}
+
+table tr.warning td {
+  color: #F7E8C5;
+}
+
+table tr.warning.merge-up td {
+  color: #514721;
+}
+
+div.error, 
+tr.error, 
+span.form-required, 
+span.marker {}
+
+.ok {}
+div.ok {}
+
+div.ok, tr.ok,
+table tr.ok td {
+  color: #222;
+  padding: 1em 0.5em;
+}
+
+.update tr.ok {
+background: #E8F7C5;
+}
+
+.update tr.error {
+  background: #FFD0DC;
+}
+
+.update tr.warning {
+  background: #F7E8C5;
+}
+
+.update .info {
+  padding:0 0 0 1em;
+}
+
+.update tr.error .version-recommended {
+  background: #FFEFF4;
+}
+
+.includes {
+  color: #222;
+}
+.includes em {}
+
+.merge-down {}
+.merge-up {}
+
+/* CSS3 */
+div.help p:last-child,
+div.help ul:last-child {
+  margin-bottom: 0;
+}  
+
+.form-item input.error,
+.form-item textarea.error,
+.form-item select.error {
+  border: 2px solid #E41F0B;
+}
+
+.form-item strong.error em { 
+  font-weight: bold; 
+  color: #E41F0B; 
+  font-size: 1.2em;
+}
+
+.block-region {
+  border: 1px dotted #000;
+  color: #000;
+  font: 1em "Lucida Console", Monaco, "DejaVu Sans Mono", monospace;
+  padding: 3px 6px 1px
+}
+
+/* Highlight unpublished nodes and comments*/
+.node-unpublished,
+.comment-unpublished {
+  background-color: #FFF6DF;
+}
+
+.unpublished {
+  visibility: hidden;
+}
+
+.node-unpublished .unpublished,
+.comment-unpublished .unpublished {
+  background: transparent url(../images/warning-small.png) no-repeat 0 0.1em;
+  color: #FFB900;
+  font-size: 0.94em;
+  margin-left: 0.5em; /* LTR */
+  padding-left: 18px; /* LTR */
+  visibility: visible;
+}
+
+/**
+ * Module page specific styles.
+ */
+.admin-dependencies, 
+.admin-required,
+.admin-enabled,
+.admin-disabled,
+.admin-missing {
+  font-weight: bold;
+}
+
+

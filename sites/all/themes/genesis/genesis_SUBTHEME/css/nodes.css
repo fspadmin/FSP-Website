@@ -1,0 +1,149 @@
+/* $Id: nodes.css,v 1.1.2.13 2009/06/05 17:49:59 jmburnz Exp $ */
+
+/**
+ * @file nodes.css
+ * Basic styles for nodes.
+ */
+
+/**********************************************************
+ *                      Nodes
+ **********************************************************/
+.node {
+  margin: 0 0 1.5em;
+}
+
+/* Inner wrapper div for nodes. */
+.node-inner {}
+
+/* Node title on teasers and other lists. */
+.node-title {}
+
+.node-title a:link,
+.node-title a:visited,
+.node-title a:active {
+  text-decoration: none;
+}
+
+.node-title a:hover {
+  text-decoration: underline;
+}
+
+/* Node content wrapper. */
+.node-content {}
+
+/* User Picture. */
+.node .user-picture {}
+.node .user-picture img {}
+
+/* Submitted */
+.node-submitted {}
+.node-submitted a {}
+.node-submitted a:hover {}
+
+/* Common links classes. */
+.node ul.links {}
+.node ul.links li {
+  padding: 0 1em 0 0;
+}
+.node ul.links li a {}
+
+/* Links. */
+.node-links {}
+.node-links ul.links {}
+.node-links ul.links li  {}
+.node-links ul.links li a {}
+
+/* Taxonomy terms. */
+.node-terms {}
+.node-terms ul.tags {}
+.node-terms ul.tags li {}
+.node-terms ul.tags li a {}
+
+/* Style module links. */
+ul.links li.node_read_more a {}
+ul.links li.comment_add a {}
+ul.links li.comment_comments a {}
+ul.links li.comment_new_comments a {}
+ul.links li.blog_usernames_blog a {}
+
+/* Node ul link first and last classes. */
+.node ul.links li.first {}
+.node ul.links li.last  {}
+
+/* Node classes for node workflow states. */
+.node-add    {}
+.node-edit   {}
+.node-delete {}
+.node-preview  {}
+.node-sticky   {}
+.node-promoted {}
+
+/* Node status. */
+.node-unpublished {}
+
+/* Theme the node teaser seperatly. */
+.node-teaser {}
+
+
+/**********************************************************
+ *                   Core node types
+ **********************************************************/
+.node-blog  {}
+.node-page  {}
+.node-story {}
+.node-forum {}
+.node-book  {}
+.node-poll  {}
+
+
+/**********************************************************
+ *                 Custom node types
+ **********************************************************/
+/** 
+ * Replace CONTENT_TYPE with the content type 
+ * machine-readable name. 
+ */
+.node-type-CONTENT_TYPE {}
+
+
+/**********************************************************
+ *                    CCK Fields
+ **********************************************************/
+/* Wrapper for any CCK field. */
+.field {}
+
+/* Use "datetime" when creating new CCK date fields. */
+.field-type-datetime {}
+
+/* Filefield field. */
+.field-type-filefield {}
+
+/* Imagefield field. */
+.field-type-image {}
+
+/* Node reference field. */
+.field-type-nodereference {}
+
+/* User reference field. */
+.field-type-userreference {}
+
+/* Number fields. */
+.field-type-number-decimal {}
+.field-type-number-float   {}
+.field-type-number-integer {}
+
+/* Text field. */
+.field-type-text {}
+
+/**
+ * Specific field names.
+ */
+/* Underscores in field name are replaced with dashes. */
+.field-field-FIELDNAME {}
+
+
+
+
+
+
+

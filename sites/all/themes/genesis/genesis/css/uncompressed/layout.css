@@ -1,0 +1,382 @@
+/* $Id: layout.css,v 1.1.2.2 2009/05/22 08:46:11 jmburnz Exp $ */
+
+/**
+ * Genesis layout methods
+ * 
+ * @file      layout.css
+ * @project   http://drupal.org/projects/genesis
+ * @author    Jeff Burnz
+ */
+	
+/*********************************************************
+
+* Setting up the Sidebar Layout:
+  
+  In your subthemes page.tpl.php replace the body id="genesis-1b" 
+  with your chosen layout:
+  
+  e.g. id="genesis-2c" (see below for all layout options).
+  
+  
+  There are 3 main sidebar layouts and each has 3 unit variants:
+	
+  i. A layout controls the position of the sidebars:
+  
+     genesis-1  -  Left  |  Content  |  Right  (standard 3 column)
+     genesis-2  -  Content  |  Left  |  Right  (two sidebars on the right)
+     genesis-3  -  Left  |  Right  |  Content  (two sidebars on the left)
+  
+  
+  ii.Each variant uses a different relative unit (em, percentage or pixel):
+  
+     a variants are em's (elastic sidebars)
+     b variants are percentages (fluid sidebars)
+     c variants are pixels (fixed width sidebars)
+     
+
+  All layout variations:
+  
+  genesis-1a  -  Left (20em)  |  Content  |  Right (20em)
+  genesis-1b  -  Left (25%)   |  Content  |  Right (25%)
+  genesis-1c  -  Left (240px) |  Content  |  Right (240px)
+		
+  genesis-2a  -  Content  |  Left (20em)  |  Right (20em)
+  genesis-2b  -  Content  |  Left (25%)   |  Right (25%)
+  genesis-2c  -  Content  |  Left (240px) |  Right (240px)
+		
+  genesis-3a  -  Left (20em)  |  Right (20em)  |  Content
+  genesis-3b  -  Left (25%)   |  Right (25%)   |  Content
+  genesis-3c  -  Left (240px) |  Right (240px) |  Content
+
+
+* How to Modify a Layout:
+
+  Copy it to your subthemes page.css file and modify it there.
+  Changing it here will not work since this file is for example 
+  only. By default genesis uses layout-tidy.css which is a 
+  compressed version.
+  
+  Note: examples can be found in the layout-examples.css file.
+
+
+* How to set the Width:
+
+  The overall width is set on the #container div in page.css.
+  See you subthemes page.css, around line 106. All layouts can
+  be elastic, fluid or fixed width.
+	
+
+* Tip:
+
+  If your site uses a page-front.tpl.php or any other page
+  template suggestion your site can have multiple layouts.
+		
+**********************************************************/
+                /*    The Layouts   */
+/*********************************************************
+   
+  Genesis 1
+   
+  The genesis-1 layout is a standard 3 column layout, i.e.
+			
+  Left | Content | Right
+			
+  There are 3 variants that use one of Ems, Percentages or 
+  Pixels to set the widths and margins:
+			
+  #genesis-1a - Ems (elastic sidebars)
+  #genesis-1b - Percentages (fluid sidebars)
+  #genesis-1c - Pixels (fixed sidebars)
+ 
+**********************************************************/
+/**
+ * #genesis-1a
+ * Unit:   em
+ * Layout: Standard 3 col - left/content/right
+ */
+#genesis-1a .two-sidebars  .content-inner {margin      : 0 22em;}
+#genesis-1a .sidebar-left  .content-inner {margin-left :   22em;}
+#genesis-1a .sidebar-right .content-inner {margin-right:   22em;}
+#genesis-1a #sidebar-left  {width: 20em; margin-left: -100%;}
+#genesis-1a #sidebar-right {width: 20em; margin-left: -20em;}
+
+/**
+ * #genesis-1b
+ * Unit:   %
+ * Layout: Standard 3 col - left/content/right
+ */
+#genesis-1b .two-sidebars  .content-inner {margin      : 0 25.25%;}
+#genesis-1b .sidebar-left  .content-inner {margin-left :   25.25%;}
+#genesis-1b .sidebar-right .content-inner {margin-right:   25.25%;}
+#genesis-1b #sidebar-left  {width: 24.25%; margin-left: -100%;}
+#genesis-1b #sidebar-right {width: 24.25%; margin-left: -24.25%;}
+
+/**
+ * #genesis-1c
+ * Unit:   px
+ * Layout: Standard 3 col; left/content/right
+ */
+#genesis-1c .two-sidebars  .content-inner {margin      : 0 260px;}
+#genesis-1c .sidebar-left  .content-inner {margin-left :   260px;}
+#genesis-1c .sidebar-right .content-inner {margin-right:   260px;}
+#genesis-1c #sidebar-left  {width: 240px; margin-left: -100%;}
+#genesis-1c #sidebar-right {width: 240px; margin-left: -240px;}
+
+
+/*********************************************************
+   
+  Genesis 2
+   
+  The genesis-2 layouts postion both sidebars to the right
+  of the main content column, i.e.
+			
+  Content | Left | Right
+			
+  There are 3 variants that use one of Ems, Percentages or 
+  Pixels to set the widths and margins:
+			
+  #genesis-2a - Ems (elastic sidebars)
+  #genesis-2b - Percentages (fluid sidebars)
+  #genesis-2c - Pixels (fixed sidebars)
+ 
+**********************************************************/
+/**
+ * #genesis-2a
+ * Unit:   em
+ * Layout: Both sidebars on the right; content/left/right
+ */
+#genesis-2a .two-sidebars  .content-inner {margin-right: 44em;}
+#genesis-2a .sidebar-left  .content-inner {margin-right: 22em;}
+#genesis-2a .sidebar-right .content-inner {margin-right: 22em;}
+#genesis-2a #sidebar-left  {width: 20em; margin-left: -42em;}
+#genesis-2a #sidebar-right {width: 20em; margin-left: -20em;}
+#genesis-2a .sidebar-left #sidebar-left {width: 20em; margin-left: -20em;}
+
+/**
+ * #genesis-2b
+ * Unit:   %
+ * Layout: Both sidebars on the right; content/left/right
+ */
+#genesis-2b .two-sidebars  .content-inner {margin-right: 50.5%;}
+#genesis-2b .sidebar-left  .content-inner {margin-right: 25.25%;}
+#genesis-2b .sidebar-right .content-inner {margin-right: 25.25%;}
+#genesis-2b #sidebar-left  {width: 24.25%; margin-left: -49.5%;}
+#genesis-2b #sidebar-right {width: 24.25%; margin-left: -24.25%;}
+#genesis-2b .sidebar-left #sidebar-left {width: 24.25%; margin-left: -24.25%;}
+
+/**
+ * #genesis-2c
+ * Unit:   px
+ * Layout: Both sidebars on the right; content/left/right
+ */
+#genesis-2c .two-sidebars  .content-inner {margin-right: 520px;}
+#genesis-2c .sidebar-left  .content-inner {margin-right: 260px;}
+#genesis-2c .sidebar-right .content-inner {margin-right: 260px;}
+#genesis-2c #sidebar-left  {width: 240px; margin-left: -500px;}
+#genesis-2c #sidebar-right {width: 240px; margin-left: -240px;}
+#genesis-2c .sidebar-left #sidebar-left {width: 240px; margin-left: -240px;}
+
+
+/*********************************************************
+   
+  Genesis 3
+   
+  The genesis-3 layouts postion both sidebars to the left
+  of the main content column, i.e.
+			
+  Left | Right | Content
+			
+  There are 3 variants that use one of Ems, Percentages or 
+  Pixels to set the widths and margins:
+			
+  #genesis-3a - Ems (elastic sidebars)
+  #genesis-3b - Percentages (fluid sidebars)
+  #genesis-3c - Pixels (fixed sidebars)
+ 
+**********************************************************/
+/**
+ * #genesis-3a
+ * Unit:   em
+ * Layout: Both sidebars on the left - left/right/content
+ */
+#genesis-3a .two-sidebars  .content-inner {margin-left: 44em;}
+#genesis-3a .sidebar-left  .content-inner {margin-left: 22em;}
+#genesis-3a .sidebar-right .content-inner {margin-left: 22em;}
+#genesis-3a #sidebar-left  {width: 20em; margin-left: -100%;}
+#genesis-3a #sidebar-right {width: 20em; margin-left: -100%;}
+/* Use position: relative to push the sidebar back into position */
+#genesis-3a .two-sidebars #sidebar-right {width: 20em; position: relative; left: 22em;}
+
+/**
+ * #genesis-3b
+ * Unit:   %
+ * Layout: Both sidebars on the left - left/right/content
+ */
+#genesis-3b .two-sidebars  .content-inner {margin-left: 50.5%;}
+#genesis-3b .sidebar-left  .content-inner {margin-left: 25.25%;}
+#genesis-3b .sidebar-right .content-inner {margin-left: 25.25%;}
+#genesis-3b #sidebar-left  {width: 24.25%; margin-left: -100%;}
+#genesis-3b #sidebar-right {width: 24.25%; margin-left: -100%;}
+/* Use position: relative to push the sidebar back into position */
+#genesis-3b .two-sidebars #sidebar-right {width: 24.25%; position: relative; left: 25.25%;}
+
+/**
+ * #genesis-3c
+ * Unit:   px
+ * Layout: Both sidebars on the left - left/right/content
+ */
+#genesis-3c .two-sidebars  .content-inner {margin-left: 520px;}
+#genesis-3c .sidebar-left  .content-inner {margin-left: 260px;}
+#genesis-3c .sidebar-right .content-inner {margin-left: 260px;}
+#genesis-3c #sidebar-left  {width: 240px; margin-left: -100%;}
+#genesis-3c #sidebar-right {width: 240px; margin-left: -100%;}
+/* Use position: relative to push the sidebar back into position */
+#genesis-3c .two-sidebars #sidebar-right {width: 240px; position: relative; left: 260px;}
+
+
+/*********************************************************
+   
+  Genesis 4 - The Golden Rule
+   
+  The genesis-4 layout is two column only. This layout is 
+  commonly known as the Golden Rule Layout (1:1.618).
+			
+  Content | Left or Right (one only)
+			
+  There is only one variant:
+			
+  #genesis-4 - Percentages (fluid)
+ 
+**********************************************************/
+/**
+ * #genesis-4
+ * Unit:   %
+ * Layout: Two column (one sidebar) content/left or right
+ */
+#genesis-4 .two-sidebars  .content-inner {margin-right: 40%;}
+#genesis-4 .sidebar-left  .content-inner {margin-right: 40%;}
+#genesis-4 .sidebar-right .content-inner {margin-right: 40%;}
+#genesis-4 #sidebar-left  {width: 37%; margin-left: -37%;}
+#genesis-4 #sidebar-right {width: 37%; margin-left: -37%;}
+#genesis-4 .sidebar-left #sidebar-left {width: 37%; margin-left: -37%;}
+
+
+
+/*********************************************************
+*                       GPanels
+*          Multi-column, fluid grid micro panels.
+**********************************************************/
+/**
+ * GPanels are drop in multi-column snippets for displaying
+ * blocks in vertical columns, such as 2 columns, 3 columns 
+ * or 4 columns.
+ *
+ * The snippets are in the /genesis/genesis/gpanels folder. 
+ *
+ * Paste the PHP snippets directly into your page.tpl.php. 
+ * See page-gpanel_examples.tpl.php in the gpanels folder.
+ */
+
+.gpanel {
+  clear: both;
+  margin: 0.75em 0;
+}
+
+.gpanel .region {
+  display: inline;
+  position: relative;
+}
+
+/* Two Col 50 */
+.two-col-50 .region {width: 49.5%;}
+.two-col-50 .col-1  {float: left;}
+.two-col-50 .col-2  {float: right;}
+
+/* Two Col 50 Nested */
+.two-col-50 .gpanel {margin: 0;}
+#two-col-50-nested .col-2 {width: 48.5%;}
+.col-1 #two-col-50-nested .region,
+.col-2 #two-col-50-nested .col-2 {width: 49%;}
+
+/* Three Col 33 */
+.three-col-33 .region {float: left; width: 32%;}
+.three-col-33 .col-2  {right: -1%; width: 34%;}
+.three-col-33 .col-3  {right: -2%;}
+
+/* Four Col 25 */
+.four-col-25 .section-1 {float: left; width: 49.5%;}
+.four-col-25 .section-2 {float: right; width: 49.5%;}
+.four-col-25 .col-1,
+.four-col-25 .col-3 {float: left; width: 49%;}
+.four-col-25 .col-2,
+.four-col-25 .col-4 {float: right; width: 49%;}
+
+/* Column margins */
+.gpanel .region .inner { 
+  margin: 0;
+}
+.gpanel .last .inner { 
+  margin-right: 0;
+}
+
+/* Debug background colors 
+.gpanel .region {background: #ddd;}
+.with-nested .col-1 {background: #fff;}
+.with-nested #two-col-50-nested .region {background: #ddd;}
+*/
+
+/*********************************************************
+*            Helper classes for all layouts
+**********************************************************/
+/* Automatic centering for widths less than 100%. */
+#container {
+  margin: 0 auto;
+  position: relative; /* Trigger hasLayout. */
+} 
+
+/* Trigger hasLayout. */
+#columns {
+  display: inline-block;
+  margin-bottom: 1em;
+}
+/* Reset for compliant browsers. */
+#container > #columns {
+  display: block;
+}
+
+/* Float the columns. */
+#content-column,
+#sidebar-left,
+#sidebar-right {
+  float: left;
+}
+
+/* Set a width on main content column. */
+#content-column {
+  width: 100%;
+  margin-bottom: 1em;
+}
+
+/* Helper class for clearing both. */
+.clear,
+#nav,
+#columns,
+#breadcrumb,
+#content-bottom,
+#secondary-content,
+#tertiary-content,
+#footer-wrapper,
+#footer,
+#footer-message {
+  clear: both;
+}
+
+.hide {
+  height: 0; 
+		overflow: hidden;
+}
+
+/* sidebar dev background colors 
+#sidebar-left  {background: #CCC;}
+#sidebar-right {background: #CCC;}
+*/

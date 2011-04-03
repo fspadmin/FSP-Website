@@ -1,0 +1,11 @@
+; $Id: ie6nomore.info,v 1.1 2010/02/01 09:56:07 jonathanhunt Exp $
+name = "IE6 No more"
+description = "Adds a banner prompting IE6 users to upgrade to a better browser."
+package = "Other"
+core = 6.x
+; Information added by drupal.org packaging script on 2010-12-10
+version = "6.x-1.0-beta2"
+core = "6.x"
+project = "ie6nomore"
+datestamp = "1292008589"
+
