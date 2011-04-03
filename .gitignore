@@ -3,4 +3,5 @@
 /multimedia/banners/*
 /multimedia/images/*
 /multimedia/pdf/*
-/sites/porcfest.com/files/*
+/sites/*/files/*
+/sites/*/settings.php
