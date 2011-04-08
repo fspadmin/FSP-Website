@@ -1,0 +1,69 @@
+/* $Id: cd_regions.css,v 1.1.2.3 2010/05/31 12:17:18 swentel Exp $ */
+
+.cd-region-header {
+  clear: both;
+}
+
+.cd-region-left {
+  display: inline;
+  float: left;
+}
+
+.cd-region-middle-wrapper {
+  display: inline;
+  float: left;
+  width: 100%;
+  margin-right: -100%;
+}
+
+.cd-region-right {
+  display: inline;
+  float: right;
+}
+
+.cd-region-footer {
+  clear: both;
+}
+
+/* default region dimensions */
+
+.cd-region-left {
+  width: 25%;
+}
+
+.cd-region-right {
+  width: 25%;
+}
+
+/* middle region */
+
+.cd-no-sidebars .cd-region-middle {
+}
+
+.cd-sidebar-left .cd-region-middle {
+  margin-left: 25%;
+}
+
+.cd-sidebar-right .cd-region-middle {
+  margin-right: 25%;
+}
+
+.cd-two-sidebars .cd-region-middle {
+  margin-left: 25%;
+  margin-right: 25%;
+}
+
+/* Fix for IE */
+.cd-no-sidebars {
+  display:block;
+  float:none;
+  margin-right:0;
+  width:auto;
+}
+
+.cd-sidebar-right {
+  *display: inline;
+  *float: right;
+  *width: 100%;
+  *margin-left: -100%;
+}

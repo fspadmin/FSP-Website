@@ -1,0 +1,660 @@
+<?php
+// $Id: ud.module,v 1.1.2.38 2010/12/15 22:00:48 swentel Exp $
+
+/**
+ * @file
+ * User displays module.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function ud_menu() {
+  $items = array();
+
+  if (module_exists('ds_ui') && module_exists('search')) {
+    $items['admin/build/ds/ud/ud_search'] = array(
+      'title' => 'Search',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('ud_search_settings'),
+      'access arguments' => array('administer ud'),
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 10,
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Menu callback: ND search settings.
+ */
+function ud_search_settings() {
+  $form = array();
+
+  $form['ud_override_search_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Override user search page'),
+    '#description' => t('Toggle this checkbox if you want to display the result of user search with the display suite. If you have ND search enabled, make sure you do not deny access to the user tab page.'),
+    '#default_value' => variable_get('ud_override_search_page', FALSE),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implementation of hook_ds_api().
+ */
+function ud_ds_api() {
+  return array(
+    'title' => 'User displays',
+    'module' => 'ud',
+    'object' => 'user',
+    'views_base' => array('users'),
+    'types' => 'ud_get_types',
+    'help' => array(0 => '
+      <p>User displays comes default with 2 build modes: the full and a block. The module also enables a block which shows the profile of the current logged in user. If you have User reference enabled, additional formatters will be available to render that user field.</p>
+      <p>This module comes with a ud.tpl.php template file, available in the templates folder, which is optimized for use with User Displays. You can copy the file to your themes folder to use your own version if you want. Copying the file to your theme folder will only work if user_profile.tpl.php is in the theme folder.</p>
+      <p>This module exposes an object called <strong>ds_profile</strong> - make sure you don\'t have another object (say a content type) with the same name. If you happen to use a module which makes a node from a user profile, you can probably disable User displays completely.</p>
+    ')
+  );
+}
+
+/**
+ * Return user types.
+ */
+function ud_get_types() {
+  $types = array();
+  $profile = new stdClass();
+  $profile->name = 'User';
+  $profile->type = 'ds_profile';
+  $types['profile'] = $profile;
+  return $types;
+}
+
+/**
+ * Implementation of hook_content_build_modes().
+ */
+function ud_content_build_modes() {
+  $build_modes = array(
+    'ud' => array(
+      'title' => t('User displays'),
+      'build modes' => array(
+        'full' => array(
+          'title' => t('Full profile'),
+          'module' => 'ud',
+          'weight' => -1,
+        ),
+        'block' => array(
+          'title' => t('Block'),
+          'module' => 'ud',
+          'weight' => 1,
+        ),
+      )
+    ),
+  );
+
+  if (module_exists('search')) {
+    $build_modes['ud']['build modes']['search'] = array(
+      'title' => t('Search'),
+      'module' => 'ud',
+      'weight' => 2,
+    );
+  }
+
+  return $build_modes;
+}
+
+/**
+ * Implementation of hook_registry_alter().
+ */
+function ud_theme_registry_alter(&$registry) {
+  $path = drupal_get_path('module', 'ud') .'/templates';
+  array_unshift($registry['user_profile']['theme paths'], $path);
+}
+
+/**
+ * Implementation of hook_ds_fields().
+ */
+function ud_ds_fields($type_name, $build_mode, $extra) {
+
+  $fields = array(
+    'name' => array(
+      'title' => 'Username',
+      'type' => DS_FIELD_TYPE_THEME,
+      'status' => DS_FIELD_STATUS_STATIC,
+      'properties' => array(
+        'formatters' => array(
+          'ud_title_h1_nolink' => t('H1 title'),
+          'ud_title_h1_link' => t('H1 title, linked to user'),
+          'ud_title_h2_nolink' => t('H2 title'),
+          'ud_title_h2_link' => t('H2 title, linked to user'),
+          'ud_title_h2_block_nolink' => t('H2 block title'),
+          'ud_title_h2_block_link' => t('H2 block title, linked to user'),
+          'ud_title_p_nolink' => t('Paragraph title'),
+          'ud_title_p_link' => t('Paragraph title, linked to user'),
+          'ud_title_text' => t('Plain text'),
+          'ud_title_text_linked' => t('Plain text, linked to user'),
+        ),
+      )
+    ),
+    'mail' => array(
+      'title' => 'E-mail',
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'created' => array(
+      'title' => 'Member for',
+      'type' => DS_FIELD_TYPE_THEME,
+      'status' => DS_FIELD_STATUS_STATIC,
+      'properties' => array(
+        'formatters' => array(
+          'ud_user_created' => t('Default'),
+        ),
+      ),
+    ),
+  );
+
+  // User signature.
+  if (variable_get('user_signatures', 0)) {
+    $fields['signature'] = array(
+      'title' => 'Signature',
+      'type' => DS_FIELD_TYPE_THEME,
+      'status' => DS_FIELD_STATUS_STATIC,
+      'properties' => array(
+        'formatters' => array(
+          'ud_user_signature' => t('Default'),
+          'ud_user_signature_text' => t('Text only'),
+        ),
+      ),
+    );
+  }
+
+  // User picture.
+  if (variable_get('user_pictures', 0)) {
+    $fields['picture'] = array(
+      'title' => 'Picture',
+      'type' => DS_FIELD_TYPE_THEME,
+      'status' => DS_FIELD_STATUS_STATIC,
+      'properties' => array(
+        'formatters' => array(
+          'ud_user_picture' => t('Picture'),
+          'ud_user_picture_linked' => t('Picture linked to profile')
+        ),
+      ),
+    );
+
+    // Add imagecache presets to user picture.
+    if (module_exists('imagecache')) {
+      foreach (imagecache_presets() as $preset) {
+        $fields['picture']['properties']['formatters'][$preset['presetname'] .'_default'] = $preset['presetname'];
+        $fields['picture']['properties']['formatters'][$preset['presetname'] .'_linked'] = $preset['presetname'] .' linked to user';
+      }
+    }
+  }
+
+  // Profile support.
+  if (module_exists('profile')) {
+    $fieldgroups = array('ds_summary' => 'Summary');
+    $result = db_query('SELECT title, name, type, category, fid, weight FROM {profile_fields} ORDER BY category, weight');
+    while ($row = db_fetch_object($result)) {
+      $key = str_replace(' ', '_', $row->category);
+      $fieldgroups[$key] = $row->category;
+
+      $fields[$row->name] = array(
+        'title' => $row->title,
+        'type' => DS_FIELD_TYPE_THEME,
+        'status' => DS_FIELD_STATUS_STATIC,
+        'properties' => array(
+          'formatters' => array(
+            'ud_profile_field' => t('Default'),
+            'ud_profile_field_urlfilter' => t('URL filter'),
+          ),
+          'category' => $row->category,
+        ),
+      );
+    }
+
+    // Take category.
+    foreach ($fieldgroups as $key => $group) {
+      $fields[$key] = array(
+        'title' => $group,
+        'type' => DS_FIELD_TYPE_GROUP,
+        'status' => DS_FIELD_STATUS_STATIC,
+        'properties' => array(
+          'formatters' => array(
+            'ds_field' => 'A simple div',
+            'ds_group_fieldset_open' => 'Fieldset open',
+            'ds_group_fieldset_collapsible' => 'Fieldset collapsible',
+            'ds_group_fieldset_collapsed' => 'Fieldset collapsed',
+          ),
+        ),
+      );
+
+      // Tabs support.
+      if (module_exists('tabs')) {
+        $fields[$key]['properties']['formatters']['ds_tabs'] = 'Tabs';
+      }
+    }
+  }
+
+  return array('ud' => $fields);
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function ud_init() {
+  drupal_add_css(drupal_get_path('module', 'ud') .'/css/ud_regions.css');
+}
+
+/**
+ * Implementation of hook_theme().
+ *
+ */
+function ud_theme() {
+  $theme_functions = array();
+
+  // User name.
+  $formatters = array(
+    'ud_title_h1_nolink', 'ud_title_h1_link', 'ud_title_h2_nolink', 'ud_title_h2_link',
+    'ud_title_h2_block_nolink', 'ud_title_h2_block_link', 'ud_title_p_nolink', 'ud_title_p_link',
+    'ud_title_text','ud_title_text_linked',
+  );
+
+  foreach ($formatters as $formatter) {
+    $theme_functions[$formatter] = array(
+      'arguments' => array('field' => NULL),
+    );
+  }
+
+  // Signatures.
+  $theme_functions['ud_user_signature'] = array(
+    'arguments' => array('field' => NULL),
+  );
+  $theme_functions['ud_user_signature_text'] = array(
+    'arguments' => array('field' => NULL),
+  );
+
+  // User picture.
+  $theme_functions['ud_user_picture'] = array(
+    'arguments' => array('field' => NULL),
+  );
+  $theme_functions['ud_user_picture_linked'] = array(
+    'arguments' => array('field' => NULL),
+  );
+
+  if (module_exists('imagecache')) {
+    foreach (imagecache_presets() as $preset) {
+      $theme_functions[$preset['presetname'] .'_default'] = array(
+        'arguments' => array('field' => NULL),
+        'function' => 'theme_ud_imagecache_picture',
+      );
+      $theme_functions[$preset['presetname'] .'_linked'] = array(
+        'arguments' => array('field' => NULL),
+        'function' => 'theme_ud_imagecache_picture',
+      );
+    }
+  }
+
+  // Created
+  $theme_functions['ud_user_created'] = array(
+    'arguments' => array('field' => NULL),
+  );
+
+  // Theming functions for core profile field.
+  if (module_exists('profile')) {
+    $theme_functions['ud_profile_field'] = array(
+      'arguments' => array('field' => NULL),
+    );
+    $theme_functions['ud_profile_field_urlfilter'] = array(
+      'arguments' => array('field' => NULL),
+    );
+  }
+
+  // Adds theming functions for user reference and user displays.
+  if (module_exists('userreference')) {
+    $build_modes = ds_get_build_modes('ud');
+    foreach ($build_modes as $key => $build_mode) {
+      $theme_functions['ud_formatter_user_'. $key] = array(
+        'arguments' => array('element'),
+        'function' => 'theme_ud_user_formatter',
+      );
+    }
+  }
+
+  return $theme_functions;
+}
+
+/**
+ * Implementation of hook_field_formatter_info().
+ *
+ * Adds extra build modes to formatters of user reference.
+ */
+function ud_field_formatter_info() {
+  $formatters = array();
+
+  if (module_exists('userreference')) {
+    $build_modes = ds_get_build_modes('ud', TRUE);
+    foreach ($build_modes as $key => $build_mode) {
+      $formatters['user_'. $key] = array(
+        'label' => t('Build mode: @build_mode', array('@build_mode' => $build_mode['title'])),
+        'field types' => array('userreference'),
+        'multiple values' => CONTENT_HANDLE_CORE,
+      );
+    }
+  }
+
+  return $formatters;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function ud_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      return array('ud-user-block' => array('info' => t('User displays profile block')));
+      break;
+    case 'view':
+      return ud_user_profile_block();
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_profile_alter().
+ */
+function ud_profile_alter(&$account) {
+
+  // Put on the type and build_mode.
+  $account->type = 'ds_profile';
+  if (!isset($account->build_mode)) {
+    $account->build_mode = 'full';
+  }
+  ds_build_fields_and_regions($account, 'ud');
+}
+
+/**
+ * Implementation of hook_preprocess_user_profile().
+ */
+function ud_preprocess_user_profile(&$variables) {
+
+  $account = $variables['account'];
+  // Break all the rendering if needed.
+  if (!$account->render_by_ds) {
+    return;
+  }
+
+  $variables['template_files'][] = 'ud';
+  $content = ds_render_content($account, 'ud', (array) $account);
+  $variables['user_profile'] = $content;
+}
+
+/**
+ * Render the comment object through the DS views plugin.
+ *
+ * @param array $vars The variables to manipulate.
+ * @param string $build_mode The build mode to use on this object.
+ */
+function ds_views_row_users(&$vars, $build_mode) {
+  $uid = $vars['row']->uid;
+  if (!is_numeric($uid)) {
+    return;
+  }
+
+  if (module_exists('object_cache')) {
+    $account = object_cache_get('user', $uid);
+  }
+  else {
+    $account = user_load($uid);
+  }
+  if (empty($account)) {
+    return;
+  }
+
+  $account->type = 'ds_profile';
+  $account->build_mode = $build_mode;
+  user_build_content($account);
+  $vars['object'] = theme('user_profile', $account);
+}
+
+/**
+ * Block callback: show the user profile.
+ */
+function ud_user_profile_block() {
+
+  global $user;
+  if ($user->uid == 0) {
+    return;
+  }
+
+  $account = user_load($user->uid);
+  if (empty($account)) {
+    return;
+  }
+
+  // Build the content.
+  $account->type = 'ds_profile';
+  $account->build_mode = 'block';
+  user_build_content($account);
+  $content = theme('user_profile', $account);
+
+  $block = array();
+  $block['subject'] = t('User profile');
+  $block['content'] = $content;
+  return $block;
+}
+
+/**
+ * User name theming functions
+ */
+function theme_ud_title_h1_nolink($field) {
+  return '<h1>'. $field['object']->name .'</h1>';
+}
+
+function theme_ud_title_h1_link($field) {
+  return '<h1>'. l($field['object']->name, 'user/'. $field['object']->uid) .'</h1>';
+}
+
+function theme_ud_title_h2_nolink($field) {
+  return '<h2>'. $field['object']->name .'</h2>';
+}
+
+function theme_ud_title_h2_link($field) {
+  return '<h2>'. l($field['object']->name, 'user/'. $field['object']->uid) .'</h2>';
+}
+
+function theme_ud_title_h2_block_nolink($field) {
+  return '<h2 class="block-title">'. $field['object']->name .'</h2>';
+}
+
+function theme_ud_title_h2_block_link($field) {
+  return '<h2 class="block-title">'. l($field['object']->name, 'user/'. $field['object']->uid) .'</h2>';
+}
+
+function theme_ud_title_p_nolink($field) {
+  return '<p>'. $field['object']->name .'</p>';
+}
+
+function theme_ud_title_p_link($field) {
+  return '<p>'. l($field['object']->name, 'user/'. $field['object']->uid) .'</p>';
+}
+
+function theme_ud_title_text($field) {
+  return $field['object']->name;
+}
+
+function theme_ud_title_text_linked($field) {
+  return l($field['object']->name, 'user/'. $field['object']->uid);
+}
+
+/**
+ * Theming function for created field.
+ */
+function theme_ud_user_created($field) {
+  return format_interval(time() - $field['object']->created);
+}
+
+/**
+ * Return the picture.
+ */
+function ud_return_picture($object) {
+  $picture = '';
+  if (!empty($object->picture)) {
+    $picture = $object->picture;
+  }
+  elseif (variable_get('user_picture_default', '')) {
+    $picture = variable_get('user_picture_default', '');
+  }
+  return $picture;
+}
+
+/**
+ * Theming function for user picture, not linked.
+ */
+function theme_ud_user_picture($field) {
+  $picture = ud_return_picture($field['object']);
+  if (!empty($picture)) {
+    $title = t('Picture of !user', array('!user' => $field['object']->name));
+    return theme('image', $picture, $title, $title);
+  }
+}
+
+/**
+ * Theming function for user picture, not linked.
+ */
+function theme_ud_user_picture_linked($field) {
+  $picture = ud_return_picture($field['object']);
+  if (!empty($picture)) {
+    $title = t('Link to profile of !user', array('!user' => $field['object']->name));
+    $image = theme('image', $picture, $title, $title);
+    return l($image, 'user/'. $field['object']->uid, array('html' => TRUE));
+  }
+}
+
+/**
+ * Theming function for user picture with imagecache.
+ */
+function theme_ud_imagecache_picture($field) {
+  $picture = ud_return_picture($field['object']);
+  if (!empty($picture)) {
+    $parts =  explode('_', $field['formatter']);
+    $style = array_pop($parts);
+    $preset = implode('_', $parts);
+    if ($style == 'linked') {
+      $title = t('Link to profile of !user', array('!user' => $field['object']->name));
+      $image = theme('imagecache', $preset, $picture, $title, $title);
+      return l($image, 'user/'. $field['object']->uid, array('html' => TRUE));
+    }
+    else {
+      $title = t('Picture of !user', array('!user' => $field['object']->name));
+      return theme('imagecache', $preset, $picture, $title, $title);
+    }
+  }
+}
+
+/**
+ * Theming function for signature field, ran through default user signature theme function.
+ */
+function theme_ud_user_signature($field) {
+  if (!empty($field['object']->signature)) {
+    $account = $field['object'];
+    $signature = check_markup($account->signature, $account->signature_format, FALSE);
+    return theme('user_signature', $signature);
+  }
+}
+
+/**
+ * Theming function for signature field, only return text.
+ */
+function theme_ud_user_signature_text($field) {
+  if (!empty($field['object']->signature)) {
+    $account = $field['object'];
+    $signature = check_markup($account->signature, $account->signature_format, FALSE);
+    return $signature;
+  }
+}
+
+/**
+ * Theming function for profile field.
+ */
+function theme_ud_profile_field($field) {
+  $key = $field['key'];
+  $account = $field['object'];
+  $profile_category = $field['properties']['category'];
+  if (isset($account->content[$profile_category][$key]['#value'])) {
+    return $account->content[$profile_category][$key]['#value'];
+  }
+}
+
+/**
+ * Theming function for profile field, ran through url filter.
+ */
+function theme_ud_profile_field_urlfilter($field) {
+  $key = $field['key'];
+  $account = $field['object'];
+  $profile_category = $field['properties']['category'];
+  if (isset($account->content[$profile_category][$key]['#value'])) {
+    $content = $account->content[$profile_category][$key]['#value'];
+    return _filter_url($content, 1);
+  }
+}
+
+/**
+ * User reference theme formatter to support User Displays.
+ * Based on theme_userreference_formatter_default.
+ */
+function theme_ud_user_formatter($element) {
+  $output = '';
+  if (isset($element['#item']['uid']) && $account = user_load(array('uid' => $element['#item']['uid']))) {
+    $build_mode = str_replace('user_', '', $element['#formatter']);
+    $account->build_mode = $build_mode;
+    $account->type = 'ds_profile';
+    user_build_content($account);
+    $output = theme('user_profile', $account);
+  }
+  return $output;
+}
+
+/**
+ * Override search results page for users.
+ */
+if (variable_get('ud_override_search_page', FALSE)) {
+  function user_search_page($results) {
+    $output = '';
+    global $base_url;
+
+    foreach ($results as $key => $result) {
+      $uid = FALSE;
+
+      // Try to get the uid from the $result['link'];
+      $path = explode('/', $result['link']);
+      $uid = end($path);
+
+      // Lookup drupal path, we are most likely having an alias.
+      if (!is_numeric($uid)) {
+        $path = str_replace($base_url .'/', '', $result['link']);
+        $alias = drupal_get_normal_path($path);
+        $path = explode('/', $alias);
+        $uid = end($path);
+      }
+
+      if (is_numeric($uid)) {
+        $account = user_load($uid);
+        if ($account->uid) {
+          $account->type = 'ds_profile';
+          $account->build_mode = 'search';
+          user_build_content($account);
+          $output .= theme('user_profile', $account);
+        }
+      }
+    }
+
+    //  Pager.
+    $output .= theme('pager', NULL, 15, 0);
+
+    // Return output.
+    return $output;
+  }
+}

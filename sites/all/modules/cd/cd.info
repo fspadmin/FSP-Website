@@ -1,0 +1,14 @@
+; $Id: cd.info,v 1.1.2.1 2010/04/08 17:14:43 swentel Exp $
+name = "Comment displays"
+description = "Extended comment display options"
+core = "6.x"
+dependencies[] = ds
+dependencies[] = comment
+package = "Display suite"
+
+; Information added by drupal.org packaging script on 2010-12-16
+version = "6.x-1.4"
+core = "6.x"
+project = "cd"
+datestamp = "1292540736"
+
