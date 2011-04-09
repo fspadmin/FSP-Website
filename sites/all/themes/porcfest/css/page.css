@@ -128,6 +128,7 @@ body{
 
 #container {
   width: 996px;     /* Width for IE6 */
+  padding-bottom:100px;
 }
 body > #container {
   width: 996px;      /* Width for all other browsers */
@@ -249,7 +250,8 @@ body > #container {
   width:150px;
   margin:0 0 0 20px;
   }
-  #leaderboard #block-block-5 .block-content a{
+  #leaderboard #block-block-5 .block-content a,
+  #leaderboard ul#utility a{
 	font-family:Impact, Impact5, Charcoal6, sans-serif;
 	color:white;
 	text-shadow: 2px 2px 0px #000;
@@ -260,11 +262,21 @@ body > #container {
     display: inline-block;
     height: 27px;
     padding: 0 10px;
-    width: 150px;
   }
-  #leaderboard #block-block-5 .block-content a:hover{
+  #leaderboard #block-block-5 .block-content a:hover,
+  #leaderboard ul#utility a:hover{
 	background:#cd853f;
 	text-decoration:none;
+  }
+  ul#utility{
+	float:left;
+	margin: 0 0 0 12px;
+    padding: 0;
+  }
+  ul#utility li{
+	display:inline;
+	list-style: none;
+	list-style-image:none;
   }
 /* Header blocks region is embedded in the header, floated
    between the logo/site_name and the search box. */
@@ -350,6 +362,118 @@ body > #container {
   margin: -33px 30px 0;
   font-style:italic;
   text-shadow:1px 1px 1px #fff;
+}
+/**********************************************************
+ *                      Vendor Page
+ **********************************************************/
+.section-vendors #main-content .block-content .view-content .views-row{
+  /*border-bottom:#666 1px solid;*/
+  padding:10px 0;
+  margin:15px 0;
+}
+.section-vendors #main-content .block-content .view-content .views-row-odd{
+  /*background:#edf1f9;*/
+}
+.section-vendors #main-content .block-views{
+  margin:0;
+}
+.section-vendors #main-content .block-content .view-content .views-row .views-field-field-vendor-image-fid{
+  float:left;
+  width:360px;
+  }
+  .section-vendors #main-content .block-content .view-content .views-row .views-field-field-vendor-image-fid img{
+	border:1px solid #ccc;
+	padding:5px;
+	border-radius:5px;
+  }
+.section-vendors #main-content .block-content .view-content .views-row .views-field-field-vendor-business-value{
+  font-size:1.2em;
+  background:#eee;
+  border-top:1px solid #666;
+  /*border-bottom:1px solid #aaa;*/
+  margin:0 0 5px;
+  padding:0 6px;
+  }
+  .section-vendors #main-content .block-content .view-content .views-row .views-field-field-vendor-business-value #persons{
+	font-size:.88em;
+	color:#333;
+  }
+  .section-vendors #main-content .block-content .view-content .views-row .views-field-field-vendor-business-value a{
+	background:url(../images/pop-out-icon.png) no-repeat right 0px;
+	padding:0 28px 0 0;
+  }
+  .section-vendors #main-content .block-content .view-content .views-row .views-field-field-vendor-business-value a:hover{
+	background:#cd853f url(../images/pop-out-icon.png) no-repeat right -19px;
+  }
+.section-vendors #main-content .block-content .view-content .views-row .views-field-field-vendor-description-value{
+  padding-left:380px;
+}
+.section-vendors #main-content .block-content .view-content .views-row .views-field-view-node{  
+  padding-left:380px;
+  }
+  .section-vendors #main-content .block-content .view-content .views-row .views-field-view-node a{
+	border-radius:10px;
+	display:block;
+	margin:10px auto;
+	background:#aaa;
+	padding:5px 10px;
+	color:white;
+  }
+  .section-vendors #main-content .block-content .view-content .views-row .views-field-view-node a:hover{
+	background:#888;
+  }
+
+#block-views-Vendors-block_2 .block-content .view-content .views-row .views-field-field-vendor-description-value{
+  padding-left:0 !important;
+}
+#block-views-Vendors-block_1 .block-content .view-content .views-row{
+  font-size:1.2em;
+  background:#eee;
+  border-top:1px solid #666;
+  /*border-bottom:1px solid #aaa;*/
+  margin:0 0 5px;
+  padding:0 6px;
+}
+/**********************************************************
+ *                      Forum Styling
+ *    (create new style in adv forum module if this gets to be lots of code.)
+ *    its put here for simplicity becuase I only made a few changes. -jacob
+ **********************************************************/
+#forum .forum-table, #forum .forum-topics {
+    border: 1px solid #4c75c9;
+}
+#forum .forum-table th, #forum .forum-topics th, #forum .forum-topics th a, #forum .forum-topics th a:link, #forum .forum-topics th a:hover, #forum .forum-topics th a:visited {
+    background-color: #4c75c9;
+}
+#forum-statistics-header {
+    background-color: #4c75c9;
+}
+.forum-statistics-sub-header {
+    background-color: #cdd9f3;
+}
+#forum-statistics {
+    border: 1px solid #4c75c9;
+}
+.post-info {
+    background: none repeat scroll 0 0 #4c75c9;
+}
+.forum-post-wrapper {
+    background-color: #cdd9f3;
+}
+.forum-post {
+    border: 2px solid #4c75c9;
+}
+.forum-post-links {
+    border-left: 1px solid #4c75c9;
+}
+.forum-post-panel-main {
+    border-left: 1px solid #4c75c9;
+}
+.forum-post-footer {
+    border-top: 1px solid #4c75c9;
+}
+.forum-post-panel-main {
+    min-height: inherit;
 }
 /**********************************************************
  *                      Sidebars

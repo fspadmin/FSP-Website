@@ -111,6 +111,16 @@ $background_data = porcfest_get_random_photo();
         <?php if ($leaderboard): ?>
           <div id="leaderboard" class="section region"><div class="region-inner">
             <?php print $leaderboard; ?>
+            <ul id="utility">
+                <li><a href="/mailchimp/subscribe">Get the Newsletter!</a></li>
+              <?php if (!$logged_in){ ?>
+                <li><a href="/user/register">Create &nbsp;Account</a></li>
+                <li><a href="/user/login#page-title">Login</a></li>
+              <?php } else{ ?>
+                <li><a href="/user#page-title">My &nbsp;Account</a></li>
+                <li><a href="/logout">Logout</a></li>
+              <?php } ?>
+            </ul>
           </div></div> <!-- /leaderboard -->
         <?php endif; ?>
     
@@ -187,6 +197,10 @@ $background_data = porcfest_get_random_photo();
                 <?php endif; ?>
         
                 <div id="main-content">
+                  <?php if($section_class == 'class="section-forum"'){
+                          print $breadcrumb;
+                        }
+                  ?>
                   <?php if ($title): ?><h1 id="page-title"><?php print $title; ?></h1><?php endif; ?>
                   <?php if ($tabs): ?>
                     <div class="local-tasks"><div class="clear-block">

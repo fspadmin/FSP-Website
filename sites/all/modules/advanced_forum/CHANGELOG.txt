@@ -1,0 +1,603 @@
+$Id: CHANGELOG.txt,v 1.3.2.133 2011/01/19 18:04:13 michellec Exp $
+
+****************************** DRUPAL 6 BRANCH ********************************
+
+March 28, 2011 -- 6.x-1.2
+--------------
+#1070792 by Michelle: Fixed notices.
+
+January 19, 2011
+----------------
+#821744 by Michelle: Added all of the images to Boxy and Boxy Stacked since adding the AP images made it no longer default to Naked.
+#821744 by Michelle: More CSS adjustments.
+
+January 17, 2011
+----------------
+#901904 by donquixote: Updated drupal_alter call to pass in new comment parameter added in 6.16.
+#738912 by mr.j: Added variable to hold table sorting in topic list.
+#767742 by miro_dietiker: Removed redundant comment ID from post template.
+#992428 by Michelle: Don't show mark read link on containers.
+#738074 by yaslama: Fixed incorrect forum post counts when using access control modules.
+#787454 by Michelle: Backported fix to new post count when topic is moved to a new forum.
+#821744 by Michelle: Switched to Author Pane 2.x dependency.
+#821744 by Michelle: Fixed goof with template file suggestion that caused it to use old AP template.
+#821744 by Michelle: Fixed a few more style issues.
+
+August 9, 2010
+-------------
+#821744 by Michelle: Initial work on Author Pane 2.x integration. Needs more testing.
+
+July 14, 2010
+-------------
+#714332 by Ddorda: Added Hebrew translation.
+#725720 by ltwinner: Added 'reply button' code to node preprocess.
+#323731 by anrikun: Improved French translation.
+#767638 by miro_dietiker: Added missing t() in post template.
+#728984 by miro_dietiker: Style comment preview.
+#848180 by fuse_64, Michelle: Style new forum node preview.
+
+January 14, 2010
+----------------
+#683688 by apolzon: Fixed typo assignment in place of equality check.
+
+December 13, 2009
+-----------------
+#658788 by ssm2017 Binder: Removed typo.
+
+July 31, 2009
+-------------
+#524592 by Dave Reid: Added email to fake user object sent to Author Pane on comments for anon users.
+
+July 29, 2009
+------------
+#470202 by tom_o_t, merlinofchaos: Fixed small error with mark as read.
+
+July 1, 2009 -- 6.x-1.1
+------------
+Fixes for SA-CONTRIB-2009-040
+
+June 24, 2009
+------------
+#485700 by tjodolv: Changed clear on br to clear-block in legend.
+#490972 by Jessica123: Added buttons for French.
+
+June 23, 2009
+------------
+NOISSUE by Michelle: Fixed all notices except two that need to be fixed in Author Pane.
+
+June 6, 2009
+------------
+#460734 by moviemaniac: added Italian translation.
+#460734 by MGParisi: Minor fix to .pot as well as removing an extra space in a translated string.
+#471510 by wulff: Added Danish translation.
+
+April 4, 2009
+-------------
+#422652 by NeoID: Closed tag on break in advanced_forum-forum-legend.tpl.php
+
+March 31, 2009 -- 6.x-1.0
+--------------
+#419782 by Michelle: Fixed wording on time ago/actual date option as it was backwards.
+
+March 30, 2009
+--------------
+#412906 by Michelle: Fixed typo in the author pane template and cleaned up comments.
+
+March 21, 2009
+--------------
+#402352 by Michelle: Removed logic to print user title image. Variable is still there.
+#408006, #397860 by Michelle: Changed online/offline default to be small icon plus words.
+#365578 by joostvdl: Added ability to have language specific image directories.
+
+March 4, 2009
+-------------
+#384180 by Michelle: Switched file format to UTF-8 [This failed to update in CVS]
+#373371 by Michelle: Synched up Author Pane template and updated CSS for Author Pane.
+
+March 3, 2009 -- RC 3
+-------------
+#375187 by nbz: Fixed switched variable name that caused fallback to Garland rather than the default theme.
+#388504 by pebosi: Updated German translation.
+
+February 26, 2009
+-----------------
+NOISSUE by Michelle: Fleshed out the readme.txt file more.
+#373371 by Michelle: Syncing up Author Pane.
+
+February 25, 2009 -- RC 2
+-----------------
+#375187 by Michelle: Fall back to default site theme when $theme not set.
+#374009 by rastatt@drupal.org: Updated German translation.
+#260397 by BlackNexus: Updated Spanish translation.
+#256174 by seals: Updated Swedish translation.
+
+February 20, 2009
+-----------------
+#376540 by Michelle: Passed all image file names through t() to make them translatable as suggested by klavs.
+
+February 11, 2009 -- RC 1
+----------------
+#303548 by Michelle: Added default avatar support to custom user picture function and also linked to profile.
+#361407 by black silence: Updated German translation.
+#310547 by Michelle: Organized and cleaned up settings page.
+
+February 9, 2009
+----------------
+#370422 by Michelle, merlinofchaos: Hopefully the last fix to get around path_to_theme's flakiness.
+#371859 by lamigo: Fixed postgress error.
+
+February 8, 2009 -- BETA 2
+----------------
+NOISSUE by Michelle: Check to make sure $links isn't empty before iterating thru it. Thanks to ghankstef for testing.
+
+February 7, 2009
+----------------
+#315972 by Michelle: Finished the reply link theming started yesterday.
+#369078 by lamigo: Fixed postgres errors.
+#370422 by Michelle: Replaced path_to_theme with my own function that always has the path to the actual site theme.
+#367496 by Michelle: Added check for link text when buttonifying.
+
+February 6, 2009
+----------------
+#315972 by Michelle: Separated out topic header into its own theme file and made the reply link a themeable function.
+
+February 4, 2009
+----------------
+#367481 by Michelle: Fixed up statistics including changing to use theme_username.
+
+February 3, 2009
+----------------
+#366301 by Michelle, ipwa: Fixed author pane layout on stacked styles.
+#365491 by Michelle, bouton: Cleaned up legend markup / css.
+
+January 27, 2009
+----------------
+#315972 by Michelle: Small fix to link to jump to last post.
+NOISSUE by Michelle: Making coder happy.
+NOISSUE by Michelle: Updated readme with Author Pane dependency.
+
+January 26, 2009
+----------------
+#102743 by yoroy: Updated topic icons.
+#363061 by Michelle, paulcouture: Eliminated duplicate users from statistics.
+Style clean up. Fixed #364385 and #360888 along the way.
+
+January 23, 2009
+----------------
+#303548 by Michelle: Added imagecache support for forum avatars.
+
+January 22, 2009
+----------------
+#360897 by RedKing: Added french translation.
+#352945 by Michelle, Heine: Added check that user is confirmed for last user in statistics.
+#351390 by Matafleur: Allow treat as forum post override to set item to _not_ be treated as a forum post.
+#328029 by Michelle: Added updated label in topic list.
+#328029 by Michelle: Added new label as well.
+
+January 18, 2009
+----------------
+#303564 by Psicomante, Michelle: Added legend for forum icons.
+
+January 16, 2009 -- BETA 1
+----------------
+#354704 by Michelle: Added check to be sure template is in use before adding the module path to it.
+#351395 by elfur: Added missing t() around link to top.
+#338722 by catch: Fixed bug in mark topics as read.
+NOISSUE by Michelle: Removed unneeded js file.
+#357361 by ron_s: Fixed created column class name.
+
+December 27, 2008
+-----------------
+NOISSUE by Michelle: Removed author pane preprocess and switched to passing the template in the theme call.
+NOISSUE by Michelle: Moved main author pane div from post template to author pane template & generally updated template.
+
+
+December 21, 2008
+-----------------
+#343853 by Michelle: Removed author pane code. This marks the start of dependency on the new author pane module.
+
+December 16, 2008
+-----------------
+#315972 by Michelle: Initial commit of jump to last post. Needs clean up and porting to D5.
+
+December 12, 2008 -- ALPHA 16
+-----------------
+#330000 and #328800 by Michelle: Redid image handling to ensure all images have alt text. Also made it possible for link images to be picked up automatically if they have a file name that matches the link key.
+#344697 by Michelle: Added permission to view statistics and also broke out statistics into its own template.
+
+December 11, 2008
+-----------------
+#345908 by Michelle: Fixed profile integration to account for change in core in D6.
+NOISSUE by Michelle: Fixed up author pane template comments and added facebook_status variable.
+#343848 by Michelle: Added variable for fasttoggle to author pane.
+
+December 9, 2008
+----------------
+NOISSUE by Michelle: Made 'naked' the base style so all other styles only need to include changed files.
+
+December 8, 2008
+----------------
+#320635 by Michelle: Added logic to 'treat as forum post' to account for reply pages. CSS is now loaded whenever AF determines the content is to be treated as a forum post.
+#320635 by Michelle: Improvements on theming reply pages, including using a seperate template for previews.
+#338268 by marcingy: Added option to set length of abbreviated topic title on forum overview.
+#338268 by Michelle: Added option to set 'time ago' cutoff.
+#303563 by Michelle: Clear readpath when marking read. (Outside module integration.)
+Redid table headers on topic list pages in an attempt to fix #334198 . Turned out not to be the problem but I like the new method better so am committing it anyway. Won't backport to D5, though.
+#339982 by Michelle: Fixed bug with comment wrapper template not loading.
+
+December 7, 2008
+----------------
+#339890 by Michelle: Fixed short script opener in advf-forum-repeat-post.tpl.php (500 errors on paged threads)
+
+November 26, 2008 -- ALPHA 15
+-----------------
+NOISSUE by Michelle: Stripped naked down to bare layout.
+NOISSUE by Michelle: Added boxy and boxy_stacked styles.
+#335770 by Michelle: Removed update that tried to clear up long unused variables as it was giving false fails.
+
+November 22, 2008
+-----------------
+#325675 by Morbus: Implemented min-height IE fix suggested by Morbus.
+#337457 by Dave Reid: Fixed code that creates links array for comments to match missed change in core.
+
+November 17, 2008 -- ALPHA 14
+
+November 11, 2008
+----------------
+NOISSUE by Michelle: Reverted changes to author pane auto file load patch.
+NOISSUE by Michelle: Code clean up.
+
+November 9, 2008
+----------------
+NOISSUE by Michelle: Simplified code for including author-pane.inc files.
+#331609 by Michelle, dvessel: Fixed problem with advf-author-user.tpl.php not being called from theme.
+NOISSUE by Michelle: advf-forum-repeat-post.tpl.php still had clearfix instead of clear-block.
+
+November 8, 2008
+----------------
+NOISSUE by Michelle: More style tweaking in naked and blue_lagoon. Still broken in IE.
+
+November 7, 2008
+----------------
+NOISSUE by Michelle: Changed naked_stacked to match recent changes to forum threads in naked.
+
+November 2, 2008
+----------------
+NOISSUE by Michelle: Contact link was using the D5 version of the l() function probably due to bad copy.
+NOISSUE by Michelle: Made sure all the icons in CVS matched my local copies.
+
+November 1, 2008
+----------------
+#326706 by Michelle: Changed query that calculates number of new comments to try and fix problem with old comments. Minimally tested.
+#327057 by Michelle: Refactored treat_as_forum_post() to add a hook and generally condense and clean up the code.
+#328617 by Michelle: If there are no new comments on a thread, don't put the # at the end of the URL on the link from the forum list page.
+
+October 27, 2008
+---------------
+#326460 by Michelle: Changed included contrib modules to new format.
+
+October 22, 2008
+---------------
+#266682 by Morbus, Michelle: Added forum statistics. Also a few minor fixes and extra docs that slipped in at the same time.
+
+October 20, 2008
+---------------
+NOISSUE by Michelle: Added blue_lagoon_stacked style.
+NOISSUE by paris: Added blank icons for blue_lagoon and naked.
+
+October 20, 2008
+---------------
+#323631 by Morbus: Style fixes for blue_lagoon. Removed need for background image.
+#323632 by Michelle: Removed member ID from naked & blue_lagoon templates as requested by Morbus.
+#323656 by Michelle: Removed override that set table row borders to 0.
+#319942 by Michelle: Thanks to Morbus for pointing out that Drupal code comes with a clearer. Changed over to using it.
+NOISSUE by Michelle: Small fixes to all styles based partially on Morbus' patch from #323631
+#323653 by Michelle: Set a minimum height for the author pane. Also some other minor fixes.
+#321590 by Morbus: Gets rid of div when forum description is empty.
+#321041 by derhasi, swill, Michelle: Fixed errors in Mark as Read functionality.
+#322125 by swill: Fixed bug with comment link array recreation.
+
+October 7, 2008 -- ALPHA 13
+---------------
+#291084 by Michelle: Removed all collapsable container code as it caused too many issues. Many thanks to jmorahan for tracing the bizarre pagers to this code.
+#316525 by CompShack, samuelet: Minor CSS fixes to forum posts to fix IE 7 issues.
+#318303 by Michelle, waawaamilk: Added static variable to avoid making multiple trips to the cache per page.
+
+October 1, 2008 -- ALPHA 12
+---------------
+#314205 by Michelle: More style cleanup.
+NOISSUE by Michelle: Code cleanup.
+
+September 30, 2008
+------------------
+#313693 by nigel: Sped up function to retrieve the count of new comments in a forum.
+#312958 by Michelle: Added $container_description to forum list template.
+NOISSUE by Michelle: Code cleanup.
+
+September 29, 2008
+------------------
+#314108 by Michelle: Fixed shadow post message.
+
+September 28, 2008
+------------------
+#314205 by Michelle, stephthegeek: Lots of style cleanup.
+#314186 by Michelle: Fixed broken comment numbering.
+NOISSUE by Michelle: Changed 'forum user' to 'author pane' for clarity.
+
+September 26, 2008
+------------------
+#303549 by Michelle: Cleaned up author info pane.
+#250112 by Michelle: Added userpoints categorization. Also added branding suggested by Vuds in #310460. Also fixed missing t()s.
+#314205 by Michelle: First round of style cleanup.
+
+September 25, 2008
+------------------
+#312602 by Michelle, merlinofchaos: Fixed broken query for counting the unread comments in a forum.
+#303740 by nigel, Michelle: Fixed lots of little bugs found with E_ALL warnings.
+
+September 24, 2008
+------------------
+#306633 by Michelle: Added more icons.
+#291084 by halkeye: Cleared options before collapsable container setting.
+NOISSUE by waawaamilk: Fixed bug with counting forums in forum list preprocess.
+#306633 by Michelle: Renamed most of the icons for a more consistant naming and replaced some.
+
+September 18, 2008
+------------------
+#310547 by Michelle: Added 'hidden options' to settings page as well as other work on the settings page. This also necessitated a change to the collapsable container code.
+NOISSUE by Michelle: Added check for css files in theme directory so they can be overridden.
+#309955 by Michelle: Comment wrapper preprocess was not checking that we are on a forum node.
+
+September 17, 2008
+------------------
+#291084 by cridenour: More work on the collapsable forum containers: setting initial state and remembering state.
+
+September 16, 2008
+------------------
+#309233 by merlinofchaos, Michelle: Adjusted theme registry manipulation to properly find .tpl files in themes and subthemes.
+NOISSUE by Michelle: Made killing of topic navigation optional since there are a few people out there who like it.
+#309066 by asxnot: Fixed PHP 4 issue with forum list icons.
+
+September 14, 2008
+------------------
+#291084 by grn, Michelle: More fixes for collapsable containers.
+#303542 by Michelle: Updated README.txt
+#299258 by Michelle: Documented icon sources.
+
+September 13, 2008
+------------------
+#291084 by grn: Added initial jquery to make collapsable containers work. Still rough but usable.
+#303556 by alpritt: Fixed no background showing in header on forum icon column.
+NOISSUE by Michelle: Changed jump to first reply on top of forum nodes to show total replies as well.
+#303556 by Michelle: Fixed issue with topic list header.
+
+September 10, 2008
+------------------
+#303816 by Michelle: Fixed post reply bug.
+#303556 by Michelle: Added blue_lagoon style.
+
+September 8, 2008
+-----------------
+#291084 by Michelle: Some preliminary work to set up the classes for collapsable containers.
+
+September 7, 2008
+-----------------
+NOISSUE by Michelle: Cleaned up user info .tpl and modules that feed it.
+#303799 by Michelle: Moved folder icons into their own column. Also cleaned up forum list tpl.
+#303799 by Michelle: Fixed issue with indenting when no containers.
+
+September 6, 2008
+-----------------
+#303553 by stephthegeek: Tweaks to naked style.
+#303740 by nigel, Michelle, neclimdul: Fixed some E_ALL warnings.
+#228557 by neclimdul: Collect extra user info variables via hook.
+
+September 2, 2008
+-----------------
+NOISSUE by Michelle: Fixed joined date to not use hardcoded format. Regex provided by Morbus.
+#274978 by Michelle: Fixed signatures so they work with and without signature for forums installed.
+NOISSUE by Michelle: Re-arranged functions and cleaned up some comments.
+#268684 by Michelle: Removed old themes directory.
+#268684 by Michelle: Added code to change forum icon when new posts. 
+#268684 by Michelle: Added new forum icons.
+#268684 by Michelle: Changed 'mark as read' to use new icon.
+#268684 by Michelle: Added advf-comment-wrapper.tpl.php and used it to add reply link at bottom of each page.
+#301089 by George2: Only print title div if there is a title on the comment.
+NOISSUE by Michelle: Fixed bad copy of &variables when calling functions. Thanks afeijo for reporting it.
+NOISSUE by Michelle: Changed 'ago' to showing actual dates when over 48 hours.
+#302125 by IceCreamYou, Michelle: Added facebook status support.
+
+September 1, 2008
+-----------------
+#238668 by Michelle: Added advanced setting to turn this off if it causes performance problems.
+#268684 by Michelle: Added support for flatgrey style. Actual style has not been added yet.
+#228557 by Michelle: Moved contrib code into individual files to pave the way for plugin system. Removed modules not yet ported to D6.
+#300594 by Michelle: Updated private message code to work with D6 rewrite.
+
+August 21, 2008
+---------------
+#295562 by catch: Make 'views' column in topic list statistics.module dependent.
+#268684 by Michelle: Cleaned up advf-forum-topic-list.tpl.php and moved some logic into the preprocess.
+#268684 by Michelle: Added classes to table header for topic list and cleaned up empty fields.
+Made advanced setting for turning off created column. 
+#238668 by ixeft, Michelle: Added N new posts to forum overview. 
+
+August 20, 2008
+---------------
+#268684 by merlinofchaos, sdboyer, and a tiny bit Michelle: Adapted panels plug in system to allow any module to add styles to advanced forum. This paves the way for offering multiple styles with the module as well as letting others contribute styles. Also 'renamed' themes directory to styles so much moving around of files. (Theme changes: The default advforum style as well as any customized themes won't work at this point. Instructions coming once this stabalizes.)
+
+August 15, 2008
+---------------
+#297227 by Michelle: Missed spot affected by D6's change to per type comment settings.
+
+August 15, 2008
+---------------
+#268684 by stephthegeek: Added new "naked" style. This completely revamped basic style will be the base for future styles.
+#268684 by Michelle: Simplified style switching / icon finding to pave the way for this issue. This is a temporary measure until the new style plugin system is written. (Theme changes: Themes are now styles and these notes will be called "Style changes" after this. As of this change, you need to set the name of the style on the options page. Advf will look for a directory by that name first in the active theme and then in the module. If you want to customize a style, copy the entire directory into your theme and make changes there.)
+
+August 1, 2008
+--------------
+#268273 by Michelle: Another fix for the last comment in forum mess.
+
+June 9, 2008
+------------
+#268680 by Morbus: Whitespace / comment cleanup.
+Code cleanup and syncing the branches.
+
+June 6, 2008 - ALPHA 1
+------------
+#241982 by Michelle: Fixed install function for filling table so it doesn't give warnings and returns success/failure properly. Since it was filling the table even with the warnings, there's no need to rerun this.
+#242527 by Michelle: Re-fixed the problem with views showing blank instead of 0.
+
+June 5, 2008
+------------
+#241982 by Michelle: Added function to .install to fill last post table with initial values.
+#241982 by Michelle: Adjusted comment link to account for multiple pages.
+#241982 by Michelle: Added icon linked to most recent comment. (Theme changes: advf-forum-submitted.tpl.php, added newest_comment.gif)
+#266765 by aMakUzr: Fixed class markup on forum posts.
+
+June 3, 2008
+------------
+#242527 by Michelle: Initialized view count to 0 so it doesn't show blank when no views of topic.
+#208440 by Michelle: Made reference post use forum theme when replying. Also removed links from comment in reply mode. 
+#241982 by Michelle: Updated variable list in comments of advf-forum-submitted.tpl.php to account for changes.
+
+June 2, 2008
+------------
+#241982 by Michelle: Added checking to see if last topic has been deleted or unpublished.
+
+May 30, 2008
+------------
+#241982 by Michelle with tons of help from litwol and neclimdul: Updated install file to create the new table.
+#241982 by Michelle (based on idea from Bdragon): Use a table to store reference to last posts in forum to replace the monster query.
+
+Still to do: Account for deleted/unpublished comments and nodes. Write something in the install file to backfill table with existing posts. More testing.
+
+Theme changes:
+advf-forum-submitted.tpl.php - Added an extra section for adding more info when a comment is the latest.
+
+#No issue by Michelle, Added some doxygen comments and moved around some functions for better readability.
+
+May 27, 2008
+------------
+#263943 by SkoalFyfan: Changed template name from forums to advf-forums in preprocess code.
+#256174 by seals: Swedish translation update.
+
+May 27, 2008
+------------
+Fixed up function advanced_forum_treat_as_forum_post() to be better commented, more logical, #232513 allow other content types (thanks nbz for the starter code), and fix #260640 comment theming not defaulting to off.
+#217194 Added template file to theme the repeated node on paginated forum threads. Thanks, Morbus. (Theme changes: advf-forum-repeat-post.tpl.php)
+Pulled creating the 'topic pager' out of advanced_forum_preprocess_forum_topic_list to simplify it.
+#242527 Added number of views to the topic listing page. Thanks to Zandroc for the starter code. (Theme changes: advf-forum-topic-list.tpl.php, advanced_forum-structure.css)
+Removed some unused CSS from advanced_forum.css
+
+May 13, 2008
+------------
+Removed debug code left in MAR and cleaned up comments. Thanks afeijo.
+
+May 12, 2008
+------------
+Port from D5: #255949 Added link to top of forum threads that lists the number of unread comments and links to the first one. This links to the comment id and so will work across pages. (Theme changes: advf-forum-post.tpl.php - Added $jump_first_new)
+Added extra markup for the post header area. (Theme changes: advf-forum-post.tpl.php - Added div.forum-post-header)
+#253155 Changed _is_forum() to advanced_forum_treat_as_forum_post() to comply with coding standards and clarify purpose.
+#253155 Changed _topic_nid() to _advanced_forum_topic_nid().
+#253155 Changed theme_image... to theme('image'...
+Ported path_to_subtheme() related code from D5.
+#246701 IE 6 fixes. Thanks, CompShack. (Theme changes: Affects both .css files)
+
+May 9, 2008
+-----------
+#241071 Mark as read function rewritten by afeijo (with some early help from konfuzed) on IRC. Thanks for the late night debugging to get this working.
+
+May 8, 2008
+-----------
+#238125 Removed the sql rewrite since it doesn't work with subqueries.
+#248652 Fixed PHP 4 incompatibility in showing last post in forum. Thanks jamix.
+#249651 Added check that contact module is enabled.
+#254051 Fixed error in mark as read menu item.
+#256174 Added Swedish translation. Thanks seals.
+Ported settings page from 5.x.
+#241071 Got mark as read partially working. Still an error.
+
+May 7, 2008
+-----------
+#254892 Added variable for forum description to forum topic list. Theme changes: advf-forums.tpl.php - Added description. advf-forum-topic-list.tpl.php - Updated variable list to include $forum_description. advf-forum-topic-list.tpl.php - padding around new class.
+
+May 1, 2008
+-----------
+Ported some small fixes that were done for D5 but not D6.
+Updated D6 with all D5 theme changes.
+#237362 Loaded user object in preprocesses for node and comment rather than in template_preprocess_author_pane so it is available in the main forum post template. Fixed #236870 in the process.
+
+March 22, 2008
+--------------
+Fixed remaining issues with advanced_forum_get_all_last_topics (I hope!)
+Updated README.txt and CHANGELOG.txt
+Fixed $Id: CHANGELOG.txt,v 1.3.2.133 2011/01/19 18:04:13 michellec Exp $ at the tops of all the files.
+
+March 18, 2008
+--------------
+#222212 #235749 Removed caching from advanced_forum_get_all_last_topics due to too many problems.
+
+March 3, 2008
+-------------
+Added some tweaks to the user info pane
+
+Feb 25, 2008
+------------
+Added better shadow topic link.
+
+Feb 24, 2008
+------------
+Fixed last topics in forums list. Thanks to LasseP.
+
+Feb 23, 2008
+------------
+Added back in mark as read buttons.
+Added extra formatting to sticky topics.
+Added folder icon to forum list.
+More CSS tweaks
+
+Feb 22, 2008
+------------
+#204281 Fixed indenting on forum overview.
+#219958 Added reply button to top of thread.
+Recreated links on comments so we can theme them better and changed CSS to match.
+Small CSS fixes to adapt to new .tpl files.
+
+FEB 21, 2008 - D6 BRANCH
+Massive changes to begin porting this to 6.x
+
+----------------------- Pre-Port -----------------------------------------------
+
+Feb 07, 2008 - ALPHA 2
+------------
+Minor theme tweaks - Fixed mark as read button & lightened post info background
+Added rest of CSS to theme links on forum topics like buttons
+#212329 Changed 'Add comment' link to 'Reply' on top post.
+
+Feb 5, 2008
+------------
+Incorporated mark as read code into main module
+Themed forum links to look like buttons
+Changed link for shadow posts to give name of forum and link to the moved post
+
+Feb 3, 2008 - ALPHA 1
+-----------
+Committed all of eigentor's changes to the default theme
+
+Jan 23, 2007
+------------
+Added t() to 'posted on'
+
+Dec 22, 2007
+------------
+Created this changelog to help early adopters keep up with my changes. Will only be recording major changes until the module gets non-dev releases.
+Notable recent changes:
+ - Moved all theme related files into themes/advforum to enable alternate themes
+ - Removed call to _is_forum() at the top of node-forum.tpl.php and rolled logic into the function
+ - Renamed node-forum.tpl.php to forum-thread.tpl.php 
+ 
+Nov 18, 2007
+------------
+Created project for advanced forum and uploaded some early code

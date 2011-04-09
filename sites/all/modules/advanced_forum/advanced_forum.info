@@ -1,0 +1,12 @@
+name = Advanced Forum
+description = Enables the look and feel of other popular forum software.
+dependencies[] = forum
+dependencies[] = author_pane
+core = 6.x
+
+; Information added by drupal.org packaging script on 2011-03-29
+version = "6.x-1.2"
+core = "6.x"
+project = "advanced_forum"
+datestamp = "1301364666"
+

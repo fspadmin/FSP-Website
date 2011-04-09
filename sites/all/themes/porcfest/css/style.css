@@ -52,7 +52,13 @@ sup, sub {}
 del {}
 ins {}
 
-blockquote {}
+blockquote {
+  color:#555;
+  font-style:italic;
+}
+blockquote p{
+  font-style:italic !important;
+}
 cite {}
 q {}
 
