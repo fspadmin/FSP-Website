@@ -1,0 +1,15 @@
+<?php
+// $Id: cd.install,v 1.1 2009/10/27 11:43:02 swentel Exp $
+
+/**
+ * @file
+ * Comment displays install file.
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function cd_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'cd_%%'");
+  cache_clear_all('variables', 'cache');
+}

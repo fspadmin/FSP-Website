@@ -1,0 +1,338 @@
+<?php
+// $Id: cd.module,v 1.1.2.30 2010/10/28 21:06:05 swentel Exp $
+
+/**
+ * @file
+ * Comment displays module.
+ */
+
+/**
+ * Implementation of hook_ds_api().
+ */
+function cd_ds_api() {
+
+  $help = array(
+    '<h3>Comment displays</h3>
+      <p>This module comes with a cd-comment.tpl.php template file, available in the templates folder, which is optimized for use with Comment Displays. You can copy the file to your themes folder to use your own version if you want. Copying the file to your theme folder will only work if comment.tpl.php is in the theme folder.</p>'
+  );
+
+  return array(
+    'title' => t('Comment displays'),
+    'module' => 'cd',
+    'object' => 'comment',
+    'views_base' => array('comments'),
+    'types' => 'cd_get_types',
+    'help' => $help,
+  );
+}
+
+/**
+ * Return comment types.
+ */
+function cd_get_types() {
+  $types = array();
+  $comment = new stdClass();
+  $comment->name = t('Comment');
+  $comment->type = 'comment';
+  $types['comment'] = $comment;
+  return $types;
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function cd_init() {
+  drupal_add_css(drupal_get_path('module', 'cd') .'/css/cd_regions.css');
+}
+
+/**
+ * Implementation of hook_ds_fields().
+ */
+function comment_ds_fields($type_name, $build_mode, $extra) {
+  $fields = array(
+    'name' => array(
+      'title' => t('Username'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'name_linked' => array(
+      'title' => t('Username linked'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'mail' => array(
+      'title' => t('E-mail'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'created' => array(
+      'title' => t('Post date'),
+      'type' => DS_FIELD_TYPE_CODE,
+      'status' => DS_FIELD_STATUS_DEFAULT,
+      'properties' => array(
+        'formatters' => array(
+          'ds_eval_code' => t('Default'),
+        ),
+        'code' => '<?php echo format_date($object->timestamp, "custom", "d/m/Y"); ?>'
+      ),
+    ),
+    'subject' => array(
+      'title' => t('Subject'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'title' => array(
+      'title' => t('Subject linked'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'comment' => array(
+      'title' => t('Comment'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'links' => array(
+      'title' => t('Links'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+  );
+
+  if (variable_get('user_signatures', 0)) {
+    $fields['signature'] = array(
+      'title' => t('Signature'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    );
+  }
+
+  // User picture.
+  if (variable_get('user_pictures', 0)) {
+    $fields['picture'] = array(
+      'title' => 'Picture',
+      'type' => DS_FIELD_TYPE_THEME,
+      'status' => DS_FIELD_STATUS_STATIC,
+      'properties' => array(
+        'formatters' => array(
+          'cd_user_picture' => t('Picture'),
+          'cd_user_picture_linked' => t('Picture linked to profile')
+        ),
+      ),
+    );
+
+    // Add imagecache presets to user picture.
+    if (module_exists('imagecache')) {
+      foreach (imagecache_presets() as $preset) {
+        $fields['picture']['properties']['formatters'][$preset['presetname'] .'_default'] = $preset['presetname'];
+        $fields['picture']['properties']['formatters'][$preset['presetname'] .'_linked'] = $preset['presetname'] .' linked to user';
+      }
+    }
+  }
+
+  return array('cd' => $fields);
+}
+
+/**
+ * Implementation of hook_theme().
+ *
+ */
+function cd_theme() {
+  $theme_functions = array();
+
+  // User picture.
+  $theme_functions['cd_user_picture'] = array(
+    'arguments' => array('field' => NULL),
+  );
+  $theme_functions['cd_user_picture_linked'] = array(
+    'arguments' => array('field' => NULL),
+  );
+
+  if (module_exists('imagecache')) {
+    foreach (imagecache_presets() as $preset) {
+      $theme_functions[$preset['presetname'] .'_default'] = array(
+        'arguments' => array('field' => NULL),
+        'function' => 'theme_cd_imagecache_picture',
+      );
+      $theme_functions[$preset['presetname'] .'_linked'] = array(
+        'arguments' => array('field' => NULL),
+        'function' => 'theme_cd_imagecache_picture',
+      );
+    }
+  }
+
+  return $theme_functions;
+}
+
+/**
+ * Implementation of hook_content_build_modes().
+ */
+function cd_content_build_modes() {
+  $build_modes = array(
+    'cd' => array(
+      'title' => t('Comment displays'),
+      'build modes' => array(
+        'full' => array(
+          'title' => t('Full comment'),
+          'module' => 'cd',
+          'weight' => -1,
+        ),
+        'list' => array(
+          'title' => t('Teaser'),
+          'module' => 'cd',
+          'weight' => -1,
+        ),
+      ),
+    )
+  );
+
+  return $build_modes;
+}
+
+/**
+ * Implementation of hook_registry_alter().
+ */
+function cd_theme_registry_alter(&$registry) {
+  $path = drupal_get_path('module', 'cd') .'/templates';
+  array_unshift($registry['comment']['theme paths'], $path);
+}
+
+/**
+ * Implementation of hook_comment().
+ */
+function cd_comment(&$comment, $op) {
+  if ($op == 'view') {
+    $comment->type = 'comment';
+    if (empty($comment->build_mode)) {
+      $comment->build_mode = 'full';
+    }
+    ds_build_fields_and_regions($comment, 'cd');
+  }
+}
+
+/**
+ * Implementation of hook_preprocess_comment().
+ */
+function cd_preprocess_comment(&$vars) {
+  // add links to comment object
+  if (isset($vars['links'])) {
+    $vars['comment']->links = $vars['links'];
+  }
+  $comment = $vars['comment'];
+
+  // Break all the rendering if needed.
+  if (!$comment->render_by_ds) {
+    return;
+  }
+
+  // Add author to vars['comment'].
+  $vars['comment']->name_linked = $vars['author'];
+
+  // Add linked title to vars['comment'].
+  $vars['comment']->title = l($comment->subject, 'node/'. $comment->nid, array('fragment' => "comment-$comment->cid"));
+
+  // Add cd-comment template suggestion.
+  $vars['template_files'][] = 'cd-comment';
+
+  $content = ds_render_content($comment, 'cd', (array) $vars['comment']);
+  $vars['content'] = $content;
+
+}
+
+/**
+ * Render the comment object through the DS views plugin.
+ *
+ * @param array $vars The variables to manipulate.
+ * @param string $build_mode The build mode to use on this object.
+ */
+function ds_views_row_comments(&$vars, $build_mode) {
+
+  $cid = $vars['row']->cid;
+  if (!is_numeric($cid)) {
+    return;
+  }
+
+  $node = new stdClass();
+  $links = array();
+  $comment = cd_comment_load($cid);
+  if (empty($comment)) {
+    return;
+  }
+
+  $show_links = ds_show_field('cd', 'comment', $build_mode, 'links');
+  if ($show_links) {
+    $links = module_invoke_all('link', 'comment', $comment, 0);
+    drupal_alter('link', $links, $node);
+  }
+
+  $comment->build_mode = $build_mode;
+  $vars['object'] = theme('comment_view', $comment, $node, $links);
+
+}
+
+/**
+ * Load the entire comment by cid, also load the user from it.
+ *
+ * @param $cid
+ *   The identifying comment id.
+ * @return
+ *   The comment object.
+ */
+function cd_comment_load($cid) {
+  return db_fetch_object(db_query('SELECT * FROM {comments} c INNER JOIN {users} u ON u.uid = c.uid WHERE cid = %d', $cid));
+}
+
+/**
+ * Return the picture.
+ */
+function cd_return_picture($object) {
+  $picture = '';
+  if (!empty($object->picture)) {
+    $picture = $object->picture;
+  }
+  elseif (variable_get('user_picture_default', '')) {
+    $picture = variable_get('user_picture_default', '');
+  }
+  return $picture;
+}
+
+/**
+ * Theming function for user picture, not linked.
+ */
+function theme_cd_user_picture($field) {
+  $picture = cd_return_picture($field['object']);
+  if (!empty($picture)) {
+    $title = t('Picture of !user', array('!user' => $field['object']->name));
+    return theme('image', $picture, $title, $title);
+  }
+}
+
+/**
+ * Theming function for user picture, not linked.
+ */
+function theme_cd_user_picture_linked($field) {
+  $picture = cd_return_picture($field['object']);
+  if (!empty($picture)) {
+    $title = t('Link to profile of !user', array('!user' => $field['object']->name));
+    $image = theme('image', $picture, $title, $title);
+    return l($image, 'user/'. $field['object']->uid, array('html' => TRUE));
+  }
+}
+
+function theme_cd_imagecache_picture($field) {
+  $picture = cd_return_picture($field['object']);
+  if (!empty($picture)) {
+    $parts =  explode('_', $field['formatter']);
+    $style = array_pop($parts);
+    $preset = implode('_', $parts);
+    if ($style == 'linked') {
+      $title = t('Link to profile of !user', array('!user' => $field['object']->name));
+      $image = theme('imagecache', $preset, $picture, $title, $title);
+      return l($image, 'user/'. $field['object']->uid, array('html' => TRUE));
+    }
+    else {
+      $title = t('Picture of !user', array('!user' => $field['object']->name));
+      return theme('imagecache', $preset, $picture, $title, $title);
+    }
+  }
+}
+
