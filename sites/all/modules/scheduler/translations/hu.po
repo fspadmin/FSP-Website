@@ -1,0 +1,99 @@
+# Hungarian translation of Drupal scheduler.module
+# Copyright Weblabor Team <info [at] weblabor.hu>
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 2.21\n"
+"POT-Creation-Date: 2004-03-15 14:39+0100\n"
+"PO-Revision-Date: 2004-03-15 14:50+0100\n"
+"Last-Translator: Weblabor Team <info [at] weblabor.hu>\n"
+"Language-Team: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#: scheduler.module:12
+msgid "schedule"
+msgstr "időzítés"
+
+#: scheduler.module:64 ;79
+msgid "Invalid date set, automatically adjusted"
+msgstr "Érvénytelen dátum beállítás, automatikusan javítva"
+
+#: scheduler.module:68 ;83
+msgid "Date in the past"
+msgstr "Dátum a múltban"
+
+#: scheduler.module:114
+msgid "Automatically post document"
+msgstr "Tartalom automatikus publikálása egy későbbi időpontban"
+
+#: scheduler.module:114
+msgid ""
+"The date at which your document will be automatically posted.  Do not check "
+"the enabling checkbox, if you don't want to schedule this document."
+msgstr ""
+"A dokumentum későbbi automatikus megjelenésének dátuma. Ha nem szeretnéd ezt "
+"a szolgáltatást haszálni, ne engedélyezd."
+
+#: scheduler.module:115
+msgid "Automatically hide document"
+msgstr ""
+"Tartalom publikálásának automatikus megszüntetése egy későbbi időpontban"
+
+#: scheduler.module:115
+msgid ""
+"The date at which your document will be automatically hidden.  Do not check "
+"the enabling checkbox, if you don't want to schedule this document."
+msgstr ""
+"A dokumentum későbbi automatikus elrejtésének dátuma. Ha nem szeretnéd ezt a "
+"szolgáltatást haszálni, ne engedélyezd."
+
+#: scheduler.module:146
+# msgid "Enabled"
+# msgstr ""
+
+#: scheduler.module:153
+msgid "Scheduling"
+msgstr "Időzítés"
+
+#: scheduler.module:174
+msgid "Scheduler posted %numpost nodes and hid %numhide nodes."
+msgstr "Az időzítő postázott %numpost nodeot, és elrejtett %numhide nodeot."
+
+#: scheduler.module:182
+# msgid "title"
+# msgstr ""
+
+#: scheduler.module:183
+# msgid "author"
+# msgstr ""
+
+#: scheduler.module:184 ;191
+msgid "post"
+msgstr "megjelenítés"
+
+#: scheduler.module:185
+msgid "hide"
+msgstr "elrejtés"
+
+#: scheduler.module:186
+# msgid "operations"
+# msgstr ""
+
+#: scheduler.module:204
+msgid "edit node"
+msgstr "szerkesztés"
+
+#: scheduler.module:205
+msgid "delete node"
+msgstr "törlés"
+
+# scheduler.module:217
+msgid "There are no scheduled nodes."
+msgstr "Nincs egyetlen időzített node sem."
+
+#: scheduler.module:0
+msgid "scheduler"
+msgstr "időzítő"
