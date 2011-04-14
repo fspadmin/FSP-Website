@@ -1,0 +1,76 @@
+/* Reset preformat for drpx output */
+.dprx {
+	color:#000;
+  font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
+  line-height:normal;
+	margin-bottom:1em;
+}
+
+.dprx a,
+.dprx a:hover {
+	color:blue;
+	text-decoration:underline;
+	cursor:pointer;
+}
+
+.dprx span {
+	color:#999;
+}
+
+.dprx-array,
+.dprx-object {
+  margin-top:4px;
+  margin-bottom:4px;
+}
+
+.dprx-array-title,
+.dprx-object-title {
+  background-color:#666;
+  color:#FFF;
+  cursor:pointer;
+  font-weight:bold;
+  padding:2px 4px;
+}
+
+.dprx-array-value,
+.dprx-object-value {
+  display:block;
+	padding:2px 4px;
+}
+
+/* Toggle expanded via closed */
+.dprx-array.dprx-closed .dprx-array-title,
+.dprx-object.dprx-closed .dprx-object-title {
+   font-style: italic;
+}
+
+.dprx-array.dprx-closed .dprx-array-value,
+.dprx-object.dprx-closed .dprx-object-value {
+  display:none;
+}
+
+/* Array colors (green) */
+.dprx-array {
+  border: 1px solid #060;
+}
+
+.dprx-array-title {
+  background-color:#090;
+}
+
+.dprx-array-value {
+  border-top: 1px solid #060;
+}
+
+/* Object colors (purple) */
+.dprx-object {
+  border: 1px solid #00C;
+}
+
+.dprx-object-title {
+  background-color: #44C;
+}
+
+.dprx-object-value {
+  border-top: 1px solid #00C;
+}

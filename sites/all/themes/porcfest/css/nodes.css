@@ -103,8 +103,12 @@ ul.links li.blog_usernames_blog a {}
  * Replace CONTENT_TYPE with the content type 
  * machine-readable name. 
  */
-.node-type-CONTENT_TYPE {}
-
+.node-type-vendor h1#page-title{
+  display:none;
+}
+.node-type-vendor #vendor-info{
+  font-size:1.2em;
+}
 
 /**********************************************************
  *                    CCK Fields
