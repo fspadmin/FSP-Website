@@ -1,0 +1,291 @@
+# Slovak translation of Scheduler (all releases)
+# Copyright (c) 2008 by the Slovak translation team
+# Generated from files:
+#  scheduler.module,v 1.46.4.18 2008/02/07 17:42:27 karpuz
+#  scheduler.module,v 1.50.2.1 2008/02/13 00:09:29 karpuz
+#  scheduler.module,v 1.46.4.21 2008/03/11 13:06:39 karpuz
+#  scheduler.module,v 1.50.2.10 2008/11/02 20:35:50 ericschaefer
+#  scheduler/scheduler.views.inc: n/a
+#  scheduler.install,v 1.5 2008/02/12 10:30:51 karpuz
+#  scheduler.install,v 1.5.2.3 2008/11/01 19:06:17 ericschaefer
+#  scheduler/scheduler.info: n/a
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Scheduler (all releases)\n"
+"POT-Creation-Date: 2008-12-16 12:39+0100\n"
+"PO-Revision-Date: 2008-12-12 14:51+0100\n"
+"Language-Team: Slovak\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=((n==1)?(0):(((n>=2)&&(n<=4))?(1):2));\n"
+
+#: scheduler.module:270,250,282,253,272,252,377,406,394,413
+msgid "view"
+msgstr "zobrazit"
+
+#: scheduler.module:270,250,272,252,394,413
+msgid "content"
+msgstr "obsah"
+
+#: scheduler.module:129,129,129
+msgid "Time zone"
+msgstr "Casové pásmo"
+
+#: scheduler.module:9,9,9,11
+msgid "A module to schedule when nodes are (un)published."
+msgstr "Modul, ktorý plánuje kedy má byt uzol (od)publikovaný."
+
+#: scheduler.module:26,28
+msgid "Light weight cron handler"
+msgstr "Jednoduchý spúštac úloh cron"
+
+#: scheduler.module:27
+msgid ""
+"A light weight cron handler to allow more frequent runs of Scheduler's "
+"internal cron system"
+msgstr ""
+"Jednoduchý spúštac úloh, ktorý umožní castejšie "
+"spúštanie interného cron systému Plánovaca"
+
+#: scheduler.module:33,35
+msgid "Test your servers UTC clock"
+msgstr "Otestujte vaše serverové UTC hodiny"
+
+#: scheduler.module:34
+msgid "Allow's site admin to check their server's internal clock"
+msgstr ""
+"Povolit administrátorovi stránky skontrolovat vnútorné hodiny "
+"serveru."
+
+#: scheduler.module:51,51,51,73,74
+msgid "Enable scheduled (un)publishing"
+msgstr "Povolit plánované (od)publikovanie"
+
+#: scheduler.module:53,53,53,75,76
+msgid "Check this box to enable scheduled (un)publishing for this node type."
+msgstr ""
+"Zaškrtnutím tohoto pola povolíte plánovanie (od)publikovania pre "
+"tento typ uzla."
+
+#: scheduler.module:57,57,57,79,80
+msgid "Alter published on time"
+msgstr "Zmenit publikované na cas"
+
+#: scheduler.module:59,59,59,81,82
+msgid ""
+"Check this box to alter the published on time to match the scheduled "
+"time (\"touch feature\")."
+msgstr ""
+"Oznacte toto pole aby ste zmenili presné publikovanie ktoré sedí s "
+"casovým plánom (\"touch feature\")."
+
+#: scheduler.module:93,93,93,131,115
+msgid "Scheduling options"
+msgstr "Nastavenia plánovania"
+
+#: scheduler.module:101,101,101,139,124; scheduler.views.inc:15,23
+msgid "Publish on"
+msgstr "Publikovat"
+
+#: scheduler.module:107,107,107
+msgid "Format: %time. Leave blank to publish on the time of form submission."
+msgstr ""
+"Formát: %time. Pre publikovanie hned po odoslaní formulára "
+"nechajte prázdne."
+
+#: scheduler.module:113,113,113,148,135; scheduler.views.inc:31,39
+msgid "Unpublish on"
+msgstr "Nepublikovat"
+
+#: scheduler.module:119,119,119
+msgid "Format: %time. Leave blank to not unpublish this node."
+msgstr "Formát: %time. Pre nepublikovanie tohto uzla nechajte prázdne."
+
+#: scheduler.module:132,132,132
+msgid "Select the time zone to (un)publish in."
+msgstr "Vybrte casovú zónu (od)publikovania."
+
+#: scheduler.module:310,345,312,469,453
+msgid "Scheduler OS time check"
+msgstr "Scheduler kontrola casu OS"
+
+#: scheduler.module:322,357,324,481,461
+msgid "Your server reports the UTC time as %time and \"localtime\" as %lt."
+msgstr "Váš server oznamuje UTC cas ako %time a lokálny cas ako %lt."
+
+#: scheduler.module:324,359,326,483,463
+msgid ""
+"If all is well with your server's time configuration UTC should match "
+"<a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC "
+"London Time</a> and the localtime should be the time where you are."
+msgstr ""
+"Ak je s vaším nastavením casu servera všetko v poriadku UTC cas "
+"by mal sediet s <a target=\"_blank\" "
+"href=\"http://wwp.greenwichmeantime.com/\">UTC Londýnskym casom</a> "
+"a localtime by mal byt cas pásma kde sa nachádzate."
+
+#: scheduler.module:326,361,328,485,465
+msgid ""
+"If this is not the case please have your Unix System Administrator fix "
+"your servers time/date configuration."
+msgstr ""
+"Pokial toto nie je dôvod prosím nechajte si opravit vaše "
+"nastavenia casu a dátumu vaším administrátorom Unixového "
+"systému."
+
+#: scheduler.module:346,381,348,485,501,511
+msgid "Scheduler: publish on"
+msgstr "Plánovac: publikovat ked"
+
+#: scheduler.module:347,382,349,486; scheduler.views.inc:16
+msgid "Date/time on which the article will be automatically published"
+msgstr "Cas alebo dátum kedy bude clánok automaticky publikovaný"
+
+#: scheduler.module:352,387,355,492,505,520
+msgid "Scheduler: unpublish on"
+msgstr "Plánovac: nepublikovat ked"
+
+#: scheduler.module:353,388,356,493
+msgid "Date/time on which the article will be automatically un-published"
+msgstr "Dátum/cas kedy bude clánok automaticky odpublikovaný"
+
+#: scheduler.module:0,0,312,282,253,0,377,406,436,0
+msgid "scheduler"
+msgstr "plánovac"
+
+#: scheduler.module:250,253,252,377,394
+msgid "@type: scheduled publishing of %title."
+msgstr "@type: plánované publikovanie %title."
+
+#: scheduler.module:270,282,272,406,413
+msgid "@type: scheduled unpublishing of %title."
+msgstr "@type: plánované nepublikovanie %title."
+
+#: scheduler.module:312,436
+msgid "Internal scheduler run activated"
+msgstr "Vnútorné spustenie plánovaca zapnuté"
+
+#: scheduler.module:17,17,17,19
+msgid "schedule (un)publishing of nodes"
+msgstr "Plánované (od)publikovanie uzlov"
+
+#: scheduler.install:11,11
+msgid "The main table to hold the scheduler data."
+msgstr "Hlavná tabulka na uchovanie dát plánovania."
+
+#: scheduler.install:14,14
+msgid "The foreign key to node.nid"
+msgstr "Cudzí klúc pre node.nid"
+
+#: scheduler.install:20,20
+msgid "The UNIX UTC timestamp when to publish"
+msgstr "UNIX UTC timestamp (casové razítko) kedy publikovat"
+
+#: scheduler.install:27,27
+msgid "The UNIX UTC timestamp when to unpublish"
+msgstr "UNIX UTC casové znacka (timestamp) kedy sa nemá publikovat"
+
+#: scheduler.install:34
+msgid "The offset in seconds due to the timezone"
+msgstr "Posun v sekundách kvôli casovým zónam"
+
+#: scheduler.info:0,0,0,0; scheduler.views.inc:5
+msgid "Scheduler"
+msgstr "Plánovac"
+
+#: scheduler.info:0,0,0,0
+msgid ""
+"This module allows nodes to be published and unpublished on specified "
+"dates."
+msgstr ""
+"Tento modul umožnuje publikovat a nepublikovat obsah pri "
+"stanovených dátumoch."
+
+#: scheduler.module:55
+msgid "Date format"
+msgstr "Formát dátumu"
+
+#: scheduler.views.inc:32
+msgid "Date/time on which the article will be automatically unpublished"
+msgstr "Dátum/cas, kedy sa má príspevok automaticky odpublikovat"
+
+#: scheduler.module:29
+msgid ""
+"A light weight cron handler to allow more frequent runs of Schedulers "
+"internal cron system"
+msgstr ""
+"Jednoduchý spúštac úloh, ktorý umožní castejšie "
+"spúštanie interného cron systému Plánovaca"
+
+#: scheduler.module:36
+msgid "Allows site admin to check their servers internal clock"
+msgstr ""
+"Umožnuje administrátorovi stránky skontrolovat stav hodín na "
+"serveri"
+
+#: scheduler.module:42,43
+msgid "Scheduler module settings"
+msgstr "Nastaveniea modulu Plánovac"
+
+#: scheduler.module:43
+msgid "Allows site admins to configure scheduler."
+msgstr "Umožnuje administrátorom stránky konfigurovat Plánovac."
+
+#: scheduler.module:59
+msgid ""
+"The input format for the (un)scheduling time/date. See the date() "
+"function for formatting options: "
+"http://www.php.net/manual/en/function.date.php"
+msgstr ""
+"Vstupný formát pre plánovaný cas/dátum. Ak sa chcete dozvediet "
+"viac o možnostiach nastavenia formátu, pozrite si popis funkcie "
+"date() na stránke:  http://www.php.net/manual/en/function.date.php"
+
+#: scheduler.module:142,127
+msgid "Format: %time. Leave blank to disable scheduled publishing."
+msgstr ""
+"Formát: %time. Ak chcete vypnút plánované publikovanie, "
+"ponechajte pole prázdne."
+
+#: scheduler.module:151,138
+msgid "Format: %time. Leave blank to disable scheduled unpublishing."
+msgstr ""
+"Formát: %time. Ak chcete vypnút plánované odpublikovanie, "
+"ponechajte pole prázdne."
+
+#: scheduler.module:297,270
+msgid "The entered publication date is invalid."
+msgstr "Zadaný dátum publikovania nie je platný."
+
+#: scheduler.module:307,277
+msgid "The entered expiration date is invalid."
+msgstr "Zadaný dátum vypršania platnosti nie je platný."
+
+#: scheduler.module:314,282
+msgid "The expiration date is before publication date."
+msgstr "Cas skoncenia platnosti je skorší ako dátum publikovania."
+
+#: scheduler.module:502
+msgid "Sort by the date the article will be automatically published."
+msgstr ""
+"Usporiadat podla dátumu, kedy boli príspevky automaticky "
+"publikované."
+
+#: scheduler.module:506
+msgid ""
+"Sort by the date/time on which the article will be automatically "
+"un-published."
+msgstr ""
+"Usporiadat podla dátumu/casu, kedy boli príspevky automaticky "
+"odpublikované."
+
+#: scheduler.module:512
+msgid ""
+"This filter allows nodes to be filtered by the date they will be "
+"automatically published."
+msgstr ""
+"Tento filter umožnuje zoradit uzly podla toho, kedy boli "
+"automaticky publikované."
+

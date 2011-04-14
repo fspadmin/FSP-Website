@@ -1,0 +1,274 @@
+# $Id: de.po,v 1.1.2.3 2009/11/22 00:14:14 thomaszahreddin Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  scheduler.module,v 1.50.2.5 2008/06/11 18:44:36 ericschaefer
+#  scheduler.install,v 1.5 2008/02/12 10:30:51 karpuz
+#  scheduler.info: n/a
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Scheduler\n"
+"POT-Creation-Date: 2009-11-22 01:10+0100\n"
+"PO-Revision-Date: 2009-11-22 01:13+0100\n"
+"Last-Translator: Thomas Zahreddin <tz@it-arts.org>\n"
+"Language-Team: Frank Tartler <rastatt@drupal.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: German\n"
+"X-Poedit-Country: GERMANY\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: scheduler.views.inc:10
+#: scheduler.module:571
+#: scheduler.info:0
+msgid "Scheduler"
+msgstr "Zeitplaner"
+
+#: scheduler.views.inc:20;28
+#: scheduler.module:135;175;182
+msgid "Publish on"
+msgstr "Veröffentlichen am/um"
+
+#: scheduler.views.inc:21
+msgid "Date/time on which the article will be automatically published"
+msgstr "Datum/Uhrzeit zu dem/der der Beitrag automatisch veröffentlicht wird"
+
+#: scheduler.views.inc:36;44
+#: scheduler.module:143;176
+msgid "Unpublish on"
+msgstr "Verbergen am/um"
+
+#: scheduler.views.inc:37
+#, fuzzy
+msgid "Date/time on which the article will be automatically unpublished"
+msgstr "Datum/Zeit an dem der Inhalt automatisch veröffentlicht wird"
+
+#: scheduler.module:60
+msgid "Date format"
+msgstr "Datumsformat"
+
+#: scheduler.module:64
+#, fuzzy
+msgid "The input format for the (un)scheduling time/date. See the date() function for formatting options: http://www.php.net/manual/en/function.date.php (only the following format characters are supported (don't use 'G' with Date Popup): djmnyYhHgGisaA)"
+msgstr "<p>Das Eingabeformat f&uuml;r Datum/Uhrzeit der Ver&ouml;ffentlichung bzw. des Verbergens. Beachten Sie die Formatierungsoptionen der date()-Funtion: http://www.php.net/manual/de/function.date.php</p>"
+
+#: scheduler.module:78
+msgid "Enable scheduled (un)publishing"
+msgstr "Zeitgesteuertes Veröffentlichen/Verbergen aktivieren"
+
+#: scheduler.module:80
+msgid "Check this box to enable scheduled (un)publishing for this node type."
+msgstr "Aktivieren Sie dieses Kästchen, um zeitgesteuertes Veröffentlichen/Verbergen für diesen Inhaltstyp zu aktivieren."
+
+#: scheduler.module:84
+msgid "Alter published on time"
+msgstr "Veröffentlichungszeitpunkt anpassen"
+
+#: scheduler.module:86
+msgid "Check this box to alter the published on time to match the scheduled time (\"touch feature\")."
+msgstr "Aktivieren Sie dieses Kästchen, um das Speicherdatum auf den geplanten Veröffentlichungszeitpunkt abzuändern (\"touch feature\")."
+
+#: scheduler.module:127
+msgid "Scheduling options"
+msgstr "Optionen für zeitgesteuerte Veröffentlichung"
+
+#: scheduler.module:138
+msgid "Format: %time. Leave blank to disable scheduled publishing."
+msgstr "Format: %time. Leer lassen um zeitgesteuertes Veröffentlichen zu deaktivieren."
+
+#: scheduler.module:146
+msgid "Format: %time. Leave blank to disable scheduled unpublishing."
+msgstr "Format: %time. Format: %time. Leer lassen um zeitgesteuertes Verbergen zu deaktivieren."
+
+#: scheduler.module:154
+#, fuzzy
+msgid "Leave blank to disable scheduled publishing."
+msgstr "Format: %time. Leer lassen um zeitgesteuertes Veröffentlichen zu deaktivieren."
+
+#: scheduler.module:159
+#, fuzzy
+msgid "Leave blank to disable scheduled unpublishing."
+msgstr "Format: %time. Format: %time. Leer lassen um zeitgesteuertes Verbergen zu deaktivieren."
+
+#: scheduler.module:173
+#, fuzzy
+msgid "Title"
+msgstr "Titel"
+
+#: scheduler.module:174
+#, fuzzy
+msgid "Author"
+msgstr "Autor"
+
+#: scheduler.module:177
+msgid "Operations"
+msgstr "Operationen"
+
+#: scheduler.module:195
+#, fuzzy
+msgid "edit"
+msgstr "bearbeiten"
+
+#: scheduler.module:207
+msgid "There are no scheduled nodes."
+msgstr "Es gibt keine Seiten mit Ablaufdatum."
+
+#: scheduler.module:361
+msgid "The 'publish on' value does not match the expected format of %time"
+msgstr ""
+
+#: scheduler.module:364
+msgid "The 'publish on' date must be in the future"
+msgstr ""
+
+#: scheduler.module:374
+msgid "The 'unpublish on' value does not match the expected format of %time"
+msgstr ""
+
+#: scheduler.module:377
+msgid "The 'unpublish on' date must be in the future"
+msgstr ""
+
+#: scheduler.module:385
+#, fuzzy
+msgid "The 'unpublish on' date must be later than the 'publish on' date."
+msgstr "Das Ablaufdatum liegt vor dem Veröffentlichungsdatum."
+
+#: scheduler.module:447;476
+msgid "view"
+msgstr "Anzeigen"
+
+#: scheduler.module:539
+msgid "Scheduler OS time check"
+msgstr "Zeitüberprüfung des Zeitplans beim Betriebssystem"
+
+#: scheduler.module:551
+msgid "Your server reports the UTC time as %time and \"localtime\" as %lt."
+msgstr "Ihr Server meldet die UTC-Zeit als %time und \"Lokale Zeit\" als %lt."
+
+#: scheduler.module:553
+msgid "If all is well with your server's time configuration UTC should match <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC London Time</a> and the localtime should be the time where you are."
+msgstr "Wenn die Zeitkonfiguration Ihres Servers korrekt ist, sollte UTC übereinstimmen mit <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC London Time</a> und die lokale Zeit sollte die Zeit an Ihrem Ort sein."
+
+#: scheduler.module:555
+msgid "If this is not the case please have your Unix System Administrator fix your servers time/date configuration."
+msgstr "Wenn dies nicht der Fall ist, dann lassen Sie bitte Ihren Unix-Systemadministrator die Datums-/Zeitkonfiguration des Servers korrigieren."
+
+#: scheduler.module:572
+#, fuzzy
+msgid "Scheduler module form."
+msgstr "Scheduler-Modul-Einstellungen"
+
+#: scheduler.module:447;476;506
+msgid "scheduler"
+msgstr "Zeitplaner"
+
+#: scheduler.module:447
+msgid "@type: scheduled publishing of %title."
+msgstr "@type: zeitgeteuertes Veröffentlichen von %title."
+
+#: scheduler.module:476
+msgid "@type: scheduled unpublishing of %title."
+msgstr "@type: zeitgesteuertes Verbergen von %title."
+
+#: scheduler.module:506
+msgid "Internal scheduler run activated"
+msgstr "Interner Zeitplan-Lauf aktiviert"
+
+#: scheduler.module:10
+msgid "schedule (un)publishing of nodes"
+msgstr "Zeitplan für das Veröffentlichen/Verbergen von Beiträgen"
+
+#: scheduler.module:10
+msgid "administer scheduler"
+msgstr "Zeitplaner verwalten"
+
+#: scheduler.module:19
+msgid "Light weight cron handler"
+msgstr "Einfaches Cron-Steuerungsprogramm"
+
+#: scheduler.module:20
+msgid "A light weight cron handler to allow more frequent runs of Schedulers internal cron system"
+msgstr "Ein einfaches Cron-Steuerungsprogramm, um häufigere Läufe des internen Cron-Systems des Zeitplaners zu ermöglichen"
+
+#: scheduler.module:26
+msgid "Test your servers UTC clock"
+msgstr "UTC-Uhr des Servers testen"
+
+#: scheduler.module:27
+msgid "Allows site admin to check their servers internal clock"
+msgstr "Erlaubt Website-Administratoren, die interne Uhr ihres Servers zu prüfen."
+
+#: scheduler.module:33
+msgid "Scheduler module settings"
+msgstr "Scheduler-Modul-Einstellungen"
+
+#: scheduler.module:34
+msgid "Allows site admins to configure scheduler."
+msgstr "Ermöglicht Website-Administratoren, den Zeitplan zu konfigurieren."
+
+#: scheduler.module:42
+#, fuzzy
+msgid "Scheduled"
+msgstr "Terminiert"
+
+#: scheduler.module:45
+#, fuzzy
+msgid "Display a list of scheduled nodes"
+msgstr "Die maximale Anzahl der anzuzeigenden Beiträge."
+
+#: scheduler.install:15
+msgid "The main table to hold the scheduler data."
+msgstr "Die Haupttabelle für Zeitplaner-Daten."
+
+#: scheduler.install:18
+#, fuzzy
+msgid "The foreign key to node.nid"
+msgstr "Fremdschlüssel zur Beziehungstabelle"
+
+#: scheduler.install:24
+msgid "The UNIX UTC timestamp when to publish"
+msgstr "Der UNIX UTC-Zeitstempel, wann veröffentlicht werden soll"
+
+#: scheduler.install:31
+msgid "The UNIX UTC timestamp when to unpublish"
+msgstr "Der UNIX UTC-Zeitstempel, wann verborgen werden soll"
+
+#: scheduler.info:0
+msgid "This module allows nodes to be published and unpublished on specified dates."
+msgstr "Dieses Modul ermöglicht, Beiträge zu bestimmten Zeitpunkten zu veröffentlichen und zu verbergen."
+
+#~ msgid "The entered publication date is invalid."
+#~ msgstr "Das eingegebene Veröffentlichungsdatum ist ungültig."
+#~ msgid "The entered expiration date is invalid."
+#~ msgstr "Das eingegebene Ablaufdatum ist ungültig."
+#~ msgid "Scheduler: publish on"
+#~ msgstr "Zeitplan: Veröffentlichen am/um"
+#~ msgid "Scheduler: unpublish on"
+#~ msgstr "Zeitplan: Verbergen am/um"
+#~ msgid "Sort by the date the article will be automatically published."
+#~ msgstr ""
+#~ "Nach dem Datum sortieren, zu dem der Beitrag automatisch veröffentlicht "
+#~ "wird."
+#~ msgid ""
+#~ "Sort by the date/time on which the article will be automatically un-"
+#~ "published."
+#~ msgstr ""
+#~ "Nach dem Datum sortieren, zu dem der Beitrag automatisch verborgen wird."
+#~ msgid ""
+#~ "This filter allows nodes to be filtered by the date they will be "
+#~ "automatically published."
+#~ msgstr ""
+#~ "Dieser Filter ermöglicht es, Beiträge nach dem Datum zu filtern, zu dem "
+#~ "sie automatisch veröffentlicht werden."
+#~ msgid ""
+#~ "This filter allows nodes to be filtered by the date they will be "
+#~ "automatically un-published."
+#~ msgstr ""
+#~ "Dieser Filter ermöglicht es, Beiträge nach dem Datum zu filtern, zu dem "
+#~ "sie automatisch verborgen werden."
+

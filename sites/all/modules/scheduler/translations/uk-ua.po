@@ -1,0 +1,179 @@
+# $Id: uk-ua.po,v 1.1.2.2 2009/08/26 17:40:43 ericschaefer Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  scheduler.views.inc: n/a
+#  scheduler.info: n/a
+#  scheduler.module,v 1.50.2.10 2008/11/02 20:35:50 ericschaefer
+#  scheduler.install,v 1.5.2.3 2008/11/01 19:06:17 ericschaefer
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Scheduler Ukrainian Translation\n"
+"POT-Creation-Date: 2009-05-14 13:48+0300\n"
+"PO-Revision-Date: 2009-05-14 14:20+0200\n"
+"Last-Translator: podarok <podarok@ua.fm>\n"
+"Language-Team: uk-ua <podarok@ua.fm>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Ukrainian\n"
+"X-Poedit-Country: UKRAINE\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: scheduler.views.inc:5
+#: scheduler.info:0
+msgid "Scheduler"
+msgstr "Планувальник"
+
+#: scheduler.views.inc:15;23
+#: scheduler.module:139
+msgid "Publish on"
+msgstr "Публікувати в"
+
+#: scheduler.views.inc:16
+msgid "Date/time on which the article will be automatically published"
+msgstr "Дата-ча�?, коли �?татт�? буде автоматично опублікована"
+
+#: scheduler.views.inc:31;39
+#: scheduler.module:148
+msgid "Unpublish on"
+msgstr "Приховати в"
+
+#: scheduler.views.inc:32
+msgid "Date/time on which the article will be automatically unpublished"
+msgstr "Дата-ча�?, коли �?татт�? буде автоматично неопублікована"
+
+#: scheduler.module:28
+msgid "Light weight cron handler"
+msgstr "Полегшене управлінн�? cron"
+
+#: scheduler.module:29
+msgid "A light weight cron handler to allow more frequent runs of Schedulers internal cron system"
+msgstr "Полегшене управлінн�? cron дозвол�?є більш ча�?тий запу�?к Планувальника"
+
+#: scheduler.module:35
+msgid "Test your servers UTC clock"
+msgstr "Те�?т �?ерверного годинника UTC"
+
+#: scheduler.module:36
+msgid "Allows site admin to check their servers internal clock"
+msgstr "Дозвол�?є адміні�?тратору перевірити внутрішній годинник �?ервера"
+
+#: scheduler.module:42
+msgid "Scheduler module settings"
+msgstr "Опції модул�? Планувальник"
+
+#: scheduler.module:43
+msgid "Allows site admins to configure scheduler."
+msgstr "Дозвол�?є адміні�?тратору �?айта налагодити Планувальник"
+
+#: scheduler.module:55
+msgid "Date format"
+msgstr "Формат Дати"
+
+#: scheduler.module:59
+msgid "The input format for the (un)scheduling time/date. See the date() function for formatting options: http://www.php.net/manual/en/function.date.php"
+msgstr "Вхідний формат дати-ча�?у дл�? (де)публікуванн�?. Вивчайте date() функцію в PHP дл�? додаткових параметрів: http://www.php.net/manual/en/function.date.php"
+
+#: scheduler.module:73
+msgid "Enable scheduled (un)publishing"
+msgstr "Вмиканн�? запланованих (де)публікацій"
+
+#: scheduler.module:75
+msgid "Check this box to enable scheduled (un)publishing for this node type."
+msgstr "Відмічайте дл�? вмиканн�? планувальника (де)публікуванн�? дл�? цього типу матеріалів."
+
+#: scheduler.module:79
+msgid "Alter published on time"
+msgstr "Пі�?л�? публікованого в ча�?"
+
+#: scheduler.module:81
+msgid "Check this box to alter the published on time to match the scheduled time (\"touch feature\")."
+msgstr "Відмічайте дл�? зміни опублікованого вча�?но дл�? відповідно�?ті запланованого ча�?у (\"touch feature\")."
+
+#: scheduler.module:131
+msgid "Scheduling options"
+msgstr "Параметри Планувальника"
+
+#: scheduler.module:142
+msgid "Format: %time. Leave blank to disable scheduled publishing."
+msgstr "Формат: %time. Залишіть пу�?тим дл�? вимкненн�? запланованої публікації."
+
+#: scheduler.module:151
+msgid "Format: %time. Leave blank to disable scheduled unpublishing."
+msgstr "Формат: %time. Залишіть пу�?тим дл�? вимкненн�? запланованої депублікації."
+
+#: scheduler.module:297
+msgid "The entered publication date is invalid."
+msgstr "�?екоректно введений ча�? публікації"
+
+#: scheduler.module:307
+msgid "The entered expiration date is invalid."
+msgstr "�?екоректно введений ча�? закіненн�? публікації"
+
+#: scheduler.module:314
+msgid "The expiration date is before publication date."
+msgstr "Дата закінченн�? перед датою публікації?"
+
+#: scheduler.module:377;406
+msgid "view"
+msgstr "перегл�?д"
+
+#: scheduler.module:469
+msgid "Scheduler OS time check"
+msgstr "Перевірка годинника �?и�?теми Планувальником"
+
+#: scheduler.module:481
+msgid "Your server reports the UTC time as %time and \"localtime\" as %lt."
+msgstr "Ваш �?ервер повідомл�?є про UTC ча�? �?к %time і \"localtime\" �?к %lt."
+
+#: scheduler.module:483
+msgid "If all is well with your server's time configuration UTC should match <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC London Time</a> and the localtime should be the time where you are."
+msgstr "Якщо в�?е в пор�?дку з параметрами дати-ча�?у на �?ервері, UTC повинен відповідати <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC Лондон</a> і локальний ча�? повинен бути реальним."
+
+#: scheduler.module:485
+msgid "If this is not the case please have your Unix System Administrator fix your servers time/date configuration."
+msgstr "Якщо це не допомогло, будь ла�?ка, хай Ваш Си�?темний �?дміні�?тратор виправить конфігурацію дати-ча�?у на �?ервері."
+
+#: scheduler.module:377;406;436;0
+msgid "scheduler"
+msgstr "планувальник"
+
+#: scheduler.module:377
+msgid "@type: scheduled publishing of %title."
+msgstr "@type: заплановано публікацію %title."
+
+#: scheduler.module:406
+msgid "@type: scheduled unpublishing of %title."
+msgstr "@type: заплановано депублікуванн�? %title."
+
+#: scheduler.module:436
+msgid "Internal scheduler run activated"
+msgstr "Внутрішній планувальник активовано"
+
+#: scheduler.module:19
+msgid "schedule (un)publishing of nodes"
+msgstr "плануванн�? публікуванн�?ми допи�?ів"
+
+#: scheduler.install:11
+msgid "The main table to hold the scheduler data."
+msgstr "Головна таблиц�? дл�? даних планувальника"
+
+#: scheduler.install:14
+msgid "The foreign key to node.nid"
+msgstr "�?еі�?нуючий ключ до node.nid"
+
+#: scheduler.install:20
+msgid "The UNIX UTC timestamp when to publish"
+msgstr "UNIX UTC формат ча�?у коли опублікувати"
+
+#: scheduler.install:27
+msgid "The UNIX UTC timestamp when to unpublish"
+msgstr "UNIX UTC формат ча�?у коли депублікувати"
+
+#: scheduler.info:0
+msgid "This module allows nodes to be published and unpublished on specified dates."
+msgstr "Цей модуль дозвол�?є допи�?ам бути опублікованими і депублікованими в зазначений ча�?"
+

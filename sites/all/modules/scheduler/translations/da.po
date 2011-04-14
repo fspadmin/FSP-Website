@@ -1,0 +1,203 @@
+# Danish translation of Drupal (scheduler.module)
+# Copyright 2005 Morten Wulff <wulff@tem.dtu.dk>
+msgid ""
+msgstr ""
+"Project-Id-Version: Danish translation of Drupal (scheduler.module) $Id: da.po,v 1.1.2.2 2009/08/26 17:40:43 ericschaefer Exp $\n"
+"POT-Creation-Date: 2005-07-06 14:44+0200\n"
+"PO-Revision-Date: 2006-04-07 12:18+0100\n"
+"Last-Translator: Morten Wulff <wulff@psyke.org>\n"
+"Language-Team: Danish <danish@psyke.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-Language: Danish\n"
+"X-Poedit-Country: DENMARK\n"
+
+#: scheduler.module:21
+msgid "schedule"
+msgstr "planlæg"
+
+#: scheduler.module:30
+msgid "Form display mode"
+msgstr "Formularvisning"
+
+#: scheduler.module:30
+msgid "Allow post and hide scheduling"
+msgstr "Tillad planlægning af offentliggørelse og nedtagning"
+
+#: scheduler.module:30
+msgid "Only allow post scheduling"
+msgstr "Tillad kun planlægning af offentliggørelse"
+
+#: scheduler.module:30
+msgid "Only allow hide scheduling"
+msgstr "Tillad kun planlægning af nedtagning"
+
+#: scheduler.module:30
+msgid "What options should the scheduler form offer?"
+msgstr "Hvilke valgmuligheder skal planægningsformularen tilbyde?"
+
+#: scheduler.module:94
+msgid "Invalid scheduled post date set; automatically adjusted"
+msgstr "Ugyldig udgivelsesdato; justeret automatisk"
+
+#: scheduler.module:95
+#: ;113
+msgid "Invalid date set, automatically adjusted"
+msgstr "Ugyldig dato; justeret automatisk"
+
+#: scheduler.module:100
+msgid "Scheduled post date in the past"
+msgstr "Udgivelsesdato passeret"
+
+#: scheduler.module:101
+#: ;119
+msgid "Date in the past"
+msgstr "Dato passeret"
+
+#: scheduler.module:112
+msgid "Invalid scheduled hide date set; automatically adjusted"
+msgstr "Udgyldig dato for nedtagning; justeret automatisk"
+
+#: scheduler.module:118
+msgid "Scheduled hide date in the past"
+msgstr "Nedtagningsdato passeret"
+
+#: scheduler.module:138
+msgid "January"
+msgstr "Januar"
+
+#: scheduler.module:138
+msgid "February"
+msgstr "Februar"
+
+#: scheduler.module:138
+msgid "March"
+msgstr "Marts"
+
+#: scheduler.module:138
+msgid "April"
+msgstr "April"
+
+#: scheduler.module:138
+msgid "May"
+msgstr "Maj"
+
+#: scheduler.module:138
+msgid "June"
+msgstr "Juni"
+
+#: scheduler.module:138
+msgid "July"
+msgstr "Juli"
+
+#: scheduler.module:138
+msgid "August"
+msgstr "August"
+
+#: scheduler.module:138
+msgid "September"
+msgstr "September"
+
+#: scheduler.module:138
+msgid "October"
+msgstr "Oktober"
+
+#: scheduler.module:138
+msgid "November"
+msgstr "November"
+
+#: scheduler.module:138
+msgid "December"
+msgstr "December"
+
+#: scheduler.module:149
+msgid "Automatically post document"
+msgstr "Udgiv indholdselement automatisk"
+
+#: scheduler.module:149
+msgid "The date at which your document will be automatically posted.<br />Do not check the enabling checkbox unless you want to schedule this document."
+msgstr "Datoen hvor du ønsker indholdselement skal udgives.<br />Du skal kun markere afkrydsningsfeltet hvis du ønsker at planlægge udgivelsen af indholdselementet."
+
+#: scheduler.module:150
+msgid "Automatically hide document"
+msgstr "Nedtag indholdselement automatisk"
+
+#: scheduler.module:150
+msgid "The date at which your document will be automatically hidden.<br />Do not check the enabling checkbox unless you want to schedule this document."
+msgstr "Datoen hvor du ønsker indholdselement skal nedtages.<br />Du skal kun markere afkrydsningsfeltet hvis du ønsker at planlægge udgivelsen af indholdselementet."
+
+#: scheduler.module:197
+msgid "Enabled"
+msgstr "Aktiveret"
+
+#: scheduler.module:210
+msgid "Scheduling"
+msgstr "Planlægning"
+
+#: scheduler.module:224
+msgid "12 am"
+msgstr "12 am"
+
+#: scheduler.module:227
+msgid "12 pm"
+msgstr "12 pm"
+
+#: scheduler.module:231
+msgid "%hour pm"
+msgstr "%hour pm"
+
+#: scheduler.module:234
+msgid "%hour am"
+msgstr "%hour am"
+
+#: scheduler.module:265
+msgid "Scheduler posted %numpost nodes and hid %numhide nodes."
+msgstr "Planlægning har udgivet %numpost indholdselementer og nedtaget %numhide indholdselementer."
+
+#: scheduler.module:274
+msgid "Title"
+msgstr "Titel"
+
+#: scheduler.module:275
+msgid "Author"
+msgstr "Forfatter"
+
+#: scheduler.module:276
+#: ;283
+msgid "Post"
+msgstr "Offentliggør"
+
+#: scheduler.module:277
+msgid "Hide"
+msgstr "Skjul"
+
+#: scheduler.module:278
+msgid "Operations"
+msgstr "Handlinger"
+
+#: scheduler.module:296
+msgid "edit"
+msgstr "rediger"
+
+#: scheduler.module:297
+msgid "delete"
+msgstr "slet"
+
+#: scheduler.module:309
+msgid "There are no scheduled nodes."
+msgstr "Der er ingen planlagte indholdselementer."
+
+#: scheduler.module:265
+msgid "special"
+msgstr "speciel"
+
+#: scheduler.module:219
+msgid "schedule nodes"
+msgstr "planlæg indholdselementer"
+
+#: scheduler.module:0
+msgid "scheduler"
+msgstr "planlægning"
+
