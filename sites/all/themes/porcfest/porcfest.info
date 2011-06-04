@@ -67,6 +67,7 @@
 
   regions[leaderboard]        = Leaderboard
   regions[header]             = Header Blocks
+  regions[submenu]            = Submenu
   regions[secondary_content]  = Secondary Content
   regions[content_top]        = Content top
   regions[content]            = Main Content

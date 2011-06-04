@@ -1,0 +1,1337 @@
+<?php
+// $Id: node_access.module,v 1.7 2009/10/16 06:38:23 emptyvoid Exp $
+/** 
+  * @file node_access.module
+  * 
+  * This module handles access permissions for nodes.
+  */
+
+/**
+  * Implementation of hook_help()
+  */
+function node_access_help($path, $arg) {
+  if ($path == 'admin/help#node_access') {
+    return '<p>'. t('The node access module provides permission management for system roles and individual users for nodes.') .'</p>';
+  };
+  
+  if ($path == 'admin/content/types/nodeaccess') {
+    return '<p>'. t('The default permissions settings page provides an interface to define default permissions for all node types.<br />Please note any roles intented to manage nodes must have the <b>administer nodes</b> permission assigned to the role.') .'</p>';
+  };
+  
+  if ($path == 'admin/content/node-type/%node/nodeaccess') {
+      return '<p>'. t('The node type permissions settings page provides an interface to define permissions for a given node type. All nodes created will inherit the node type permissions until node specific permissions are defined.<br />') .'</p>';
+  };
+  
+  if ($path == 'node/%/nodeaccess') {
+    return '<p>'. t('The node permissions settings page provides an interface to define permissions for a given node. <br />') .'</p>';
+  }
+  
+  /*
+  if ($path == 'admin/build/menu-customize/%/menu_access') {
+    return '<p>'. t('The menu access page provides an interface to define permissions for the menu.') .'</p>';
+  }
+  if ($path == 'admin/build/menu') {
+    return '<p>'. t('The menu access module provides additional permissions to define global and per menu access settings. Should your account have access, click on <b>Menu Access Settings</b> to define global settings.') .'</p>';
+  }
+  */
+}
+
+
+/**
+  *  Valid permissions for this module
+  *  @return array An array of valid permissions for the menu_access module
+  */
+function node_access_perm() {
+  return array(
+  'access nodes',
+  'administer node access settings',
+  'administer node type access settings',
+  'administer node settings',
+  'create node content',
+  'delete node content',
+  'edit node content',
+  );
+}
+
+
+/*
+ * Implementation of hook_menu().
+ */
+function node_access_menu() {
+  
+  
+  // menu section for global content type permission defaults
+  
+  // menu access settings in menu list
+  $items['admin/content/types/nodeaccess'] = array(
+    'title' => 'Default Permission Settings',
+    'description' => 'Configure node access default permissions.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('node_access_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer node access settings'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  
+  
+  // Menu section per content type
+  
+  $defaults = array(
+    'title' => 'Permissions',
+    'description' => 'Configure node access control.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('node_access_type_admin_settings', 3),
+    'access arguments' => array('administer node type access settings'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10
+  );
+  
+  foreach (node_get_types('types', NULL, TRUE) as $type) {
+    // node add by type link
+    $type_url_str = str_replace('_', '-', $type->type);
+    $cur = $defaults;
+    $cur['page arguments'][1] = $type_url_str;
+    $items["admin/content/node-type/{$type_url_str}/nodeaccess"] = $cur;
+  }
+  
+  
+  $items["node/%node/nodeaccess"] = array(
+    'title' => 'Permissions',
+    'description' => 'Configure this node\s access permissions.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('node_access_page', 1),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => 'node_access_get_type_value_by_node',
+    'access arguments' => array('administer node settings', 1),
+    'weight' => 5
+  );
+  
+  /*
+   node validation hack overrides 
+  */
+  
+  // view menu items
+  
+  $items['node/%node'] = array(
+    'title callback' => 'node_page_title',
+    'title arguments' => array(1),
+    'page callback' => 'node_page_view',
+    'page arguments' => array(1),
+    'access callback' => 'node_access_access',
+    'access arguments' => array('view', 1),
+    'type' => MENU_CALLBACK,
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+    );
+    
+    $items['node/%node/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'node_page_edit',
+    'page arguments' => array(1),
+    'access callback' => 'node_access_access',
+    'access arguments' => array('update', 1),
+    'weight' => 1,
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+    );
+    
+    $items['node/%node/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('node_delete_confirm', 1),
+    'access callback' => 'node_access_access',
+    'access arguments' => array('delete', 1),
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+    'weight' => 1,
+    'type' => MENU_CALLBACK,
+    );
+    
+  
+  return $items;
+}
+
+
+
+/**
+ * Access Validation Methods
+ *
+ */
+
+
+
+function node_access_access($op, $node, $account = NULL) {
+  global $user;
+
+  if (!$node) {
+    return FALSE;
+  }
+  // Convert the node to an object if necessary:
+  if ($op != 'create') {
+    $node = (object)$node;
+  }
+  // If no user object is supplied, the access check is for the current user.
+  if (empty($account)) {
+    $account = $user;
+  }
+  /*
+  // 02/17/2009 RJF commenting out based on data format error.
+   
+  // If the node is in a restricted format, disallow editing.
+  if ($op == 'update' && !filter_access($node->format)) {
+    return FALSE;
+  }
+  */
+  
+  // check if user is an annonymous role and the node is not published
+  $annon_check = array_search('anonymous user', $account->roles) === FALSE;
+  if (($annon_check == FALSE) && $node->status == 0) {
+    return FALSE;
+  }
+  
+  $access = node_access_validate_access($op, $node, $account);
+  if (!is_null($access)) {
+    return $access;
+  }
+
+  // If the module did not override the access rights, use those set in the
+  // node_access table.
+  if ($op != 'create' && $node->nid && $node->status) {
+    $grants = array();
+    foreach (node_access_grants($op, $account) as $realm => $gids) {
+      foreach ($gids as $gid) {
+        $grants[] = "(gid = $gid AND realm = '$realm')";
+      }
+    }
+
+    $grants_sql = '';
+    if (count($grants)) {
+      $grants_sql = 'AND ('. implode(' OR ', $grants) .')';
+    }
+
+    $sql = "SELECT COUNT(*) FROM {node_access} WHERE (nid = 0 OR nid = %d) $grants_sql AND grant_$op >= 1";
+    $result = db_query($sql, $node->nid);
+    return (db_result($result));
+  }
+
+  // Let authors view their own nodes.
+  if ($op == 'view' && $account->uid == $node->uid && $account->uid != 0) {
+    return TRUE;
+  }
+
+  
+
+  return FALSE;
+  
+}
+
+
+
+
+/**
+ * This method validates if a user has the rights to enact the operation for the given node
+ * If passed the method will validate if the account has the passed permission
+ * Then the method will validate if the account has rights to accomplish the operation.
+ * This is accomplished by first checking if the account uid is explicitly assigned to accomplish
+ * the operation. If the result is FALSE, the second check will determine if one of the roles assigned
+ * to the account can accomplish the operation.
+ */
+function node_access_validate_access($op = 'view', $node = NULL, $account = NULL, $perm_str = NULL) {
+  global $user;
+  static $perm = array();
+  $result = FALSE;
+  
+  if (is_null($node) || $node == '') {
+    // try to grab the node it from the path
+    $node_id = arg(1);
+    if (!is_null($node_id) && is_numeric($node_id)) {
+      $node = node_load($node_id);
+    }
+    else {
+      return FALSE;
+    }
+  }
+  
+  if (is_null($account) || $account == '') {
+    $account = $user;
+  }
+  
+  // User #1 has all privileges:
+  if ($account->uid == 1) {
+    return TRUE;
+  }
+  
+  if (!user_access('access content', $account)) {
+    return FALSE;
+  }
+  if (!user_access('access nodes', $account)) {
+    return FALSE;
+  }
+  
+  
+  // if the permision variable is not null
+  if (!is_null($perm_str)) {
+    
+      $result = user_access($perm_str, $account);
+    
+      if ($result == TRUE) {
+        
+          // check if the user is assigned to view the menu
+          $result = node_access_nacl_get_user_grant_by_nid($op, $node, $account);
+          
+          // if the user is not explicity assigned to view the menu
+          // check if the user is assigned to any roles allowed to view it.
+          if ($result == FALSE) {
+            $settings = node_access_per_node_setting($op, $node);
+            
+            $userroles = $account->roles;
+            
+            foreach ($userroles as $key => $value) {
+              //$searchSet = array_search($key, $settings);
+              if (FALSE !== array_search($key, $settings)) {
+                $result = TRUE;
+              }
+            }
+          }
+      }
+    
+  }
+  else {
+    // check if the user is assigned to view the menu
+      $result = node_access_nacl_get_user_grant_by_nid($op, $node, $account);
+      
+    // if the user is not explicity assigned to view the menu
+    // check if the user is assigned to any roles allowed to view it.
+    if ($result == FALSE) {
+      $settings = node_access_per_node_setting($op, $node);
+      
+      $userroles = $account->roles;
+      
+      foreach ($userroles as $key => $value) {
+        //$searchSet = array_search($key, $settings);
+        if (FALSE !== array_search($key, $settings)) {
+          $result = TRUE;
+          break;
+        }
+      }
+    }
+  }
+  
+  return $result;
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Global default settings methods
+ *
+ */
+
+
+
+/**
+  * implements the hook_admin()
+  * This is the main administration form of defining global security settings.
+  */
+function node_access_admin_settings() {
+  drupal_set_title('Default Permissions');
+  $roles = node_access_get_roles_and_author();
+  
+  //per menu
+  $form['node'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Per node access control settings'),
+    '#collapsible' => TRUE,
+    '#description' => t('Optionally you can enable per node access control settings. '.
+      'Configure access per node at the node access permissions page.'),
+  );
+  
+  $form['node']['per_node'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable per node access control settings'),
+    '#default_value' => node_access_get_settings('per_node'),
+    //'#default_value' => TRUE,
+  );
+ 
+ 
+  //defaults
+  $form['defaults'] = array(
+    '#type' => 'fieldset', 
+    '#title' => t('Default access control settings'),
+    '#collapsible' => TRUE,
+    '#description' => t('If per node settings are available, the default settings will be overridden by the settings below.'),
+  );
+  drupal_add_css(drupal_get_path('module', 'node_access') .'/node_access.css');
+ 
+  $form['defaults']['view'] = array('#type' => 'checkboxes',
+    '#prefix' => '<div class="node_access-div">',
+    '#suffix' => '</div>',
+    '#options' => $roles,
+    '#title' => t('View'),
+    '#default_value' => node_access_get_settings('view'),
+  );
+  $form['defaults']['update'] = array('#type' => 'checkboxes',
+    '#prefix' => '<div class="node_access-div">',
+    '#suffix' => '</div>',
+    '#options' => $roles,
+    '#title' => t('Edit'),
+    '#default_value' => node_access_get_settings('update'),
+  );
+  $form['defaults']['delete'] = array('#type' => 'checkboxes',
+    '#prefix' => '<div class="node_access-div">',
+    '#suffix' => '</div>',
+    '#options' => $roles,
+    '#title' => t('Delete'),
+    '#default_value' => node_access_get_settings('delete'),
+  );
+  $form['defaults']['clearer'] = array(
+    '#value' => '<br clear="all" />',
+  );
+  $priority = node_access_get_settings('priority');
+  $form['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['advanced']['priority'] = array(
+    '#type' => 'weight',
+    '#title' => t('Give node grants priority'),
+    '#default_value' => $priority,
+    '#description' => t('If you are only using this access control module, you can safely ignore this. '.
+      'If you are using multiple access control modules you can adjust the priority of this module.'),
+  ); 
+  
+  //$form['type'] = array('#type' => 'value', '#value' => $type);
+  
+  $form['save'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save configuration'),
+      '#submit' => array('node_access_admin_settings_submit'),
+      '#weight' => 10,
+    );
+  
+  $form['default'] = array(
+      '#type' => 'submit',
+      '#value' => t('Reset to defaults'),
+      '#submit' => array('node_access_admin_settings_reset'),
+      '#weight' => 11,
+    );
+  
+  //$form['#submit'][] = 'menu_access_admin_settings_submit';
+  
+  return $form;
+}
+
+
+
+
+/**
+  * Saves the settings for the node default settings admin form.
+  */
+  
+function node_access_admin_settings_submit($form, &$form_state) {
+  $form_values = $form_state['values'];
+  
+  $per_node_old = node_access_get_settings('per_node', NULL);
+  $settings = node_access_get_settings();
+
+  foreach (node_access_available_settings() as $setting) {
+    if (is_array($form_values[$setting])) {
+      unset($form_values[$setting][0]);
+      $form_values[$setting] = array_filter($form_values[$setting]);
+    }
+    $settings[$setting] = $form_values[$setting];
+  }
+  node_access_set_settings($settings);
+  
+  drupal_set_message(t('Your settings have been saved.'));
+  
+}
+
+/**
+  * Resets the admin settings if reset is submitted.
+  */
+
+
+function node_access_admin_settings_reset($form, &$form_state) {
+  $form_values = $form_state['values'];
+  
+  variable_del('node_access_settings');
+  variable_set('node_access_settings', array('per_node' => '1', 'priority' => '10', 'view' => array('1', '2'), 'update' => array('2'), 'delete' => array('2')));
+  
+  drupal_set_message(t('Default settings restored.'));
+  
+}
+
+
+
+
+
+
+
+/**
+ * Per Node Type permission setttings methods
+ *
+ */
+
+/**
+  * implements the hook_admin()
+  * This is the main administration form of defining global security settings.
+  */
+function node_access_type_admin_settings(&$form_state, $type) {
+  drupal_set_title('Permissions');
+  
+  $roles = node_access_get_roles_and_author();
+  
+  //per menu
+  $form['node'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Per node access control settings'),
+    '#collapsible' => TRUE,
+    '#description' => t('Optionally you can enable per node access control settings. '.
+      'Configure access per node at the node access permissions page.'),
+  );
+  
+  $form['node']['per_node'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable per node access control settings'),
+    '#default_value' => node_access_get_settings('per_node', $type),
+    //'#default_value' => TRUE,
+  );
+ 
+ 
+  //defaults
+  $form['defaults'] = array(
+    '#type' => 'fieldset', 
+    '#title' => t('Default access control settings'),
+    '#collapsible' => TRUE,
+    '#description' => t('If per node settings are available, the default settings will be overridden by the settings below.'),
+  );
+  drupal_add_css(drupal_get_path('module', 'node_access') .'/node_access.css');
+ 
+  $form['defaults']['view'] = array('#type' => 'checkboxes',
+    '#prefix' => '<div class="node_access-div">',
+    '#suffix' => '</div>',
+    '#options' => $roles,
+    '#title' => t('View'),
+    '#default_value' => node_access_get_settings('view', $type),
+  );
+  $form['defaults']['update'] = array('#type' => 'checkboxes',
+    '#prefix' => '<div class="node_access-div">',
+    '#suffix' => '</div>',
+    '#options' => $roles,
+    '#title' => t('Edit'),
+    '#default_value' => node_access_get_settings('update', $type),
+  );
+  $form['defaults']['delete'] = array('#type' => 'checkboxes',
+    '#prefix' => '<div class="node_access-div">',
+    '#suffix' => '</div>',
+    '#options' => $roles,
+    '#title' => t('Delete'),
+    '#default_value' => node_access_get_settings('delete', $type),
+  );
+  $form['defaults']['clearer'] = array(
+    '#value' => '<br clear="all" />',
+  );
+  $priority = node_access_get_settings('priority', $type);
+  $form['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['advanced']['priority'] = array(
+    '#type' => 'weight',
+    '#title' => t('Give node grants priority'),
+    '#default_value' => $priority,
+    '#description' => t('If you are only using this access control module, you can safely ignore this. '.
+      'If you are using multiple access control modules you can adjust the priority of this module.'),
+  ); 
+  
+  $form['type'] = array('#type' => 'value', '#value' => $type);
+  
+  $form['save'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save configuration'),
+      '#submit' => array('node_access_type_admin_settings_submit'),
+      '#weight' => 10,
+    );
+  
+  $form['default'] = array(
+      '#type' => 'submit',
+      '#value' => t('Reset to defaults'),
+      '#submit' => array('node_access_type_admin_settings_reset'),
+      '#weight' => 11,
+    );
+  
+  //$form['#submit'][] = 'menu_access_admin_settings_submit';
+  
+  return $form;
+}
+
+
+
+/**
+  * Saves the settings for the node default settings admin form.
+  * 
+  */
+  
+function node_access_type_admin_settings_submit($form, &$form_state) {
+  $form_values = $form_state['values'];
+  $type = $form_values['type'];
+  
+  $per_node_old = node_access_get_settings('per_node', $type);
+  $settings = node_access_get_settings('all', $type);
+
+  foreach (node_access_available_settings() as $setting) {
+    if (is_array($form_values[$setting])) {
+      unset($form_values[$setting][0]);
+      $form_values[$setting] = array_filter($form_values[$setting]);
+    }
+    $settings[$setting] = $form_values[$setting];
+  }
+  node_access_set_settings($settings, $type);
+  
+  drupal_set_message(t('Your settings have been saved.'));
+  
+}
+
+/**
+  * Resets the admin settings if reset is submitted.
+  * 
+  */
+
+
+function node_access_type_admin_settings_reset($form, &$form_state) {
+  $form_values = $form_state['values'];
+  $type = $form_values['type'];
+  
+    $type_url_str = str_replace('_', '-', $type);
+    variable_del('node_type_'. $type_url_str .'_access_settings');
+    
+    variable_set('node_type_'. $type_url_str .'_access_settings', variable_get('node_access_settings', array()));
+  
+  drupal_set_message(t('Default settings restored.'));
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Per Node Access Permissions methods
+ *
+ */
+
+/*
+ * Per node settings page.
+ */
+function node_access_page(&$form_state, $node) {
+  //$node = node_load($nid);
+  drupal_set_title(check_plain($node->title) .' Permissions');
+  
+  foreach (array('view', 'update', 'delete') as $i) {
+    $defaults[$i] = node_access_per_node_setting($i, $node);
+  }
+  
+  $form = node_access_page_form($defaults, $node);
+  
+  $form['node'] = array('#type' => 'value', '#value' => $node);
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save Permissions'),
+    '#submit' => array('node_access_page_submit'),
+    '#weight' => 10,
+  );
+  return $form;
+}
+
+
+
+
+
+
+/**
+ * Builds per node setting page form without requiring a node. Used by
+ * content_access_action_set_node_permissions_form().
+ * 
+ * @param $defaults
+ *   Array of defaults for view/update/delete checkboxes.
+ * @param $node
+ *   Optional node for ACL.
+ */
+function node_access_page_form($defaults = array(), $node = FALSE) {
+  
+  // Make sure defaults array is full.
+  foreach (array('view', 'update', 'delete') as $op) {
+    if (!isset($defaults[$op])) $defaults[$op] = array();
+  }
+  
+  $roles = node_access_get_roles_and_author();
+  $form['settings'] = array(
+    '#type' => 'fieldset', 
+    '#title' => t('Role access control settings'),
+    '#collapsible' => TRUE,
+  );
+  
+  if (!$node) {
+    $form['settings']['#description'] = t('Warning: No defaults are set; be sure to fill out all boxes appropriately.');
+  }
+  
+  drupal_add_css(drupal_get_path('module', 'node_access') .'/node_access.css');
+  
+  $form['settings']['view'] = array('#type' => 'checkboxes',
+    '#prefix' => '<div class="node_access-div">',
+    '#suffix' => '</div>',
+    '#options' => $roles,
+    '#title' => t('View'),
+    '#default_value' => $defaults['view'],
+  );
+  $form['settings']['update'] = array('#type' => 'checkboxes',
+    '#prefix' => '<div class="node_access-div">',
+    '#suffix' => '</div>',
+    '#options' => $roles,
+    '#title' => t('Edit'),
+    '#default_value' => $defaults['update'],
+  );
+  $form['settings']['delete'] = array('#type' => 'checkboxes',
+    '#prefix' => '<div class="node_access-div">',
+    '#suffix' => '</div>',
+    '#options' => $roles,
+    '#title' => t('Delete'),
+    '#default_value' => $defaults['delete'],
+  );
+  $form['settings']['clearer'] = array(
+    '#value' => '<br clear="all" />',
+  );
+  
+  if ($node) {
+    // This is disabled when there is no node passed.
+    $form['nacl'] = array(
+      '#type' => 'fieldset', 
+      '#title' => t('User access control lists'),
+      '#description' => t('These settings allow you to grant access to specific users. <br /><strong>Please note: adding or removing users from each grant list will not be applied until you click the <i>Save Permissions</i> button.</strong>'),
+      '#collapsible' => TRUE,
+      '#tree' => TRUE,
+    );
+    
+    foreach (array('view', 'update', 'delete') as $op) {
+    
+      $form['nacl'][$op] = node_access_nacl_edit_form($node->nid, 'Grant '. $op .' access ', $op);
+      // hack - for now always display the listing open.
+      $form['nacl'][$op]['#collapsed'] = FALSE;
+      
+    }
+  }
+  
+  return $form;
+}
+
+function node_access_page_submit($form, &$form_state) {
+  $form_values = $form_state['values'];
+  $node = $form_values['node'];
+  $settings = array();
+  foreach (array('view', 'update', 'delete') as $op) {
+    // Set the settings so that further calls will return this settings.
+    unset($form_values[$op][0]);
+    $settings[$op] = array_filter($form_values[$op]);
+    /*
+    if (isset($form_values['nacl'][$op])) {
+      node_access_acl_save_form($form_values['nacl'][$op]);
+    }
+    */
+  }
+  
+  // Save per-node settings.
+  node_access_save_per_node_settings($node, $settings);
+
+
+  if (isset($form_values['nacl'])) {
+    
+      $form_per_user = $form_values['nacl'];
+    
+      node_access_nacl_save_settings($node, $form_per_user);
+    
+  }
+
+  // Apply new settings.
+  node_access_acquire_grants($node);
+  
+  drupal_set_message('Your changes have been saved.');
+}
+
+/**
+ * Form Hook Alter for extend existing forms
+ */
+
+function node_access_form_alter(&$form, $form_state, $form_id) {
+  
+  if (stristr($form_id, 'node_form') === FALSE) {
+  }
+  else {
+  
+    if (node_access_validate_access('delete') == FALSE) {
+      // override the submit button to run the override edit/save
+      $form['buttons']['delete'] = array();
+    }
+    
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ *  User Access Methods
+ *  
+ */
+
+
+/**
+  * validate if a menu has access settings
+  */
+function node_access_nacl_get_id_by_name($realm, $nid) {
+  return db_result(db_query("SELECT nid FROM {node_access_user} WHERE nid = '%d'", $nid));
+}
+
+
+
+/**
+ * Provide a form to edit the NACL that can be embedded in other forms.
+ * Pass $new_nacl=TRUE if you have no NACL yet, but do supply a nid.
+ * 
+ */
+function node_access_nacl_edit_form($nid, $label = NULL, $op, $new_nacl = FALSE) {
+  $users = array();
+  
+   if (!$new_nacl) {
+    // Ensure the MACL in question even exists.
+   /*
+    if (!$menu_name = db_result(db_query("SELECT menu_name FROM {menu_access_user} WHERE menu_name = %d", $menu_name))) {
+      return array();
+    }
+    */
+   
+   
+    $result = db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {node_access_user} aclu ON aclu.uid = u.uid WHERE nid = '%d' AND aclu.grant_". $op ." = 1", $nid);
+    while ($user = db_fetch_object($result)) {
+      $users[$user->uid] = $user->name;
+    }
+  }
+  
+  if (!isset($label)) {
+    $label = $nid;
+  }
+
+  $form = array(
+    '#type' => 'fieldset', 
+    '#collapsible' => TRUE, 
+    '#title' => $label,
+    '#tree' => TRUE);
+
+  $form['nid'] = array('#type' => 'value', '#value' => $nid);
+
+  $form['deletions'] = array('#type' => 'checkboxes', '#options' => array()); // placeholder
+  $form['delete_button'] = array(
+    '#type' => 'button',
+    '#value' => t('Remove Checked'),
+    '#submit' => FALSE,
+  );
+
+  $form['add'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Add user'), 
+    '#maxlength' => 60, 
+    '#size' => 40,
+    '#autocomplete_path' => 'user/autocomplete',
+  );
+  $form['add_button'] = array(
+    '#type' => 'button',
+    '#value' => t('Add User'),
+    '#submit' => FALSE,
+  );
+
+  $form['user_list'] = array(
+    '#type' => 'hidden',
+    '#default_value' => serialize($users),
+  );
+
+  $form['#after_build'] = array('node_access_nacl_edit_form_after_build');
+  
+  return $form;
+}
+
+
+
+
+
+/**
+ * Process a form that had our buttons on it.
+ */
+function node_access_nacl_edit_form_after_build($form, &$form_values) {
+  
+  // We can't use form_values because it's the entire structure
+  // and we have no clue where our values actually are. That's
+  // ok tho cause #value still works for us.
+  $user_list = unserialize($form['user_list']['#value']);
+  if (isset($form['delete_button']['#post']['op']) && $form['delete_button']['#post']['op'] == $form['delete_button']['#value']) {
+    $deletions = $form['deletions']['#value'];
+    foreach ($deletions as $uid) {
+      unset($user_list[$uid]);
+      unset($form['deletions']['#value'][$uid]);
+    }
+  }
+  else if (isset($form['add_button']['#post']['op']) && $form['add_button']['#post']['op'] == $form['add_button']['#value']) {
+    $name = $form['add']['#value'];
+    if (!empty($name)) {
+      $u = db_fetch_object(db_query("SELECT uid, name FROM {users} WHERE name = '%s'", $name));
+      if (!$u->uid) {
+          form_error($form['add'], "Invalid user.");
+      }
+      else {
+        $user_list[$u->uid] = $u->name;
+        $form['add']['#value'] = NULL;
+      }
+    }
+  }
+
+  if (count($user_list) != 0) {
+    $form['deletions']['#type'] = 'checkboxes';
+    $form['deletions']['#title'] = t("Current users");
+    $form['deletions']['#options'] = $user_list;
+    $form['deletions']['#value'] = array(); // don't carry value through.
+    // need $form_id and have no way to get it but from $_POST that
+    // I can find; and if we got here that variable's already been
+    // checked.
+    $form['deletions'] = form_builder($form_values['values']['form_id'], $form['deletions'], $form_values);
+  }
+  else {
+    $form['delete_button']['#type'] = 'value';
+  }
+  $form['user_list']['#value'] = serialize($user_list);
+  return $form;
+}
+
+
+/**
+ * Save per menu user access settings
+ */
+function node_access_nacl_save_settings($node, $settings) {
+  
+  // step one
+  // purge the uses for the given menu.
+  node_access_nacl_delete($node);
+  
+  // Step two
+  // Loop through the view, update and delete and build a permissions set
+  foreach (array('view', 'update', 'delete') as $op) {
+
+    if (isset($settings[$op])) {
+      $users = unserialize($settings[$op]['user_list']);
+      foreach ($users as $uid => $name) {
+        // check if a record already exists
+        $check_result = db_fetch_array(db_query("SELECT COUNT(*) AS count FROM {node_access_user} WHERE nid = '%d' AND uid = %d", $node->nid, $uid));
+        // if a record exists update the grant option
+        if ($check_result['count'] != 0) {
+          db_query("UPDATE {node_access_user} SET grant_". $op ." = 1 WHERE nid = '%d' AND uid = %d", $node->nid, $uid);
+          // if no roles where updated insert a new record
+        }
+        else {
+          db_query("INSERT INTO {node_access_user} (nid, uid, realm, grant_". $op .") VALUES (%d, %d, 'node access nacl', 1)", $node->nid, $uid);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Delete an existing MACL.
+ */
+function node_access_nacl_delete($node) {
+  db_query("DELETE FROM {node_access_user} WHERE nid = %d", $node->nid);
+}
+
+
+/**
+  * get user access settings by nid
+  */
+function node_access_nacl_get_user_grants_by_nid($account, $node) {
+  return db_result(db_query("SELECT * FROM {node_access_user} WHERE nid = '%d' AND uid = %d", $node->nid, $account->uid));
+}
+
+
+/**
+ * get user access grant by nid
+ */
+function node_access_nacl_get_user_grant_by_nid($op, $node, $account = NULL) {
+  if (empty($account)) {
+    $account = $user;
+  }
+  
+  $result = db_fetch_array(db_query("SELECT * FROM {node_access_user} WHERE nid = '%d' AND uid = %d", $node->nid, $account->uid));
+  
+  if (is_array($result)) {
+    $target = 'grant_'. $op;
+    if ($result[$target] == 1) {
+      return TRUE;
+    }
+  }
+  
+  return FALSE;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Utility Methods
+ */
+
+/*
+ * Returns the node_access' settings.
+ * 
+ * @param $return
+ *   One of the node_access_available_settings(), e.g. 'view' or 'per_node'.
+ * @param $type
+ *   If not all, return the setting for the specified type.
+ */
+function node_access_get_settings($return = 'all', $type = NULL) {
+  
+  if (isset($type)) {
+    $type = str_replace('_', '-', $type);
+     $settings = variable_get('node_type_'. $type .'_access_settings', variable_get('node_access_settings', array()));
+     if ($return == 'all') {
+        return $settings;
+     }
+     else {
+       return isset($settings[$return]) ? $settings[$return] : array();
+     }
+  }
+  else {
+    if ($return == 'all') {
+      return variable_get('node_access_settings', array());
+    }
+    else {
+        $settings = node_access_get_settings();
+        return isset($settings[$return]) ? $settings[$return] : array();
+    }
+  }
+  
+  /*
+  if (isset($type)) {
+    $settings = node_access_get_settings($return);
+    if (is_array($settings) && (is_string($type) || is_int($type)) && array_key_exists($type , $settings)) {
+      return $settings[$type];
+    }
+    else {
+      return node_access_get_setting_defaults($return, $type);
+    }
+  }
+  */
+  
+  return array();
+}
+
+/*
+ * Saves the node_access settings - needs the complete settings array.
+ */
+function node_access_set_settings($settings, $type = NULL) {
+  // Cleanup the settings before saving.
+  /*
+  foreach (node_access_available_settings() as $setting) {
+    if (isset($settings[$setting])) {
+      foreach ($settings[$setting] as $type => $value) {
+        if (!isset($value)) {
+          unset($settings[$setting][$type]);
+        }
+      }
+    }
+  }
+  */
+  if (isset($type)) {
+    $type = str_replace('_', '-', $type);
+    variable_set('node_type_'. $type .'_access_settings', $settings);  
+  }
+  else {
+    variable_set('node_access_settings', $settings);
+  }
+}
+
+/*
+ * Return an array containing all available node_access settings.
+ */
+function node_access_available_settings() {
+  return array('view', 'update', 'delete', 'per_node', 'priority');
+}
+
+/*
+ * Defines default values for settings.
+ */
+function node_access_get_setting_defaults($setting, $type) {
+  switch ($setting) {
+    default:
+      return array();
+    case 'view':
+      return array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID);
+    case 'delete':
+    case 'update':
+      $roles = node_access_get_permission_access('edit '. $type .' content');
+      if (count(array_diff(array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID), node_access_get_permission_access('edit own '. $type .' content'))) == 0) {
+        $roles[] = 'author';
+      }
+      return $roles;
+    case 'priority':
+      return 0;
+  }
+}
+
+/*
+ * Returns all possible roles with an added item "author"
+ */
+function node_access_get_roles_and_author() {
+  static $roles;
+  if (!isset($roles)) {
+    //$roles = array('author' => t('author')) + user_roles();
+    $roles = user_roles();
+  }
+  return $roles;
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Per node settings methods
+ *
+ */
+
+/**
+ * This method validates that a setting for the node type of a node is a specific value
+ * If a system permission is passed the method will validate if the current user has
+ * access to the permission if the first clause returns TRUE.
+ * If no system permission is passed the method will validate if the node type setting
+ * contains a value that is equal to the desired state passed.
+ */
+
+function node_access_get_type_value_by_node($perm = NULL, $node, $setting = 'per_node', $state = TRUE) {
+  $result = FALSE;
+  
+  if (node_access_get_settings($setting, $node->type) == $state) {
+    if (isset($perm)) {
+      $result = user_access($perm);
+    }
+    else {
+      $result = TRUE;
+    }
+  }
+  
+  return $result;
+  
+}
+
+
+
+
+/*
+ * Returns the per node role settings. If no per node settings are available, it will return the
+ * default settings
+ * 
+ * @param $op One of view, update or delete
+ * @param $node The node object
+ * @param $settings (optional) This may be used to update the settings cache with the given settings
+ * @return An array of role ids which have access
+ */
+function node_access_per_node_setting($op, $node, $settings = NULL) {
+  
+  static $grants = array();
+ 
+  if (isset($settings)) {
+    //update settings cache
+    $grants[$node->nid] = $settings;
+    return;
+  }
+  if (!isset($grants[$node->nid])) {
+    //load settings from db
+    $grants[$node->nid] = node_access_get_per_node_settings($node);
+  }
+  
+  //apply the defaults if no per menu settings are available
+  return isset($grants[$node->nid][$op]) ? $grants[$node->nid][$op] : node_access_get_settings($op, $node->type);
+}
+
+
+
+/*
+ * Gets the per node settings of a node.
+ * 
+ * @note
+ *   This function won't apply defaults, so if there are no other settings 
+ *   it will return an empty array.
+ */
+function node_access_get_per_node_settings($node) {
+  
+  $settings = array();
+  $results = db_query("SELECT rid, grant_view, grant_update, grant_delete from {node_access_role} WHERE nid = %d", $node->nid);
+  
+  while ($accessitem = db_fetch_array($results)) {
+    if ($accessitem['grant_view'] == 1) {
+      $settings['view'][] = $accessitem['rid'];
+    }
+    if ($accessitem['grant_update'] == 1) {
+      $settings['update'][] = $accessitem['rid'];
+    }
+    if ($accessitem['grant_delete'] == 1) {
+      $settings['delete'][] = $accessitem['rid'];
+    }
+  }
+  
+  if (empty($settings)) {
+    return array();
+  }
+  
+  //return unserialize($settings);
+  return $settings;
+}
+
+
+/*
+ * Saves custom per node settings in the own node_access_roles table
+ */
+
+function node_access_save_per_node_settings($node, $settings) {
+ // function expects an array, the array contains a group of view, edit, delete arrays listing role ids.
+ 
+ // setup defaults
+ $grant_view = 0;
+ $grant_edit = 0;
+ $grant_delete = 0;
+ $realm = 'node access';
+ 
+ // get all active roles
+ $roles = user_roles();
+ 
+ // check that settings are not empty
+ if (!empty($settings) && is_array($settings)) {
+    // loop through each role
+    foreach ($roles as $role => $rolevalue) {
+      // Check if the role exists in each of the permission sets
+      
+      // view
+      $view_result = array_search($role, $settings['view']);
+      if ($view_result !== FALSE && $view_result != -1) { 
+        $grant_view = 1;
+      }
+      
+      // edit
+      $edit_result = array_search($role, $settings['update']);
+      if ($edit_result !== FALSE && $edit_result != -1) { 
+        $grant_edit = 1;
+      }
+      
+      // delete
+      $delete_result = array_search($role, $settings['delete']);
+      if ($delete_result !== FALSE && $delete_result != -1) { 
+        $grant_delete = 1;
+      }
+      
+      // now if all grants are empty delete the role for the menu.
+      if ($grant_view == 0 && $grant_edit == 0 && $grant_delete == 0) {
+          
+          // this should do nothing if no record exists
+          db_query("DELETE FROM {node_access_role} WHERE nid = '%d' AND rid = '%d'", $node->nid, $role);
+      }
+      else {
+        // try to update an existing role record for the menu
+        db_query("UPDATE {node_access_role} SET nid = '%d', rid = '%d', realm = '%s', grant_view = '%d', grant_update = '%d', grant_delete = '%d' WHERE nid = '%d' and rid = '%d'", $node->nid, $role, $realm, $grant_view, $grant_edit, $grant_delete, $node->nid, $role);
+        
+        // check if the update did anything
+        if (!db_affected_rows()) { 
+          
+            // insert instead
+            db_query("INSERT INTO {node_access_role} (nid, rid, realm, grant_view, grant_update, grant_delete) values (%d, %d, '%s', %d, %d, %d)", $node->nid, $role, $realm, $grant_view, $grant_edit, $grant_delete);
+          
+        }
+      }
+      
+       $grant_view = 0;
+       $grant_edit = 0;
+       $grant_delete = 0;
+      
+    }
+  }
+}
+
+
+
+
+
+

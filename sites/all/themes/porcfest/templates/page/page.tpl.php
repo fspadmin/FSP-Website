@@ -180,7 +180,14 @@ $background_data = porcfest_get_random_photo();
             <?php if ($secondary_menu): ?>
               <div id="secondary"><?php print $secondary_menu; ?></div>
             <?php endif; ?>
-    
+            
+            <?php if ($submenu): ?>
+              <div id="submenu" class="section region"><div class="region-inner">
+                
+                <?php print $submenu; ?>
+              </div></div> <!-- /submenu -->
+            <?php endif; ?>
+            
           </div> <!-- /nav -->
         <?php endif; ?>
         
@@ -205,7 +212,7 @@ $background_data = porcfest_get_random_photo();
                 <?php endif; ?>
         
                 <div id="main-content">
-                  <?php if($section_class == 'class="section-forum"'){
+                  <?php if($section_class == 'class="section-forum"' || $section_class == 'class="section-forums"'){
                           print $breadcrumb;
                         }
                   ?>
