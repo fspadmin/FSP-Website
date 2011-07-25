@@ -1,5 +1,4 @@
 <?php
-// $Id: comment.tpl.php,v 1.1 2009/08/19 04:28:07 sociotech Exp $
 ?>
 
 <div class="comment <?php print $comment_classes;?> clear-block">

@@ -1,4 +1,3 @@
-// $Id: script.js,v 1.1.2.6 2010/07/03 03:00:39 sociotech Exp $
 
 Drupal.behaviors.fusionEqualheights = function (context) {
   if (jQuery().equalHeights) {

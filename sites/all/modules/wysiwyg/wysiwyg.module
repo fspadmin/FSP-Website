@@ -1,5 +1,4 @@
 <?php
-// $Id: wysiwyg.module,v 1.33.2.14 2011/01/06 02:00:34 sun Exp $
 
 /**
  * @file
@@ -131,6 +130,16 @@ function wysiwyg_process_form(&$form) {
         if ((isset($element['#type']) && $element['#type'] == 'fieldset') || isset($element['format']['guidelines'])) {
           // The element before this element is the target form field.
           $field = &$form[$children[$index - 1]];
+
+          // Allow modules to programmatically enforce no client-side editor by
+          // setting the #wysiwyg property to FALSE.
+          if (isset($field['#wysiwyg']) && !$field['#wysiwyg']) {
+            // A 'format' element should not have any child elements that may
+            // need processing, so it should be safe to skip the recursion that
+            // happens at the end of this function, and move on to the next
+            // element on the same level.
+            continue;
+          }
 
           // If this textarea is #resizable and we will load at least one
           // editor, then only load the behavior and let the 'none' editor

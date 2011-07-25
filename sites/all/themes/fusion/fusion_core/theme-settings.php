@@ -1,5 +1,4 @@
 <?php
-// $Id: theme-settings.php,v 1.1.2.6 2010/04/08 07:02:59 sociotech Exp $
 
 /**
  * Theme setting defaults
@@ -215,6 +214,7 @@ function phptemplate_settings($saved_settings) {
       'font-family-serif-lg' => '<span class="font-family-serif-lg">' . t('Serif - larger (Baskerville, Georgia, Palatino, Palatino Linotype, Book Antiqua, URW Palladio L, serif)') . '</span>',
       'font-family-myriad' => '<span class="font-family-myriad">' . t('Myriad (Myriad Pro, Myriad, Trebuchet MS, Arial, Helvetica, sans-serif)') . '</span>',
       'font-family-lucida' => '<span class="font-family-lucida">' . t('Lucida (Lucida Sans, Lucida Grande, Lucida Sans Unicode, Verdana, Geneva, sans-serif)') . '</span>',
+      'font-family-tahoma' => '<span class="font-family-tahoma">' . t('Tahoma (Tahoma, Arial, Verdana, sans-serif)') . '</span>',
     ),
   );
   // Font size settings

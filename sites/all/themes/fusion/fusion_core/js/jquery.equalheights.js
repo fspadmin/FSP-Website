@@ -1,4 +1,3 @@
-// $Id: jquery.equalheights.js,v 1.1.2.2 2010/07/03 03:00:39 sociotech Exp $
 
 /**
  * Equal Heights Plugin
