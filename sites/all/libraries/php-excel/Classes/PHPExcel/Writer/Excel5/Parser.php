@@ -2,7 +2,7 @@
 /**
  * PHPExcel
  *
- * Copyright (c) 2006 - 2010 PHPExcel
+ * Copyright (c) 2006 - 2011 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel_Writer_Excel5
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license    http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version    1.7.5, 2010-12-10
+ * @version    1.7.6, 2011-02-27
  */
 
 // Original file header of PEAR::Spreadsheet_Excel_Writer_Parser (used as the base for this class):
@@ -55,7 +55,7 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel_Writer_Excel5
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  */
 class PHPExcel_Writer_Excel5_Parser
 {
@@ -510,6 +510,7 @@ class PHPExcel_Writer_Excel5_Parser
 			  'VARPA'           => array( 365,   -1,    0,    0 ),
 			  'STDEVA'          => array( 366,   -1,    0,    0 ),
 			  'VARA'            => array( 367,   -1,    0,    0 ),
+			  'BAHTTEXT'        => array( 368,    1,    0,    0 ),
 			  );
 	}
 
@@ -1296,7 +1297,9 @@ class PHPExcel_Writer_Excel5_Parser
 	{
 		// If it's a string return a string node
 		if (preg_match("/\"([^\"]|\"\"){0,255}\"/", $this->_current_token)) {
-			$result = $this->_createTree(str_replace('""', '"', $this->_current_token), '', '');
+			$tmp = str_replace('""', '"', $this->_current_token);
+			if (($tmp == '"') || ($tmp == '')) $tmp = '""';	//	Trap for "" that has been used for an empty string
+			$result = $this->_createTree($tmp, '', '');
 			$this->_advance();
 			return $result;
         // If it's an error code
@@ -1568,6 +1571,7 @@ class PHPExcel_Writer_Excel5_Parser
 		if (empty($tree)) { // If it's the first call use _parse_tree
 			$tree = $this->_parse_tree;
 		}
+
 		if (is_array($tree['left'])) {
 			$converted_tree = $this->toReversePolish($tree['left']);
 			$polish .= $converted_tree;

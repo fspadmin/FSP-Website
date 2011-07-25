@@ -13,7 +13,7 @@
   <tr>
     <td class="header_menu">
         
-                                                                                                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                                                                                    
                                                                       		  [ <a href="classtrees_PHPExcel_Writer.html" class="menu">class tree: PHPExcel_Writer</a> ]
 		  [ <a href="elementindex_PHPExcel_Writer.html" class="menu">index: PHPExcel_Writer</a> ]
 		  	    [ <a href="elementindex.html" class="menu">all elements</a> ]
@@ -35,6 +35,7 @@
               <a href="li_PHPExcel_Cell.html">PHPExcel_Cell</a><br />
               <a href="li_PHPExcel_Reader.html">PHPExcel_Reader</a><br />
               <a href="li_PHPExcel_Reader_Excel5.html">PHPExcel_Reader_Excel5</a><br />
+              <a href="li_PHPExcel_Reader_Excel2007.html">PHPExcel_Reader_Excel2007</a><br />
               <a href="li_PHPExcel_RichText.html">PHPExcel_RichText</a><br />
               <a href="li_PHPExcel_Settings.html">PHPExcel_Settings</a><br />
               <a href="li_PHPExcel_Shared.html">PHPExcel_Shared</a><br />
@@ -44,6 +45,7 @@
               <a href="li_PHPExcel_Shared_OLE.html">PHPExcel_Shared_OLE</a><br />
               <a href="li_com-tecnick-tcpdf.html">com-tecnick-tcpdf</a><br />
               <a href="li_PHPExcel_Shared_Best_Fit.html">PHPExcel_Shared_Best_Fit</a><br />
+              <a href="li_PHPExcel_Shared_ZipArchive.html">PHPExcel_Shared_ZipArchive</a><br />
               <a href="li_PHPExcel_Style.html">PHPExcel_Style</a><br />
               <a href="li_PHPExcel_Worksheet.html">PHPExcel_Worksheet</a><br />
               <a href="li_PHPExcel_Worksheet_Drawing.html">PHPExcel_Worksheet_Drawing</a><br />
@@ -61,8 +63,6 @@
 		</a><br>
 			<a href="PHPExcel_Writer/_PHPExcel---Writer---PDF.php.html">		PDF.php
 		</a><br>
-			<a href="PHPExcel_Writer/_PHPExcel---Writer---Serialized.php.html">		Serialized.php
-		</a><br>
 	  </div><br />
       
             <b>Interfaces:</b><br />
@@ -75,7 +75,6 @@
 		    		<a href="PHPExcel_Writer/PHPExcel_Writer_CSV.html">PHPExcel_Writer_CSV</a><br />
 	    		<a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html">PHPExcel_Writer_HTML</a><br />
 	    		<a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html">PHPExcel_Writer_PDF</a><br />
-	    		<a href="PHPExcel_Writer/PHPExcel_Writer_Serialized.html">PHPExcel_Writer_Serialized</a><br />
 	  </div>
                 </td>
     <td>
@@ -103,8 +102,6 @@
 				<dd>in file HTML.php, variable <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#var$_isPdf">PHPExcel_Writer_HTML::$_isPdf</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Is the current writer creating PDF?</dd>
 							<dt><b>$_phpExcel</b></dt>
 				<dd>in file HTML.php, variable <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#var$_phpExcel">PHPExcel_Writer_HTML::$_phpExcel</a><br>&nbsp;&nbsp;&nbsp;&nbsp;PHPExcel object</dd>
-							<dt><b>__construct</b></dt>
-				<dd>in file Serialized.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_Serialized.html#method__construct">PHPExcel_Writer_Serialized::__construct()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Create a new PHPExcel_Writer_Serialized</dd>
 							<dt><b>__construct</b></dt>
 				<dd>in file PDF.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html#method__construct">PHPExcel_Writer_PDF::__construct()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Create a new PHPExcel_Writer_PDF</dd>
 							<dt><b>__construct</b></dt>
@@ -173,16 +170,14 @@
 				<dd>in file PDF.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html#methodgetOrientation">PHPExcel_Writer_PDF::getOrientation()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get Orientation</dd>
 							<dt><b>getPaperSize</b></dt>
 				<dd>in file PDF.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html#methodgetPaperSize">PHPExcel_Writer_PDF::getPaperSize()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get Paper Size</dd>
-							<dt><b>getPHPExcel</b></dt>
-				<dd>in file Serialized.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_Serialized.html#methodgetPHPExcel">PHPExcel_Writer_Serialized::getPHPExcel()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get PHPExcel object</dd>
 							<dt><b>getPreCalculateFormulas</b></dt>
 				<dd>in file HTML.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#methodgetPreCalculateFormulas">PHPExcel_Writer_HTML::getPreCalculateFormulas()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get Pre-Calculate Formulas</dd>
 							<dt><b>getPreCalculateFormulas</b></dt>
 				<dd>in file CSV.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_CSV.html#methodgetPreCalculateFormulas">PHPExcel_Writer_CSV::getPreCalculateFormulas()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get Pre-Calculate Formulas</dd>
 							<dt><b>getSheetIndex</b></dt>
-				<dd>in file HTML.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#methodgetSheetIndex">PHPExcel_Writer_HTML::getSheetIndex()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get sheet index</dd>
-							<dt><b>getSheetIndex</b></dt>
 				<dd>in file CSV.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_CSV.html#methodgetSheetIndex">PHPExcel_Writer_CSV::getSheetIndex()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get sheet index</dd>
+							<dt><b>getSheetIndex</b></dt>
+				<dd>in file HTML.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#methodgetSheetIndex">PHPExcel_Writer_HTML::getSheetIndex()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get sheet index</dd>
 							<dt><b>getTempDir</b></dt>
 				<dd>in file PDF.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html#methodgetTempDir">PHPExcel_Writer_PDF::getTempDir()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get temporary storage directory</dd>
 							<dt><b>getUseBOM</b></dt>
@@ -227,8 +222,6 @@
 				<dd>in file IWriter.php, class <a href="PHPExcel_Writer/PHPExcel_Writer_IWriter.html">PHPExcel_Writer_IWriter</a><br>&nbsp;&nbsp;&nbsp;&nbsp;PHPExcel_Writer_IWriter</dd>
 							<dt><b>PHPExcel_Writer_PDF</b></dt>
 				<dd>in file PDF.php, class <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html">PHPExcel_Writer_PDF</a><br>&nbsp;&nbsp;&nbsp;&nbsp;PHPExcel_Writer_PDF</dd>
-							<dt><b>PHPExcel_Writer_Serialized</b></dt>
-				<dd>in file Serialized.php, class <a href="PHPExcel_Writer/PHPExcel_Writer_Serialized.html">PHPExcel_Writer_Serialized</a><br>&nbsp;&nbsp;&nbsp;&nbsp;PHPExcel_Writer_Serialized</dd>
 					</dl>
 	</div>
 	<a href="elementindex_PHPExcel_Writer.html#top">top</a><br>
@@ -237,18 +230,14 @@
 	<div>
 		<h2>s</h2>
 		<dl>
-							<dt><b>Serialized.php</b></dt>
-				<dd>procedural page <a href="PHPExcel_Writer/_PHPExcel---Writer---Serialized.php.html">Serialized.php</a></dd>
+							<dt><b>save</b></dt>
+				<dd>in file PDF.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html#methodsave">PHPExcel_Writer_PDF::save()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Save PHPExcel to file</dd>
+							<dt><b>save</b></dt>
+				<dd>in file HTML.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#methodsave">PHPExcel_Writer_HTML::save()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Save PHPExcel to file</dd>
 							<dt><b>save</b></dt>
 				<dd>in file CSV.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_CSV.html#methodsave">PHPExcel_Writer_CSV::save()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Save PHPExcel to file</dd>
 							<dt><b>save</b></dt>
 				<dd>in file IWriter.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_IWriter.html#methodsave">PHPExcel_Writer_IWriter::save()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Save PHPExcel to file</dd>
-							<dt><b>save</b></dt>
-				<dd>in file PDF.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html#methodsave">PHPExcel_Writer_PDF::save()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Save PHPExcel to file</dd>
-							<dt><b>save</b></dt>
-				<dd>in file Serialized.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_Serialized.html#methodsave">PHPExcel_Writer_Serialized::save()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Save PHPExcel to file</dd>
-							<dt><b>save</b></dt>
-				<dd>in file HTML.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#methodsave">PHPExcel_Writer_HTML::save()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Save PHPExcel to file</dd>
 							<dt><b>setDelimiter</b></dt>
 				<dd>in file CSV.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_CSV.html#methodsetDelimiter">PHPExcel_Writer_CSV::setDelimiter()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Set delimiter</dd>
 							<dt><b>setEnclosure</b></dt>
@@ -265,16 +254,14 @@
 				<dd>in file PDF.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html#methodsetOrientation">PHPExcel_Writer_PDF::setOrientation()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Set Orientation</dd>
 							<dt><b>setPaperSize</b></dt>
 				<dd>in file PDF.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html#methodsetPaperSize">PHPExcel_Writer_PDF::setPaperSize()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Set Paper Size</dd>
-							<dt><b>setPHPExcel</b></dt>
-				<dd>in file Serialized.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_Serialized.html#methodsetPHPExcel">PHPExcel_Writer_Serialized::setPHPExcel()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Get PHPExcel object</dd>
 							<dt><b>setPreCalculateFormulas</b></dt>
 				<dd>in file HTML.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#methodsetPreCalculateFormulas">PHPExcel_Writer_HTML::setPreCalculateFormulas()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Set Pre-Calculate Formulas</dd>
 							<dt><b>setPreCalculateFormulas</b></dt>
 				<dd>in file CSV.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_CSV.html#methodsetPreCalculateFormulas">PHPExcel_Writer_CSV::setPreCalculateFormulas()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Set Pre-Calculate Formulas</dd>
 							<dt><b>setSheetIndex</b></dt>
-				<dd>in file HTML.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#methodsetSheetIndex">PHPExcel_Writer_HTML::setSheetIndex()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Set sheet index</dd>
-							<dt><b>setSheetIndex</b></dt>
 				<dd>in file CSV.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_CSV.html#methodsetSheetIndex">PHPExcel_Writer_CSV::setSheetIndex()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Set sheet index</dd>
+							<dt><b>setSheetIndex</b></dt>
+				<dd>in file HTML.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_HTML.html#methodsetSheetIndex">PHPExcel_Writer_HTML::setSheetIndex()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Set sheet index</dd>
 							<dt><b>setTempDir</b></dt>
 				<dd>in file PDF.php, method <a href="PHPExcel_Writer/PHPExcel_Writer_PDF.html#methodsetTempDir">PHPExcel_Writer_PDF::setTempDir()</a><br>&nbsp;&nbsp;&nbsp;&nbsp;Set temporary storage directory</dd>
 							<dt><b>setUseBOM</b></dt>
@@ -296,7 +283,7 @@
 	<a href="elementindex_PHPExcel_Writer.html#top">top</a><br>
         <div class="credit">
 		    <hr />
-		    Documentation generated on Fri, 10 Dec 2010 08:31:34 +0100 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
+		    Documentation generated on Sun, 27 Feb 2011 16:26:38 -0800 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
 	      </div>
       </td></tr></table>
     </td>

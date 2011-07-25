@@ -3,7 +3,7 @@
 /**
  * PHPExcel
  *
- * Copyright (c) 2006 - 2010 PHPExcel
+ * Copyright (c) 2006 - 2011 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,9 +21,9 @@
  *
  * @category   PHPExcel
  * @package	PHPExcel_Shared
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license	http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version	1.7.5, 2010-12-10
+ * @version	1.7.6, 2011-02-27
  */
 
 
@@ -32,7 +32,7 @@
  *
  * @category   PHPExcel
  * @package	PHPExcel_Shared
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  */
 class PHPExcel_Shared_Date
 {
@@ -220,7 +220,7 @@ class PHPExcel_Shared_Date
 	}	//	function isDateTimeFormat()
 
 
-	private static	$possibleDateFormatCharacters = 'ymdHis';
+	private static	$possibleDateFormatCharacters = 'ymdHs';
 
 	/**
 	 * Is a given number format code a date/time?
@@ -262,6 +262,18 @@ class PHPExcel_Shared_Date
 		}
 		// Try checking for any of the date formatting characters that don't appear within square braces
 		if (preg_match('/(^|\])[^\[]*['.self::$possibleDateFormatCharacters.']/i',$pFormatCode)) {
+			//	We might also have a format mask containing quoted strings...
+			//		we don't want to test for any of our characters within the quoted blocks
+			if (strpos($pFormatCode,'"') !== false) {
+				$i = false;
+				foreach(explode('"',$pFormatCode) as $subVal) {
+					//	Only test in alternate array entries (the non-quoted blocks)
+					if (($i = !$i) && (preg_match('/(^|\])[^\[]*['.self::$possibleDateFormatCharacters.']/i',$subVal))) {
+						return true;
+					}
+				}
+				return false;
+			}
 			return true;
 		}
 
@@ -278,6 +290,8 @@ class PHPExcel_Shared_Date
 	 */
 	public static function stringToExcel($dateValue = '') {
 		if (strlen($dateValue) < 2)
+			return false;
+		if (!preg_match('/^(\d{1,4}[ \.\/\-][A-Z]{3,9}([ \.\/\-]\d{1,4})?|[A-Z]{3,9}[ \.\/\-]\d{1,4}([ \.\/\-]\d{1,4})?|\d{1,4}[ \.\/\-]\d{1,4}([ \.\/\-]\d{1,4})?)( \d{1,2}:\d{1,2}(:\d{1,2})?)?$/iu', $dateValue))
 			return false;
 
 		$dateValueNew = PHPExcel_Calculation_DateTime::DATEVALUE($dateValue);

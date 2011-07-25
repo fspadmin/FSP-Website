@@ -2,7 +2,7 @@
 /**
  * PHPExcel
  *
- * Copyright (c) 2006 - 2010 PHPExcel
+ * Copyright (c) 2006 - 2011 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel_Reader
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license    http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version    1.7.5, 2010-12-10
+ * @version    1.7.6, 2011-02-27
  */
 
 
@@ -36,34 +36,30 @@ if (!defined('PHPEXCEL_ROOT')) {
 }
 
 /**
- * PHPExcel_Reader_OOCalc
+ *	PHPExcel_Reader_OOCalc
  *
- * @category   PHPExcel
- * @package    PHPExcel_Reader
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ *	@category	PHPExcel
+ *	@package	PHPExcel_Reader
+ *	@copyright	Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  */
 class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 {
 	/**
-	 * Read data only?
+	 *	Read data only?
+	 *	Identifies whether the Reader should only read data values for cells, and ignore any formatting information;
+	 *		or whether it should read both data and formatting
 	 *
-	 * @var boolean
+	 *	@var	boolean
 	 */
 	private $_readDataOnly = false;
 
 	/**
-	 * Restict which sheets should be loaded?
+	 *	Restrict which sheets should be loaded?
+	 *	This property holds an array of worksheet names to be loaded. If null, then all worksheets will be loaded.
 	 *
-	 * @var array
+	 *	@var	array of string
 	 */
 	private $_loadSheetsOnly = null;
-
-	/**
-	 * Sheet index to read
-	 *
-	 * @var int
-	 */
-	private $_sheetIndex 	= 0;
 
 	/**
 	 * Formats
@@ -81,19 +77,24 @@ class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 
 
 	/**
-	 * Read data only?
+	 *	Read data only?
+	 *		If this is true, then the Reader will only read data values for cells, it will not read any formatting information.
+	 *		If false (the default) it will read data and formatting.
 	 *
-	 * @return boolean
+	 *	@return	boolean
 	 */
 	public function getReadDataOnly() {
 		return $this->_readDataOnly;
 	}
 
 	/**
-	 * Set read data only
+	 *	Set read data only
+	 *		Set to true, to advise the Reader only to read data values for cells, and to ignore any formatting information.
+	 *		Set to false (the default) to advise the Reader to read both data and formatting for cells.
 	 *
-	 * @param boolean $pValue
-	 * @return PHPExcel_Reader_OOCalc
+	 *	@param	boolean	$pValue
+	 *
+	 *	@return	PHPExcel_Reader_OOCalc
 	 */
 	public function setReadDataOnly($pValue = false) {
 		$this->_readDataOnly = $pValue;
@@ -101,9 +102,11 @@ class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 	}
 
 	/**
-	 * Get which sheets to load
+	 *	Get which sheets to load
+	 *		Returns either an array of worksheet names (the list of worksheets that should be loaded), or a null
+	 *			indicating that all worksheets in the workbook should be loaded.
 	 *
-	 * @return mixed
+	 *	@return mixed
 	 */
 	public function getLoadSheetsOnly()
 	{
@@ -111,10 +114,13 @@ class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 	}
 
 	/**
-	 * Set which sheets to load
+	 *	Set which sheets to load
 	 *
-	 * @param mixed $value
-	 * @return PHPExcel_Reader_OOCalc
+	 *	@param mixed $value
+	 *		This should be either an array of worksheet names to be loaded, or a string containing a single worksheet name.
+	 *		If NULL, then it tells the Reader to read all worksheets in the workbook
+	 *
+	 *	@return PHPExcel_Reader_OOCalc
 	 */
 	public function setLoadSheetsOnly($value = null)
 	{
@@ -124,9 +130,10 @@ class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 	}
 
 	/**
-	 * Set all sheets to load
+	 *	Set all sheets to load
+	 *		Tells the Reader to load all worksheets from the workbook.
 	 *
-	 * @return PHPExcel_Reader_OOCalc
+	 *	@return PHPExcel_Reader_OOCalc
 	 */
 	public function setLoadAllSheets()
 	{
@@ -192,6 +199,42 @@ class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 
 		return false;
 	}
+
+	/**
+	 * Reads names of the worksheets from a file, without parsing the whole file to a PHPExcel object
+	 *
+	 * @param 	string 		$pFilename
+	 * @throws 	Exception
+	 */
+	public function listWorksheetNames($pFilename)
+	{
+		// Check if file exists
+		if (!file_exists($pFilename)) {
+			throw new Exception("Could not open " . $pFilename . " for reading! File does not exist.");
+		}
+
+		$worksheetNames = array();
+
+		$zip = new ZipArchive;
+		if ($zip->open($pFilename) === true) {
+
+			$xml = simplexml_load_string($zip->getFromName("content.xml"));
+			$namespacesContent = $xml->getNamespaces(true);
+
+			$workbook = $xml->children($namespacesContent['office']);
+			foreach($workbook->body->spreadsheet as $workbookData) {
+				$workbookData = $workbookData->children($namespacesContent['table']);
+				foreach($workbookData->table as $worksheetDataSet) {
+					$worksheetDataAttributes = $worksheetDataSet->attributes($namespacesContent['table']);
+
+					$worksheetNames[] = $worksheetDataAttributes['name'];
+				}
+			}
+		}
+
+		return $worksheetNames;
+	}
+
 
 	/**
 	 * Loads PHPExcel from file
@@ -376,6 +419,7 @@ class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 
 //									echo '<b>'.$columnID.$rowID.'</b><br />';
 									$cellDataText = $cellData->children($namespacesContent['text']);
+									$cellDataOffice = $cellData->children($namespacesContent['office']);
 									$cellDataOfficeAttributes = $cellData->attributes($namespacesContent['office']);
 									$cellDataTableAttributes = $cellData->attributes($namespacesContent['table']);
 
@@ -393,6 +437,22 @@ class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 									if (isset($cellDataTableAttributes['formula'])) {
 										$cellDataFormula = $cellDataTableAttributes['formula'];
 										$hasCalculatedValue = true;
+									}
+
+									if (isset($cellDataOffice->annotation)) {
+//										echo 'Cell has comment<br />';
+										$annotationText = $cellDataOffice->annotation->children($namespacesContent['text']);
+										$textArray = array();
+										foreach($annotationText as $t) {
+											foreach($t->span as $text) {
+												$textArray[] = (string)$text;
+											}
+										}
+										$text = implode("\n",$textArray);
+//										echo $text,'<br />';
+										$objPHPExcel->getActiveSheet()->getComment( $columnID.$rowID )
+//																		->setAuthor( $author )
+																		->setText($this->_parseRichText($text) );
 									}
 
 									if (isset($cellDataText->p)) {
@@ -447,9 +507,10 @@ class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 //										echo 'Formula: '.$cellDataFormula.'<br />';
 										$cellDataFormula = substr($cellDataFormula,strpos($cellDataFormula,':=')+1);
 										$temp = explode('"',$cellDataFormula);
-										foreach($temp as $key => &$value) {
+										$tKey = false;
+										foreach($temp as &$value) {
 											//	Only replace in alternate array entries (i.e. non-quoted blocks)
-											if (($key % 2) == 0) {
+											if ($tKey = !$tKey) {
 												$value = preg_replace('/\[\.(.*):\.(.*)\]/Ui','$1:$2',$value);
 												$value = preg_replace('/\[\.(.*)\]/Ui','$1',$value);
 												$value = PHPExcel_Calculation::_translateSeparator(';',',',$value,$inBraces);
@@ -510,23 +571,12 @@ class PHPExcel_Reader_OOCalc implements PHPExcel_Reader_IReader
 		return $objPHPExcel;
 	}
 
-	/**
-	 * Get sheet index
-	 *
-	 * @return int
-	 */
-	public function getSheetIndex() {
-		return $this->_sheetIndex;
+	private function _parseRichText($is = '') {
+		$value = new PHPExcel_RichText();
+
+		$value->createText($is);
+
+		return $value;
 	}
 
-	/**
-	 * Set sheet index
-	 *
-	 * @param	int		$pValue		Sheet index
-	 * @return PHPExcel_Reader_OOCalc
-	 */
-	public function setSheetIndex($pValue = 0) {
-		$this->_sheetIndex = $pValue;
-		return $this;
-	}
 }

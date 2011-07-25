@@ -2,7 +2,7 @@
 /**
  * PHPExcel
  *
- * Copyright (C) 2006 - 2010 PHPExcel
+ * Copyright (C) 2006 - 2011 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license    http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version    1.7.5, 2010-12-10
+ * @version    1.7.6, 2011-02-27
  */
 
 /** Error reporting */
@@ -35,7 +35,16 @@ require_once '../Classes/PHPExcel/IOFactory.php';
 
 
 echo date('H:i:s') . " Load from XML file\n";
-$objPHPExcel = PHPExcel_IOFactory::load("XMLTest.xml");
+$inputFileName = "XMLTest.xml";
+
+/**  Identify the type of $inputFileName  **/
+$inputFileType = PHPExcel_IOFactory::identify($inputFileName);
+echo 'Loading ',$inputFileName,' using ',$inputFileType," Reader\n";
+
+/**  Create a new Reader of the type that has been identified  **/
+$objReader = PHPExcel_IOFactory::createReader($inputFileType);
+/**  Load $inputFileName to a PHPExcel Object  **/
+$objPHPExcel = $objReader->load($inputFileName);
 
 echo date('H:i:s') . " Write to Excel2007 format\n";
 $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');

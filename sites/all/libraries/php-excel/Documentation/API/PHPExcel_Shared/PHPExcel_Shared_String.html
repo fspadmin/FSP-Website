@@ -13,8 +13,8 @@
   <tr>
     <td class="header_menu">
         
-                                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                  		  [ <a href="../classtrees_PHPExcel_Shared.html" class="menu">class tree: PHPExcel_Shared</a> ]
+                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                      		  [ <a href="../classtrees_PHPExcel_Shared.html" class="menu">class tree: PHPExcel_Shared</a> ]
 		  [ <a href="../elementindex_PHPExcel_Shared.html" class="menu">index: PHPExcel_Shared</a> ]
 		  	    [ <a href="../elementindex.html" class="menu">all elements</a> ]
     </td>
@@ -38,12 +38,14 @@
               <a href="../li_PHPExcel_Cell.html">PHPExcel_Cell</a><br />
               <a href="../li_PHPExcel_Reader.html">PHPExcel_Reader</a><br />
               <a href="../li_PHPExcel_Reader_Excel5.html">PHPExcel_Reader_Excel5</a><br />
+              <a href="../li_PHPExcel_Reader_Excel2007.html">PHPExcel_Reader_Excel2007</a><br />
               <a href="../li_PHPExcel_RichText.html">PHPExcel_RichText</a><br />
               <a href="../li_PHPExcel_Settings.html">PHPExcel_Settings</a><br />
               <a href="../li_PHPExcel_Shared.html">PHPExcel_Shared</a><br />
               <a href="../li_PHPExcel_Shared_Best_Fit.html">PHPExcel_Shared_Best_Fit</a><br />
               <a href="../li_PHPExcel_Shared_Escher.html">PHPExcel_Shared_Escher</a><br />
               <a href="../li_PHPExcel_Shared_OLE.html">PHPExcel_Shared_OLE</a><br />
+              <a href="../li_PHPExcel_Shared_ZipArchive.html">PHPExcel_Shared_ZipArchive</a><br />
               <a href="../li_PHPExcel_Style.html">PHPExcel_Style</a><br />
               <a href="../li_PHPExcel_Worksheet.html">PHPExcel_Worksheet</a><br />
               <a href="../li_PHPExcel_Worksheet_Drawing.html">PHPExcel_Worksheet_Drawing</a><br />
@@ -118,7 +120,7 @@ Source Location: /PHPExcel/Shared/String.php<br /><br />
 
 <h4>Copyright:</h4>
 <ul>
-  <li>Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)</li>
+  <li>Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)</li>
 </ul>
         
 </td>
@@ -141,12 +143,14 @@ Source Location: /PHPExcel/Shared/String.php<br /><br />
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodconvertToNumberIfFraction">convertToNumberIfFraction</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodCountCharacters">CountCharacters</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodFormatNumber">FormatNumber</a></li>
+    <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodgetCurrencyCode">getCurrencyCode</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodgetDecimalSeparator">getDecimalSeparator</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodgetIsIconvEnabled">getIsIconvEnabled</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodgetIsMbstringEnabled">getIsMbstringEnabled</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodgetThousandsSeparator">getThousandsSeparator</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodIsUTF8">IsUTF8</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodSanitizeUTF8">SanitizeUTF8</a></li>
+    <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodsetCurrencyCode">setCurrencyCode</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodsetDecimalSeparator">setDecimalSeparator</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodsetThousandsSeparator">setThousandsSeparator</a></li>
     <li><a href="../PHPExcel_Shared/PHPExcel_Shared_String.html#methodSubstring">Substring</a></li>
@@ -179,7 +183,7 @@ PHPExcel_Shared_String<br /><br /><br /><br />
 <div class="tags">
 <table border="0" cellspacing="0" cellpadding="0">
   <tr>
-    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)</td>
+    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)</td>
   </tr>
 </table>
 </div>
@@ -193,7 +197,7 @@ PHPExcel_Shared_String<br /><br /><br /><br />
 <div class="tags">
   <hr />
 	<a name="methodbuildCharacterSets"></a>
-	<h3>static method buildCharacterSets <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a325">325</a>]</span></h3>
+	<h3>static method buildCharacterSets <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a332">332</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -218,7 +222,7 @@ PHPExcel_Shared_String<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodControlCharacterOOXML2PHP"></a>
-	<h3>static method ControlCharacterOOXML2PHP <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a348">348</a>]</span></h3>
+	<h3>static method ControlCharacterOOXML2PHP <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a355">355</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -254,7 +258,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodControlCharacterPHP2OOXML"></a>
-	<h3>static method ControlCharacterPHP2OOXML <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a366">366</a>]</span></h3>
+	<h3>static method ControlCharacterPHP2OOXML <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a373">373</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -290,7 +294,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodConvertEncoding"></a>
-	<h3>static method ConvertEncoding <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a476">476</a>]</span></h3>
+	<h3>static method ConvertEncoding <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a483">483</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -338,7 +342,7 @@ $from)</code>
   </div>
   <hr />
 	<a name="methodconvertToNumberIfFraction"></a>
-	<h3>static method convertToNumberIfFraction <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a578">578</a>]</span></h3>
+	<h3>static method convertToNumberIfFraction <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a585">585</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -374,7 +378,7 @@ string
   </div>
   <hr />
 	<a name="methodCountCharacters"></a>
-	<h3>static method CountCharacters <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a534">534</a>]</span></h3>
+	<h3>static method CountCharacters <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a541">541</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -419,7 +423,7 @@ $enc = 'UTF-8'])</code>
   </div>
   <hr />
 	<a name="methodFormatNumber"></a>
-	<h3>static method FormatNumber <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a409">409</a>]</span></h3>
+	<h3>static method FormatNumber <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a416">416</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -454,8 +458,33 @@ $value)</code>
         <div class="top">[ <a href="#top">Top</a> ]</div>
   </div>
   <hr />
+	<a name="methodgetCurrencyCode"></a>
+	<h3>static method getCurrencyCode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a660">660</a>]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>static string getCurrencyCode(
+)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+	
+		Get the currency code. If it has not yet been set explicitly, try to obtain the 		symbol information from locale.<br /><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>access:</b>&nbsp;&nbsp;</td><td>public</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+
+	
+        <div class="top">[ <a href="#top">Top</a> ]</div>
+  </div>
+  <hr />
 	<a name="methodgetDecimalSeparator"></a>
-	<h3>static method getDecimalSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a594">594</a>]</span></h3>
+	<h3>static method getDecimalSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a601">601</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -480,7 +509,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodgetIsIconvEnabled"></a>
-	<h3>static method getIsIconvEnabled <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a286">286</a>]</span></h3>
+	<h3>static method getIsIconvEnabled <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a293">293</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -505,7 +534,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodgetIsMbstringEnabled"></a>
-	<h3>static method getIsMbstringEnabled <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a269">269</a>]</span></h3>
+	<h3>static method getIsMbstringEnabled <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a276">276</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -530,7 +559,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodgetThousandsSeparator"></a>
-	<h3>static method getThousandsSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a627">627</a>]</span></h3>
+	<h3>static method getThousandsSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a633">633</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -555,7 +584,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodIsUTF8"></a>
-	<h3>static method IsUTF8 <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a398">398</a>]</span></h3>
+	<h3>static method IsUTF8 <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a405">405</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -591,7 +620,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodSanitizeUTF8"></a>
-	<h3>static method SanitizeUTF8 <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a376">376</a>]</span></h3>
+	<h3>static method SanitizeUTF8 <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a383">383</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -626,8 +655,44 @@ $value)</code>
         <div class="top">[ <a href="#top">Top</a> ]</div>
   </div>
   <hr />
+	<a name="methodsetCurrencyCode"></a>
+	<h3>static method setCurrencyCode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a681">681</a>]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>static void setCurrencyCode(
+[string
+$pValue = '$'])</code>
+    </td></tr></table>
+    </td></tr></table><br />
+	
+		Set the currency code. Only used by PHPExcel_Style_NumberFormat::toFormattedString() 		to format output by PHPExcel_Writer_HTML and PHPExcel_Writer_PDF<br /><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>access:</b>&nbsp;&nbsp;</td><td>public</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+
+	
+        <h4>Parameters:</h4>
+    <div class="tags">
+    <table border="0" cellspacing="0" cellpadding="0">
+          <tr>
+        <td class="type">string&nbsp;&nbsp;</td>
+        <td><b>$pValue</b>&nbsp;&nbsp;</td>
+        <td>Character for currency code</td>
+      </tr>
+        </table>
+    </div><br />
+        <div class="top">[ <a href="#top">Top</a> ]</div>
+  </div>
+  <hr />
 	<a name="methodsetDecimalSeparator"></a>
-	<h3>static method setDecimalSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a616">616</a>]</span></h3>
+	<h3>static method setDecimalSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a622">622</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -663,7 +728,7 @@ $pValue = '.'])</code>
   </div>
   <hr />
 	<a name="methodsetThousandsSeparator"></a>
-	<h3>static method setThousandsSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a643">643</a>]</span></h3>
+	<h3>static method setThousandsSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a649">649</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -699,7 +764,7 @@ $pValue = ','])</code>
   </div>
   <hr />
 	<a name="methodSubstring"></a>
-	<h3>static method Substring <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a556">556</a>]</span></h3>
+	<h3>static method Substring <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a563">563</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -759,7 +824,7 @@ $length)</code>
   </div>
   <hr />
 	<a name="methodSYLKtoUTF8"></a>
-	<h3>static method SYLKtoUTF8 <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a654">654</a>]</span></h3>
+	<h3>static method SYLKtoUTF8 <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a692">692</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -798,7 +863,7 @@ $pValue = ''])</code>
   </div>
   <hr />
 	<a name="methodUTF8toBIFF8UnicodeLong"></a>
-	<h3>static method UTF8toBIFF8UnicodeLong <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a452">452</a>]</span></h3>
+	<h3>static method UTF8toBIFF8UnicodeLong <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a459">459</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -834,7 +899,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodUTF8toBIFF8UnicodeShort"></a>
-	<h3>static method UTF8toBIFF8UnicodeShort <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a426">426</a>]</span></h3>
+	<h3>static method UTF8toBIFF8UnicodeShort <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a433">433</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -870,7 +935,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodutf16_decode"></a>
-	<h3>static method utf16_decode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a511">511</a>]</span></h3>
+	<h3>static method utf16_decode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Shared__PHPExcelSharedString.php.html#a518">518</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -940,7 +1005,7 @@ $bom_be = true])</code>
 
         <div class="credit">
 		    <hr />
-		    Documentation generated on Fri, 10 Dec 2010 08:40:40 +0100 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
+		    Documentation generated on Sun, 27 Feb 2011 16:34:15 -0800 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
 	      </div>
       </td></tr></table>
     </td>

@@ -2,7 +2,7 @@
 /**
  * PHPExcel
  *
- * Copyright (c) 2006 - 2010 PHPExcel
+ * Copyright (c) 2006 - 2011 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel_Reader_Excel5
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license    http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version    1.7.5, 2010-12-10
+ * @version    1.7.6, 2011-02-27
  */
 
 // Original file header of ParseXL (used as the base for this class):
@@ -67,13 +67,13 @@ if (!defined('PHPEXCEL_ROOT')) {
 }
 
 /**
- * PHPExcel_Reader_Excel5
+ *	PHPExcel_Reader_Excel5
  *
- * This class uses {@link http://sourceforge.net/projects/phpexcelreader/parseXL}
+ *	This class uses {@link http://sourceforge.net/projects/phpexcelreader/parseXL}
  *
- * @category   PHPExcel
- * @package    PHPExcel_Reader_Excel5
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ *	@category	PHPExcel
+ *	@package	PHPExcel_Reader_Excel5
+ *	@copyright	Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  */
 class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 {
@@ -159,16 +159,19 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 	const XLS_Type_UNKNOWN				= 0xffff;
 
 	/**
-	 * Read data only?
+	 *	Read data only?
+	 *	Identifies whether the Reader should only read data values for cells, and ignore any formatting information;
+	 *		or whether it should read both data and formatting
 	 *
-	 * @var boolean
+	 *	@var	boolean
 	 */
 	private $_readDataOnly = false;
 
 	/**
-	 * Restict which sheets should be loaded?
+	 *	Restrict which sheets should be loaded?
+	 *	This property holds an array of worksheet names to be loaded. If null, then all worksheets will be loaded.
 	 *
-	 * @var array
+	 *	@var	array of string
 	 */
 	private $_loadSheetsOnly = null;
 
@@ -335,6 +338,20 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 	private $_objs;
 
 	/**
+	 * Text Objects. One TXO record corresponds with one entry.
+	 *
+	 * @var array
+	 */
+	private $_textObjects;
+
+	/**
+	 * Cell Annotations (BIFF8)
+	 *
+	 * @var array
+	 */
+	private $_cellNotes;
+
+	/**
 	 * The combined MSODRAWINGGROUP data
 	 *
 	 * @var string
@@ -384,10 +401,13 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 	 */
 	private $_sharedFormulaParts;
 
+
 	/**
-	 * Read data only?
+	 *	Read data only?
+	 *		If this is true, then the Reader will only read data values for cells, it will not read any formatting information.
+	 *		If false (the default) it will read data and formatting.
 	 *
-	 * @return boolean
+	 *	@return	boolean
 	 */
 	public function getReadDataOnly()
 	{
@@ -395,10 +415,13 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 	}
 
 	/**
-	 * Set read data only
+	 *	Set read data only
+	 *		Set to true, to advise the Reader only to read data values for cells, and to ignore any formatting information.
+	 *		Set to false (the default) to advise the Reader to read both data and formatting for cells.
 	 *
-	 * @param boolean $pValue
-	 * @return PHPExcel_Reader_Excel5
+	 *	@param	boolean	$pValue
+	 *
+	 *	@return	PHPExcel_Reader_Excel5
 	 */
 	public function setReadDataOnly($pValue = false)
 	{
@@ -407,9 +430,11 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 	}
 
 	/**
-	 * Get which sheets to load
+	 *	Get which sheets to load
+	 *		Returns either an array of worksheet names (the list of worksheets that should be loaded), or a null
+	 *			indicating that all worksheets in the workbook should be loaded.
 	 *
-	 * @return mixed
+	 *	@return mixed
 	 */
 	public function getLoadSheetsOnly()
 	{
@@ -417,10 +442,13 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 	}
 
 	/**
-	 * Set which sheets to load
+	 *	Set which sheets to load
 	 *
-	 * @param mixed $value
-	 * @return PHPExcel_Reader_Excel5
+	 *	@param mixed $value
+	 *		This should be either an array of worksheet names to be loaded, or a string containing a single worksheet name.
+	 *		If NULL, then it tells the Reader to read all worksheets in the workbook
+	 *
+	 *	@return PHPExcel_Reader_Excel5
 	 */
 	public function setLoadSheetsOnly($value = null)
 	{
@@ -430,9 +458,10 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 	}
 
 	/**
-	 * Set all sheets to load
+	 *	Set all sheets to load
+	 *		Tells the Reader to load all worksheets from the workbook.
 	 *
-	 * @return PHPExcel_Reader_Excel5
+	 *	@return	PHPExcel_Reader_Excel5
 	 */
 	public function setLoadAllSheets()
 	{
@@ -492,6 +521,55 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 			return false;
 		}
 	}
+
+	/**
+	 * Reads names of the worksheets from a file, without parsing the whole file to a PHPExcel object
+	 *
+	 * @param 	string 		$pFilename
+	 * @throws 	Exception
+	 */
+	public function listWorksheetNames($pFilename)
+	{
+		// Check if file exists
+		if (!file_exists($pFilename)) {
+			throw new Exception("Could not open " . $pFilename . " for reading! File does not exist.");
+		}
+
+		$worksheetNames = array();
+
+		// Read the OLE file
+		$this->_loadOLE($pFilename);
+
+		// total byte size of Excel data (workbook global substream + sheet substreams)
+		$this->_dataSize = strlen($this->_data);
+
+		$this->_pos		= 0;
+		$this->_sheets	= array();
+
+		// Parse Workbook Global Substream
+		while ($this->_pos < $this->_dataSize) {
+			$code = self::_GetInt2d($this->_data, $this->_pos);
+
+			switch ($code) {
+				case self::XLS_Type_BOF:	$this->_readBof();		break;
+				case self::XLS_Type_SHEET:	$this->_readSheet();	break;
+				case self::XLS_Type_EOF:	$this->_readDefault();	break 2;
+				default:					$this->_readDefault();	break;
+			}
+		}
+
+		foreach ($this->_sheets as $sheet) {
+			if ($sheet['sheetType'] != 0x00) {
+				// 0x00: Worksheet, 0x02: Chart, 0x06: Visual Basic module
+				continue;
+			}
+
+			$worksheetNames[] = $sheet['name'];
+		}
+
+		return $worksheetNames;
+	}
+
 
 	/**
 	 * Loads PHPExcel from file
@@ -669,6 +747,13 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 			// Initialize shared formulas
 			$this->_sharedFormulas = array();
 
+			// Initialize text objs
+			$this->_textObjects = array();
+
+			// Initialize cell annotations
+			$this->_cellNotes = array();
+			$this->textObjRef = -1;
+
 			while ($this->_pos <= $this->_dataSize - 4) {
 				$code = self::_GetInt2d($this->_data, $this->_pos);
 
@@ -722,6 +807,7 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 					case self::XLS_Type_RANGEPROTECTION:		$this->_readRangeProtection();			break;
 					case self::XLS_Type_NOTE:					$this->_readNote();						break;
 					//case self::XLS_Type_IMDATA:				$this->_readImData();					break;
+					case self::XLS_Type_TXO:					$this->_readTextObject();				break;
 					case self::XLS_Type_CONTINUE:				$this->_readContinue();					break;
 					case self::XLS_Type_EOF:					$this->_readDefault();					break 2;
 					default:									$this->_readDefault();					break;
@@ -745,8 +831,10 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 
 			// treat OBJ records
 			foreach ($this->_objs as $n => $obj) {
-//				echo 'Object ID is ',$n,'<br />';
-//
+//				echo '<hr /><b>Object</b> reference is ',$n,'<br />';
+//				var_dump($obj);
+//				echo '<br />';
+
 				// the first shape container never has a corresponding OBJ record, hence $n + 1
 				$spContainer = $allSpContainers[$n + 1];
 
@@ -771,14 +859,35 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 				$offsetX = $startOffsetX * PHPExcel_Shared_Excel5::sizeCol($this->_phpSheet, $startColumn) / 1024;
 				$offsetY = $startOffsetY * PHPExcel_Shared_Excel5::sizeRow($this->_phpSheet, $startRow) / 256;
 
-				switch ($obj['type']) {
+				switch ($obj['otObjType']) {
 
 				case 0x19:
 					// Note
-//					echo 'Comment Object<br />';
+//					echo 'Cell Annotation Object<br />';
+//					echo 'Object ID is ',$obj['idObjID'],'<br />';
+//
+					if (isset($this->_cellNotes[$obj['idObjID']])) {
+						$cellNote = $this->_cellNotes[$obj['idObjID']];
+
+//						echo '_cellNotes[',$obj['idObjID'],']: ';
+//						var_dump($cellNote);
+//						echo '<br />';
+//
+						if (isset($this->_textObjects[$obj['idObjID']])) {
+							$textObject = $this->_textObjects[$obj['idObjID']];
+//							echo '_textObject: ';
+//							var_dump($textObject);
+//							echo '<br />';
+//
+							$this->_cellNotes[$obj['idObjID']]['objTextData'] = $textObject;
+							$text = $textObject['text'];
+						}
+//						echo $text,'<br />';
+					}
 					break;
 
 				case 0x08:
+//					echo 'Picture Object<br />';
 					// picture
 
 					// get index to BSE entry (1-based)
@@ -833,6 +942,18 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 						$formula = $this->_getFormulaFromStructure($this->_sharedFormulas[$baseCell], $cell);
 						$this->_phpSheet->getCell($cell)->setValueExplicit('=' . $formula, PHPExcel_Cell_DataType::TYPE_FORMULA);
 					}
+				}
+			}
+
+			if (count($this->_cellNotes) > 0) {
+				foreach($this->_cellNotes as $note => $noteDetails) {
+//					echo '<b>Cell annotation ',$note,'</b><br />';
+//					var_dump($noteDetails);
+//					echo '<br />';
+					$cellAddress = str_replace('$','',$noteDetails['cellRef']);
+					$this->_phpSheet->getComment( $cellAddress )
+													->setAuthor( $noteDetails['author'] )
+													->setText($this->_parseRichText($noteDetails['objTextData']['text']) );
 				}
 			}
 		}
@@ -1127,8 +1248,6 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 			return;
 		}
 
-//		hexDump($this->_documentSummaryInformation);
-//
 		//	offset: 0;	size: 2;	must be 0xFE 0xFF (UTF-16 LE byte order mark)
 		//	offset: 2;	size: 2;
 		//	offset: 4;	size: 2;	OS version
@@ -1285,28 +1404,107 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 		$this->_pos += 4 + $length;
 	}
 
+
+	/**
+	 *	The NOTE record specifies a comment associated with a particular cell. In Excel 95 (BIFF7) and earlier versions,
+	 *		this record stores a note (cell note). This feature was significantly enhanced in Excel 97.
+	 */
 	private function _readNote()
 	{
-//		echo 'Read Note<br />';
+//		echo '<b>Read Cell Annotation</b><br />';
 		$length = self::_GetInt2d($this->_data, $this->_pos + 2);
 		$recordData = substr($this->_data, $this->_pos + 4, $length);
 
 		// move stream pointer to next record
 		$this->_pos += 4 + $length;
 
-		if ($this->_readDataOnly || $this->_version != self::XLS_BIFF8) {
+		if ($this->_readDataOnly) {
 			return;
 		}
 
-//		hexDump($recordData);
-//
 		$cellAddress = $this->_readBIFF8CellAddress(substr($recordData, 0, 4));
-		$noteObjID = self::_GetInt2d($recordData, 6);
-		$noteAuthor = trim(substr($recordData, 8));
+		if ($this->_version == self::XLS_BIFF8) {
+			$noteObjID = self::_GetInt2d($recordData, 6);
+			$noteAuthor = self::_readUnicodeStringLong(substr($recordData, 8));
+			$noteAuthor = $noteAuthor['value'];
+//			echo 'Note Address=',$cellAddress,'<br />';
+//			echo 'Note Object ID=',$noteObjID,'<br />';
+//			echo 'Note Author=',$noteAuthor,'<hr />';
+//
+			$this->_cellNotes[$noteObjID] = array('cellRef'		=> $cellAddress,
+												  'objectID'	=> $noteObjID,
+												  'author'		=> $noteAuthor
+												 );
+		} else {
+			$extension = false;
+			if ($cellAddress == '$B$65536') {
+				//	If the address row is -1 and the column is 0, (which translates as $B$65536) then this is a continuation
+				//		note from the previous cell annotation. We're not yet handling this, so annotations longer than the
+				//		max 2048 bytes will probably throw a wobbly.
+				$row = self::_GetInt2d($recordData, 0);
+				$extension = true;
+				$cellAddress = array_pop(array_keys($this->_phpSheet->getComments()));
+			}
+//			echo 'Note Address=',$cellAddress,'<br />';
 
-//		echo 'Note Address=',$cellAddress,'<br />';
-//		echo 'Note Object ID=',$noteObjID,'<br />';
-//		echo 'Note Author=',$noteAuthor,'<br />';
+			$cellAddress = str_replace('$','',$cellAddress);
+			$noteLength = self::_GetInt2d($recordData, 4);
+			$noteText = trim(substr($recordData, 6));
+//			echo 'Note Length=',$noteLength,'<br />';
+//			echo 'Note Text=',$noteText,'<br />';
+
+			if ($extension) {
+				//	Concatenate this extension with the currently set comment for the cell
+				$comment = $this->_phpSheet->getComment( $cellAddress );
+				$commentText = $comment->getText()->getPlainText();
+				$comment->setText($this->_parseRichText($commentText.$noteText) );
+			} else {
+				//	Set comment for the cell
+				$this->_phpSheet->getComment( $cellAddress )
+//													->setAuthor( $author )
+													->setText($this->_parseRichText($noteText) );
+			}
+		}
+
+	}
+
+	/**
+	 *	The TEXT Object record contains the text associated with a cell annotation.
+	 */
+	private function _readTextObject()
+	{
+		$length = self::_GetInt2d($this->_data, $this->_pos + 2);
+		$recordData = substr($this->_data, $this->_pos + 4, $length);
+
+		// move stream pointer to next record
+		$this->_pos += 4 + $length;
+
+		if ($this->_readDataOnly) {
+			return;
+		}
+
+		// recordData consists of an array of subrecords looking like this:
+		//	grbit: 2 bytes; Option Flags
+		//	rot: 2 bytes; rotation
+		//	cchText: 2 bytes; length of the text (in the first continue record)
+		//	cbRuns: 2 bytes; length of the formatting (in the second continue record)
+		// followed by the continuation records containing the actual text and formatting
+		$grbitOpts	= self::_GetInt2d($recordData, 0);
+		$rot		= self::_GetInt2d($recordData, 2);
+		$cchText	= self::_GetInt2d($recordData, 10);
+		$cbRuns		= self::_GetInt2d($recordData, 12);
+		$text		= $this->_getSplicedRecordData();
+
+		$this->_textObjects[$this->textObjRef] = array(
+				'text'		=> substr($text["recordData"],$text["spliceOffsets"][0]+1,$cchText),
+				'format'	=> substr($text["recordData"],$text["spliceOffsets"][1],$cbRuns),
+				'alignment'	=> $grbitOpts,
+				'rotation'	=> $rot
+			 );
+
+//		echo '<b>_readTextObject()</b><br />';
+//		var_dump($this->_textObjects[$this->textObjRef]);
+//		echo '<br />';
 	}
 
 	/**
@@ -3698,16 +3896,32 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 		}
 
 		// recordData consists of an array of subrecords looking like this:
-		//	ft: 2 bytes; id number
-		//	cb: 2 bytes; size in bytes of following data
+		//	ft: 2 bytes; ftCmo type (0x15)
+		//	cb: 2 bytes; size in bytes of ftCmo data
+		//	ot: 2 bytes; Object Type
+		//	id: 2 bytes; Object id number
+		//	grbit: 2 bytes; Option Flags
 		//	data: var; subrecord data
 
 		// for now, we are just interested in the second subrecord containing the object type
-		$ot = self::_GetInt2d($recordData, 4);
+		$ftCmoType	= self::_GetInt2d($recordData, 0);
+		$cbCmoSize	= self::_GetInt2d($recordData, 2);
+		$otObjType	= self::_GetInt2d($recordData, 4);
+		$idObjID	= self::_GetInt2d($recordData, 6);
+		$grbitOpts	= self::_GetInt2d($recordData, 6);
 
 		$this->_objs[] = array(
-			'type' => $ot,
+			'ftCmoType'	=> $ftCmoType,
+			'cbCmoSize'	=> $cbCmoSize,
+			'otObjType'	=> $otObjType,
+			'idObjID'	=> $idObjID,
+			'grbitOpts'	=> $grbitOpts
 		);
+		$this->textObjRef = $idObjID;
+
+//		echo '<b>_readObj()</b><br />';
+//		var_dump(end($this->_objs));
+//		echo '<br />';
 	}
 
 	/**
@@ -3849,8 +4063,9 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 		if (!is_null($this->getReadFilter())) {
 			$includeCellRange = false;
 			$rangeBoundaries = PHPExcel_Cell::getRangeBoundaries($cellRangeAddress);
+			$rangeBoundaries[1][0]++;
 			for ($row = $rangeBoundaries[0][1]; $row <= $rangeBoundaries[1][1]; $row++) {
-				for ($column = $rangeBoundaries[0][0]; $column <= $rangeBoundaries[1][0]; $column++) {
+				for ($column = $rangeBoundaries[0][0]; $column != $rangeBoundaries[1][0]; $column++) {
 					if ($this->getReadFilter()->readCell($column, $row, $this->_phpSheet->getTitle())) {
 						$includeCellRange = true;
 						break 2;
@@ -5150,6 +5365,7 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 			case 352: $function = 'DATESTRING';		$args = 1;	break;
 			case 353: $function = 'NUMBERSTRING';	$args = 2;	break;
 			case 360: $function = 'PHONETIC';		$args = 1;	break;
+			case 368: $function = 'BAHTTEXT';		$args = 1;	break;
 			default:
 				throw new Exception('Unrecognized function in formula');
 				break;
@@ -6438,6 +6654,14 @@ class PHPExcel_Reader_Excel5 implements PHPExcel_Reader_IReader
 			case 0x3F: return array('rgb' => '333333');
 			default:   return array('rgb' => '000000');
 		}
+	}
+
+	private function _parseRichText($is = '') {
+		$value = new PHPExcel_RichText();
+
+		$value->createText($is);
+
+		return $value;
 	}
 
 }

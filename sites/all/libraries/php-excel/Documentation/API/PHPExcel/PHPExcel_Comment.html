@@ -14,7 +14,7 @@
     <td class="header_menu">
         
                                     
-                                                                                                                                                                                                                                                                                                                                                                                                                                              		  [ <a href="../classtrees_PHPExcel.html" class="menu">class tree: PHPExcel</a> ]
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      		  [ <a href="../classtrees_PHPExcel.html" class="menu">class tree: PHPExcel</a> ]
 		  [ <a href="../elementindex_PHPExcel.html" class="menu">index: PHPExcel</a> ]
 		  	    [ <a href="../elementindex.html" class="menu">all elements</a> ]
     </td>
@@ -38,12 +38,14 @@
               <a href="../li_PHPExcel_Cell.html">PHPExcel_Cell</a><br />
               <a href="../li_PHPExcel_Reader.html">PHPExcel_Reader</a><br />
               <a href="../li_PHPExcel_Reader_Excel5.html">PHPExcel_Reader_Excel5</a><br />
+              <a href="../li_PHPExcel_Reader_Excel2007.html">PHPExcel_Reader_Excel2007</a><br />
               <a href="../li_PHPExcel_RichText.html">PHPExcel_RichText</a><br />
               <a href="../li_PHPExcel_Settings.html">PHPExcel_Settings</a><br />
               <a href="../li_PHPExcel_Shared.html">PHPExcel_Shared</a><br />
               <a href="../li_PHPExcel_Shared_Best_Fit.html">PHPExcel_Shared_Best_Fit</a><br />
               <a href="../li_PHPExcel_Shared_Escher.html">PHPExcel_Shared_Escher</a><br />
               <a href="../li_PHPExcel_Shared_OLE.html">PHPExcel_Shared_OLE</a><br />
+              <a href="../li_PHPExcel_Shared_ZipArchive.html">PHPExcel_Shared_ZipArchive</a><br />
               <a href="../li_PHPExcel_Style.html">PHPExcel_Style</a><br />
               <a href="../li_PHPExcel_Worksheet.html">PHPExcel_Worksheet</a><br />
               <a href="../li_PHPExcel_Worksheet_Drawing.html">PHPExcel_Worksheet_Drawing</a><br />
@@ -193,6 +195,8 @@
 		</a><br>
 			<a href="../PHPExcel/_PHPExcel---Shared---JAMA---docs---package.php.html">		package.php
 		</a><br>
+			<a href="../PHPExcel/_PHPExcel---Shared---PCLZip---pclzip.lib.php.html">		pclzip.lib.php
+		</a><br>
 			<a href="../PHPExcel/_PHPExcel.php.html">		PHPExcel.php
 		</a><br>
 			<a href="../PHPExcel/_PHPExcel---Shared---JAMA---examples---polyfit.php.html">		polyfit.php
@@ -245,6 +249,7 @@
 		    		<a href="../PHPExcel/LagrangeInterpolation.html">LagrangeInterpolation</a><br />
 	    		<a href="../PHPExcel/LevenbergMarquardt.html">LevenbergMarquardt</a><br />
 	    		<a href="../PHPExcel/LMQuadTest.html">LMQuadTest</a><br />
+	    		<a href="../PHPExcel/PclZip.html">PclZip</a><br />
 	    		<a href="../PHPExcel/PHPExcel.html">PHPExcel</a><br />
 	    		<a href="../PHPExcel/PHPExcel_Autoloader.html">PHPExcel_Autoloader</a><br />
 	    		<a href="../PHPExcel/PHPExcel_CachedObjectStorageFactory.html">PHPExcel_CachedObjectStorageFactory</a><br />
@@ -285,7 +290,7 @@ Source Location: /PHPExcel/Comment.php<br /><br />
 
 <h4>Copyright:</h4>
 <ul>
-  <li>Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)</li>
+  <li>Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)</li>
 </ul>
                 <p class="implements">
             Implements interfaces:
@@ -301,6 +306,7 @@ Source Location: /PHPExcel/Comment.php<br /><br />
 <h3><a href="#class_methods">Methods</a></h3>
 <ul>
     <li><a href="../PHPExcel/PHPExcel_Comment.html#method__construct">__construct</a></li>
+    <li><a href="../PHPExcel/PHPExcel_Comment.html#methodgetAlignment">getAlignment</a></li>
     <li><a href="../PHPExcel/PHPExcel_Comment.html#methodgetAuthor">getAuthor</a></li>
     <li><a href="../PHPExcel/PHPExcel_Comment.html#methodgetFillColor">getFillColor</a></li>
     <li><a href="../PHPExcel/PHPExcel_Comment.html#methodgetHashCode">getHashCode</a></li>
@@ -310,6 +316,7 @@ Source Location: /PHPExcel/Comment.php<br /><br />
     <li><a href="../PHPExcel/PHPExcel_Comment.html#methodgetText">getText</a></li>
     <li><a href="../PHPExcel/PHPExcel_Comment.html#methodgetVisible">getVisible</a></li>
     <li><a href="../PHPExcel/PHPExcel_Comment.html#methodgetWidth">getWidth</a></li>
+    <li><a href="../PHPExcel/PHPExcel_Comment.html#methodsetAlignment">setAlignment</a></li>
     <li><a href="../PHPExcel/PHPExcel_Comment.html#methodsetAuthor">setAuthor</a></li>
     <li><a href="../PHPExcel/PHPExcel_Comment.html#methodsetHeight">setHeight</a></li>
     <li><a href="../PHPExcel/PHPExcel_Comment.html#methodsetMarginLeft">setMarginLeft</a></li>
@@ -343,7 +350,7 @@ PHPExcel_Comment<br /><br /><br /><br />
 <div class="tags">
 <table border="0" cellspacing="0" cellpadding="0">
   <tr>
-    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)</td>
+    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)</td>
   </tr>
 </table>
 </div>
@@ -358,7 +365,7 @@ PHPExcel_Comment<br /><br /><br /><br />
 
   <hr />
 	<a name="method__construct"></a>
-	<h3>constructor __construct <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a99">99</a>]</span></h3>
+	<h3>constructor __construct <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a106">106</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -385,8 +392,33 @@ PHPExcel_Comment<br /><br /><br /><br />
         <div class="top">[ <a href="#top">Top</a> ]</div>
   </div>
   <hr />
+	<a name="methodgetAlignment"></a>
+	<h3>method getAlignment <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a280">280</a>]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>string getAlignment(
+)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+	
+		Get Alignment<br /><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>access:</b>&nbsp;&nbsp;</td><td>public</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+
+	
+        <div class="top">[ <a href="#top">Top</a> ]</div>
+  </div>
+  <hr />
 	<a name="methodgetAuthor"></a>
-	<h3>method getAuthor <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a112">112</a>]</span></h3>
+	<h3>method getAuthor <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a120">120</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -411,7 +443,7 @@ PHPExcel_Comment<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetFillColor"></a>
-	<h3>method getFillColor <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a252">252</a>]</span></h3>
+	<h3>method getFillColor <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a260">260</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -436,7 +468,7 @@ PHPExcel_Comment<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetHashCode"></a>
-	<h3>method getHashCode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a261">261</a>]</span></h3>
+	<h3>method getHashCode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a289">289</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -470,7 +502,7 @@ PHPExcel_Comment<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetHeight"></a>
-	<h3>method getHeight <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a172">172</a>]</span></h3>
+	<h3>method getHeight <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a180">180</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -495,7 +527,7 @@ PHPExcel_Comment<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetMarginLeft"></a>
-	<h3>method getMarginLeft <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a192">192</a>]</span></h3>
+	<h3>method getMarginLeft <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a200">200</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -520,7 +552,7 @@ PHPExcel_Comment<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetMarginTop"></a>
-	<h3>method getMarginTop <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a212">212</a>]</span></h3>
+	<h3>method getMarginTop <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a220">220</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -545,7 +577,7 @@ PHPExcel_Comment<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetText"></a>
-	<h3>method getText <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a132">132</a>]</span></h3>
+	<h3>method getText <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a140">140</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -570,7 +602,7 @@ PHPExcel_Comment<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetVisible"></a>
-	<h3>method getVisible <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a232">232</a>]</span></h3>
+	<h3>method getVisible <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a240">240</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -595,7 +627,7 @@ PHPExcel_Comment<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetWidth"></a>
-	<h3>method getWidth <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a152">152</a>]</span></h3>
+	<h3>method getWidth <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a160">160</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -619,8 +651,44 @@ PHPExcel_Comment<br /><br /><br /><br />
         <div class="top">[ <a href="#top">Top</a> ]</div>
   </div>
   <hr />
+	<a name="methodsetAlignment"></a>
+	<h3>method setAlignment <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a270">270</a>]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code><a href="../PHPExcel/PHPExcel_Comment.html">PHPExcel_Comment</a> setAlignment(
+[string
+$pValue = PHPExcel_Style_Alignment::HORIZONTAL_GENERAL])</code>
+    </td></tr></table>
+    </td></tr></table><br />
+	
+		Set Alignment<br /><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>access:</b>&nbsp;&nbsp;</td><td>public</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+
+	
+        <h4>Parameters:</h4>
+    <div class="tags">
+    <table border="0" cellspacing="0" cellpadding="0">
+          <tr>
+        <td class="type">string&nbsp;&nbsp;</td>
+        <td><b>$pValue</b>&nbsp;&nbsp;</td>
+        <td></td>
+      </tr>
+        </table>
+    </div><br />
+        <div class="top">[ <a href="#top">Top</a> ]</div>
+  </div>
+  <hr />
 	<a name="methodsetAuthor"></a>
-	<h3>method setAuthor <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a122">122</a>]</span></h3>
+	<h3>method setAuthor <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a130">130</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -656,7 +724,7 @@ $pValue = ''])</code>
   </div>
   <hr />
 	<a name="methodsetHeight"></a>
-	<h3>method setHeight <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a182">182</a>]</span></h3>
+	<h3>method setHeight <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a190">190</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -692,7 +760,7 @@ $value = '55.5pt'])</code>
   </div>
   <hr />
 	<a name="methodsetMarginLeft"></a>
-	<h3>method setMarginLeft <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a202">202</a>]</span></h3>
+	<h3>method setMarginLeft <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a210">210</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -728,7 +796,7 @@ $value = '59.25pt'])</code>
   </div>
   <hr />
 	<a name="methodsetMarginTop"></a>
-	<h3>method setMarginTop <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a222">222</a>]</span></h3>
+	<h3>method setMarginTop <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a230">230</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -764,7 +832,7 @@ $value = '1.5pt'])</code>
   </div>
   <hr />
 	<a name="methodsetText"></a>
-	<h3>method setText <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a142">142</a>]</span></h3>
+	<h3>method setText <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a150">150</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -800,7 +868,7 @@ $pValue)</code>
   </div>
   <hr />
 	<a name="methodsetVisible"></a>
-	<h3>method setVisible <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a242">242</a>]</span></h3>
+	<h3>method setVisible <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a250">250</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -836,7 +904,7 @@ $value = false])</code>
   </div>
   <hr />
 	<a name="methodsetWidth"></a>
-	<h3>method setWidth <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a162">162</a>]</span></h3>
+	<h3>method setWidth <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a170">170</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -872,7 +940,7 @@ $value = '96pt'])</code>
   </div>
   <hr />
 	<a name="method__clone"></a>
-	<h3>method __clone <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a278">278</a>]</span></h3>
+	<h3>method __clone <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel__PHPExcelComment.php.html#a307">307</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -900,7 +968,7 @@ $value = '96pt'])</code>
 
         <div class="credit">
 		    <hr />
-		    Documentation generated on Fri, 10 Dec 2010 08:34:44 +0100 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
+		    Documentation generated on Sun, 27 Feb 2011 16:29:08 -0800 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
 	      </div>
       </td></tr></table>
     </td>

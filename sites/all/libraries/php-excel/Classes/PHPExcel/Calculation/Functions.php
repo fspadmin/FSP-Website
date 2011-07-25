@@ -2,7 +2,7 @@
 /**
  * PHPExcel
  *
- * Copyright (c) 2006 - 2010 PHPExcel
+ * Copyright (c) 2006 - 2011 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@
  *
  * @category	PHPExcel
  * @package		PHPExcel_Calculation
- * @copyright	Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright	Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license		http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version		1.7.5, 2010-12-10
+ * @version		1.7.6, 2011-02-27
  */
 
 
@@ -49,18 +49,12 @@ define('MAX_ITERATIONS', 256);
 define('PRECISION', 8.88E-016);
 
 
-$savedPrecision = ini_get('precision');
-if ($savedPrecision < 16) {
-	ini_set('precision',16);
-}
-
-
 /**
  * PHPExcel_Calculation_Functions
  *
  * @category	PHPExcel
  * @package		PHPExcel_Calculation
- * @copyright	Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright	Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  */
 class PHPExcel_Calculation_Functions {
 
@@ -491,7 +485,7 @@ class PHPExcel_Calculation_Functions {
 	 *	@return	string	Version information
 	 */
 	public static function VERSION() {
-		return 'PHPExcel 1.7.5, 2010-12-10';
+		return 'PHPExcel 1.7.6, 2011-02-27';
 	}	//	function VERSION()
 
 
