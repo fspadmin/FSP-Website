@@ -13,3 +13,7 @@
 .uc_signup_next {
   margin-left: 25px;
 }
+
+span.uc_signup_closed_message {
+  display: block;
+}

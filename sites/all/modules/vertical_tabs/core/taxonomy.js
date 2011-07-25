@@ -1,4 +1,3 @@
-// $Id: taxonomy.js,v 1.1.2.1 2009/12/09 01:08:39 davereid Exp $
 
 Drupal.verticalTabs = Drupal.verticalTabs || {};
 
@@ -10,12 +9,13 @@ Drupal.verticalTabs.taxonomy = function() {
       var vocabulary = $(this).siblings('label').html();
       terms[vocabulary] = terms[vocabulary] || [];
       if ($(this).is('input.form-text')) {
-        terms[vocabulary].push(this.value);
+        terms[vocabulary].push(Drupal.checkPlain(this.value));
         termCount++;
       }
       else if ($(this).is('select')) {
         $(this).find('option[selected]').each(function() {
-          terms[vocabulary].push($(this).text());
+          var term = $(this).text().replace(/^\-+/, '');
+          terms[vocabulary].push(Drupal.checkPlain(term));
           termCount++;
         });
       }

@@ -1,4 +1,8 @@
-// $Id: CHANGELOG.txt,v 1.1.2.1 2008/12/12 08:42:19 robrechtj Exp $
+Changes in 6.x-1.1:
+
+ * Issue #267555 by mvc, Robrecht Jacques: Added support for core locale module.
+ * Issue #1080912 by Robrecht Jacques: Fixed call-time pass-by-reference.
+ * Issue #434572 by rconstantine: Added support for content_taxonomy.
 
 Changes since DRUPAL-6--1-0-RC1:
  * by robrechtj : error in types list of user.inc

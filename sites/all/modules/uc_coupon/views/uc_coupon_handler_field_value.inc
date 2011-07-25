@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon_handler_field_value.inc,v 1.1 2010/11/15 00:59:03 longwave Exp $
 
 /**
  * @file
@@ -11,11 +10,9 @@
  */
 class uc_coupon_handler_field_value extends views_handler_field_numeric {
   function render($values) {
-    if ($values->{$this->aliases['type']} == 'percentage') {
-      return $values->{$this->field_alias} . '%';
-    }
-    else {
-      return uc_currency_format($values->{$this->field_alias});
-    }
+    $coupon = new stdClass;
+    $coupon->value = $values->{$this->field_alias};
+    $coupon->type = $values->{$this->aliases['type']};
+    return uc_coupon_format_discount($coupon);
   }
 }

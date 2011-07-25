@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_ajax_cart.php,v 1.1.2.10 2010/05/01 12:42:30 erikseifert Exp $
 
 class UcAjaxCart
 {

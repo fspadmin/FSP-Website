@@ -1,5 +1,0 @@
-; $Id$
-name = Devel helper
-description = Devel add-on module that outputs a themer friendly alternative to dprint_r, dpr, and dvm.
-core = 6.x
-package = Custom

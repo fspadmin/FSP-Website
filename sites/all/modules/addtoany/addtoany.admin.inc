@@ -1,5 +1,4 @@
 <?php
-// $Id: addtoany.admin.inc,v 1.1.2.6.2.1 2010/07/09 09:45:02 micropat Exp $
 
 /**
  * @file
@@ -101,6 +100,7 @@ function addtoany_admin_settings() {
     '#collapsed'    => TRUE,
   );
   $form['addtoany_additional_settings']['addtoany_additional_js'] = array(
+  	'#wysiwyg' 	 	 => FALSE, // Exclude CKEditor/FCKeditor/etc. WYSIWYG HTML editors
     '#type'          => 'textarea',
     '#title'         => t('Additional script'),
     '#default_value' => variable_get('addtoany_additional_js', ''),

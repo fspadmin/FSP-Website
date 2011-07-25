@@ -1,5 +1,4 @@
 <?php
-// $Id: views_data_export_plugin_style_export.inc,v 1.1.2.2.4.3 2010/12/06 10:02:03 darthsteven Exp $
 /**
  * @file
  * Plugin include file for export style plugin.
@@ -77,7 +76,8 @@ class views_data_export_plugin_style_export extends views_plugin_style {
     // General token replacement.
     $output = t('<p>The following substitution patterns are available for this display. Use the pattern shown on the left to display the value indicated on the right.</p>');
     $items = array(
-      '%view == ' . t('view name'),
+      '%view == ' . t('View name'),
+      '%display == ' . t('Display name'),
     );
 
     $output .= theme('item_list', $items);
@@ -105,7 +105,7 @@ class views_data_export_plugin_style_export extends views_plugin_style {
       'dd' => 'd',
       'ddd' => 'D',
       'hh' => 'H',
-      'mm' => 'i',
+      'ii' => 'i',
       'ss' => 's',
     );
     foreach ($parts as $part => $format) {
@@ -231,14 +231,14 @@ class views_data_export_plugin_style_export extends views_plugin_style {
 
   function render_header() {
     $rows = array();
-    $output .= theme($this->definition['additional themes base'] . '_header', $this->view, $this->options, $rows, $title);
 
+    $output = theme($this->theme_functions($this->definition['additional themes base'] . '_header'), $this->view, $this->options, $rows, '');
     return $output;
   }
 
   function render_footer() {
     $rows = array();
-    $output .= theme($this->definition['additional themes base'] . '_footer', $this->view, $this->options, $rows, $title);
+    $output = theme($this->theme_functions($this->definition['additional themes base'] . '_footer'), $this->view, $this->options, $rows, '');
 
     return $output;
   }
@@ -267,7 +267,7 @@ class views_data_export_plugin_style_export extends views_plugin_style {
         $rows = $records;
       }
 
-      $output .= theme($this->definition['additional themes base'] . '_body', $this->view, $this->options, $rows, $title);
+      $output .= theme($this->theme_functions($this->definition['additional themes base'] . '_body'), $this->view, $this->options, $rows, '');
     }
     unset($this->view->row_index);
     return $output;
@@ -302,6 +302,7 @@ class views_data_export_plugin_style_export extends views_plugin_style {
       // General tokens.
       $tokens = array(
         '%view' => check_plain($view->name),
+        '%display' => check_plain($view->current_display),
       );
       // Argument tokens.
       $count = 0;
@@ -324,6 +325,9 @@ class views_data_export_plugin_style_export extends views_plugin_style {
       if (!empty($exposed)) {
         $tokens['%exposed'] = implode('-', $exposed);
       }
+      else {
+        $tokens['%exposed'] = 'default' ;
+      }
 
       // Timestamp token.
       $time = time();
@@ -336,7 +340,7 @@ class views_data_export_plugin_style_export extends views_plugin_style {
         'dd' => 'd',
         'ddd' => 'D',
         'hh' => 'H',
-        'mm' => 'i',
+        'ii' => 'i',
         'ss' => 's',
       );
       foreach ($parts as $part => $format) {

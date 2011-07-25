@@ -1,5 +1,4 @@
 <?php
-// $Id: emvideo.inc,v 1.1.2.1 2009/10/09 15:43:35 robrechtj Exp $
 
 /**
  * @file

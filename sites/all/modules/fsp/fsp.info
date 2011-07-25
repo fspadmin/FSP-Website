@@ -1,6 +1,0 @@
-name = fsp
-description = FSP-specific functionality, including registration, stats, etc.
-package = FSP
-core = 6.x
-core = "6.x"
-project = "fsp"

@@ -1,4 +1,3 @@
-// $Id: twitter.js,v 1.2 2008/06/18 03:34:33 eaton Exp $
 
 /**
  * Attach handlers to count the number of words in a given textfield, in its

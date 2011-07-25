@@ -1,5 +1,4 @@
 <?php 
-// $Id: uc_coupon-certificate.tpl.php,v 1.4 2010/12/22 00:22:09 longwave Exp $
 
 /**
  * Basic template for a printed coupon certificate.

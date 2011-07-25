@@ -10,7 +10,8 @@
  */
 function vertical_tabs_menu() {
   $items['admin/settings/vertical-tabs'] = array(
-    'title' => t('Vertical Tabs'),
+    'title' => 'Vertical Tabs',
+    'description' => 'Configure settings for vertical tabs.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('vertical_tabs_settings_form'),
     'access arguments' => array('administer site configuration'),
@@ -370,6 +371,9 @@ function vertical_tabs_add_vertical_tabs(&$form, $config = array()) {
           }
         }
       }
+
+      // Ensure the CSS files actually exist.
+      $css = array_filter($css, 'file_exists');
     }
 
     // User sort orders by the "weight" key.

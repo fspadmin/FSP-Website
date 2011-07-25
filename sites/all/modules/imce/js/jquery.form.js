@@ -1,4 +1,3 @@
-//$Id: jquery.form.js,v 1.1 2010/03/17 20:55:38 ufku Exp $
 /*
  * jQuery Form Plugin
  * version: 2.36 (07-NOV-2009)

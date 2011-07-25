@@ -1,5 +1,4 @@
 <?php
-// $Id: modr8.inc,v 1.1.2.1 2009/02/25 20:15:52 robrechtj Exp $
 
 /**
  * @file

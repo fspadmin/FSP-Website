@@ -1,5 +1,4 @@
 <?PHP
-// $Id: phplist.install,v 1.1.2.4 2009/08/02 16:55:45 paulbeaney Exp $
 function phplist_schema() {
   $schema['phplist_access'] = array(
       'description' => t('The table for tracking role access to lists.'),
@@ -11,6 +10,12 @@ function phplist_schema() {
           'not null' => TRUE),
         'rid' => array(
           'description' => t('The current {role}.rid role identifier.'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0),
+  		'mand' => array(
+          'description' => t('Determine whether list is auto-subscribe'),
           'type' => 'int',
           'unsigned' => TRUE,
           'not null' => TRUE,
@@ -63,7 +68,7 @@ function phplist_uninstall() {
  */
 function phplist_update_6000() {
   $ret = array();
-  
+
   $schema['phplist_access'] = array(
     'description' => t('The table for tracking role access to lists.'),
     'fields' => array(
@@ -78,11 +83,58 @@ function phplist_update_6000() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0),
+      'mand' => array(
+        'description' => t('Determine whether list is auto-subscribe'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
        ),
     'primary key' => array('lid', 'rid'),
   );
   db_create_table($ret, 'phplist_access', $schema['phplist_access']);
-  
+
   return $ret;
 }
 
+function phplist_update_6001() {
+  $ret = array();
+
+  if (!db_table_exists('phplist_access')) {
+    $schema['phplist_access'] = array(
+      'description' => t('The table for tracking role access to lists.'),
+      'fields' => array(
+        'lid' => array(
+          'description' => t('The list identifier.'),
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE),
+        'rid' => array(
+          'description' => t('The current {role}.rid role identifier.'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0),
+        'mand' => array(
+          'description' => t('Determine whether list is auto-subscribe'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0),
+        ),
+      'primary key' => array('lid', 'rid'),
+    );
+    db_create_table($ret, 'phplist_access', $schema['phplist_access']);
+  }
+  else {
+    $field = array(
+      'type' => 'int',
+      'description' => t('Determine whether list is auto-subscribe'),
+	  'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0);
+    db_add_field($ret, 'phplist_access', 'mand', $field);
+  }
+
+  return $ret;
+}

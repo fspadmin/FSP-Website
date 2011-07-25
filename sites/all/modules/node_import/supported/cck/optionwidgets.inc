@@ -1,5 +1,4 @@
 <?php
-// $Id: optionwidgets.inc,v 1.1.2.1 2009/02/26 21:28:50 robrechtj Exp $
 
 /**
  * @file

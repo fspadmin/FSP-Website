@@ -29,7 +29,7 @@ function uc_discounts_schema() {
       ),
       "description" => array(
         "type" => "varchar",
-        "length" => 1000,
+        "length" => 100,
         "not null" => TRUE,
         "default" => "",
       ),
@@ -113,6 +113,13 @@ function uc_discounts_schema() {
         "not null" => TRUE,
         "default" => 1,
         "description" => t("Number of times this discount can be applied to a single cart (0 for unlimited)."),
+      ),
+      "limit_max_times_applied" => array(
+        "type" => "int",
+        "size" => "tiny",
+        "not null" => TRUE,
+        "default" => 0,
+        "description" => t("Whether or not to further limit the maximum times applied to the number of qualifying products."),
       ),
       "can_be_combined_with_other_discounts" => array(
         "type" => "int",
@@ -275,7 +282,7 @@ function uc_discounts_schema() {
     "fields" => array(
       "discount_class_id" => array(
         "type" => "serial",
-        "no null" => TRUE,
+        "not null" => TRUE,
       ),
       "discount_id" => array(
         "type" => "int",
@@ -526,6 +533,7 @@ function uc_discounts_update_6001() {
   db_add_field($ret, 'uc_discounts', 'activates_on', $schema['uc_discounts']['fields']['activates_on']);
   return $ret;
 }
+
 /**
  * #919730, Add the ability for a discount to qualify based on subtotal of all products
  */
@@ -535,5 +543,16 @@ function uc_discounts_update_6002() {
   db_add_field($ret, 'uc_discounts', 'use_only_discounted_products_to_qualify', $schema['uc_discounts']['fields']['use_only_discounted_products_to_qualify']);
   // This was the default before this feature was added
   db_query("UPDATE {uc_discounts} SET use_only_discounted_products_to_qualify=1");
+  return $ret;
+}
+
+/**
+ * #1100790, Add the ability for a discount max applications to be limited to number of required products in the cart
+ */
+function uc_discounts_update_6003() {
+  $schema = uc_discounts_schema();
+  $ret = array();
+  db_add_field($ret, 'uc_discounts', 'limit_max_times_applied', $schema['uc_discounts']['fields']['limit_max_times_applied']);
+  db_query("UPDATE {uc_discounts} SET required_product = '' WHERE required_product = 'none'");
   return $ret;
 }

@@ -67,7 +67,7 @@
   // Format and embed an object.
   embedObject = function (swfObject, opts, jq) {
     jq.each(function () {
-      var obj = $('<object/>', this.ownerDocument);
+      var obj = '<object';
       
       if (opts.params == '') {
         opts.params = {};
@@ -77,38 +77,30 @@
       if ($.browser.msie) {
         // If IE, then add class ID and extra movie param
         opts.params.movie = swfObject;
-        obj.attr('classid', 'clsid:D27CDB6E-AE6D-11cf-96B8-444553540000');
+        obj += ' classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"';
       }
       else {
-        obj.attr('data', swfObject);
-        obj.attr('type', opts.mimeType);
+        obj += ' data="'+ swfObject +'"';
+        obj += ' type="'+ opts.mimeType +'"';
       }
       
       // Set attributes
-      obj.attr('width', opts.width).attr('height', opts.height);
+      obj += ' width="'+ opts.width +'"';
+      obj += ' height="'+ opts.height +'"';
+      
+      obj += '>';
       
       // Build the params
       opts.params['flashvars'] = formatVars(opts.flashvars);
-      ie6hack = '';
+      
       $.each(opts.params, function (name, val) {
-        var p = $('<param/>').attr('name', name).attr('value', val);
-        
-        // See below for explanation.
-        $.browser.msie ? ie6hack += p.parent().html() : p.appendTo(obj);
+        obj += '<param name="'+ name +'" value="'+ val +'"/>';
       });
       
+      obj += '</object>';
+      
       // Insert the element.
-      // IE 6/7 won't let us nest elements before inserting them into the 
-      // DOM, but params and object have to be inserted together, so
-      // we do this elaborate hack to string-build.
-      if ($.browser.msie) {
-        tag = obj.parent().html().split('>', 2);
-        text = tag[0] + '>' + ie6hack + tag[1];
-        $(this).html(text);
-      }
-      else {
-        $(this).html(obj);
-      }
+      $(this).html(obj);
     });
   };
   

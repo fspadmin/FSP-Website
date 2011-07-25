@@ -1,5 +1,4 @@
 <?php
-// $Id: twitter_actions.rules.inc,v 1.1.2.1 2009/04/08 14:19:59 eaton Exp $
 /**
  * @file
  * Provide better intergration into the rules module

@@ -1,4 +1,3 @@
-// $Id: behavior.swfembed.js,v 1.1 2009/03/18 20:27:12 mbutcher Exp $
 /**
  * Behaviors for adding SWF object files into a document.
  * @file

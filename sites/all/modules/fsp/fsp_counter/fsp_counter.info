@@ -1,6 +1,0 @@
-name = fsp_counter
-description = Provides the counter block
-package = FSP
-core = 6.x
-core = "6.x"
-project = "fsp_counter"

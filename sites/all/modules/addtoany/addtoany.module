@@ -1,5 +1,4 @@
 <?php
-// $Id: addtoany.module,v 1.7.2.8.2.10 2010/07/09 09:45:02 micropat Exp $
 
 /**
  * @file
@@ -123,35 +122,72 @@ function addtoany_menu() {
 }
 
 /**
- * Implementation of hook_footer().  Would use drupal_add_js, but external scripts are not well supported
+ * Internal function to add inline JavaScript to the head tag.
  * 
- * @param object $main [optional]
  * @return
  *   String containing JavaScript code to initialize each drop-down menu
  */
-function addtoany_footer($main = 0) {
-	global $_addtoany_script, $_addtoany_script_init;
+function _addtoany_header_script() {
 	
-	// Only output when needed (fixes http://drupal.org/node/843068)
-	if ( ! $_addtoany_script_init)
-		return;
+	$script_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://static.addtoany.com/menu/page.js' : 'http://static.addtoany.com/menu/page.js';
 	
-	$javascript = "<script type=\"text/javascript\">\n"
-		. "<!--//--><![CDATA[//><!--\n"
-		. "da2a.init = function(){\n"
-		. $_addtoany_script
-		. "da2a.ready = true;\n"
-		. "}\n"
-		. "da2a.html_ready = true;\n"
-		. "if(da2a.script_ready && !da2a.ready)da2a.init();\n" // Call a2a.init() if external script is ready, and if a2a.init() hasn't been called already
-		. "//--><!]]>\n"
-		. "</script>\n";
+	$javascript_header = "var a2a_config=a2a_config||{},"
+			. "da2a={done:false,"
+			. "html_done:false,"
+			. "script_ready:false,"
+			. "script_load:function(){"
+				. "var a=document.createElement('script'),"
+					. "s=document.getElementsByTagName('script')[0];"
+				. "a.type='text/javascript';a.async=true;"
+				. "a.src='" . $script_url . "';"
+				. "s.parentNode.insertBefore(a,s);"
+				. "da2a.script_load=function(){};"
+			. "},"
+			. "script_onready:function(){"
+				. "da2a.script_ready=true;"
+				. "if(da2a.html_done)da2a.init();"
+			. "},"
+			. "init:function(){"
+				. "for(var i=0,el,target,targets=da2a.targets,length=targets.length;i<length;i++){"
+					. "el=document.getElementById('da2a_'+(i+1));"
+					. "target=targets[i];"
+					. "a2a_config.linkname=target.title;"
+					. "a2a_config.linkurl=target.url;"
+					. "if(el)a2a.init('page',{target:el});da2a.done=true;"
+				. "}"
+			. "}"
+		. "};"
+		. "a2a_config.tracking_callback=['ready',da2a.script_onready];"
+		. variable_get('addtoany_additional_js', '');
 	
-	return $javascript;
+	drupal_add_js($javascript_header, 'inline');
 }
 
 /**
- * Internal function to create asynchronous load JavaScript after first button, and create the on-ready JS for footer.
+ * Implementation of hook_footer().  Add inline JavaScript before the closing body tag.
+ * 
+ * @return
+ *   None.  hook_footer is used for drupal_add_js, because hook_init is too early in the load process.
+ */
+function addtoany_footer() {
+	global $_addtoany_init, $_addtoany_targets;
+	
+	// Only output script when AddToAny is used
+	if ( ! $_addtoany_init)
+		return;
+	
+	$javascript_footer = "da2a.targets=["
+			. implode(",", $_addtoany_targets)
+		. "];\n"
+		. "da2a.html_done=true;"
+		. "if(da2a.script_ready&&!da2a.done)da2a.init();" // External script may load before html_done=true, but will only init if html_done=true.  So call da2a.init() if external script is ready, and if da2a.init() hasn't been called already.  Otherwise, wait for callback to call da2a.init()
+		. "da2a.script_load();"; // Load external script if not already called with the first AddToAny button.  Fixes issues where first button code is processed internally but without actual code output
+		
+	drupal_add_js($javascript_footer, 'inline', 'footer');
+}
+
+/**
+ * Internal function to call the async script loading function right after the first AddToAny button, to utilize concurrent downloading and increase overall page-load performance.
  * 
  * @param object $id_num
  * @param object $link_name
@@ -160,34 +196,26 @@ function addtoany_footer($main = 0) {
  *   String containing the asynchronous load JavaScript for the first button.
  */
 function _addtoany_create_script($id_num, $link_name, $link_url) {
-	global $_addtoany_script, $_addtoany_script_init;
+	global $_addtoany_targets, $_addtoany_init;
 		
-	$_addtoany_script .= "a2a_config.linkname='". check_plain($link_name)
-		. "'; a2a_config.linkurl='" . check_plain($link_url)
-		. "'; a2a.init('page', {target: '#da2a_" . $id_num . "'});\n";
+	if ( ! isset($_addtoany_targets))
+		$_addtoany_targets = array();
+	$_addtoany_targets[] = "\n{title:'". check_plain($link_name) . "',"
+		. "url:'" . check_plain($link_url) . "'}";
 	
-	if ( ! $_addtoany_script_init) {
-		$script_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://static.addtoany.com/menu/page.js' : 'http://static.addtoany.com/menu/page.js';
-		$javascript_async = "<script type=\"text/javascript\">\n"
+	if ( ! $_addtoany_init) {
+		$javascript_load_early = "<script type=\"text/javascript\">\n"
 			. "<!--//--><![CDATA[//><!--\n"
-			. "var a2a_config = a2a_config || {}, "
-				. "da2a = {ready: false, "
-				. "html_ready: false, "
-				. "script_ready: false, "
-				. "script_onready: function() { da2a.script_ready = true; if(da2a.html_ready)da2a.init(); }"
-			. "}; "
-			. "a2a_config.tracking_callback = ['ready', da2a.script_onready];"
-			. variable_get('addtoany_additional_js', '')
-			. "\n(function(){var a = document.createElement('script');a.type = 'text/javascript';a.async = true;a.src = '" . $script_url . "';var s = document.getElementsByTagName('script')[0];s.parentNode.insertBefore(a, s);})();\n"			
+			. "da2a.script_load();\n"			
 			. "//--><!]]>\n"
 			. "</script>";
 	}
 	else
-		$javascript_async = "";
+		$javascript_load_early = "";
 	
-	$_addtoany_script_init = TRUE;
+	$_addtoany_init = TRUE;
 	
-	return $javascript_async;
+	return $javascript_load_early;
 }
 
 /**
@@ -201,9 +229,11 @@ function _addtoany_create_script($id_num, $link_name, $link_url) {
 function _addtoany_create_button($node=NULL, $teaser = FALSE) {
 	global $_addtoany_counter, $base_path;
 	
+	// Only output CSS and JS when AddToAny is used (hook_init, etc. would be too early in the load process)
 	$_addtoany_counter++;
 	if ($_addtoany_counter == 1) {
 		drupal_add_css((drupal_get_path('module', 'addtoany') .'/addtoany.css'));
+		_addtoany_header_script();
 	}
 	
 	$disable_dropdown = variable_get('addtoany_dropdown_disabled', '0');
@@ -212,7 +242,7 @@ function _addtoany_create_button($node=NULL, $teaser = FALSE) {
 	  	$link_name 	= (module_exists('page_title')) ? page_title_page_get_title() : $node->title;
 		$link_url 	= url('node/' . $node->nid, array('absolute' => 1));
 	} else { // Front page
-		$link_name	= (module_exists('page_title')) ? page_title_page_get_title() : variable_get('site_name', '');
+		$link_name	= (module_exists('page_title')) ? page_title_page_get_title() : variable_get('site_name', 'Drupal');
 		$link_url = url('<front>', array('absolute' => 1));
 	}
 	
@@ -221,7 +251,7 @@ function _addtoany_create_button($node=NULL, $teaser = FALSE) {
 	$button_setting = variable_get('addtoany_image', 'share_save_171_16.png|171|16');
 
 	if ($button_setting == "custom") {
-		$button_image 		= variable_get('addtoany_custom_image', '');
+		$button_image 		= check_url(variable_get('addtoany_custom_image', ''));
 		$button_width    	= '';
 		$button_height		= ''; 
 	} elseif ($button_setting != "text") {
@@ -232,7 +262,7 @@ function _addtoany_create_button($node=NULL, $teaser = FALSE) {
 		$button_image 	= $base_path . drupal_get_path('module', 'addtoany') . '/images/' . $button_filename;
 	}
 	
-	$button_text = variable_get('addtoany_link_text', '');
+	$button_text = check_url(variable_get('addtoany_link_text', ''));
 	if (strlen($button_text) > 0)
 		$button_text = ' ' . $button_text; 
 	
@@ -240,7 +270,7 @@ function _addtoany_create_button($node=NULL, $teaser = FALSE) {
 		$button_image,
 		$button_width,
 		$button_height,
-		variable_get('addtoany_image_attributes', 'alt="Share this"'),
+		filter_xss(variable_get('addtoany_image_attributes', 'alt="Share this"'), array()),
 		$button_text
 	);
 	

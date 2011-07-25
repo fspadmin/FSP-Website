@@ -1,5 +1,4 @@
 <?php
-// $Id: menu.inc,v 1.1.2.8 2009/01/15 20:05:52 robrechtj Exp $
 
 /**
  * @file

@@ -1,5 +1,4 @@
 <?php
-// $Id: views-data-export-xml-body.tpl.php,v 1.1.2.2 2010/11/27 17:01:55 darthsteven Exp $
 /**
  * @file views-view-table.tpl.php
  * Template to display a view as a table.

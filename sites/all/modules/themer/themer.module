@@ -1,11 +1,12 @@
 <?php
-// $Id: themer.module,v 1.16 2008/07/07 23:56:00 tjholowaychuk Exp $
  
 /**
  * @file 
  * Theme utility functions and helpful themeing functionality. 
  * @author Tj Holowaychuk <tj@vision-media.ca>
  * @link http://vision-media.ca
+ * 
+ * @todo tokens for nodes ect?
  */
  
 /* -----------------------------------------------------------------
@@ -26,18 +27,18 @@ function themer_perm(){
  */  
 function themer_menu(){
   $items = array();
-  
+       
   $items['admin/settings/themer'] = array(
-      'title' => 'Themer', 
+      'title' => 'Themer',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('themer_settings'),
       'access callback' => 'user_access',
-      'access arguments' => array('administer themer'),
+      'access arguments' => array('access content'),
       'type' => MENU_NORMAL_ITEM,
-    ); 
+    );  
   
   return $items;
-}
+}   
 
 /**
  * Implementation of hook_theme();
@@ -45,7 +46,7 @@ function themer_menu(){
 function themer_theme() {
   return array(
     'themer_copyright' => array(
-        'arguments' => array('date' => NULL, 'site_name' => ''),
+        'arguments' => array('starting_year' => '', 'name' => ''),
       ),
   );
 }
@@ -57,7 +58,7 @@ function themer_theme() {
 ------------------------------------------------------------------ */
 
 function themer_settings() {      
-  $form = array();                       
+  $form        = array();                       
   $theme_funcs = themer_class_funcs();   
   
   $form['body_classes'] = array(

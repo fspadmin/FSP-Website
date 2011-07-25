@@ -1,4 +1,3 @@
-// $Id: uc_coupon.admin.js,v 1.4 2010/12/22 00:57:41 longwave Exp $
 
 Drupal.behaviors.ucCouponAdmin = function(context) {
   $('#edit-discount', context).keyup(function() {

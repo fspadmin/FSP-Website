@@ -1,4 +1,3 @@
-// $Id: block.js,v 1.1.2.1 2009/12/09 04:35:33 davereid Exp $
 
 Drupal.verticalTabs = Drupal.verticalTabs || {};
 

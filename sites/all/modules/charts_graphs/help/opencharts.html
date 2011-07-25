@@ -1,13 +1,12 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<!-- $Id: opencharts.html,v 1.1.2.4 2010/06/29 00:49:50 rsevero Exp $ -->
 <html>
   <head>
-    <title>Charts and Graphs - Open Charts Flash 2</title>
+    <title>Charts and Graphs - Open Flash Chart 2</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   </head>
   <body>
     <h3>Library pages</h3>
-    <p>For definitive info about Open Charts Flash 2 library please see it's
+    <p>For definitive info about Open Flash Chart 2 library please see it's
       <a href="http://teethgrinder.co.uk/open-flash-chart-2/">home page</a>,
       it's <a href="http://teethgrinder.co.uk/open-flash-chart-2/tutorial.php">
         tutorial page</a>, it's
@@ -16,36 +15,40 @@
           <a href="http://teethgrinder.co.uk/open-flash-chart-2/x-axis.php">
             properties reference pages</a>.</p>
     <h3>Installation</h3>
-    <p>You don't necessarily need to download Open Flash Charts 2 SWF file, since
-        the package is LGPL, it can be packaged with the module, and is included
-        in the corresponding sub-module's download. If you still want to
-        download it yourself or need to update  a version, download latest
-        <a href="http://sourceforge.net/projects/openflashchart/files/">
-          OpenFlashCharts2 swf file</a> and dump it into
-          <i>sites/all/modules/charts_graphs/charts_openflash</i>.</p>
+    <p>You need to get Open Flash Chart SWF file as it's LGPL and so can't be 
+      included in this module release files. Download latest
+        <a href="http://sourceforge.net/projects/openflashchart/files/open-flash-chart/">
+          Open Flash Chart 2 release</a> and dump the 
+          <em>open-flash-chart.swf</em> file into 
+          <i>sites/all/modules/charts_graphs/apis/charts_graphs_open_flash</i>.</p>
     <h4>Install and Configure SWFTools</h4>
     <ol>
-      <li>Download and enable <a href="http://drupal.org/project/swftools">SWFTools</a></li>
+      <li>Download and enable 
+        <a href="http://drupal.org/project/swftools">SWFTools</a></li>
       <li>Download: http://code.google.com/p/swfobject zip file, extract
         <i>swfobject.js</i> and copy it to
         <i>sites/all/modules/swftools/shared/swfobject2/swfobject.js</i></li>
-      <li>At this point, you should be able to start using OpenFlashCharts, but it is
-        highly recommended that you complete following two steps as well.
+      <li>At this point, you should be able to start using OpenFlashCharts, but 
+        it is highly recommended that you complete following two steps as well.
         <ol>
           <li>Enable SWFObject2 module.</li>
-          <li>Go to SWFTools embeding configuration located at: http://example.com/admin/settings/swftools/embed and under "Embedding Methods", make "SWFObject 2 - JavaScript" the default method.
+          <li>Go to SWFTools embeding configuration located at: 
+            http://example.com/admin/settings/swftools/embed and under 
+            "Embedding Methods", make "SWFObject 2 - JavaScript" the default 
+            method.</li>
         </ol>
       </li>
-      <li> AmCharts should work with all embedding methods, but we highly recommend using it with SWFObject2.</li>
+      <li> AmCharts should work with all embedding methods, but we highly 
+        recommend using it with SWFObject2.</li>
     </ol>
     <h3>Usage</h3>
-    <p>The quickest code to get something graphed using OpenFlashCharts2:</p>
+    <p>The quickest code to get something graphed using Open Flash Chart 2:</p>
 <pre>
 &lt;?php
 function charts_graphs_test() {
-  $canvas = chart_graphs_get_graph('open-flash');
+  $canvas = charts_graphs_get_graph('open-flash');
 
-  $canvas->title = 'OpenFlashCharts Chart';
+  $canvas->title = 'Open Flash Chart 2 chart';
   $canvas->type = 'line';
   $canvas->y_legend = 'Y Legend';
   $canvas->colour = '#808000';
@@ -63,7 +66,7 @@ function charts_graphs_test() {
 }
 </pre>
     <h3>Graph types supported</h3>
-    <p>Open Charts Flash 2 supports all <a href="general_reference#type">main</a>
+    <p>Open Flash Chart 2 supports all <a href="general_reference#type">main</a>
       graph types but none
       <a href="general_reference#other_standardized_types">standardized graph</a>
       types. It also supports the following graph types:</p>
@@ -87,13 +90,16 @@ function charts_graphs_test() {
       <dt>bar_sketch</dt>
         <dd>Bar graph with sketched effect bars.</dd>
     </dl>
+    <h3>Unsupported properties</h3>
+      <p>Open Flash Chart 2 has no themes defined to be used with the
+        <a href="general_reference#theme">theme</a> property.</p>
     <h3>Examples</h3>
-    <p>The examples below will only work if you have the Open Charts Flash 2
+    <p>The examples below will only work if you have the Open Flash Chart 2
       submodule configured correctly.</p>
     <ul>
-      <li><a href="/charts_graphs/test/open-flash/line/Open Charts Flash 2 - Line example">Line example</a></li>
-      <li><a href="/charts_graphs/test/open-flash/bar/Open Charts Flash 2 - Bar example">Bar example</a></li>
-      <li><a href="/charts_graphs/test/open-flash/pie/Open Charts Flash 2 - Pie example">Pie example</a></li>
+      <li><a href="/charts_graphs/test/open-flash/line/Open%20Flash%20Chart%202%20-%20Line%20example">Line example</a></li>
+      <li><a href="/charts_graphs/test/open-flash/bar/Open%20Flash%20Chart%202%20-%20Bar%20example">Bar example</a></li>
+      <li><a href="/charts_graphs/test/open-flash/pie/Open%20Flash%20Chart%202%20-%20Pie%20example">Pie example</a></li>
     </ul>
   </body>
 </html>

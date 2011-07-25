@@ -68,4 +68,3 @@ if you attach a (small) file that shows the problem. When you do, mention how
 you configured the type you are trying to import, eg what vocabularies you
 have defined, whether the content type is event- or location-enabled, etc.
 
-$Id: README.txt,v 1.16.2.6 2009/03/17 09:14:23 robrechtj Exp $

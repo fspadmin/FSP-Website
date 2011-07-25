@@ -1,5 +1,4 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<!-- $Id: general_reference.html,v 1.1.2.5 2010/06/29 21:29:54 rsevero Exp $ -->
 <html>
   <head>
     <title>Charts and Graphs - General Reference</title>
@@ -10,16 +9,30 @@
       charting libraries. Any library that doesn't implements some of this
       properties should document it so in it's specific page.</p>
     <h3>Properties list</h3>
-    <ul>
-      <li><a href="#height">height</a></li>
-      <li><a href="#series">series</a></li>
-      <li><a href="#title">title</a></li>
-      <li><a href="#type">type</a></li>
-      <li><a href="#width">width</a></li>
-      <li><a href="#x_labels">x_labels</a></li>
-      <li><a href="#y_legend">y_legend</a></li>
-    </ul>
+      <ul>
+        <li><a href="#colour">colour</a></li>
+        <li><a href="#height">height</a></li>
+        <li><a href="#series">series</a></li>
+        <li><a href="#series_colours">series_colours</a></li>
+        <li><a href="#theme">theme</a></li>
+        <li><a href="#title">title</a></li>
+        <li><a href="#type">type</a></li>
+        <li><a href="#width">width</a></li>
+        <li><a href="#x_labels">x_labels</a></li>
+        <li><a href="#y_legend">y_legend</a></li>
+        <li><a href="#y_min">y_min</a></li>
+        <li><a href="#y_max">y_max</a></li>
+        <li><a href="#y_step">y_step</a></li>
+      </ul>
     <h3>Properties</h3>
+      <h4><a name="colour">colour</a></h4>
+        <p>The <i>colour</i> property sets the graph background colour. It
+          should contain the hex value of the colour.</p>
+        <h5>Example:</h5>
+<pre>
+&lt;?php
+$canvas->colour = '#123456' // This way you get a dark blue background.
+</pre>
       <h4><a name="height">height</a></h4>
         <p>The <i>height</i> property sets the graph height in pixels.</p>
         <h5>Example:</h5>
@@ -42,6 +55,21 @@ $canvas->series = array(
   array(1000, 1200, 1300, 1150),
   array(345, 1300, 120, 937),
 );
+</pre>
+      <h4><a name="series_colours">series_colours</a></h4>
+        <p>The <i>series_colours</i> property sets the series colours. It
+          should contain an array of hex value of the desired colours.</p>
+        <h5>Example:</h5>
+<pre>
+&lt;?php
+$canvas->series_colours = array('#123456', '#654321); // This way you get a dark blue and a medium brown.
+</pre>
+      <h4><a name="theme">theme</a></h4>
+        <p>The <i>theme</i> property sets a library dependent theme.</p>
+        <h5>Example:</h5>
+<pre>
+&lt;?php
+$canvas->theme = 'keynote'; // This example works for Bluff.
 </pre>
       <h4><a name="title">title</a></h4>
         <p>The <i>title</i> property sets the graph title.</p>
@@ -117,6 +145,30 @@ $canvas->x_labels = array('2007', '2008', '2009', '2010');
 <pre>
 &lt;?php
 $canvas->y_legend = 'population';
+</pre>
+      <h4><a name="y_min">y_min</a></h4>
+        <p>The <i>y_min</i> property sets the minimum value to be presented in
+          the y axis of the graph.</p>
+        <h5>Example:</h5>
+<pre>
+&lt;?php
+$canvas->y_min = -18;
+</pre>
+      <h4><a name="y_max">y_max</a></h4>
+        <p>The <i>y_max</i> property sets the maximum value to be presented in
+          the y axis of the graph.</p>
+        <h5>Example:</h5>
+<pre>
+&lt;?php
+$canvas->y_max = 164;
+</pre>
+      <h4><a name="y_step">y_step</a></h4>
+        <p>The <i>y_step</i> property sets the step used to define intermediate
+          values to be presented in the y axis of the graph.</p>
+        <h5>Example:</h5>
+<pre>
+&lt;?php
+$canvas->y_step = 4;
 </pre>
   </body>
 </html>

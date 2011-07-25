@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon_purchase.views.inc,v 1.1 2010/11/29 00:28:55 longwave Exp $
 
 /**
  * @file
@@ -14,6 +13,12 @@ function uc_coupon_purchase_views_data() {
     'left_field' => 'uid',
     'field' => 'uid',
   );
+  
+  $data['uc_coupon_purchase_users']['table']['join']['uc_coupons'] = array(
+    'left_field' => 'cid',
+    'field' => 'cid',
+  );
+  
 
   return $data;
 }
@@ -26,6 +31,12 @@ function uc_coupon_purchase_views_data_alter(&$data) {
     'left_table' => 'uc_coupon_purchase_users',
     'left_field' => 'cid',
     'field' => 'cid',
+  );
+  
+  $data['users']['table']['join']['uc_coupons'] = array(
+    'left_table' => 'uc_coupon_purchase_users',
+    'left_field' => 'uid',
+    'field' => uid,
   );
 
   $data['uc_coupons']['base_name'] = array(

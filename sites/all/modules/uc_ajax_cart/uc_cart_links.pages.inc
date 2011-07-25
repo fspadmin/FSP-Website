@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_cart_links.pages.inc,v 1.1.2.9 2010/05/01 12:42:30 erikseifert Exp $
 
 /**
  * @file

@@ -15,27 +15,33 @@
   width: 100%;
 }
 
-#uc_discounts_table td.date,
-#uc_discounts_table td.operations {
+table.uc-discounts td.date,
+table.uc-discounts td.operations {
   white-space: nowrap;
 }
 
-#uc_discounts_table td.operations a {
+table.uc-discounts td.operations a {
   padding-right: 5px;
 }
 
-#uc_discounts_table td.amount,
-#uc_discounts_table td.weight {
+table.uc-discounts td.numeric {
   text-align: center;
 }
 
-#uc_discounts_table td.is_inactive,
-#uc_discounts_table td.is_active {
+table.uc-discounts td.is_inactive,
+table.uc-discounts td.is_active {
   text-align: center;
   font-weight: bold;
   color: green;
 }
 
-#uc_discounts_table td.is_inactive {
+table.uc-discounts td.is_inactive {
   color: red;
+}
+
+code.uc-discounts-generated-codes {
+  display: block;
+  background: #eee;
+  border: 1px solid #333;
+  white-space: pre;
 }

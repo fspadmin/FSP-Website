@@ -1,5 +1,4 @@
 <?php
-// $Id: auto_nodetitle.inc,v 1.1.2.1 2009/04/09 18:35:53 robrechtj Exp $
 
 /**
  * @file

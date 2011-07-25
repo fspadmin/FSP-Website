@@ -1,6 +1,4 @@
 <?php
-// $Id: node.inc,v 1.12.2.23 2009/04/21 09:42:26 robrechtj Exp $
-
 /**
  * @file
  * Support file for the core node module.
@@ -139,8 +137,6 @@ function node_node_import_fields($type) {
       'input_format' => 'date',
       'output_format' => DATE_UNIX,
     );
-
-    //TODO: language
 
     $fields['log'] = array(
       'title' => t('Log message'),

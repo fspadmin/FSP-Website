@@ -1,5 +1,4 @@
 <?php
-// $Id: views_data_export_plugin_display_export.inc,v 1.1.2.5 2010/12/01 11:47:07 darthsteven Exp $
 
 /**
  * @file
@@ -58,7 +57,7 @@ class views_data_export_plugin_display_export extends views_plugin_display_feed 
    */
   function option_definition() {
     $options = parent::option_definition();
-    $options['use_batch'] = array('default' => TRUE);
+    $options['use_batch'] = array('default' => $this->is_compatible());
     $options['items_per_page'] = array('default' => '0');
     $options['style_plugin']['default'] = 'views_data_export_csv';
 
@@ -78,13 +77,17 @@ class views_data_export_plugin_display_export extends views_plugin_display_feed 
     // It is very important to call the parent function here:
     parent::options_summary($categories, $options);
 
-    $categories['page']['title'] = t('Export settings');
+    $categories['page']['title'] = t('Data export settings');
 
     $options['use_batch'] = array(
       'category' => 'page',
       'title' => t('Batched export'),
       'value' => $this->get_option('use_batch') ? t('Yes') : t('No'),
     );
+    
+    if (!$this->is_compatible() && $this->get_option('use_batch')) {
+      $options['use_batch']['value'] .= ' <strong>' . t('(Warning: incompatible)') . '</strong>';
+    }
   }
 
   /**
@@ -106,6 +109,15 @@ class views_data_export_plugin_display_export extends views_plugin_display_feed 
             FALSE => t('Export data all in one segment. Possible time and memory limit issues.'),
           ),
         );
+        if (!$this->is_compatible()) {
+          $form['use_batch']['#disabled'] = TRUE;
+          $form['use_batch']['#default_value'] = 0;
+          $form['use_batch']['message'] = array (
+            '#type' => 'markup',
+            '#value' => theme('views_data_export_message', t('The underlying database (!db_driver) is incompatible with the batched export option and it has been disabled.', array('!db_driver' => $this->_get_database_driver()))),
+            '#weight' => -10,
+          );
+        }
         break;
     }
   }
@@ -180,20 +192,6 @@ class views_data_export_plugin_display_export extends views_plugin_display_feed 
       $output = $this->execute_initial();
     }
 
-    // Call me on the cached version of this view please
-    // This allows this view to be programatically executed with nothing
-    // more than the eid in $_GET in order for it to execute the next chunk
-    // TODO: What is going on here?
-    if (!$this->views_data_export_cached_view_loaded) {
-      $view = views_data_export_view_retrieve($this->batched_execution_state->eid);
-      $view->set_display($this->view->current_display);
-      $view->display_handler->batched_execution_state->eid = $this->batched_execution_state->eid;
-      $view->display_handler->views_data_export_cached_view_loaded = TRUE;
-      $ret =  $view->execute_display($display_id);
-      $this->batched_execution_state = &$view->display_handler->batched_execution_state;
-      return $ret;
-    }
-
     // Last time through
     if ($this->batched_execution_state->batch_state == VIEWS_DATA_EXPORT_FINISHED) {
       $output = $this->execute_final();
@@ -219,12 +217,12 @@ class views_data_export_plugin_display_export extends views_plugin_display_feed 
 
     // Register this export with our central table - get a unique eid
     // Also store our view in a cache to be retrieved with each batch call
-    $this->batched_execution_state = views_data_export_new($this->view->name, $this->view->current_display, $this->outputfile_path());
+    $this->batched_execution_state = views_data_export_new($this->view->name, $this->view->current_display, $this->outputfile_create());
     views_data_export_view_store($this->batched_execution_state->eid, $this->view);
 
     // We need to build the index right now, before we lose $_GET etc.
     $this->initialize_index();
-    $this->batched_execution_state->fid = $this->outputfile_create();
+    //$this->batched_execution_state->fid = $this->outputfile_create();
 
     // Initialize the progress counter
     $this->batched_execution_state->sandbox['max'] = db_result(db_query('SELECT COUNT(*) FROM {' . $this->index_tablename() . '}'));
@@ -476,6 +474,10 @@ class views_data_export_plugin_display_export extends views_plugin_display_feed 
   function transfer_file() {
     // Build the view so we can set the headers.
     $this->view->build();
+    // Arguments can cause the style to not get built.
+    if (!$this->view->init_style()) {
+      $this->view->build_info['fail'] = TRUE;
+    }
     // Set the headers.
     $this->add_http_headers();
     file_transfer($this->outputfile_path(), array());
@@ -766,5 +768,33 @@ class views_data_export_plugin_display_export extends views_plugin_display_feed 
       // Set the message in the batch context.
       return t('Time remaining: about @interval.', array('@interval' => format_interval($stamp)));
     }
+  }
+  
+  /**
+   * Checks the driver of the database underlying
+   * this query and returns FALSE if it is imcompatible
+   * with the approach taken in this display.
+   * Basically mysql & mysqli will be fine, pg will not
+   */
+  function is_compatible() {
+    $incompatible_drivers = array (
+      'pgsql',
+    );
+    $db_driver = $this->_get_database_driver();
+    return !in_array($db_driver, $incompatible_drivers);
+  }
+  
+  function  _get_database_driver() {
+    $name = !empty($this->view->base_database) ? $this->view->base_database : 'default';
+    // Lifted out of the middle of db_set_active()
+    global $db_url, $db_type, $active_db;
+    if (is_array($db_url)) {
+      $connect_url = array_key_exists($name, $db_url) ? $db_url[$name] : $db_url['default'];
+    }
+    else {
+      $connect_url = $db_url;
+    }
+    $db_type = substr($connect_url, 0, strpos($connect_url, '://'));
+    return $db_type;
   }
 }

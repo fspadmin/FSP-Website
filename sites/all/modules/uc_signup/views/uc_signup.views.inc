@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_signup.views.inc,v 1.2 2009/07/03 15:23:47 ezrag Exp $
 
 /*
  * Implementation of hook_views_data().
@@ -14,13 +13,22 @@ function uc_signup_views_data() {
       'left_field' => 'sid',
       'field' => 'sid',
     ),
+    'uc_orders' => array(
+      'left_field' => 'order_id',
+      'field' => 'oid',
+    ),
   );
 
   $data['uc_signup_log']['oid'] = array(
-    'title' => t('UC Signup Link to Associated Order'),
-    'help' => 'gettouttaheare',
+    'title' => t('Associated Order'),
+    'help' => 'Link to the Order related to the purchase of this signup.',
     'field' => array(
       'handler' => 'uc_signup_field_signup_order_handler',
+    ),
+    'relationship' => array(
+      'base' => 'uc_orders',
+      'handler' => 'views_handler_relationship',
+      'label' => t('Signup order'),
     ),
   );
   return $data;

@@ -1,0 +1,13 @@
+name = phpList backend
+description = Provides a backend tie-in with phpList.
+package = phpList
+dependencies[] = phplist
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2011-07-19
+version = "6.x-1.6"
+core = "6.x"
+project = "phplist"
+datestamp = "1311065819"
+

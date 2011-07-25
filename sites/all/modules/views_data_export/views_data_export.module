@@ -1,5 +1,4 @@
 <?php
-// $Id: views_data_export.module,v 1.1.2.1 2010/11/24 13:10:03 darthsteven Exp $
 
 /**
  * @file
@@ -12,6 +11,15 @@ define('VIEWS_DATA_EXPORT_FOOTER', 'footer');
 define('VIEWS_DATA_EXPORT_FINISHED', 'finished');
 
 define('VIEWS_DATA_EXPORT_INDEX_TABLE_PREFIX', 'views_data_export_index_');
+
+/**
+ * Implements hook_init().
+ */
+function views_data_export_init() {
+  // We have to include our theme preprocessors here until:
+  // http://drupal.org/node/1096770 is fixed.
+  module_load_include('inc', 'views_data_export', 'theme/views_data_export.theme');
+}
 
 /**
  * Implementation of hook_views_api().
@@ -48,6 +56,15 @@ function views_data_export_theme() {
     ),
     'file' => 'theme/views_data_export.theme.inc',
   );
+
+  $hooks['views_data_export_message'] = array (
+    'arguments' => array(
+      'message' => '',
+      'type' => 'info',
+    ),
+    'file' => 'theme/views_data_export.theme.inc',
+  );
+
   return $hooks;
 }
 
@@ -131,7 +148,6 @@ function _views_data_export_batch_process($export_id, $display_id, &$context) {
 
   // Inform the data_export display which export it corresponds to and execute
   $view->display_handler->batched_execution_state->eid = $export_id;
-  $view->display_handler->views_data_export_cached_view_loaded = TRUE;
   $view->execute_display($display_id);
 
   // Update batch api progress information

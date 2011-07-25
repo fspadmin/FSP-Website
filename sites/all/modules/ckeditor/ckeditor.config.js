@@ -1,4 +1,7 @@
-// $Id: ckeditor.config.js,v 1.2.2.10 2010/09/27 12:37:20 dczepierga Exp $
+/*
+Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+For licensing, see LICENSE.html or http://ckeditor.com/license
+*/
 
 /*
  WARNING: clear browser's cache after you modify this file.
@@ -20,17 +23,8 @@ CKEDITOR.editorConfig = function(config) {
   // side
   // (as does Drupal), so just leave this line as is.
   config.protectedSource.push(/<\?[\s\S]*?\?>/g); // PHP Code
+  config.protectedSource.push(/<code>[\s\S]*?<\/code>/gi); // Code tags
   config.extraPlugins = '';
-  if (Drupal.ckeditorCompareVersion('3.1')) {
-    config.extraPlugins += (config.extraPlugins ? ',drupalbreaks' : 'drupalbreaks' );
-  }
-
-  if (Drupal.settings.ckeditor.linktocontent_node) {
-    config.extraPlugins += (config.extraPlugins ? ',linktonode' : 'linktonode' );
-  }
-  if (Drupal.settings.ckeditor.linktocontent_menu) {
-    config.extraPlugins += (config.extraPlugins ? ',linktomenu' : 'linktomenu' );
-  }
 
   // Define as many toolbars as you need, you can change toolbar names and remove or add buttons.
   // List of all buttons is here: http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.config.html#.toolbar_Full
@@ -47,7 +41,7 @@ CKEDITOR.editorConfig = function(config) {
     ['Bold','Italic','Underline','Strike','-','Subscript','Superscript'],
     ['NumberedList','BulletedList','-','Outdent','Indent','Blockquote'],
     ['JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock','-','BidiRtl','BidiLtr'],
-    ['Link','Unlink','Anchor','LinkToNode', 'LinkToMenu'],
+    ['Link','Unlink','Anchor','Linkit','LinkToNode','LinkToMenu'],
     ['DrupalBreak', 'DrupalPageBreak']
    ];
 
@@ -56,7 +50,7 @@ CKEDITOR.editorConfig = function(config) {
   * if you change the name of DrupalBasic, you have to update
   * CKEDITOR_FORCE_SIMPLE_TOOLBAR_NAME in ckeditor.module
   */
-  config.toolbar_DrupalBasic = [ [ 'Format', '-', 'Bold', 'Italic', '-', 'NumberedList','BulletedList', '-', 'Link', 'Unlink', 'Image' ] ];
+  config.toolbar_DrupalBasic = [ [ 'Format', 'Bold', 'Italic', '-', 'NumberedList','BulletedList', '-', 'Link', 'Unlink', 'Image' ] ];
 
   /*
    * This toolbar is dedicated to users with "Full HTML" access some of commands
@@ -72,7 +66,7 @@ CKEDITOR.editorConfig = function(config) {
       ['Bold','Italic','Underline','Strike','-','Subscript','Superscript'],
       ['NumberedList','BulletedList','-','Outdent','Indent','Blockquote'],
       ['JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock','-','BidiRtl','BidiLtr'],
-      ['Link','Unlink','Anchor','LinkToNode', 'LinkToMenu'],
+      ['Link','Unlink','Anchor','Linkit','LinkToNode', 'LinkToMenu'],
       '/',
       ['Format','Font','FontSize'],
       ['TextColor','BGColor'],
@@ -89,11 +83,15 @@ CKEDITOR.editorConfig = function(config) {
   /**
    * Sample extraCss code for the "marinelli" theme.
    */
-  if (Drupal.settings.ckeditor.theme == "marinelli") {
+  var themeName = Drupal.settings.ckeditor.theme;
+  if (typeof themeName == "object") {
+    themeName = Drupal.settings.ckeditor.theme[0];
+  }
+  if (themeName == "marinelli") {
     config.extraCss += "body{background:#FFF;text-align:left;font-size:0.8em;}";
     config.extraCss += "#primary ol, #primary ul{margin:10px 0 10px 25px;}";
   }
-  if (Drupal.settings.ckeditor.theme == "newsflash") {
+  if (themeName == "newsflash") {
     config.extraCss = "body{min-width:400px}";
   }
 
@@ -107,28 +105,8 @@ CKEDITOR.editorConfig = function(config) {
   /**
    * Sample bodyClass and BodyId for the "marinelli" theme.
    */
-  if (Drupal.settings.ckeditor.theme == "marinelli") {
+  if (themeName == "marinelli") {
     config.bodyClass = 'singlepage';
     config.bodyId = 'primary';
   }
-
-  if (Drupal.ckeditorCompareVersion('3.1')) {
-    CKEDITOR.plugins.addExternal('drupalbreaks', Drupal.settings.ckeditor.module_path + '/plugins/drupalbreaks/');
-  }
-  if (Drupal.settings.ckeditor.linktocontent_menu) {
-    CKEDITOR.plugins.addExternal('linktomenu', Drupal.settings.ckeditor.module_path + '/plugins/linktomenu/');
-    Drupal.settings.ckeditor.linktomenu_basepath = Drupal.settings.basePath;
-  }
-  if (Drupal.settings.ckeditor.linktocontent_node) {
-    CKEDITOR.plugins.addExternal('linktonode', Drupal.settings.ckeditor.module_path + '/plugins/linktonode/');
-    Drupal.settings.ckeditor.linktonode_basepath = Drupal.settings.basePath;
-  }
-
-  // 'MediaEmbed' plugin. To enable it, uncomment lines below and add 'MediaEmbed' button to selected toolbars.
-  //config.extraPlugins += (config.extraPlugins ? ',mediaembed' : 'mediaembed' );
-  //CKEDITOR.plugins.addExternal('mediaembed', Drupal.settings.ckeditor.module_path + '/plugins/mediaembed/');
-
-  // 'IMCE' plugin. If IMCE module is enabled, you may uncomment lines below and add an 'IMCE' button to selected toolbar. 
-  //config.extraPlugins += (config.extraPlugins ? ',imce' : 'imce' );
-  //CKEDITOR.plugins.addExternal('imce', Drupal.settings.ckeditor.module_path + '/plugins/imce/');
 };

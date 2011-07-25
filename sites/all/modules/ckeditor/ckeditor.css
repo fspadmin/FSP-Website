@@ -1,4 +1,3 @@
-/* $Id: ckeditor.css,v 1.2.2.4 2010/03/05 09:56:08 mephir Exp $ */
 /* Indent & Justify classes */
 
 .rteindent1 {
@@ -42,4 +41,13 @@ table.cke_editor fieldset {
 }
 .cke_editor,#ie#bug {
   display: inline-table !important;
+}
+
+.cke_panel_listItem {
+    background-image: none;
+    padding-left: 0;
+}
+/* remove top border from tbody - overwrite system.css - [#751672] */
+tbody {
+    border: 0;
 }

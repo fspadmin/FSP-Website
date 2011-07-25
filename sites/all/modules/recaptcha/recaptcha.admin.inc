@@ -1,5 +1,4 @@
 <?php
-// $Id: recaptcha.admin.inc,v 1.1.2.2 2010/05/19 17:29:37 robloach Exp $
 
 /**
  * @file

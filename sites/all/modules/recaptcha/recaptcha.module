@@ -1,5 +1,4 @@
 <?php
-/* $Id: recaptcha.module,v 1.13.2.4.2.11.2.14 2010/09/24 02:25:51 bleen18 Exp $ */
 
 /**
  * @file
@@ -151,7 +150,7 @@ function recaptcha_captcha() {
           );
           $js = "$(function() { Recaptcha.create('$recaptcha_public_key', 'recaptcha_ajax_api_container', {theme: '$recaptcha_theme'});});";
           drupal_add_js($js, 'inline', 'header');
-          drupal_set_html_head('<script type="text/javascript" src="http://api.recaptcha.net/js/recaptcha_ajax.js"></script>');
+          drupal_set_html_head('<script type="text/javascript" src="https://www.google.com/recaptcha/api/js/recaptcha_ajax.js"></script>');
         }
       }
       return $captcha;
@@ -162,10 +161,11 @@ function recaptcha_captcha() {
  * CAPTCHA Callback; Validates the reCAPTCHA code.
  */
 function recaptcha_captcha_validation($solution = NULL, $response = NULL) {
+  global $user;
   if ($response == 'reCAPTCHA' && isset($_POST['recaptcha_challenge_field']) && isset($_POST['recaptcha_response_field'])) {
     $resp = recaptcha_check_answer(
       variable_get('recaptcha_private_key', ''),
-      $_SERVER['REMOTE_ADDR'],
+      $user->hostname,
       $_POST['recaptcha_challenge_field'],
       $_POST['recaptcha_response_field']
     );

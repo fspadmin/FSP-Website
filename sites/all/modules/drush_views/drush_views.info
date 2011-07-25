@@ -5,9 +5,9 @@ package = Drush
 dependencies[] = views
 core = 6.x
 
-; Information added by drupal.org packaging script on 2010-01-01
-version = "6.x-2.x-dev"
+; Information added by drupal.org packaging script on 2009-05-05
+version = "6.x-2.0"
 core = "6.x"
 project = "drush_views"
-datestamp = "1262304269"
+datestamp = "1241540744"
 

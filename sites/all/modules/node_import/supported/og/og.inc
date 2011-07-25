@@ -1,5 +1,4 @@
 <?php
-// $Id: og.inc,v 1.1.2.1 2009/04/18 09:50:44 robrechtj Exp $
 
 /**
  * @file

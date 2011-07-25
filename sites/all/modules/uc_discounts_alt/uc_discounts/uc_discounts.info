@@ -1,7 +1,6 @@
-; $Id: uc_discounts.info,v 1.2.2.3 2010/12/30 19:40:07 jrust Exp $
 name = Discounts
 description = Defines Ubercart discount based on user-defined codes.
-dependencies[] = date
+dependencies[] = date_popup
 dependencies[] = uc_store
 dependencies[] = uc_product
 package = "Ubercart - core (optional)"
@@ -15,9 +14,9 @@ project = "uc_discounts_alt"
 datestamp = "1278836081"
 
 
-; Information added by drupal.org packaging script on 2010-12-30
-version = "6.x-2.0"
+; Information added by drupal.org packaging script on 2011-05-06
+version = "6.x-2.2"
 core = "6.x"
 project = "uc_discounts_alt"
-datestamp = "1293741199"
+datestamp = "1304706417"
 

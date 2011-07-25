@@ -6,9 +6,9 @@ dependencies[] = uc_reports
 package = "Ubercart - extra"
 
 
-; Information added by drupal.org packaging script on 2010-12-07
-version = "6.x-2.11"
+; Information added by drupal.org packaging script on 2011-05-29
+version = "6.x-2.13"
 core = "6.x"
 project = "uc_who_bought_what"
-datestamp = "1291751742"
+datestamp = "1306681318"
 

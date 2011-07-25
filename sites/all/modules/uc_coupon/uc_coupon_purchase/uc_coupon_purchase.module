@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon_purchase.module,v 1.12 2010/12/22 00:22:09 longwave Exp $
 
 require_once 'uc_coupon_purchase.ca.inc';
 
@@ -37,6 +36,17 @@ function uc_coupon_purchase_menu() {
     'file' => 'uc_coupon_purchase.pages.inc',
     'weight' => 5,
   );
+  $items['user/%user/coupons/%uc_coupon/codes'] = array(
+    'title' => 'Download codes',
+    'page callback' => 'uc_coupon_codes_csv',
+    'access callback' => 'uc_coupon_purchase_can_view',
+    'page arguments' => array(3),
+    'access arguments' => array(1, 3),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_coupon.admin.inc',
+    'file path' => drupal_get_path('module','uc_coupon'),
+    'weight' => 5,
+  );
 
   return $items;
 }
@@ -61,12 +71,47 @@ function uc_coupon_purchase_can_view($account, $coupon = NULL) {
   return FALSE;
 }
 
+/*
+ * Implementation of hook_uc_coupon_actions for purchased coupons
+ */
+function uc_coupon_purchase_uc_coupon_actions($coupon) {
+  $actions = array();
+  if (!user_access('manage store coupons')) {
+    global $user;
+    $account =  (arg(0) == 'user') ? user_load(arg(1)) : $user;
+
+    if (uc_coupon_purchase_can_view($account, $coupon)) {
+      $actions[] = array(
+        'url' => "user/$account->uid/coupons/$coupon->cid/view",
+        'icon' => drupal_get_path('module', 'uc_store') .'/images/order_view.gif',
+        'title' => t('View coupon: @name', array('@name' => $coupon->name)),
+      );
+
+      $actions[] = array(
+        'url' => "user/$account->uid/coupons/$coupon->cid/print",
+        'icon' => drupal_get_path('module', 'uc_store') .'/images/print.gif',
+        'title' => t('Print coupon: @name', array('@name' => $coupon->name)),
+      );
+  
+      if ($coupon->bulk) {
+        $actions[] = array(
+          'url' => 'admin/store/coupons/'. $coupon->cid .'/codes',
+          'icon' => drupal_get_path('module', 'uc_store') .'/images/menu_reports_small.gif',
+          'title' => t('Download codes as CSV: @name', array('@name' => $coupon->name)),
+        );
+      }
+    }
+  }
+  return $actions;
+}
+
 /**
  * Check whether a given user has purchased any coupon, or the specific supplied coupon.
  */
 function uc_coupon_purchase_has_coupon($account, $coupon = NULL) {
   $sql = 'SELECT COUNT(*) FROM {uc_coupon_purchase_users} WHERE uid = %d';
-  if (!empty($coupon)) {
+  // Make sure coupon is valid before looking for it.
+  if (!empty($coupon) && !empty($coupon->cid)) {
     $sql .= ' AND cid = %d';
     $coupon = $coupon->cid;
   }
@@ -269,6 +314,13 @@ function uc_coupon_purchase_uc_coupon_presave(&$coupon, $edit) {
 }
 
 /**
+ * Implementation of hook_uc_coupon_delete().
+ */
+function uc_coupon_purchase_uc_coupon_delete($coupon) {
+  db_query('DELETE FROM {uc_coupon_purchase_users} WHERE cid = %d', $coupon->cid);
+}
+
+/**
  * Implementation of hook_order().
  */
 function uc_coupon_purchase_order($op, $order, $status) {
@@ -283,7 +335,19 @@ function uc_coupon_purchase_order($op, $order, $status) {
           while ($row = db_fetch_object($result)) {
             if ($row->model == $product->model || empty($row->model)) {
               $coupon = uc_coupon_load($row->base_cid);
-              uc_coupon_purchase_create($coupon, $product->qty, $order);
+              
+              // Append purchaser data to the coupon name.
+              $purchaser = $order->billing_company ? $order->billing_company : ($order->billing_first_name .' '. $order->billing_last_name);
+              $coupon->name .= ' '. t('purchased by !name', array('!name' => $purchaser));
+              $coupon->data['order_id'] = $order->order_id;
+              
+              // Create new coupon and link to purchaser.
+              $new_coupon = uc_coupon_purchase_create($coupon, $product->qty, $order->uid);
+              uc_order_comment_save($order->order_id, 0, t('Coupon created with code %code.', array('%code' => $new_coupon->code)));
+              
+              // Fire hook and conditional actions to send emails for this coupon purchase.
+              module_invoke_all('uc_coupon_purchase', $order, $new_coupon);
+              ca_pull_trigger('uc_coupon_purchase', $order, $new_coupon);
             }
           }
         }
@@ -295,15 +359,7 @@ function uc_coupon_purchase_order($op, $order, $status) {
 /**
  * Create newly purchased coupons, based on the supplied coupon object.
  */
-function uc_coupon_purchase_create($coupon, $qty, $order) {
-  global $user;
-
-  // Append purchaser data to the coupon name.
-  $purchaser = $order->billing_company ? $order->billing_company : ($order->billing_first_name .' '. $order->billing_last_name);
-  $coupon->name .= ' '. t('purchased by !name', array('!name' => $purchaser));
-  $coupon->data['order_id'] = $order->order_id;
-  $coupon->data['base_cid'] = $coupon->cid;
-
+function uc_coupon_purchase_create($coupon, $qty, $uid = NULL) {
   $suffix_length = isset($coupon->data['purchase_suffix_length']) ? $coupon->data['purchase_suffix_length'] : 12;
 
   // If more than one coupon will be generated, ensure it is a bulk coupon.
@@ -331,19 +387,18 @@ function uc_coupon_purchase_create($coupon, $qty, $order) {
   }
   
   // Create a new, active coupon with the suffix applied.
+  $coupon->data['base_cid'] = $coupon->cid;
   unset($coupon->cid);
   $coupon->code .= strtoupper(user_password($suffix_length));
   $coupon->status = TRUE;
   uc_coupon_save($coupon);
-
-  uc_order_comment_save($order->order_id, $user->uid, t('Coupon created with code %code.', array('%code' => $coupon->code)));
-
-  // Record this coupon purchase.
-  db_query("INSERT INTO {uc_coupon_purchase_users} (uid, cid) VALUES (%d, %d)", $order->uid, $coupon->cid);
-
-  // Fire hook and conditional actions to send emails for this coupon purchase.
-  module_invoke_all('uc_coupon_purchase', $order, $coupon);
-  ca_pull_trigger('uc_coupon_purchase', $order, $coupon);
+  
+  // Associate this coupon with its owner.
+  if (!is_null($uid)) {
+    db_query("INSERT INTO {uc_coupon_purchase_users} (uid, cid) VALUES (%d, %d)", $uid, $coupon->cid);
+  }
+  
+  return $coupon;
 }
 
 /**

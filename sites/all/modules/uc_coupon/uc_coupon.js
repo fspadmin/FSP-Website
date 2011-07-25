@@ -1,4 +1,3 @@
-// $Id: uc_coupon.js,v 1.8 2010/12/16 23:49:09 longwave Exp $
 
 function getCoupon() {
   $('#coupon-message').remove();

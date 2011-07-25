@@ -1,4 +1,3 @@
-// $Id: vertical_tabs.js,v 1.3.2.19 2010/02/03 18:24:42 davereid Exp $
 
 Drupal.verticalTabs = Drupal.verticalTabs || {};
 Drupal.settings.verticalTabs = Drupal.settings.verticalTabs || {};

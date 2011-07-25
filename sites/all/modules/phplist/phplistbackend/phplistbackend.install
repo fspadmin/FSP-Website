@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function phplistbackend_install() {
+  drupal_install_schema('phplistbackend');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function phplistbackend_schema() {
+  $schema['phplist_node'] = array(
+    'fields' => array(
+      'nid'    => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'nlid'   => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+    ),
+    'primary key' => array('nid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function phplistbackend_uninstall() {
+  drupal_uninstall_schema('phplistbackend');
+}

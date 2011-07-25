@@ -177,6 +177,24 @@ function uc_signup_views_default_views() {
       'validate_user_restrict_roles' => 0,
     ),
   ));
+  $handler->override_option('filters', array(
+    'uid' => array(
+      'operator' => 'not in',
+      'value' => array(
+        '0' => 0,
+      ),
+      'group' => '0',
+      'exposed' => FALSE,
+      'expose' => array(
+        'operator' => FALSE,
+        'label' => '',
+      ),
+      'id' => 'uid',
+      'table' => 'users',
+      'field' => 'uid',
+      'relationship' => 'uid',
+    ),
+  ));
   $handler->override_option('access', array(
     'type' => 'perm',
     'perm' => 'administer all signups',
@@ -185,6 +203,7 @@ function uc_signup_views_default_views() {
     'type' => 'none',
   ));
   $handler->override_option('items_per_page', 100);
+  $handler->override_option('use_pager', '1');
   $handler->override_option('style_plugin', 'table');
   $handler->override_option('style_options', array(
     'grouping' => '',
@@ -234,6 +253,7 @@ function uc_signup_views_default_views() {
     'title' => '',
     'description' => '',
     'weight' => 0,
+    'name' => 'navigation',
   ));
   $views[$view->name] = $view;
   return $views;

@@ -1,6 +1,0 @@
-name = fsp_statistics
-description = Provides an openflash block of weekly or monthly signups
-package = FSP
-core = 6.x
-core = "6.x"
-project = "fsp_statistics"

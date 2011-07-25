@@ -1,4 +1,3 @@
-// $Id: README.txt,v 1.5.2.6 2010/09/09 03:04:34 sun Exp $
 
 -- SUMMARY --
 
@@ -30,21 +29,21 @@ To submit bug reports and feature suggestions, or to track changes:
 
     http://code.google.com/p/jquery-ui/downloads/list?q=1.6
 
-* Put the downloaded archive into the module directory:
+* Put the downloaded archive into the directory:
 
-    /sites/all/modules/jquery_ui/jquery.ui-1.6.zip
+    /sites/all/libraries/jquery.ui-1.6.zip
 
 * Extract the archive.  This will create the following sub-directory:
 
-    /sites/all/modules/jquery_ui/jquery.ui-1.6/
+    /sites/all/libraries/jquery.ui-1.6/
 
-* Rename the sub-directory into "jquery.ui" within the jquery_ui module folder:
+* Rename the sub-directory into "jquery.ui":
 
-    /sites/all/modules/jquery_ui/jquery.ui/
+    /sites/all/libraries/jquery.ui/
 
   so the actual jQuery UI JavaScript files are located in:
 
-    /sites/all/modules/jquery_ui/jquery.ui/ui/*.js
+    /sites/all/libraries/jquery.ui/ui/*.js
 
 * Enable the module at Administer >> Site building >> Modules.
 
@@ -63,21 +62,21 @@ to jQuery UI 1.7, you can get around this by doing the following:
 
     http://code.google.com/p/jquery-ui/downloads/list?q=1.7
 
-* Put the downloaded archive into the module directory:
+* Put the downloaded archive into the directory:
 
-    /sites/all/modules/jquery_ui/jquery.ui-1.7.zip
+    /sites/all/libraries/jquery.ui-1.7.zip
 
 * Extract the archive.  This will create the following sub-directory:
 
-    /sites/all/modules/jquery_ui/jquery.ui-1.7/
+    /sites/all/libraries/jquery.ui-1.7/
 
-* Rename the sub-directory into "jquery.ui" within the jquery_ui module folder:
+* Rename the sub-directory into "jquery.ui":
 
-    /sites/all/modules/jquery_ui/jquery.ui/
+    /sites/all/libraries/jquery.ui/
 
   so the actual jQuery UI JavaScript files are located in:
 
-    /sites/all/modules/jquery_ui/jquery.ui/ui/*.js
+    /sites/all/libraries/jquery.ui/ui/*.js
 
 * Enable the module at Administer >> Site building >> Modules.
 

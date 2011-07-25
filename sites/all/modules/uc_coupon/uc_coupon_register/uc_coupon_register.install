@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon_register.install,v 1.1 2010/12/18 07:37:30 longwave Exp $
 
 /**
  * Implementation of hook_uninstall().

@@ -1,5 +1,8 @@
 <?php
-// $Id: memcache.db.inc,v 1.2.2.11.2.5 2010/09/28 12:12:48 robertDouglass Exp $
+
+/** THIS FILE IS DEPRECATED - DO NOT USE **/
+// http://drupal.org/node/959200
+// http://drupal.org/node/961496
 
 require_once 'dmemcache.inc';
 
@@ -145,8 +148,10 @@ function cache_set($cid, $data, $table = 'cache', $expire = CACHE_PERMANENT, $he
     }
 
     // Save to the database
-    db_query('DELETE FROM {'. $table ."} WHERE cid = '%s'", $cid);
-    db_query('INSERT INTO {'. $table ."} (cid, data, expire, created, headers, serialized) VALUES ('%s', %b, %d, %d, '%s', '%s')", $cid, $data, $expire, $created, $headers, $serialized);
+    db_query("UPDATE {". $table ."} SET data = %b, created = %d, expire = %d, headers = '%s', serialized = %d WHERE cid = '%s'", $data, $created, $expire, $headers, $serialized, $cid);
+    if (!db_affected_rows()) {
+      @db_query("INSERT INTO {". $table ."} (cid, data, created, expire, headers, serialized) VALUES ('%s', %b, %d, %d, '%s', %d)", $cid, $data, $created, $expire, $headers, $serialized);
+    }
   }
 
   // Save to memcache

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon.ca.inc,v 1.3 2010/12/17 23:50:47 longwave Exp $
 
 /**
  * Implementation of hook_ca_entity().
@@ -48,6 +47,15 @@ function uc_coupon_ca_condition() {
  */
 function uc_coupon_condition_order_has_coupon($order, $settings) {
   if (isset($order->data['coupon'])) {
+    $check_code = $order->data['coupon'];
+  }
+  elseif ($settings['check_current'] && isset($_SESSION['uc_coupon'])) {
+    $check_code = drupal_strtoupper(trim($_SESSION['uc_coupon']));
+  }
+  else {
+    $check_code = FALSE;
+  }
+  if ($check_code) {
     // If no codes specified, match any coupon.
     if (empty($settings['codes'])) {
       return TRUE;
@@ -55,7 +63,7 @@ function uc_coupon_condition_order_has_coupon($order, $settings) {
 
     // Check codes for exact or wildcard matches.
     foreach (explode("\n", $settings['codes']) as $code) {
-      if (preg_match('/^' . str_replace('\*', '.*?', preg_quote(strtoupper(trim($code)), '/')) . '$/', $order->data['coupon'])) {
+      if (preg_match('/^' . str_replace('\*', '.*?', preg_quote(strtoupper(trim($code)), '/')) . '$/', $check_code)) {
         return TRUE;
       }
     }
@@ -70,6 +78,17 @@ function uc_coupon_condition_order_has_coupon_form($form_state, $settings = arra
     '#title' => t('Coupon codes'),
     '#description' => t('Enter coupon codes that this condition will apply to, one per line. Wildcards are allowed, e.g. COUPON* will match all codes beginning with COUPON. Leave blank to apply to any order with a coupon.'),
     '#default_value' => $settings['codes'],
+  );
+  
+  $form['check_current'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Include currently applied coupon (if any).'),
+    '#description' => t('Check this box if this condition will apply only to orders that
+    	are currently in checkout, in order to catch coupons applied before an order reaches
+    	the review stage (e.g. for shipping quotes).  Leave unchecked if the condition will
+    	apply to orders after checkout is complete (e.g. when payment notification is received 
+    	or when order status is updated manually).'),
+    '#default_value' => $settings['check_current'],
   );
 
   return $form;

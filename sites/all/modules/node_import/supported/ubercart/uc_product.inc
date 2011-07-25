@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_product.inc,v 1.1.2.3 2009/10/09 15:23:21 robrechtj Exp $
 
 /**
  * @file

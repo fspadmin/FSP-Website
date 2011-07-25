@@ -27,6 +27,6 @@
  */
 ?>
 
-<div id="corner-module-<?php echo $corner->cid; ?>" class="corner-module corner-module-<?php echo $corner->location; ?> corner-module-<?php echo $corner->position; ?> pngfix">
+<div id="corner-<?php echo $corner->cid; ?>" class="corner corner-<?php echo $corner->location; ?> corner-<?php echo $corner->position; ?> pngfix">
   <?php echo $html; ?>
 </div>
