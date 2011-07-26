@@ -6,3 +6,4 @@
 /sites/*/files/*
 /sites/*/settings.php
 /backup
+*~
