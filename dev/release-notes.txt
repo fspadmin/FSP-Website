@@ -1,6 +1,6 @@
-7/26/2011: Release #1000 (lcalitz)
-- Started new release numbering system (flat numbers, random start @ 1000)
-- Re-installed core & contribs from scratch after security breach
+7/26/2011: Release #6222 (lcalitz)
+- Started new release numbering system (flat numbers, random start @ 6221)
+- Re-installed newest core & contribs from scratch after security breach
 - Moved Porcfest files outside of code directories & link to it
 - Added dev/release-notes.txt (this file)
 
