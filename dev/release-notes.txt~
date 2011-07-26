@@ -1,0 +1,5 @@
+7/26/2011: Release #1000 (louis)
+- Re-installed core & contribs from scratch after security breach
+- Moved Porcfest files outside of code directories & link to it
+- Added dev/release-notes.txt (this file)
+
