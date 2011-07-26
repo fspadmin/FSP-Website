@@ -1,5 +1,5 @@
-7/26/2011: Release #6222 (lcalitz)
-- Started new release numbering system (flat numbers, random start @ 6221)
+Release #624, on 7/26/2011, by lcalitz
+- Started new release numbering system with flat numbers
 - Re-installed newest core & contribs from scratch after security breach
 - Moved Porcfest files outside of code directories & link to it
 - Added dev/release-notes.txt (this file)
