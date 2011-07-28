@@ -1,3 +1,6 @@
+Release #624.1 on 7/26/2011, by lcalitz
+- Restored missing fsp modules inadvertently dropped during clean upgrade
+
 Release #624, on 7/26/2011, by lcalitz
 - Started new release numbering system with flat numbers
 - Re-installed newest core & contribs from scratch after security breach
