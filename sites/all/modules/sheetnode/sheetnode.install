@@ -1,5 +1,5 @@
 <?php
-// $Id: sheetnode.install,v 1.1.4.14 2010/04/06 03:15:57 kratib Exp $
+// $Id: sheetnode.install,v 1.1.4.15 2011/01/02 07:52:18 kratib Exp $
 
 function sheetnode_install() {
   drupal_install_schema('sheetnode');
@@ -258,14 +258,31 @@ function sheetnode_update_6005(&$sandbox) {
   return $ret;
 }
 
-function sheetnode_patch() {
-  drupal_set_message(t('An update has been made to the SocialCalc patch. Please follow the <a href="@patch">instructions online</a> to apply this patch.',
-    array('@patch' => 'http://drupal.org/project/sheetnode#patch')
-  ), 'warning');
+function sheetnode_update_6006(&$sandbox) {
+  return array();
 }
 
-function sheetnode_update_6006(&$sandbox) {
-  sheetnode_patch();
+/**
+ * New file structure: inform user.
+ */
+function sheetnode_update_6007(&$sandbox) {
+  $files = array(
+    "php_java_bridge*",
+    "sheetnode_google*",
+    "sheetnode_xls*",
+    "sheetnode_ods*",
+  );
+  $msg = t('
+    The files in the Sheetnode module have been reorganized as of update 6007. 
+    Please delete the following files from the main Sheetnode directory at !path: 
+    <ul>!files</ul>
+  ');
+  $args = array(
+    '!path' => drupal_get_path('module', 'sheetnode'),
+    '!files' => "\n<li>" . implode("</li>\n<li>", $files) . '</li>',
+  );
+  watchdog('sheetnode', $msg, $args, WATCHDOG_ALERT);
+  drupal_set_message(t($msg, $args), 'warning');
   return array();
 }
 

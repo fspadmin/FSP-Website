@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon_register.module,v 1.1 2010/12/18 07:37:30 longwave Exp $
 
 /**
  * Implementation of hook_form_FORM_ID_alter().
@@ -78,13 +77,15 @@ function uc_coupon_register_user($type, &$edit, &$account, $category = NULL) {
 
       // Grant access to the coupon.
       $coupon = uc_coupon_load(variable_get('uc_coupon_register_cid', 0));
-      $coupon->data['users'][$uid] = $uid;
-      uc_coupon_save($coupon);
-
-      // Send the email.
-      $params['account'] = $account;
-      $params['coupon'] = $coupon;
-      drupal_mail('uc_coupon_register', 'coupon', $account->mail, user_preferred_language($account), $params);
+      if ($coupon->cid) {
+        $coupon->data['users'][$uid] = $uid;
+        uc_coupon_save($coupon);
+  
+        // Send the email.
+        $params['account'] = $account;
+        $params['coupon'] = $coupon;
+        drupal_mail('uc_coupon_register', 'coupon', $account->mail, user_preferred_language($account), $params);
+      }
     }
 
     $edit['uc_coupon_register'] = NULL;

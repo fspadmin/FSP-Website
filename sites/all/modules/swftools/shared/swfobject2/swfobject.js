@@ -1,1 +1,0 @@
-../../../../libraries/swfobject/swfobject.js

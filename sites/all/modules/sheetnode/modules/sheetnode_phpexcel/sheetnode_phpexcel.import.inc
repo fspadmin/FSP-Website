@@ -1,5 +1,5 @@
 <?php
-// $Id: sheetnode_phpexcel.import.inc,v 1.1.2.1 2010/11/21 03:11:27 kratib Exp $
+// $Id: sheetnode_phpexcel.import.inc,v 1.1.2.3 2011/01/02 06:55:05 kratib Exp $
 
 function _sheetnode_phpexcel_import_form(&$form_state, $format) {
   $form['#attributes'] = array('enctype' => "multipart/form-data");
@@ -123,8 +123,14 @@ function _sheetnode_phpexcel_import_do($workbook, $sheet) {
 
   // Default values.
   $font = $sheet->getDefaultStyle()->getFont();
-  $sc['attribs']['defaultcolwidth'] = PHPExcel_Shared_Drawing::cellDimensionToPixels($sheet->getDefaultColumnDimension()->getWidth(), $font);
-  $sc['attribs']['defaultrowheight'] = $sheet->getDefaultRowDimension()->getRowHeight();
+  $defaultcolwidth = PHPExcel_Shared_Drawing::cellDimensionToPixels($sheet->getDefaultColumnDimension()->getWidth(), $font);
+  if ($defaultcolwidth > 0) {
+    $sc['attribs']['defaultcolwidth'] = $defaultcolwidth;
+  }
+  $defaultrowheight = $sheet->getDefaultRowDimension()->getRowHeight();
+  if ($defaultrowheight > 0) {
+    $sc['attribs']['defaultrowheight'] = $defaultrowheight;
+  }
   $sc['attribs']['lastrow'] = $sheet->getHighestRow();
   $sc['attribs']['lastcol'] = PHPExcel_Cell::columnIndexFromString($sheet->getHighestColumn());
 
@@ -176,6 +182,9 @@ function _sheetnode_phpexcel_import_do($workbook, $sheet) {
       'definition' => $range->getRange(),
     );
   }
+  
+  // Reset caches.
+  _sheetnode_phpexcel_get_cached_styles(TRUE);
 
   $socialcalc = array(
     'sheet' => $sc,
@@ -266,7 +275,7 @@ function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc) {
 
   // Style
   $style = $sheet->getStyle($cell->getCoordinate());
-  static $styles = array();
+  $styles = _sheetnode_phpexcel_get_cached_styles();
   $hash = $style->getHashCode();
   if (empty($styles[$hash])) {
     // Font
@@ -282,7 +291,7 @@ function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc) {
     }
 
     // Background color
-    $bgcolor = _sheetnode_phpexcel_get_color($style->getFill()->getEndColor());
+    $bgcolor = _sheetnode_phpexcel_get_color($style->getFill()->getStartColor());
     if ($bgcolor) {
       $styles[$hash]['bgcolor'] = _sheetnode_phpexcel_insert_hash($sc, 'color', $bgcolor);
     }
@@ -322,6 +331,14 @@ function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc) {
   $c += $styles[$hash]; // merge the cached styles into the cell directly.
 
   $sc['cells'][$cell->getCoordinate()] = $c;
+}
+
+function _sheetnode_phpexcel_get_cached_styles($reset = FALSE) {
+  static $styles = array();
+  if ($reset) {
+    $styles = array();
+  }
+  return $styles;
 }
 
 /**

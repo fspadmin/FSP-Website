@@ -1,5 +1,4 @@
 <?php
-// $Id: node_import.admin.inc,v 1.1.2.38 2010/03/15 10:48:43 robrechtj Exp $
 
 /**
  * @file

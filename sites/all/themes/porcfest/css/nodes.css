@@ -103,9 +103,31 @@ ul.links li.blog_usernames_blog a {}
  * Replace CONTENT_TYPE with the content type 
  * machine-readable name. 
  */
-.node-type-CONTENT_TYPE {}
-
-
+.node-type-vendor h1#page-title{
+  display:none;
+}
+.node-type-vendor #vendor-info{
+  font-size:1.2em;
+}
+.node-news_entry{
+  padding: 0 0 20px 0;
+}
+.node-news_entry .field-news-entry-image{
+  float:left;
+  padding:4px 4px;
+  border-radius:5px;
+  margin:0 15px 0 0;
+  border:1px solid #ccc;
+}
+.node-news_entry .field-news-entry-image img{
+  display:block;
+}
+.node-news_entry .node-submitted{
+  font-size:.75em;
+}
+.node-news_entry .node-content{
+  margin: 15px 0;
+}
 /**********************************************************
  *                    CCK Fields
  **********************************************************/

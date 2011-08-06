@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon_handler_field_actions.inc,v 1.1 2010/11/15 00:59:03 longwave Exp $
 
 /**
  * @file

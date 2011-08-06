@@ -1,5 +1,5 @@
 <?php
-// $Id: securepages.module,v 1.15.2.22 2009/05/03 23:00:18 gordon Exp $
+// $Id: securepages.module,v 1.15.2.28 2011/02/23 14:41:39 gordon Exp $
 /**
  * @file
  * Provide method of creating allowing certain pages to only viewable from
@@ -10,8 +10,6 @@
  * Implementation of hook_boot().
  */
 function securepages_boot() {
-  global $base_url;
-
   $path = isset($_GET['q']) ? $_GET['q'] : '';
   if ($path == 'admin/build/securepages/test') {
     if (securepages_is_secure()) {
@@ -22,8 +20,8 @@ function securepages_boot() {
     }
     exit();
   }
-  
-  if (!variable_get('securepages_enable', 0) || basename($_SERVER['PHP_SELF']) != 'index.php') {
+
+  if (!variable_get('securepages_enable', 0) || basename($_SERVER['PHP_SELF']) != 'index.php' || php_sapi_name() == 'cli') {
     return;
   }
 
@@ -48,7 +46,7 @@ function securepages_boot() {
  * Implementation of hook_init().
  */
 function securepages_init() {
-  if (!variable_get('securepages_enable', 0) || basename($_SERVER['PHP_SELF']) != 'index.php') {
+  if (!variable_get('securepages_enable', 0) || basename($_SERVER['PHP_SELF']) != 'index.php' || php_sapi_name() == 'cli') {
     return;
   }
 
@@ -122,7 +120,7 @@ function securepages_form_alter(&$form, &$form_state, $form_id) {
 /**
  * Implementation of hook_link_alter().
  */
-function securepages_link_alter(&$links, &$node) {
+function securepages_link_alter(&$links, $node) {
   if (!variable_get('securepages_enable', 0)) {
     return;
   }
@@ -144,6 +142,7 @@ function securepages_link_alter(&$links, &$node) {
  * insecure version of the page.
  */
 function securepages_redirect() {
+  global $base_url;
   $path = isset($_GET['q']) ? $_GET['q'] : '';
   $page_match = securepages_match($path);
 
@@ -173,7 +172,7 @@ function securepages_redirect() {
  */
 function securepages_goto($secure) {
   global $base_root;
-  
+
   $_SESSION['securepages_redirect'] = TRUE;
   $path = !empty($_REQUEST['q']) ? $_REQUEST['q'] : '';
   $query = count($_GET) > 1 ? securepages_get_query($_GET) : NULL;
@@ -190,7 +189,7 @@ function securepages_goto($secure) {
     bootstrap_invoke_all('exit');
   }
   header('Location: '. $url);
-  
+
   // Make sure the cache is clear so that the next page will not pick up a cached version.
   cache_clear_all($base_root . request_uri(), 'cache_page');
   exit();
@@ -304,35 +303,12 @@ function securepages_url($path = NULL, $options = array()) {
     'prefix' => '',
     'secure' => TRUE,
   );
-  if (!isset($options['external'])) {
-    // Return an external link if $path contains an allowed absolute URL.
-    // Only call the slow filter_xss_bad_protocol if $path contains a ':' before
-    // any / ? or #.
-    $colonpos = strpos($path, ':');
-    $options['external'] = ($colonpos !== FALSE && !preg_match('![/?#]!', substr($path, 0, $colonpos)) && filter_xss_bad_protocol($path, FALSE) == check_plain($path));
-  }
 
   if ($options['fragment']) {
     $options['fragment'] = '#'. $options['fragment'];
   }
   if (is_array($options['query'])) {
     $options['query'] = drupal_query_string_encode($options['query']);
-  }
-
-  if ($options['external']) {
-    // Split off the fragment.
-    if (strpos($path, '#') !== FALSE) {
-      list($path, $old_fragment) = explode('#', $path, 2);
-      if (isset($old_fragment) && !$options['fragment']) {
-        $options['fragment'] = '#'. $old_fragment;
-      }
-    }
-    // Append the query.
-    if ($options['query']) {
-      $path .= (strpos($path, '?') !== FALSE ? '&' : '?') . $options['query'];
-    }
-    // Reassemble.
-    return $path . $options['fragment'];
   }
 
   global $base_url;
@@ -423,17 +399,7 @@ function securepages_baseurl($secure = TRUE) {
  * Return a querystring without the q paramter
  */
 function securepages_get_query($query) {
-  unset($query['q']);
-  $q = array();
-
-  foreach ($query as $key => $value) {
-    if (is_array($value)) {
-      $value = http_build_query(array($key => $value));
-    }
-    $q[] = securepages_urlencode($key) .'='. securepages_urlencode($value);
-  }
-
-  return implode('&', $q);
+  return trim(str_replace('q='.$query['q'], '', $_SERVER['QUERY_STRING']),'&');
 }
 
 /**
@@ -443,10 +409,10 @@ function securepages_urlencode($text) {
   if (variable_get('clean_url', '0')) {
     return str_replace(array('%2F', '%26', '%23', '//'),
                        array('/', '%2526', '%2523', '/%252F'),
-                       urlencode($text));
+                       rawurlencode($text));
   }
   else {
-    return str_replace('%2F', '/', urlencode($text));
+    return str_replace('%2F', '/', rawurlencode($text));
   }
 }
 
@@ -455,22 +421,24 @@ function securepages_urlencode($text) {
  */
 function securepages_can_alter_url($url) {
   global $base_path, $base_url;
-  
+
+  $path = '';
+
   @extract(@parse_url($url));
-  
+
   // If there is no scheme then it is a relative url and can be altered
   if (!isset($scheme) && $base_path == '/') {
     return TRUE;
   }
-  
+
   // If the host names are not the same then don't allow altering of the path.
   if (isset($host) && strtolower($host) != strtolower($_SERVER['HTTP_HOST'])) {
     return FALSE;
   }
-  
+
   if (strlen($base_path) > 1 && substr($base_url, -1) != substr($path, 1, strlen($base_path))) {
     return FALSE;
   }
-  
+
   return TRUE;
 }

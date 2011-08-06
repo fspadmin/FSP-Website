@@ -286,6 +286,39 @@ body > #container {
 }
 #header-blocks .region-inner {}
 
+#submenu{
+  width: 100%;
+  display: block;
+  background: peru;
+  height: 34px;
+  float: left;
+  padding: 0.9px 0 0 0;
+  margin: -23px 0 0 0;
+  }
+  #submenu .block-content ul{
+    margin:2px 0 0;
+  }
+  #submenu .block-content ul li{
+    list-style:none;
+    list-style-image:none;
+    display:inline;
+    }
+    #submenu .block-content ul li a{
+      color:#1f1209;
+      text-shadow:none;
+      font-size:1.2em;
+      border-radius:10px;
+      -moz-border-radius:10px;
+      padding:3px 9px;
+      }
+      #submenu .block-content ul li a:hover{
+	color:white;
+      }
+      #submenu .block-content ul li a.active,
+      #submenu .block-content ul li a.active-trail{
+	color:white;
+      }
+      
 /* Secondary content is a full width region between 
    the header and the main columns. */
 #secondary-content {
@@ -370,6 +403,8 @@ body > #container {
   /*border-bottom:#666 1px solid;*/
   padding:10px 0;
   margin:15px 0;
+  display:inline-block;
+  width:100%;
 }
 .section-vendors #main-content .block-content .view-content .views-row-odd{
   /*background:#edf1f9;*/
@@ -475,6 +510,71 @@ body > #container {
 .forum-post-panel-main {
     min-height: inherit;
 }
+
+/**********************************************************
+ *                      Speakers Page
+ **********************************************************/
+.page-events-speakers #main-content .view-content .views-row{
+  padding:10px 0;
+  margin:15px 0;
+}
+.page-events-speakers #main-content .view-content .views-field-field-speaker-photo-fid{
+  float:left;
+  padding-right:15px;
+}
+.page-events-speakers #main-content .view-content .views-field-field-speaker-photo-fid img{
+      border:1px solid #ccc;
+      padding:5px;
+      border-radius:5px;
+}
+.page-events-speakers #main-content .view-content .views-field-title{
+  font-size:1.2em;
+  background:#eee;
+  border-top:1px solid #666;
+  /*border-bottom:1px solid #aaa;*/
+  margin:0 0 5px;
+  padding:0 6px;
+  }
+  .page-events-speakers #main-content .view-content .views-field-title span.speaker-link a{
+	background:url(../images/pop-out-icon.png) no-repeat right 0px;
+	padding:0 28px 0 0;
+  }
+  .page-events-speakers #main-content .view-content .views-field-title span.speaker-link a:hover{
+	background:#cd853f url(../images/pop-out-icon.png) no-repeat right -19px;
+  }
+/**********************************************************
+ *                      Sponsors Page
+ **********************************************************/
+.page-support-sponsors #main-content .view-content .views-row{
+  padding:10px 0;
+  margin:15px 0;
+  display:inline-block;
+  width:100%;
+}
+.page-support-sponsors #main-content .view-content .views-field-field-sponsor-image-fid{
+  float:left;
+  padding-right:15px;
+}
+.page-support-sponsors #main-content .view-content .views-field-field-sponsor-image-fid img{
+      border:1px solid #ccc;
+      padding:5px;
+      border-radius:5px;
+}
+.page-support-sponsors #main-content .view-content .views-field-title{
+  font-size:1.2em;
+  background:#eee;
+  border-top:1px solid #666;
+  /*border-bottom:1px solid #aaa;*/
+  margin:0 0 5px;
+  padding:0 6px;
+  }
+  .page-support-sponsors #main-content .view-content .views-field-title span.sponsor-link a{
+	background:url(../images/pop-out-icon.png) no-repeat right 0px;
+	padding:0 28px 0 0;
+  }
+  .page-support-sponsors #main-content .view-content .views-field-title span.sponsor-link a:hover{
+	background:#cd853f url(../images/pop-out-icon.png) no-repeat right -19px;
+  }
 /**********************************************************
  *                      Sidebars
  **********************************************************/
@@ -504,6 +604,22 @@ body > #container {
 }
 .block{
 margin: 0 0 15px;
+}
+
+#block-views-news_view-block_1 .block-content .view-content .views-row{
+	font-size:.8em;
+	margin:3px 0;
+	padding:3px 0;
+	border-bottom:1px solid #ccc;
+}
+#block-views-news_view-block_1 .block-content .view-content a:hover,
+#block-views-news_view-block_1 .block-content .view-footer a:hover{
+	background:#cd853f;
+	color:white;
+}
+#block-views-news_view-block_1 .block-content .view-content .views-row .views-field-created{
+	color:#666;
+	white-space:nowrap;
 }
 /*********************************************************
 *                     GPanel Regions
@@ -762,7 +878,7 @@ dl.search-results dd .search-info {}
  * Example styles to get you started.
  */
 #primary {
-  padding:0 15px;
+  padding:0 15px 30px;
 }
 
 #nav .primary-links {
@@ -776,13 +892,18 @@ dl.search-results dd .search-info {}
 #nav .primary-links li {
   float:left;
   list-style: none;
-  margin: 20px 0 0;
+  margin: 20px 4px 0;
   padding: 0 9px;
   height:40px;
   border-radius:10px;
   -moz-border-radius:10px;
 }
-
+#nav .primary-links li.first{
+  margin-left:3px;
+}
+#nav .primary-links li.last{
+  margin-right:3px;
+}
 #nav .primary-links li a {
   text-decoration: none;
   white-space: nowrap;

@@ -1,5 +1,4 @@
 <?php
-// $Id: views_data_export.theme.inc,v 1.1.2.3 2010/11/27 17:01:55 darthsteven Exp $
 
 /**
  * @file
@@ -7,6 +6,18 @@
  *
  * Views bug: http://drupal.org/node/593336
  */
+
+
+/**
+ * Theme a status message
+ */
+function theme_views_data_export_message($message, $type = 'info') {
+  $output = '';
+  $output .= '<div class="messages status ' . $type . '">';
+  $output .= $message;
+  $output .= '</div>';
+  return $output;
+}
 
 /**
  * Theme a feed link.
@@ -96,6 +107,17 @@ function template_preprocess_views_data_export_csv_header(&$vars) {
     if ($vars['options']['trim']) {
       $output = trim($output);
     }
+    if (!empty($vars['options']['encoding']) && function_exists('iconv')) {
+        switch($vars['options']['encoding']) {
+          case 'ASCII':
+            $converted = iconv("UTF-8", "ASCII//TRANSLIT", $output);
+            if ($converted !== FALSE) {
+              $output = $converted;
+            }
+            break;
+        }
+      }
+      
     $vars['header'][$key] = $wrap . str_replace('"', $replace_value, $output) . $wrap;
   }
 }
@@ -127,6 +149,20 @@ function template_preprocess_views_data_export_csv_body(&$vars) {
       $output = decode_entities(strip_tags($value));
       if ($vars['options']['trim']) {
         $output = trim($output);
+      }
+
+      if (!empty($vars['options']['encoding']) && function_exists('iconv')) {
+        switch($vars['options']['encoding']) {
+          case 'ASCII':
+            $converted = iconv("UTF-8", "ASCII//TRANSLIT", $output);
+            if ($converted !== FALSE) {
+              $output = $converted;
+            }
+            break;
+        }
+      }
+      if (!empty($vars['options']['replace_newlines'])) {
+        $output = str_replace("\n", $vars['options']['newline_replacement'], $output);
       }
       $vars['themed_rows'][$i][$j] = $wrap . str_replace('"', $replace_value, $output) . $wrap;
     }
@@ -164,6 +200,16 @@ function template_preprocess_views_data_export_csv(&$vars) {
     if ($vars['options']['trim']) {
       $output = trim($output);
     }
+    if (!empty($vars['options']['encoding']) && function_exists('iconv')) {
+      switch($vars['options']['encoding']) {
+        case 'ASCII':
+          $converted = iconv("UTF-8", "ASCII//TRANSLIT", $output);
+          if ($converted !== FALSE) {
+            $output = $converted;
+          }
+          break;
+      }
+    }
     $vars['header'][$key] = $wrap . str_replace('"', $replace_value, $output) . $wrap;
   }
 
@@ -173,6 +219,16 @@ function template_preprocess_views_data_export_csv(&$vars) {
       $output = decode_entities(strip_tags($value));
       if ($vars['options']['trim']) {
         $output = trim($output);
+      }
+      if (!empty($vars['options']['encoding']) && function_exists('iconv')) {
+        switch($vars['options']['encoding']) {
+          case 'ASCII':
+            $converted = iconv("UTF-8", "ASCII//TRANSLIT", $output);
+            if ($converted !== FALSE) {
+              $output = $converted;
+            }
+            break;
+        }
       }
       $vars['themed_rows'][$i][$j] = $wrap . str_replace('"', $replace_value, $output) . $wrap;
     }
@@ -330,7 +386,8 @@ function template_preprocess_views_data_export_xml_body(&$vars) {
   }
 
   foreach ($vars['header'] as $field => $header) {
-    $vars['xml_tag'][$field] = $header;
+    // If there is no field label, use 'no name'.
+    $vars['xml_tag'][$field] = !empty($header) ? $header : 'no name';
     if ($vars['options']['transform']) {
       switch ($vars['options']['transform_type']) {
         case 'dash':

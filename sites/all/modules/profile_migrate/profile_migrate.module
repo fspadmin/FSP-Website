@@ -1,5 +1,4 @@
 <?php
-// $Id: profile_migrate.module,v 1.3 2009/12/06 12:37:24 karens Exp $
 function profile_migrate_help($path, $arg) {
   $output = '';
   switch ($path) {
@@ -80,7 +79,7 @@ function profile_migrate_settings_form() {
   $form['method'] = array(
     '#type' => 'select',
     '#options' => array('fieldgroup' => t('Fieldgroup'), 'type' => t('Content type')),
-    '#default_value' => 'type',
+    '#default_value' => 'fieldgroup',
     '#title' => t('Each category is a'),
     '#description' => t('The way to handle profile categories. Either treat each category as a fieldgroup on the content type selected above, or use the above content type for the first category and then create a new content type for each additional category, each with the fields used in that category.'),
   );
@@ -109,14 +108,14 @@ function profile_migrate_settings_form_submit(&$form, &$form_state) {
  *   create a new content type for each one.
  */
 function profile_migrate($type_name = 'profile', $method = 'fieldgroup') {
-  if ($method == 'fieldgroup') {
+  if (method == 'fieldgroup') {
     module_enable(array('fieldgroup'));
-  } 
+  }
   $batch = array(
     'title' => t('Migrating Profile fields'),
     'operations' => array(
       array('profile_migrate_fields', array($type_name, $method)),
-//      array('profile_migrate_data', array($type_name, $method)),
+      array('profile_migrate_data', array($type_name, $method)),
     ),
     'finished' => 'profile_migrate_batch_finished'
   );
@@ -130,7 +129,7 @@ function profile_migrate_fields($type_name, $method, &$context) {
   ini_set('max_execution_time', 240);
   
   module_load_include('inc', 'content', 'includes/content.crud');
-
+  
   $types = content_types();
   $cat_count = 0;
   
@@ -138,7 +137,6 @@ function profile_migrate_fields($type_name, $method, &$context) {
   $new_names = array();
   $new_types = array();
   $new_groups = array();
-  $new_fields = array();
   
   // Get all profile fields.
   $result = db_query('SELECT * FROM {profile_fields} ORDER BY category, weight');
@@ -148,7 +146,6 @@ function profile_migrate_fields($type_name, $method, &$context) {
   $replace_name = array(
      ' ' => '_',
   );
-
       
   while($old_field = db_fetch_object($result)) {
     // Create field instance.
@@ -240,8 +237,8 @@ function profile_migrate_fields($type_name, $method, &$context) {
       case 'selection':
         $field['type'] = 'text';
         $field['module'] = 'text';
-        $field['widget']['type'] = 'optionwidgets_select';
-        $field['widget']['module'] = 'optionwidgets';
+        $field['widget']['type'] = 'options_select';
+        $field['widget']['module'] = 'text';
         
         $field['text_processing'] = 0;
         $field['max_length'] = '';
@@ -314,22 +311,75 @@ function profile_migrate_fields($type_name, $method, &$context) {
     
     content_field_instance_create($field);
     $new_names[$old_field->name] = $field['field_name'];
-    if( TRUE ) {      
-      //if ($cat_count > 0) {
+      
+    if ($method == 'fieldgroup') {
+      $group_name = strtolower(strtr($old_field->category, $replace_name));
+      $new_groups[$old_field->category] = $group_name;
+      $field['group_name'] = $group_name;
+      $groups = fieldgroup_groups($type_name, FALSE, TRUE);
+      if (!array_key_exists($group_name, $groups)) {
+        $group = array(
+          'group_type' => 'standard',
+          'type_name' => $type_name,
+          'group_name' => $group_name,
+          'label' => $old_field->category,
+          'settings' => array (
+            'form' => array (
+              'style' => 'fieldset',
+              'description' => '',
+            ),
+            'display' => array (
+              'description' => '',
+              'label' => 'above',
+              'teaser' => array (
+                'format' => 'fieldset',
+                'exclude' => 0,
+              ),
+              'full' => array (
+                'format' => 'fieldset',
+                'exclude' => 0,
+              ),
+              4 => array (
+                'format' => 'fieldset',
+                'exclude' => 0,
+              ),
+              2 => array (
+                'format' => 'fieldset',
+                'exclude' => 0,
+              ),
+              3 => array (
+                'format' => 'fieldset',
+                'exclude' => 0,
+              ),
+              5 => array (
+                'format' => 'fieldset',
+                'exclude' => 0,
+              ),
+              'token' => array (
+                'format' => 'fieldset',
+                'exclude' => 0,
+              ),
+            ),
+          ),
+          'weight' => $cat_count,
+          'fields' => array (),
+        );
+        fieldgroup_save_group($type_name, $group);
+        $cat_count++;
+      }
+      fieldgroup_update_fields(array('field_name' => $field_name, 'group' => $group_name, 'type_name' => $type_name));
+    }
+    else {
+      if ($cat_count > 0) {
         $type_name = strtolower(strtr($old_field->category, $replace_name));
         $types = node_get_types('names', NULL, TRUE);
-        /*
         while (in_array($type_name, $types)) {
           $type_name .= '_1';
         }
-        */
-      //}
-  		watchdog('profile_migrate', sprintf('%-30s -> %s',$old_field->name,$type_name));
+      }
       $new_types[$old_field->category] = $type_name;
-			array_unique($new_types);
       
-      //if ($cat_count > 0 && !array_key_exists($type_name, $types)) 
-      if (!array_key_exists($type_name, $types)) {
+      if ($cat_count > 0 && !array_key_exists($type_name, $types)) { 
         $type = array(
           'type' => $type_name,
           'name' => $old_field->category,
@@ -337,8 +387,6 @@ function profile_migrate_fields($type_name, $method, &$context) {
           'description' => t('A user profile built as content.'),
           'custom' => TRUE, 
           'locked' => FALSE, 
-					'has_body' => FALSE,
-					'body_label' => '',
           'node_options' => array (
             'status' => TRUE,
             'promote' => FALSE, 
@@ -347,14 +395,13 @@ function profile_migrate_fields($type_name, $method, &$context) {
           ),
         );
         $type = (object) _node_type_set_defaults($type);
-        $context['message'] = t('Last moved '. $type_name);
         node_type_save($type);
       }     
       $cat_count++;
-			variable_set('content_profile_use_'. $type_name, 1);
-			$settings = content_profile_content_profile_settings();
-			variable_set('content_profile_'. $type_name, $settings);
-		}
+    }
+    variable_set('content_profile_use_'. $type_name, 1);
+    $settings = content_profile_content_profile_settings();
+    variable_set('content_profile_'. $type_name, $settings);
   }
   $_SESSION['sandbox']['new_fields'] = $new_fields;
   $_SESSION['sandbox']['new_groups'] = $new_groups;
@@ -367,15 +414,15 @@ function profile_migrate_fields($type_name, $method, &$context) {
 
 function profile_migrate_data($type_name, $method, &$context) {
   if (empty($context['sandbox'])) {
-    // initiate multistep processing.
+    // Initiate multistep processing.
     $context['sandbox']['progress'] = 0;
     $context['sandbox']['current_uid'] = 0;
-    $context['sandbox']['max'] = db_result(db_query('select count(distinct uid) from {profile_values}'));
-    $results = db_query('select distinct(uid) from {profile_values} v order by uid');
+    $context['sandbox']['max'] = db_result(db_query('SELECT COUNT(DISTINCT uid) FROM {profile_values}'));
+    $results = db_query('SELECT DISTINCT(uid) FROM {profile_values} v ORDER BY uid');
     while($row = db_fetch_object($results)) {
       $context['sandbox']['uids'][] = $row->uid;
     }
-    $_session['sandbox']['uids'] = $context['sandbox']['uids'];
+    $_SESSION['sandbox']['uids'] = $context['sandbox']['uids'];
   }
   $prev_category = '';
   $uid = array_shift($context['sandbox']['uids']);

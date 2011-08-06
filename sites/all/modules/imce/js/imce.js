@@ -1,4 +1,3 @@
-// $Id: imce.js,v 1.16.2.11 2010/12/12 07:24:43 ufku Exp $
 
 (function($) {
 //Global container.
@@ -329,7 +328,7 @@ opClick: function(name) {
       });
     });
     var diff = left + $opcon.width() - $('#imce-content').width();
-    $opcon.css({left: diff > 0 ? left - diff : left});
+    $opcon.css({left: diff > 0 ? left - diff - 1 : left});
     $(Op.li).addClass('active');
     $(imce.opCloseLink).fadeIn(300);
     imce.vars.op = name;
@@ -555,9 +554,9 @@ setMessage: function (msg, type) {
     $box.css({opacity: 0, display: 'block'}).html(msg);
     $box.dequeue();
   });
-  var q = $box.queue().length;
+  var q = $box.queue().length, t = imce.vars.msgT || 1000;
   q = q < 2 ? 1 : q < 3 ? 0.8 : q < 4 ? 0.7 : 0.4;//adjust speed with respect to queue length
-  $box.fadeTo(600 * q, 1).fadeTo(1000 * q, 1).fadeOut(400 * q);
+  $box.fadeTo(600 * q, 1).fadeTo(t * q, 1).fadeOut(400 * q);
   $(logs).append(msg);
   return false;
 },

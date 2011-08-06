@@ -58,4 +58,3 @@ Configuration:
 
 Last updated:
 ------------
-$Id: README.txt,v 1.4 2009/04/26 09:21:32 ryangroe Exp $

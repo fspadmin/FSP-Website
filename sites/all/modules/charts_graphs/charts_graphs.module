@@ -1,5 +1,4 @@
 <?php
-// $Id: charts_graphs.module,v 1.1.2.15 2010/06/28 22:55:42 rsevero Exp $
 
 /**
  * @File
@@ -10,7 +9,7 @@
  * Implementation of hook_init().
  */
 function charts_graphs_init() {
-  require_once(dirname(__FILE__) . '/charts_graphs.class.inc');
+  require_once(dirname(__FILE__) . '/charts_graphs_canvas.class.inc');
   $api_providers = array();
 
   $hook = 'chartgraph_provider';
@@ -20,7 +19,7 @@ function charts_graphs_init() {
     if (!empty($result) && is_object($result)) {
       $result->modulename = $module;
       //save it as a provider;
-      chart_graphs_apis($result); 
+      charts_graphs_apis($result);
     }
   }
 }
@@ -39,7 +38,73 @@ function charts_graphs_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['admin/settings/charts_graphs'] = array(
+    'title' => 'Charts and Graphs',
+    'description' => 'Main configurations for Charts and Graphs',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('charts_graphs_main_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
   return $items;
+}
+
+/**
+ *  Main Charts and Graphs settings form.
+ */
+function charts_graphs_main_settings_form() {
+  $form = array();
+
+  $form['charts_graphs_check_chart_api'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Check presence of Chart API module'),
+    '#description' => t(
+      'Defines if !charts_graphs will check for the presence of the !chart_api
+        module. This only affects the presentation of a warning in the
+        !status_page complaining about both the Charts and Graphs module and the
+        Chart API module being installed at the same time.',
+      array(
+        '!charts_graphs' => l(
+          t('Charts and Graphs'),
+          'http://drupal.org/project/charts_graphs'
+        ),
+        '!chart_api' => l(
+          t('Chart API'),
+          'http://drupal.org/project/chart'
+        ),
+        '!status_page' => l(t('Status report'), 'admin/reports/status'),
+      )
+    ),
+    '#default_value' => variable_get('charts_graphs_check_chart_api', 1),
+    '#required' => TRUE,
+  );
+
+  $form['charts_graphs_check_charts'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Check presence of Charts module'),
+    '#description' => t(
+      'Defines if !charts_graphs will check for the presence of the !charts
+        module. This only affects the presentation of a warning in the
+        !status_page complaining about both the Charts and Graphs module and the
+        Charts module being installed at the same time.',
+      array(
+        '!charts_graphs' => l(
+          t('Charts and Graphs'),
+          'http://drupal.org/project/charts_graphs'
+        ),
+        '!charts' => l(
+          t('Charts'),
+          'http://drupal.org/project/charts'
+        ),
+        '!status_page' => l(t('Status report'), 'admin/reports/status'),
+      )
+    ),
+    '#default_value' => variable_get('charts_graphs_check_charts', 1),
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
 }
 
 /**
@@ -47,26 +112,54 @@ function charts_graphs_menu() {
  *
  * @return <string> 
  */
-function charts_graphs_test($submodule = 'open-flash', $type = 'bar', $title = 'The Title') {
-  $canvas = chart_graphs_get_graph($submodule);
-
-  if (($type == 'pie') || ($type == 'donut')) {
-    $series = array(
-      'Some Value' => array(91, 60, 70, 90, 5, 72, 63, 9, 72),
-    );
+function charts_graphs_test($submodule = NULL, $type = 'bar', $title = 'The Title', $series = NULL, $labels = NULL) {
+  if ($submodule === NULL) {
+    $submodule = array_shift(array_keys(charts_graphs_apis()));
   }
-  else {
+
+  if ($series === NULL) {
     $series = array(
       'Some Value' => array(91, 60, 70, 90, 5, 72, 63, 9, 72),
       'Page Views' => array(63, 70, 94, 50, 7, 62, 93, 71, 3),
     );
   }
+  else {
+    $series = unserialize($series);
+  }
+
+  if ($labels === NULL) {
+    $labels = array(
+      'one',
+      'two',
+      'three',
+      'four',
+      'five',
+      'six',
+      'seven',
+      'eight',
+      'nine'
+    );
+  }
+  else {
+    $labels = unserialize($labels);
+  }
+
+  $canvas = charts_graphs_get_graph($submodule);
+
+//  if ((strpos($type, 'pie') !== FALSE) || (strpos($type, 'donut') !== FALSE)) {
+//    $series = array(
+//      reset(array_keys($series)) => reset(array_values($series)),
+//    );
+//  }
+
   $canvas->title = check_plain($title);
+  $canvas->width = 500;
+  $canvas->height = 400;
   $canvas->type = $type;
   $canvas->y_legend = 'Y Legend';
-  $canvas->colour = 'white';
+  $canvas->colour = '#ffffff';
   $canvas->series = $series;
-  $canvas->x_labels = array('one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine');
+  $canvas->x_labels = $labels;
 
   $out = $canvas->get_chart();
 
@@ -78,10 +171,10 @@ function charts_graphs_test($submodule = 'open-flash', $type = 'bar', $title = '
  * passed or add a new implementation to the static list.
  *
  * @staticvar <array> $apis
- * @param <ChartCanvas> $api_class
+ * @param <ChartsGraphsCanvas> $api_class
  * @return <string>
  */
-function chart_graphs_apis($api_class = NULL) {
+function charts_graphs_apis($api_class = NULL) {
   static $apis = array();
 
   if (!empty($api_class)) {
@@ -93,15 +186,14 @@ function chart_graphs_apis($api_class = NULL) {
 }
 
 /**
- * Factory method that allows instantiating of a
- * charting implementation class by implementation
- * name.
+ * Factory method that allows instantiating of a charting implementation class
+ * by implementation name.
  * 
- * @param <ChartCanvas> $name
+ * @param <ChartsGraphsCanvas> $name
  * @return <type> 
  */
-function chart_graphs_get_graph($name) {
-  $apis = chart_graphs_apis();
+function charts_graphs_get_graph($name) {
+  $apis = charts_graphs_apis();
   $api = $apis[$name];
 
   if (!empty($api) && is_object($api)) {
@@ -120,7 +212,7 @@ function chart_graphs_get_graph($name) {
  * @staticvar <int> $id
  * @return <int> 
  */
-function chart_graphs_chart_id_generator() {
+function charts_graphs_chart_id_generator() {
   static $id = 0;
 
   $id++;
@@ -134,7 +226,7 @@ function chart_graphs_chart_id_generator() {
  * 
  * @return <string> 
  */
-function chart_graphs_random_hash() {
+function charts_graphs_random_hash() {
   list($usec, $sec) = explode(' ', microtime());
   $seed = (float) $sec + ((float) $usec * 100000);
   mt_srand($seed);

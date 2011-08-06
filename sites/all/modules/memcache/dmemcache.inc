@@ -1,5 +1,4 @@
 <?php
-// $Id: dmemcache.inc,v 1.1.2.7.2.20 2010/09/29 15:04:05 robertDouglass Exp $
 
 /*
  * Core dmemcache functions required by:
@@ -33,16 +32,17 @@ $_memcache_statistics = array();
 function dmemcache_set($key, $value, $exp = 0, $bin = 'cache') {
   global $_memcache_statistics;
   $full_key = dmemcache_key($key, $bin);
-  $_memcache_statistics[] = array('set', $bin, $full_key, '');
+  $success = FALSE;
   if ($mc = dmemcache_object($bin)) {
-    if (class_exists('Memcached')) {
-      return $mc->set($full_key, $value, $exp);
+    if ($mc instanceof Memcached) {
+      $success = $mc->set($full_key, $value, $exp);
     }
-    else {
-      return $mc->set($full_key, $value, MEMCACHE_COMPRESSED, $exp);
+    elseif ($mc instanceof Memcache) {
+      $success = $mc->set($full_key, $value, MEMCACHE_COMPRESSED, $exp);
     }
   }
-  return FALSE;
+  $_memcache_statistics[] = array('set', $bin, $full_key, (int)$success);
+  return $success;
 }
 
 /**
@@ -73,16 +73,17 @@ function dmemcache_set($key, $value, $exp = 0, $bin = 'cache') {
 function dmemcache_add($key, $value, $exp = 0, $bin = 'cache', $mc = NULL, $flag = FALSE) {
   global $_memcache_statistics;
   $full_key = dmemcache_key($key, $bin);
-  $_memcache_statistics[] = array('add', $bin, $full_key, '');
+  $success = FALSE;
   if ($mc || ($mc = dmemcache_object($bin))) {
-    if (class_exists('Memcached')) {
-      return $mc->add($full_key, $value, $exp);
+    if ($mc instanceof Memcached) {
+      $success = $mc->add($full_key, $value, $exp);
     }
-    else {
-      return $mc->add($full_key, $value, $flag, $exp);
+    elseif ($mc instanceof Memcache) {
+      $success = $mc->add($full_key, $value, $flag, $exp);
     }
   }
-  return FALSE;
+  $_memcache_statistics[] = array('add', $bin, $full_key, (int)$success);
+  return $success;
 }
 
 /**
@@ -100,24 +101,7 @@ function dmemcache_get($key, $bin = 'cache') {
   $success = '0';
   if ($mc = dmemcache_object($bin)) {
     $result = $mc->get($full_key);
-    if ($result) {
-      // We check $result->expire to see if the object has expired.  If so, we
-      // try and grab a lock.  If we get the lock, we return FALSE instead of
-      // the cached object which should cause it to be rebuilt.  If we do not
-      // get the lock, we return the cached object.  The goal here is to avoid
-      // cache stampedes. 
-      // By default the cache stampede semaphore is held for 15 seconds.  This
-      // can be adjusted by setting the memcache_stampede_semaphore variable.
-      // TODO: Can we log when a sempahore expires versus being intentionally
-      // freed to track when this is happening?
-      if (isset($result->expire) && $result->expire !== CACHE_PERMANENT && $result->expire <= $_SERVER['REQUEST_TIME'] && dmemcache_add($full_key .'_semaphore', '', variable_get('memcache_stampede_semaphore', 15))) {
-        $result = FALSE;
-      }
-      else {
-        $success = '1';
-      }
-    }
-    $statistics[] = $success;
+    $statistics[] = (bool) $result;
     $_memcache_statistics[] = $statistics;
 
     return $result;
@@ -143,10 +127,10 @@ function dmemcache_get_multi($keys, $bin = 'cache', $mc = NULL) {
   }
   $results = array();
   if ($mc || ($mc = dmemcache_object($bin))) {
-    if (class_exists('Memcached')) {
+    if ($mc instanceof Memcached) {
       $results = $mc->getMulti($full_keys);
     }
-    else {
+    elseif ($mc instanceof Memcache) {
       $results = $mc->get($full_keys);
     }
   }
@@ -168,11 +152,12 @@ function dmemcache_get_multi($keys, $bin = 'cache', $mc = NULL) {
 function dmemcache_delete($key, $bin = 'cache') {
   global $_memcache_statistics;
   $full_key = dmemcache_key($key, $bin);
-  $_memcache_statistics[] = array('delete', $bin, $full_key, '');
+  $success = FALSE;
   if ($mc = dmemcache_object($bin)) {
-    return $mc->delete($full_key);
+    $success = $mc->delete($full_key, 0);
   }
-  return FALSE;
+  $_memcache_statistics[] = array('delete', $bin, $full_key, (int)$success);
+  return $success;
 }
 
 /**
@@ -193,37 +178,62 @@ function dmemcache_flush($bin = 'cache') {
   }
 }
 
-function dmemcache_stats($bin = 'cache', $type = '') {
-  // resolve requests for 'default' type to ''
-  if ($type == 'default') {
-    $type = '';
-  }
-  // resolve requests for 'default' bin to 'cache'.
-  if ($bin == 'default') {
-    $bin = 'cache';
-  }
-  if ($mc = dmemcache_object($bin)) {
-    // The PHP Memcache extension 3.x version throws an error if the stats
-    // type is NULL or not in {reset, malloc, slabs, cachedump, items, sizes}.
-    // If $type is 'default', then no parameter should be passed to the 
-    // Memcache memcache_get_extended_stats() function.
-    if ($type == 'default' || $type == '') {
-      if (class_exists('Memcached')) {
-        return $mc->getStats();
-      }
-      else if (class_exists('Memcache')) {
-        return $mc->getExtendedStats();
+function dmemcache_stats($stats_bin = 'cache', $stats_type = 'default', $aggregate = FALSE) {
+  $memcache_bins = variable_get('memcache_bins', array('cache' => 'default'));
+  // The stats_type can be over-loaded with an integer slab id, if doing a
+  // cachedump.  We know we're doing a cachedump if $slab is non-zero.
+  $slab = (int)$stats_type;
+
+  foreach ($memcache_bins as $bin => $target) {
+    if ($stats_bin == $bin) {
+      if ($mc = dmemcache_object($bin)) {
+        if ($mc instanceof Memcached) {
+          $stats[$bin] = $mc->getStats();
+        }
+        // The PHP Memcache extension 3.x version throws an error if the stats
+        // type is NULL or not in {reset, malloc, slabs, cachedump, items,
+        // sizes}. If $stats_type is 'default', then no parameter should be
+        // passed to the Memcache memcache_get_extended_stats() function.
+        else if ($mc instanceof Memcache) {
+          if ($stats_type == 'default' || $stats_type == '') {
+            $stats[$bin] = $mc->getExtendedStats();
+          }
+          // If $slab isn't zero, then we are dumping the contents of a
+          // specific cache slab.
+          else if (!empty($slab))  {
+            $stats[$bin] = $mc->getStats('cachedump', $slab);
+          }
+          else {
+            $stats[$bin] = $mc->getExtendedStats($stats_type);
+          }
+        }
       }
     }
-    else {
-      if (class_exists('Memcached')) {
-        return $mc->getStats();        
-      }
-      else if (class_exists('Memcache')) {
-        return $mc->getExtendedStats($type);
+  }
+  // Optionally calculate a sum-total for all servers in the current bin.
+  if ($aggregate) {
+    // Some variables don't logically aggregate.
+    $no_aggregate = array('pid', 'time', 'version', 'pointer_size', 'accepting_conns', 'listen_disabled_num');
+    foreach($stats as $bin => $servers) {
+      if (is_array($servers)) {
+        foreach ($servers as $server) {
+          if (is_array($server)) {
+            foreach ($server as $key => $value) {
+              if (!in_array($key, $no_aggregate)) {
+                if (isset($stats[$bin]['total'][$key])) {
+                  $stats[$bin]['total'][$key] += $value;
+                }
+                else {
+                  $stats[$bin]['total'][$key] = $value;
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
+  return $stats;
 }
 
 /**
@@ -240,7 +250,25 @@ function dmemcache_stats($bin = 'cache', $type = '') {
  * @return an Memcache object or FALSE.
  */
 function dmemcache_object($bin = NULL, $flush = FALSE) {
-  static $memcacheCache = array(), $memcache_servers, $memcache_bins;
+  static $extension, $memcacheCache = array(), $memcache_servers, $memcache_bins, $memcache_persistent;
+
+  if (!isset($extension)) {
+    // If an extension is specified in settings.php, use that when available.
+    $preferred = ucfirst(strtolower((variable_get('memcache_extension', NULL))));
+    if (isset($preferred) && class_exists($preferred)) {
+      $extension = $preferred;
+    }
+    // If no extension is set, default to Memcache.
+    // The Memcached extension has some features that the older extension lacks
+    // but also an unfixed bug that affects cache clears.
+    // @see http://pecl.php.net/bugs/bug.php?id=16829
+    elseif (class_exists('Memcache')) {
+      $extension = 'Memcache';
+    }
+    elseif (class_exists('Memcached')) {
+      $extension = 'Memcached';
+    }
+  }
 
   if ($flush) {
     foreach ($memcacheCache as $cluster) {
@@ -270,8 +298,9 @@ function dmemcache_object($bin = NULL, $flush = FALSE) {
       $memcacheCache[$bin] = &$memcacheCache['cache'];
     }
     else {
-      // Create a new Memcache object. Each cluster gets its own Memcache object.
-      if (class_exists('Memcached')) {
+      // Create a new Memcache object. Each cluster gets its own Memcache
+      // object.
+      if ($extension == 'Memcached') {
         $memcache = new Memcached;
         $default_opts = array(
           Memcached::OPT_COMPRESSION => FALSE,
@@ -280,18 +309,29 @@ function dmemcache_object($bin = NULL, $flush = FALSE) {
         foreach ($default_opts as $key => $value) {
           $memcache->setOption($key, $value);
         }
+        // See README.txt for setting custom Memcache options when using the
+        // memcached PECL extension.
         $memconf = variable_get('memcache_options', array());
         foreach ($memconf as $key => $value) {
           $memcache->setOption($key, $value);
         }
       }
-      else if (class_exists('Memcache')) {
+      elseif ($extension == 'Memcache') {
         $memcache = new Memcache;
       }
       else {
         drupal_set_message('You must enable the PECL memcached or memcache extension to use memcache.inc.', 'error');
         return;
       }
+
+      // Indicate whether to connect to memcache using a persistent connection.
+      // Note: this only affects the Memcache PECL extension, and does not
+      // affect the Memcached PECL extension.  For a detailed explanation see:
+      //  http://drupal.org/node/822316#comment-4427676
+      if (!isset($memcache_persistent)) {
+        $memcache_persistent = variable_get('memcache_persistent', FALSE);
+      }
+
       // A variable to track whether we've connected to the first server.
       $init = FALSE;
 
@@ -300,17 +340,25 @@ function dmemcache_object($bin = NULL, $flush = FALSE) {
         if ($c == $cluster) {
           list($host, $port) = explode(':', $s);
 
-          // This is a server that belongs to this cluster.
-          if (!class_exists('Memcached') && !$init) {
-            // If using PECL memcache extension, use ->connect for first server
-            if ($memcache->connect($host, $port)) {
-              $init = TRUE;
+          // Using the Memcache PECL extension.
+          if ($memcache instanceof Memcache) {
+            // When using the PECL memcache extension, we must use ->(p)connect 
+            // for the first connection.
+            if (!$init) {
+              if ($memcache_persistent && $memcache->pconnect($host, $port)) {
+                $init = TRUE;
+              }
+              elseif (!$memcache_persistent && $memcache->connect($host, $port)) {
+                $init = TRUE;
+              }
+            }
+            else {
+              $memcache->addServer($host, $port, $memcache_persistent);
             }
           }
-          else {
-            if ($memcache->addServer($host, $port) && !$init) {
-              $init = TRUE;
-            }
+          // Using the Memcached PECL extension.
+          else if ($memcache->addServer($host, $port) && !$init) {
+            $init = TRUE;
           }
         }
       }
@@ -334,13 +382,19 @@ function dmemcache_object($bin = NULL, $flush = FALSE) {
   return empty($memcacheCache[$bin]) ? FALSE : $memcacheCache[$bin];
 }
 
-function dmemcache_key($key, $bin = 'cache') {
+function dmemcache_key($key = '', $bin = 'cache', $reset = FALSE) {
   static $prefix;
-  // memcache_key_prefix can be set in settings.php to support site namespaces
-  // in a multisite environment.
-  if (empty($prefix)) {
+  if (!isset($prefix)) {
+    $prefix = '';
+    // memcache_key_prefix can be set in settings.php to support site namespaces
+    // in a multisite environment.
     if ($prefix = variable_get('memcache_key_prefix', '')) {
       $prefix .= '-';
+    }
+    // When simpletest is running, emulate the simpletest database prefix here
+    // to avoid the child site setting cache entries in the parent site.
+    if (isset($GLOBALS['drupal_test_info']['test_run_id'])) {
+      $prefix .= $GLOBALS['drupal_test_info']['test_run_id'];
     }
   }
   $full_key = urlencode($prefix . $bin . '-' . $key);

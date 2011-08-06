@@ -14,7 +14,7 @@
     <td class="header_menu">
         
                                                                                                                                         
-                                                                                                                                                                                                                                                                                                                                          		  [ <a href="../classtrees_PHPExcel_Calculation.html" class="menu">class tree: PHPExcel_Calculation</a> ]
+                                                                                                                                                                                                                                                                                                                                                                                  		  [ <a href="../classtrees_PHPExcel_Calculation.html" class="menu">class tree: PHPExcel_Calculation</a> ]
 		  [ <a href="../elementindex_PHPExcel_Calculation.html" class="menu">index: PHPExcel_Calculation</a> ]
 		  	    [ <a href="../elementindex.html" class="menu">all elements</a> ]
     </td>
@@ -38,12 +38,14 @@
               <a href="../li_PHPExcel_Cell.html">PHPExcel_Cell</a><br />
               <a href="../li_PHPExcel_Reader.html">PHPExcel_Reader</a><br />
               <a href="../li_PHPExcel_Reader_Excel5.html">PHPExcel_Reader_Excel5</a><br />
+              <a href="../li_PHPExcel_Reader_Excel2007.html">PHPExcel_Reader_Excel2007</a><br />
               <a href="../li_PHPExcel_RichText.html">PHPExcel_RichText</a><br />
               <a href="../li_PHPExcel_Settings.html">PHPExcel_Settings</a><br />
               <a href="../li_PHPExcel_Shared.html">PHPExcel_Shared</a><br />
               <a href="../li_PHPExcel_Shared_Best_Fit.html">PHPExcel_Shared_Best_Fit</a><br />
               <a href="../li_PHPExcel_Shared_Escher.html">PHPExcel_Shared_Escher</a><br />
               <a href="../li_PHPExcel_Shared_OLE.html">PHPExcel_Shared_OLE</a><br />
+              <a href="../li_PHPExcel_Shared_ZipArchive.html">PHPExcel_Shared_ZipArchive</a><br />
               <a href="../li_PHPExcel_Style.html">PHPExcel_Style</a><br />
               <a href="../li_PHPExcel_Worksheet.html">PHPExcel_Worksheet</a><br />
               <a href="../li_PHPExcel_Worksheet_Drawing.html">PHPExcel_Worksheet_Drawing</a><br />
@@ -54,6 +56,8 @@
                         <b>Files:</b><br />
       	  <div class="package">
 			<a href="../PHPExcel_Calculation/_PHPExcel---Calculation.php.html">		Calculation.php
+		</a><br>
+			<a href="../PHPExcel_Calculation/_PHPExcel---Calculation---Database.php.html">		Database.php
 		</a><br>
 			<a href="../PHPExcel_Calculation/_PHPExcel---Calculation---DateTime.php.html">		DateTime.php
 		</a><br>
@@ -89,6 +93,7 @@
             <b>Classes:</b><br />
         <div class="package">
 		    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation.html">PHPExcel_Calculation</a><br />
+	    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation_Database.html">PHPExcel_Calculation_Database</a><br />
 	    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation_DateTime.html">PHPExcel_Calculation_DateTime</a><br />
 	    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation_Engineering.html">PHPExcel_Calculation_Engineering</a><br />
 	    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation_Exception.html">PHPExcel_Calculation_Exception</a><br />
@@ -131,7 +136,7 @@ Source Location: /PHPExcel/Calculation/Functions.php<br /><br />
 
 <h4>Copyright:</h4>
 <ul>
-  <li>Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)</li>
+  <li>Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)</li>
 </ul>
         
 </td>
@@ -212,13 +217,13 @@ Source Location: /PHPExcel/Calculation/Functions.php<br /><br />
 <a name="class_details"></a>
 <h3>Class Details</h3>
 <div class="tags">
-[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a65">65</a>]<br />
+[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a59">59</a>]<br />
 PHPExcel_Calculation_Functions<br /><br /><br /><br />
 <h4>Tags:</h4>
 <div class="tags">
 <table border="0" cellspacing="0" cellpadding="0">
   <tr>
-    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)</td>
+    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)</td>
   </tr>
 </table>
 </div>
@@ -232,7 +237,7 @@ PHPExcel_Calculation_Functions<br /><br /><br /><br />
 	<a name="var$compatibilityMode"></a>
 	<p></p>
 	<h4>static $compatibilityMode = <span class="value">&nbsp;self::COMPATIBILITY_EXCEL</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a83">83</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a77">77</a>]</p>
   Compatibility mode to use for error checking and responses<br /><br /><br /><br />
 <h4>Tags:</h4>
 <div class="tags">
@@ -256,7 +261,7 @@ PHPExcel_Calculation_Functions<br /><br /><br /><br />
 	<a name="var$ReturnDateType"></a>
 	<p></p>
 	<h4>static $ReturnDateType = <span class="value">&nbsp;self::RETURNDATE_EXCEL</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a91">91</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a85">85</a>]</p>
   Data Type to use when returning date values<br /><br /><br /><br />
 <h4>Tags:</h4>
 <div class="tags">
@@ -288,7 +293,7 @@ PHPExcel_Calculation_Functions<br /><br /><br /><br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'na'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt;&nbsp;'#N/A',<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'gettingdata'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt;&nbsp;'#GETTING_DATA'<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a99">99</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a93">93</a>]</p>
   List of error codes<br /><br /><br /><br />
 <h4>Tags:</h4>
 <div class="tags">
@@ -317,7 +322,7 @@ PHPExcel_Calculation_Functions<br /><br /><br /><br />
 <div class="tags">
   <hr />
 	<a name="methodDIV0"></a>
-	<h3>static method DIV0 <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a207">207</a>]</span></h3>
+	<h3>static method DIV0 <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a201">201</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -345,7 +350,7 @@ PHPExcel_Calculation_Functions<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodDUMMY"></a>
-	<h3>static method DUMMY <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a195">195</a>]</span></h3>
+	<h3>static method DUMMY <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a189">189</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -373,7 +378,7 @@ PHPExcel_Calculation_Functions<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodERROR_TYPE"></a>
-	<h3>static method ERROR_TYPE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a335">335</a>]</span></h3>
+	<h3>static method ERROR_TYPE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a329">329</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -409,7 +414,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodflattenArray"></a>
-	<h3>static method flattenArray <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a594">594</a>]</span></h3>
+	<h3>static method flattenArray <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a588">588</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -448,7 +453,7 @@ $array)</code>
   </div>
   <hr />
 	<a name="methodflattenArrayIndexed"></a>
-	<h3>static method flattenArrayIndexed <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a626">626</a>]</span></h3>
+	<h3>static method flattenArrayIndexed <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a620">620</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -487,7 +492,7 @@ $array)</code>
   </div>
   <hr />
 	<a name="methodflattenSingleValue"></a>
-	<h3>static method flattenSingleValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a658">658</a>]</span></h3>
+	<h3>static method flattenSingleValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a652">652</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -523,7 +528,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodgetCompatibilityMode"></a>
-	<h3>static method getCompatibilityMode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a144">144</a>]</span></h3>
+	<h3>static method getCompatibilityMode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a138">138</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -551,7 +556,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodgetReturnDateType"></a>
-	<h3>static method getReturnDateType <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a183">183</a>]</span></h3>
+	<h3>static method getReturnDateType <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a177">177</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -579,7 +584,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodisCellValue"></a>
-	<h3>static method isCellValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a310">310</a>]</span></h3>
+	<h3>static method isCellValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a304">304</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -615,7 +620,7 @@ $idx)</code>
   </div>
   <hr />
 	<a name="methodisMatrixValue"></a>
-	<h3>static method isMatrixValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a300">300</a>]</span></h3>
+	<h3>static method isMatrixValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a294">294</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -651,7 +656,7 @@ $idx)</code>
   </div>
   <hr />
 	<a name="methodisValue"></a>
-	<h3>static method isValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a305">305</a>]</span></h3>
+	<h3>static method isValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a299">299</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -687,7 +692,7 @@ $idx)</code>
   </div>
   <hr />
 	<a name="methodIS_BLANK"></a>
-	<h3>static method IS_BLANK <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a355">355</a>]</span></h3>
+	<h3>static method IS_BLANK <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a349">349</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -723,7 +728,7 @@ $value = null])</code>
   </div>
   <hr />
 	<a name="methodIS_ERR"></a>
-	<h3>static method IS_ERR <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a370">370</a>]</span></h3>
+	<h3>static method IS_ERR <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a364">364</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -759,7 +764,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodIS_ERROR"></a>
-	<h3>static method IS_ERROR <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a383">383</a>]</span></h3>
+	<h3>static method IS_ERROR <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a377">377</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -795,7 +800,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodIS_EVEN"></a>
-	<h3>static method IS_EVEN <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a409">409</a>]</span></h3>
+	<h3>static method IS_EVEN <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a403">403</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -831,7 +836,7 @@ $value = 0])</code>
   </div>
   <hr />
 	<a name="methodIS_LOGICAL"></a>
-	<h3>static method IS_LOGICAL <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a457">457</a>]</span></h3>
+	<h3>static method IS_LOGICAL <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a451">451</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -867,7 +872,7 @@ $value = true])</code>
   </div>
   <hr />
 	<a name="methodIS_NA"></a>
-	<h3>static method IS_NA <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a396">396</a>]</span></h3>
+	<h3>static method IS_NA <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a390">390</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -903,7 +908,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodIS_NONTEXT"></a>
-	<h3>static method IS_NONTEXT <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a483">483</a>]</span></h3>
+	<h3>static method IS_NONTEXT <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a477">477</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -939,7 +944,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodIS_NUMBER"></a>
-	<h3>static method IS_NUMBER <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a441">441</a>]</span></h3>
+	<h3>static method IS_NUMBER <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a435">435</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -975,7 +980,7 @@ $value = 0])</code>
   </div>
   <hr />
 	<a name="methodIS_ODD"></a>
-	<h3>static method IS_ODD <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a425">425</a>]</span></h3>
+	<h3>static method IS_ODD <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a419">419</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1011,7 +1016,7 @@ $value = null])</code>
   </div>
   <hr />
 	<a name="methodIS_TEXT"></a>
-	<h3>static method IS_TEXT <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a470">470</a>]</span></h3>
+	<h3>static method IS_TEXT <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a464">464</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1047,7 +1052,7 @@ $value = ''])</code>
   </div>
   <hr />
 	<a name="methodN"></a>
-	<h3>static method N <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a513">513</a>]</span></h3>
+	<h3>static method N <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a507">507</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1086,7 +1091,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodNA"></a>
-	<h3>static method NA <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a225">225</a>]</span></h3>
+	<h3>static method NA <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a219">219</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1114,7 +1119,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodNAME"></a>
-	<h3>static method NAME <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a253">253</a>]</span></h3>
+	<h3>static method NAME <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a247">247</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1142,7 +1147,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodNaN"></a>
-	<h3>static method NaN <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a239">239</a>]</span></h3>
+	<h3>static method NaN <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a233">233</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1170,7 +1175,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodNULL"></a>
-	<h3>static method NULL <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a281">281</a>]</span></h3>
+	<h3>static method NULL <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a275">275</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1198,7 +1203,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodREF"></a>
-	<h3>static method REF <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a267">267</a>]</span></h3>
+	<h3>static method REF <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a261">261</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1226,7 +1231,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodsetCompatibilityMode"></a>
-	<h3>static method setCompatibilityMode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a122">122</a>]</span></h3>
+	<h3>static method setCompatibilityMode <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a116">116</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1265,7 +1270,7 @@ $compatibilityMode)</code>
   </div>
   <hr />
 	<a name="methodsetReturnDateType"></a>
-	<h3>static method setReturnDateType <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a161">161</a>]</span></h3>
+	<h3>static method setReturnDateType <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a155">155</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1304,7 +1309,7 @@ $returnDateType)</code>
   </div>
   <hr />
 	<a name="methodTYPE"></a>
-	<h3>static method TYPE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a552">552</a>]</span></h3>
+	<h3>static method TYPE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a546">546</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1343,7 +1348,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodVALUE"></a>
-	<h3>static method VALUE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a295">295</a>]</span></h3>
+	<h3>static method VALUE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a289">289</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1371,7 +1376,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="methodVERSION"></a>
-	<h3>static method VERSION <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a493">493</a>]</span></h3>
+	<h3>static method VERSION <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a487">487</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1399,7 +1404,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="method_ifCondition"></a>
-	<h3>static method _ifCondition <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a315">315</a>]</span></h3>
+	<h3>static method _ifCondition <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a309">309</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1443,42 +1448,42 @@ $condition)</code>
 	<a name="constCOMPATIBILITY_EXCEL"></a>
 	<p></p>
 	<h4>COMPATIBILITY_EXCEL = <span class="value">&nbsp;'Excel'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a68">68</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a62">62</a>]</p>
   constants<br /><br />
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constCOMPATIBILITY_GNUMERIC"></a>
 	<p></p>
 	<h4>COMPATIBILITY_GNUMERIC = <span class="value">&nbsp;'Gnumeric'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a69">69</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a63">63</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constCOMPATIBILITY_OPENOFFICE"></a>
 	<p></p>
 	<h4>COMPATIBILITY_OPENOFFICE = <span class="value">&nbsp;'OpenOfficeCalc'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a70">70</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a64">64</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constRETURNDATE_EXCEL"></a>
 	<p></p>
 	<h4>RETURNDATE_EXCEL = <span class="value">&nbsp;'E'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a74">74</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a68">68</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constRETURNDATE_PHP_NUMERIC"></a>
 	<p></p>
 	<h4>RETURNDATE_PHP_NUMERIC = <span class="value">&nbsp;'P'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a72">72</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a66">66</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constRETURNDATE_PHP_OBJECT"></a>
 	<p></p>
 	<h4>RETURNDATE_PHP_OBJECT = <span class="value">&nbsp;'O'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a73">73</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculationFunctions.php.html#a67">67</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
@@ -1486,7 +1491,7 @@ $condition)</code>
 
         <div class="credit">
 		    <hr />
-		    Documentation generated on Fri, 10 Dec 2010 08:38:17 +0100 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
+		    Documentation generated on Sun, 27 Feb 2011 16:32:08 -0800 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
 	      </div>
       </td></tr></table>
     </td>

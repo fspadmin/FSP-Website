@@ -1,5 +1,4 @@
 <?php
-// $Id: taxonomy.inc,v 1.7.2.14 2010/03/20 08:00:00 robrechtj Exp $
 
 /**
  * @file

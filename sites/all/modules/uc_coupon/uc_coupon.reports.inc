@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon.reports.inc,v 1.3 2010/12/17 01:12:08 longwave Exp $
 
 /**
  * Coupon report options form.

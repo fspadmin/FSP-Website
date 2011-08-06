@@ -1,11 +1,11 @@
 <?php
-// $Id: securepages.admin.inc,v 1.1.2.1 2009/03/29 10:49:12 gordon Exp $
+// $Id: securepages.admin.inc,v 1.1.2.3 2011/01/25 05:20:37 grendzy Exp $
 
 /**
  * @file
  * Provide all the administration pages
  */
- 
+
  /**
   * Implementation of hook_settings().
   */
@@ -48,10 +48,11 @@
    $form['securepages_pages'] = array(
      '#type' => 'textarea',
      '#title' => t('Pages'),
-     '#default_value' => variable_get('securepages_pages', "node/add*\nnode/*/edit\nuser/*\nadmin*"),
+     '#default_value' => variable_get('securepages_pages', "node/add*\nnode/*/edit\nuser\nuser/*\nadmin\nadmin/*"),
      '#cols' => 40,
      '#rows' => 5,
-     '#description' => t("Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are '<em>blog</em>' for the blog page and '<em>blog/*</em>' for every personal blog. '<em>&lt;front&gt;</em>' is the front page."),
+     '#description' => t("Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are '<em>blog</em>' for the main blog page and '<em>blog/*</em>' for every personal blog. '<em>&lt;front&gt;</em>' is the front page."),
+     '#wysiwyg' => FALSE,
    );
    $form['securepages_ignore'] = array(
      '#type' => 'textarea',
@@ -60,8 +61,8 @@
      '#cols' => 40,
      '#rows' => 5,
      '#description' => t("The pages listed here will be ignored and be either returned in http or https. Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are '<em>blog</em>' for the blog page and '<em>blog/*</em>' for every personal blog. '<em>&lt;front&gt;</em>' is the front page."),
+     '#wysiwyg' => FALSE,
    );
    return system_settings_form($form);
  }
- 
- 
+

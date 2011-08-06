@@ -1,0 +1,177 @@
+# $Id: ja.po,v 1.1.2.2 2009/08/26 17:40:43 ericschaefer Exp $
+#
+# Japanese translation of Drupal (general)
+# Copyright 2008 PineRay <matsudaterutaka@gmail.com>
+# Generated from files:
+#  scheduler.views.inc: n/a
+#  scheduler.info: n/a
+#  scheduler.module,v 1.50.2.10 2008/11/02 20:35:50 ericschaefer
+#  scheduler.install,v 1.5.2.3 2008/11/01 19:06:17 ericschaefer
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Scheduler 6.x-1.3\n"
+"POT-Creation-Date: 2008-11-06 15:52+0900\n"
+"PO-Revision-Date: 2008-11-06 17:30+0900\n"
+"Last-Translator: PineRay <matsudaterutaka@gmail.com>\n"
+"Language-Team: Japanese <matsudaterutaka@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: scheduler.views.inc:5
+#: scheduler.info:0
+msgid "Scheduler"
+msgstr "ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ©"
+
+#: scheduler.views.inc:15;23
+#: scheduler.module:139
+msgid "Publish on"
+msgstr "æŽ²è¼‰ã?™ã‚‹æ—¥æ™‚:"
+
+#: scheduler.views.inc:16
+msgid "Date/time on which the article will be automatically published"
+msgstr "è¨˜äº‹ã‚’è‡ªå‹•çš„ã?«æŽ²è¼‰ã?™ã‚‹æ—¥ä»˜ã?¨æ™‚é–“ã€‚"
+
+#: scheduler.views.inc:31;39
+#: scheduler.module:148
+msgid "Unpublish on"
+msgstr "é?žæŽ²è¼‰ã?«ã?™ã‚‹æ—¥æ™‚:"
+
+#: scheduler.views.inc:32
+msgid "Date/time on which the article will be automatically unpublished"
+msgstr "è¨˜äº‹ã‚’è‡ªå‹•çš„ã?«é?žæŽ²è¼‰ã?«ã?™ã‚‹æ—¥ä»˜ã?¨æ™‚é–“ã€‚"
+
+#: scheduler.module:28
+msgid "Light weight cron handler"
+msgstr "è»½é‡?ã?ªcronãƒ?ãƒ³ãƒ‰ãƒ©"
+
+#: scheduler.module:29
+msgid "A light weight cron handler to allow more frequent runs of Schedulers internal cron system"
+msgstr "ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ©å†…éƒ¨ã?®cronã‚·ã‚¹ãƒ†ãƒ ã‚’ã‚ˆã‚Šé »ç¹?ã?«å®Ÿè¡Œã?§ã??ã‚‹ã‚ˆã?†ã?«ã?ªã‚‹ã€?è»½é‡?ã?ªcronãƒ?ãƒ³ãƒ‰ãƒ©"
+
+#: scheduler.module:35
+msgid "Test your servers UTC clock"
+msgstr "ã‚µãƒ¼ãƒ?ã?®UTCæ™‚è¨ˆã‚’ãƒ†ã‚¹ãƒˆ"
+
+#: scheduler.module:36
+msgid "Allows site admin to check their servers internal clock"
+msgstr "ã‚µã‚¤ãƒˆç®¡ç?†è€…ã?Œã‚µãƒ¼ãƒ?ã?®å†…éƒ¨æ™‚è¨ˆã‚’ç¢ºèª?ã?§ã??ã?¾ã?™"
+
+#: scheduler.module:42
+msgid "Scheduler module settings"
+msgstr "ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ©ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã?®è¨­å®š"
+
+#: scheduler.module:43
+msgid "Allows site admins to configure scheduler."
+msgstr "ã‚µã‚¤ãƒˆç®¡ç?†è€…ã?¯ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ©ã‚’è¨­å®šã?™ã‚‹ã?“ã?¨ã?Œã?§ã??ã?¾ã?™ã€‚"
+
+#: scheduler.module:55
+msgid "Date format"
+msgstr "æ—¥ä»˜ã?®æ›¸å¼?"
+
+#: scheduler.module:59
+msgid "The input format for the (un)scheduling time/date. See the date() function for formatting options: http://www.php.net/manual/en/function.date.php"
+msgstr "ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã?®æ™‚é–“ã‚„æ—¥ä»˜ã‚’å…¥åŠ›ã?™ã‚‹ã?Ÿã‚?ã?®æ›¸å¼?ã€‚æ›¸å¼?ã?®ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã?«ã?¤ã?„ã?¦ã?¯date()é–¢æ•°ã‚’å?‚ç…§ã?—ã?¦ã??ã? ã?•ã?„: http://www.php.net/manual/en/function.date.php"
+
+#: scheduler.module:73
+msgid "Enable scheduled (un)publishing"
+msgstr "æŽ²è¼‰ã?™ã‚‹ (ã?¾ã?Ÿã?¯é?žæŽ²è¼‰ã?«ã?™ã‚‹) ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ç«‹ã?¦ã‚‰ã‚Œã‚‹ã‚ˆã?†ã?«ã?™ã‚‹"
+
+#: scheduler.module:75
+msgid "Check this box to enable scheduled (un)publishing for this node type."
+msgstr "ã?“ã?®ãƒœãƒƒã‚¯ã‚¹ã?«ãƒ?ã‚§ãƒƒã‚¯ã‚’å…¥ã‚Œã‚‹ã?¨ã€?ã?“ã?®ã‚³ãƒ³ãƒ†ãƒ³ãƒ„ã‚¿ã‚¤ãƒ—ã?®ãƒŽãƒ¼ãƒ‰ã‚’æŽ²è¼‰ã?™ã‚‹ (ã?¾ã?Ÿã?¯é?žæŽ²è¼‰ã?«ã?™ã‚‹) ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ç«‹ã?¦ã‚‰ã‚Œã‚‹ã‚ˆã?†ã?«ã?ªã‚Šã?¾ã?™ã€‚"
+
+#: scheduler.module:79
+msgid "Alter published on time"
+msgstr "æŠ•ç¨¿æ—¥æ™‚ã‚’å¤‰æ›´"
+
+#: scheduler.module:81
+msgid "Check this box to alter the published on time to match the scheduled time (\"touch feature\")."
+msgstr "ã?“ã?®ãƒœãƒƒã‚¯ã‚¹ã?«ãƒ?ã‚§ãƒƒã‚¯ã?Œã?‚ã‚Œã?°ã€?ãƒŽãƒ¼ãƒ‰ã?®æŠ•ç¨¿æ—¥æ™‚ã‚’ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã?®æ™‚é–“ã?«å¤‰æ›´ã?—ã?¾ã?™ (ã€Œã‚¿ãƒƒãƒ?æ©Ÿèƒ½ã€?)ã€‚"
+
+#: scheduler.module:131
+msgid "Scheduling options"
+msgstr "ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã?®ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
+
+#: scheduler.module:142
+msgid "Format: %time. Leave blank to disable scheduled publishing."
+msgstr "æ›¸å¼?: %timeã€‚ç©ºæ¬„ã?«ã?™ã‚‹ã?¨ã€?æŽ²è¼‰ã?™ã‚‹ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã?Œç„¡åŠ¹ã?¨ã?ªã‚Šã?¾ã?™ã€‚"
+
+#: scheduler.module:151
+msgid "Format: %time. Leave blank to disable scheduled unpublishing."
+msgstr "æ›¸å¼?: %timeã€‚ç©ºæ¬„ã?«ã?™ã‚‹ã?¨ã€?é?žæŽ²è¼‰ã?«ã?™ã‚‹ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã?Œç„¡åŠ¹ã?¨ã?ªã‚Šã?¾ã?™ã€‚"
+
+#: scheduler.module:297
+msgid "The entered publication date is invalid."
+msgstr "å…¥åŠ›ã?•ã‚Œã?ŸæŽ²è¼‰æ—¥æ™‚ã?Œé?©åˆ‡ã?§ã?¯ã?‚ã‚Šã?¾ã?›ã‚“ã€‚"
+
+#: scheduler.module:307
+msgid "The entered expiration date is invalid."
+msgstr "å…¥åŠ›ã?•ã‚Œã?Ÿé?žæŽ²è¼‰æ—¥æ™‚ã?Œé?©åˆ‡ã?§ã?¯ã?‚ã‚Šã?¾ã?›ã‚“ã€‚"
+
+#: scheduler.module:314
+msgid "The expiration date is before publication date."
+msgstr "é?žæŽ²è¼‰ã?«ã?™ã‚‹æ—¥æ™‚ã?ŒæŽ²è¼‰ã?™ã‚‹æ—¥æ™‚ã‚ˆã‚Šä»¥å‰?ã?¨ã?ªã?£ã?¦ã?„ã?¾ã?™ã€‚"
+
+#: scheduler.module:377;406
+msgid "view"
+msgstr "è¡¨ç¤º"
+
+#: scheduler.module:469
+msgid "Scheduler OS time check"
+msgstr "ã‚·ã‚¹ãƒ†ãƒ ã?®æ™‚åˆ»è¨­å®šã?®ç¢ºèª?"
+
+#: scheduler.module:481
+msgid "Your server reports the UTC time as %time and \"localtime\" as %lt."
+msgstr "ã‚µãƒ¼ãƒ?ã?®å›žç­”ã?§ã?¯ã€?UTCã‚¿ã‚¤ãƒ ã?¯ %time ã?§ã€Œãƒ­ãƒ¼ã‚«ãƒ«ã‚¿ã‚¤ãƒ ã€?ã?¯ %lt ã?§ã?™ã€‚"
+
+#: scheduler.module:483
+msgid "If all is well with your server's time configuration UTC should match <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC London Time</a> and the localtime should be the time where you are."
+msgstr "ã‚µãƒ¼ãƒ?ã?®æ™‚åˆ»è¨­å®šã?Œæ­£ã?—ã??è¨­å®šã?•ã‚Œã?¦ã?„ã‚Œã?°ã€?UTCã?¯<a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTCã?®ãƒ­ãƒ³ãƒ‰ãƒ³æ™‚é–“</a>ã?«ä¸€è‡´ã?—ã?¦ã?Šã‚Šã€?ãƒ­ãƒ¼ã‚«ãƒ«ã‚¿ã‚¤ãƒ ã?¯ã?‚ã?ªã?Ÿã?Œç?¾åœ¨ã?„ã‚‹å ´æ‰€ã?®æ™‚é–“ã?«ä¸€è‡´ã?—ã?¦ã?„ã?ªã?‘ã‚Œã?°ã?ªã‚Šã?¾ã?›ã‚“ã€‚"
+
+#: scheduler.module:485
+msgid "If this is not the case please have your Unix System Administrator fix your servers time/date configuration."
+msgstr "ã‚‚ã?—ã‚‚ã?šã‚Œã?Œç”Ÿã?˜ã?¦ã?„ã‚Œã?°ã€?UNIXã?®ã‚·ã‚¹ãƒ†ãƒ ç®¡ç?†è€…ã?«æ—¥æ™‚ã?®æ§‹æˆ?ã‚’ä¿®å¾©ã?•ã?›ã?¦ã??ã? ã?•ã?„ã€‚"
+
+#: scheduler.module:377;406;436;0
+msgid "scheduler"
+msgstr "ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ©"
+
+#: scheduler.module:377
+msgid "@type: scheduled publishing of %title."
+msgstr "@type: ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã?«ã?—ã?Ÿã?Œã?£ã?¦%titleã‚’æŽ²è¼‰ã?—ã?¾ã?—ã?Ÿã€‚"
+
+#: scheduler.module:406
+msgid "@type: scheduled unpublishing of %title."
+msgstr "@type: ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã?«ã?—ã?Ÿã?Œã?£ã?¦%titleã‚’é?žæŽ²è¼‰ã?«ã?—ã?¾ã?—ã?Ÿã€‚"
+
+#: scheduler.module:436
+msgid "Internal scheduler run activated"
+msgstr "å†…éƒ¨ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ©ã?Œèµ·å‹•ã?—ã?¾ã?—ã?Ÿ"
+
+#: scheduler.module:19
+msgid "schedule (un)publishing of nodes"
+msgstr "ãƒŽãƒ¼ãƒ‰ã‚’æŽ²è¼‰ã?™ã‚‹ (é?žæŽ²è¼‰ã?«ã?™ã‚‹) ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ç«‹ã?¦ã‚‹"
+
+#: scheduler.install:11
+msgid "The main table to hold the scheduler data."
+msgstr "ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ©ã?®ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´?ã?™ã‚‹ä¸»ãƒ†ãƒ¼ãƒ–ãƒ«ã€‚"
+
+#: scheduler.install:14
+msgid "The foreign key to node.nid"
+msgstr "node.nidã?«çµ?ã?³ä»˜ã??å¤–éƒ¨ã‚­ãƒ¼"
+
+#: scheduler.install:20
+msgid "The UNIX UTC timestamp when to publish"
+msgstr "æŽ²è¼‰ã?™ã‚‹æ—¥æ™‚ã?® UNIX UTC ã‚¿ã‚¤ãƒ ã‚¹ã‚¿ãƒ³ãƒ—"
+
+#: scheduler.install:27
+msgid "The UNIX UTC timestamp when to unpublish"
+msgstr "é?žæŽ²è¼‰ã?«ã?™ã‚‹æ—¥æ™‚ã?® UNIX UTC ã‚¿ã‚¤ãƒ ã‚¹ã‚¿ãƒ³ãƒ—"
+
+#: scheduler.info:0
+msgid "This module allows nodes to be published and unpublished on specified dates."
+msgstr "ã?“ã?®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã?«ã‚ˆã?£ã?¦ã€?æŒ‡å®šã?—ã?Ÿæ—¥æ™‚ã?«ãƒŽãƒ¼ãƒ‰ã‚’æŽ²è¼‰ã?—ã?Ÿã‚Šé?žæŽ²è¼‰ã?«ã?—ã?Ÿã‚Šã?§ã??ã‚‹ã‚ˆã?†ã?«ã?ªã‚Šã?¾ã?™ã€‚"
+

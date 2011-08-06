@@ -221,10 +221,6 @@ SocialCalc.TableEditor = function(context) {
             ta.focus();
             ta.select();
             window.setTimeout(function() {
-               if (!SocialCalc.GetSpreadsheetControlObject) return; // in case not loaded
-               var s = SocialCalc.GetSpreadsheetControlObject();
-               if (!s) return;
-               var editor = s.editor;
                var ta = editor.pasteTextarea;
                ta.blur();
                ta.style.display = "none";
@@ -247,10 +243,6 @@ SocialCalc.TableEditor = function(context) {
             ta.value = "";  // must follow "block" setting for Webkit
             ta.focus();
             window.setTimeout(function() {
-               if (!SocialCalc.GetSpreadsheetControlObject) return;
-               var s = SocialCalc.GetSpreadsheetControlObject();
-               if (!s) return;
-               var editor = s.editor;
                var ta = editor.pasteTextarea;
                var value = ta.value;
                ta.blur();
@@ -285,10 +277,6 @@ SocialCalc.TableEditor = function(context) {
             if (!SocialCalc.Constants.AllowCtrlS) break;
             window.setTimeout(
                function() {
-                  if (!SocialCalc.GetSpreadsheetControlObject) return;
-                  var s = SocialCalc.GetSpreadsheetControlObject();
-                  if (!s) return;
-                  var editor = s.editor;
                   var sheet = editor.context.sheetobj;
                   var cell = sheet.GetAssuredCell(editor.ecell.coord);
                   var ntvf = cell.nontextvalueformat ? sheet.valueformats[cell.nontextvalueformat-0] || "" : "";
@@ -940,34 +928,6 @@ addmsg("Unknown status: "+status);
    return;
 
    }
-
-// Timer-driven steps for use with SocialCalc.EditorSheetStatusCallback
-
-SocialCalc.EditorStepInfo = {
-//   status: "", // saved value to pass to callback
-   editor: null // for callback
-//   arg: null, // for callback
-//   timerobj: null
-   };
-
-/*
-SocialCalc.EditorStepSet = function(editor, status, arg) {
-   var esi = SocialCalc.EditorStepInfo;
-addmsg("step: "+status);
-   if (esi.timerobj) {
-alert("Already waiting. Old/new: "+esi.status+"/"+status);
-      }
-   esi.editor = editor;
-   esi.status = status;
-   esi.timerobj = window.setTimeout(SocialCalc.EditorStepDone, 1);
-   }
-
-SocialCalc.EditorStepDone = function() {
-   var esi = SocialCalc.EditorStepInfo;
-   esi.timerobj = null;
-   SocialCalc.EditorSheetStatusCallback(null, esi.status, null, esi.editor);
-   }
-*/
 
 //
 // str = SocialCalc.EditorGetStatuslineString(editor, status, arg, params)
@@ -2128,12 +2088,16 @@ SocialCalc.EditorSaveEdit = function(editor, text) {
    else if (fch=="'") {
       type = "text t";
       value = value.substring(1);
+      valueinfo = SocialCalc.DetermineValueType(value); // determine type again
+      if (valueinfo.type.charAt(0)=="t") {
+         type = "text "+valueinfo.type;
+         }
       }
    else if (value.length==0) {
       type = "empty";
       }
    else {
-      valueinfo = SocialCalc.DetermineValueType(value)
+      valueinfo = SocialCalc.DetermineValueType(value);
       if (valueinfo.type=="n" && value==(valueinfo.value+"")) { // see if don't need "constant"
          type = "value n";
          }
@@ -3038,17 +3002,14 @@ SocialCalc.ScheduleRender = function(editor) {
    if (editor.timeout) window.clearTimeout(editor.timeout); // in case called more than once, just use latest
 
    SocialCalc.EditorSheetStatusCallback(null, "schedrender", null, editor);
-   SocialCalc.EditorStepInfo.editor = editor;
-   editor.timeout = window.setTimeout(SocialCalc.DoRenderStep, 1);
+   editor.timeout = window.setTimeout(function() { SocialCalc.DoRenderStep(editor); }, 1);
 
    }
 
-// DoRenderStep()
+// DoRenderStep(editor)
 //
 
-SocialCalc.DoRenderStep = function() {
-
-   var editor = SocialCalc.EditorStepInfo.editor;
+SocialCalc.DoRenderStep = function(editor) {
 
    editor.timeout = null;
 
@@ -3058,7 +3019,7 @@ SocialCalc.DoRenderStep = function() {
 
    SocialCalc.EditorSheetStatusCallback(null, "schedposcalc", null, editor);
 
-   editor.timeout = window.setTimeout(SocialCalc.DoPositionCalculations, 1);
+   editor.timeout = window.setTimeout(function() { SocialCalc.DoPositionCalculations(editor); }, 1);
 
    }
 
@@ -3068,11 +3029,9 @@ SocialCalc.DoRenderStep = function() {
 
 SocialCalc.SchedulePositionCalculations = function(editor) {
 
-   SocialCalc.EditorStepInfo.editor = editor;
-
    SocialCalc.EditorSheetStatusCallback(null, "schedposcalc", null, editor);
 
-   editor.timeout = window.setTimeout(SocialCalc.DoPositionCalculations, 1);
+   editor.timeout = window.setTimeout(function() { SocialCalc.DoPositionCalculations(editor); }, 1);
 
    }
 
@@ -3083,9 +3042,7 @@ SocialCalc.SchedulePositionCalculations = function(editor) {
 // Note: Only call this after the DOM objects have been modified and rendered!
 //
 
-SocialCalc.DoPositionCalculations = function() {
-
-   var editor = SocialCalc.EditorStepInfo.editor;
+SocialCalc.DoPositionCalculations = function(editor) {
 
    editor.timeout = null;
 
@@ -3901,6 +3858,13 @@ SocialCalc.ShowCellHandles = function(cellhandles, show, moveshow) {
       while (editor.context.sheetobj.rowattribs.hide[row+rowinc] == "yes") {
          rowinc++; 
          }     
+
+      // Check colspan and rowspan.
+      cell = editor.context.sheetobj.cells[SocialCalc.crToCoord(col+colinc-1, row+rowinc-1)];
+      if (typeof cell != "undefined") {
+         colinc += (cell.colspan || 1) - 1;
+         rowinc += (cell.rowspan || 1) - 1;
+         }
 
       if (editor.rowpositions[row+rowinc]+20>editor.horizontaltablecontrol.controlborder+editor.relativeoffset.top) {
          break;

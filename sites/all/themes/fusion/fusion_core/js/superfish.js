@@ -1,4 +1,3 @@
-// $Id: superfish.js,v 1.1 2009/08/19 04:28:07 sociotech Exp $
 
 /*
  * Superfish v1.4.8 - jQuery menu widget

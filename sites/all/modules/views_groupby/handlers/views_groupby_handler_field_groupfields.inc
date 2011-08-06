@@ -260,11 +260,7 @@ class views_groupby_handler_field_groupfields extends views_handler_field {
         $count++;
         $sz_to_group .= $field;
       }
-      $this->query->add_groupby($sz_to_group);
-      if($count) {
-          $this->query->distinct = TRUE;
-          $this->query->no_distinct = 'views_groupby';
-      }
+      $this->query->add_groupby($sz_to_group);    
     }
     
     $views_fields = $this->_get_views_fields($just_aliases=TRUE);

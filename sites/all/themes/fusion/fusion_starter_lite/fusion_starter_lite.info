@@ -1,4 +1,3 @@
-; $Id: fusion_starter_lite.info,v 1.1.2.1 2010/06/17 07:54:57 sociotech Exp $
 
 name = Fusion Starter Lite
 description = Fusion Starter Lite sub-theme. Requires <a href="http://drupal.org/project/fusion">Fusion Core</a> and the <a href="http://drupal.org/project/skinr">Skinr</a> module to enable easy point-and-click theming.
@@ -14,16 +13,6 @@ regions[header] = header
 regions[content] = content
 regions[footer] = footer
 
-features[] = logo
-features[] = name
-features[] = slogan
-features[] = node_user_picture
-features[] = comment_user_picture
-features[] = search
-features[] = favicon
-features[] = primary_links
-features[] = secondary_links
-
 ; Default theme settings
 settings[theme_grid] = grid12-960
 settings[theme_grid_options][] = grid12-960
@@ -33,9 +22,6 @@ settings[theme_font_size] = font-size-12
 settings[sidebar_layout] = sidebars-split
 settings[sidebar_first_width] = 2
 settings[sidebar_last_width] = 2
-
-; Inherit Skinr styles from Fusion Core
-skinr[options][inherit_skins] = false
 
 ; Widths for 12 column, 960px/fluid grid
 skinr[grid12-width][title] = Width (12 column grid)
@@ -86,9 +72,9 @@ skinr[fusion-alignment][options][3][class] = fusion-clear
 ;skinr[fusion-example-styles][options][1][label] = My sample Skinr style
 ;skinr[fusion-example-styles][options][1][class] = fusion-example-stylename
 
-; Information added by drupal.org packaging script on 2010-07-08
-version = "6.x-1.0"
+; Information added by drupal.org packaging script on 2011-04-29
+version = "6.x-1.1"
 core = "6.x"
 project = "fusion"
-datestamp = "1278618609"
+datestamp = "1304100144"
 

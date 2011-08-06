@@ -1,5 +1,4 @@
 <?php
-// $Id: comment-wrapper.tpl.php,v 1.1 2009/08/19 04:28:07 sociotech Exp $
 
 /**
  * @file comment-wrapper.tpl.php

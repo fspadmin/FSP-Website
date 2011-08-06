@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon_handler_filter_product_type.inc,v 1.1 2010/11/29 00:14:34 longwave Exp $
 /**
  * @file
  * Views handler: Coupon filter on "product-type".

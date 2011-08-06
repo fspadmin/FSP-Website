@@ -2,7 +2,7 @@
 /**
  * PHPExcel
  *
- * Copyright (c) 2006 - 2010 PHPExcel
+ * Copyright (c) 2006 - 2011 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@
  *
  * @category	PHPExcel
  * @package		PHPExcel_Cell
- * @copyright	Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright	Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license		http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version		1.7.5, 2010-12-10
+ * @version		1.7.6, 2011-02-27
  */
 
 
@@ -31,7 +31,7 @@
  *
  * @category   PHPExcel
  * @package	PHPExcel_Cell
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  */
 class PHPExcel_Cell
 {
@@ -140,7 +140,9 @@ class PHPExcel_Cell
 		$this->_parent = $pSheet;
 
 		// Set datatype?
-		if ($pDataType !== NULL) {
+		if ($pDataType !== null) {
+			if ($pDataType == PHPExcel_Cell_DataType::TYPE_STRING2)
+				$pDataType = PHPExcel_Cell_DataType::TYPE_STRING;
 			$this->_dataType = $pDataType;
 		} else {
 			if (!self::getValueBinder()->bindValue($this, $pValue)) {
@@ -232,6 +234,8 @@ class PHPExcel_Cell
 	{
 		// set the value according to data type
 		switch ($pDataType) {
+			case PHPExcel_Cell_DataType::TYPE_STRING2:
+				$pDataType = PHPExcel_Cell_DataType::TYPE_STRING;
 			case PHPExcel_Cell_DataType::TYPE_STRING:
 			case PHPExcel_Cell_DataType::TYPE_NULL:
 			case PHPExcel_Cell_DataType::TYPE_INLINE:
@@ -343,6 +347,9 @@ class PHPExcel_Cell
 	 */
 	public function setDataType($pDataType = PHPExcel_Cell_DataType::TYPE_STRING)
 	{
+		if ($pDataType == PHPExcel_Cell_DataType::TYPE_STRING2)
+			$pDataType = PHPExcel_Cell_DataType::TYPE_STRING;
+
 		$this->_dataType = $pDataType;
 
 		return $this->notifyCacheController();
@@ -473,7 +480,7 @@ class PHPExcel_Cell
 		list($rangeStart,$rangeEnd) = PHPExcel_Cell::rangeBoundaries($pRange);
 
 		// Translate properties
-		$myColumn	= PHPExcel_Cell::columnIndexFromString($this->getColumn()) - 1;
+		$myColumn	= PHPExcel_Cell::columnIndexFromString($this->getColumn());
 		$myRow		= $this->getRow();
 
 		// Verify if cell is in range
@@ -491,7 +498,7 @@ class PHPExcel_Cell
 	 */
 	public static function coordinateFromString($pCoordinateString = 'A1')
 	{
-		if (preg_match("/^([$]?[A-Z]{1,3})([$]?\d{1,5})$/", $pCoordinateString, $matches)) {
+		if (preg_match("/^([$]?[A-Z]{1,3})([$]?\d{1,7})$/", $pCoordinateString, $matches)) {
 			return array($matches[1],$matches[2]);
 		} elseif ((strpos($pCoordinateString,':') !== false) || (strpos($pCoordinateString,',') !== false)) {
 			throw new Exception('Cell coordinate string can not be a range of cells.');
@@ -503,10 +510,32 @@ class PHPExcel_Cell
 	}
 
 	/**
+	 * Make string row, column or cell coordinate absolute
+	 *
+	 * @param	string	$pCoordinateString		e.g. 'A' or '1' or 'A1'
+	 * @return	string	Absolute coordinate		e.g. '$A' or '$1' or '$A$1'
+	 * @throws	Exception
+	 */
+	public static function absoluteReference($pCoordinateString = 'A1')
+	{
+		if (strpos($pCoordinateString,':') === false && strpos($pCoordinateString,',') === false) {
+			// Create absolute coordinate
+			if (ctype_digit($pCoordinateString)) {
+				return '$'.$pCoordinateString;
+			} elseif (ctype_alpha($pCoordinateString)) {
+				return '$'.strtoupper($pCoordinateString);
+			}
+			return self::absoluteCoordinate($pCoordinateString);
+		} else {
+			throw new Exception("Coordinate string should not be a cell range.");
+		}
+	}
+
+	/**
 	 * Make string coordinate absolute
 	 *
-	 * @param	string	$pCoordinateString
-	 * @return	string	Absolute coordinate
+	 * @param	string	$pCoordinateString		e.g. 'A1'
+	 * @return	string	Absolute coordinate		e.g. '$A$1'
 	 * @throws	Exception
 	 */
 	public static function absoluteCoordinate($pCoordinateString = 'A1')
@@ -619,8 +648,7 @@ class PHPExcel_Cell
 
 		// Extract range
 		if (strpos($pRange, ':') === false) {
-			$rangeA = $pRange;
-			$rangeB = $pRange;
+			$rangeA = $rangeB = $pRange;
 		} else {
 			list($rangeA, $rangeB) = explode(':', $pRange);
 		}

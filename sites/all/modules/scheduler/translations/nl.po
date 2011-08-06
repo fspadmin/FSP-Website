@@ -1,0 +1,177 @@
+# $Id: nl.po,v 1.1.2.2 2009/08/26 17:40:43 ericschaefer Exp $
+#
+# Dutch translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  scheduler.views.inc: n/a
+#  scheduler.info: n/a
+#  scheduler.module,v 1.50.2.10 2008/11/02 20:35:50 ericschaefer
+#  scheduler.install,v 1.5.2.3 2008/11/01 19:06:17 ericschaefer
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2009-04-24 16:59+0200\n"
+"PO-Revision-Date: 2009-04-24 17:16+0100\n"
+"Last-Translator: L.B. Cohn <lichai@999games.nl>\n"
+"Language-Team: Dutch <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: scheduler.views.inc:5
+#: scheduler.info:0
+msgid "Scheduler"
+msgstr "Planner"
+
+#: scheduler.views.inc:15;23
+#: scheduler.module:139
+msgid "Publish on"
+msgstr "Publiceer op"
+
+#: scheduler.views.inc:16
+msgid "Date/time on which the article will be automatically published"
+msgstr "Datum en tijd waarop het artikel automatisch zal worden gepubliceerd"
+
+#: scheduler.views.inc:31;39
+#: scheduler.module:148
+msgid "Unpublish on"
+msgstr "Depubliceer op"
+
+#: scheduler.views.inc:32
+msgid "Date/time on which the article will be automatically unpublished"
+msgstr "Datum en tijd waarop het artikel automatisch zal worden gedepubliceerd"
+
+#: scheduler.module:28
+msgid "Light weight cron handler"
+msgstr "Lichtgewicht cron handler"
+
+#: scheduler.module:29
+msgid "A light weight cron handler to allow more frequent runs of Schedulers internal cron system"
+msgstr "Een lichtgewicht cron handler om Planner's interne cronsysteem frequenter te draaien"
+
+#: scheduler.module:35
+msgid "Test your servers UTC clock"
+msgstr "Test de UTC klok van jouw server"
+
+#: scheduler.module:36
+msgid "Allows site admin to check their servers internal clock"
+msgstr "Laat site admins hun interne serverklok controleren"
+
+#: scheduler.module:42
+msgid "Scheduler module settings"
+msgstr "Plannermodule-instellingen"
+
+#: scheduler.module:43
+msgid "Allows site admins to configure scheduler."
+msgstr "Laat site admins de planner configureren."
+
+#: scheduler.module:55
+msgid "Date format"
+msgstr "Datumformaat"
+
+#: scheduler.module:59
+msgid "The input format for the (un)scheduling time/date. See the date() function for formatting options: http://www.php.net/manual/en/function.date.php"
+msgstr "Het invoerformaat voor het (de)publiceren van datum en tijd. Zie de date()-functie voor formaatopties: http://www.php.net/manual/en/function.date.php"
+
+#: scheduler.module:73
+msgid "Enable scheduled (un)publishing"
+msgstr "Sta geplande (de)publicaties toe"
+
+#: scheduler.module:75
+msgid "Check this box to enable scheduled (un)publishing for this node type."
+msgstr "Vink dit aan om geplande (de)publicaties toe te staan voor deze inhoudstype."
+
+#: scheduler.module:79
+msgid "Alter published on time"
+msgstr "Verander tijd waarop gepubliceerd is"
+
+#: scheduler.module:81
+msgid "Check this box to alter the published on time to match the scheduled time (\"touch feature\")."
+msgstr "Vink dit aan om de tijd waarop de node gepubliceerd is aan te passen aan de geplande tijd (\"aanraakfunctie\")."
+
+#: scheduler.module:131
+msgid "Scheduling options"
+msgstr "Planneropties"
+
+#: scheduler.module:142
+msgid "Format: %time. Leave blank to disable scheduled publishing."
+msgstr "Formaat: %time. Laat leeg om niet gepland te publiceren."
+
+#: scheduler.module:151
+msgid "Format: %time. Leave blank to disable scheduled unpublishing."
+msgstr "Formaat: %time. Laat leeg om niet gepland te depubliceren."
+
+#: scheduler.module:297
+msgid "The entered publication date is invalid."
+msgstr "De ingevulde publicatiedatum is ongeldig"
+
+#: scheduler.module:307
+msgid "The entered expiration date is invalid."
+msgstr "De ingevulde vervaldatum is ongeldig."
+
+#: scheduler.module:314
+msgid "The expiration date is before publication date."
+msgstr "De vervaldatum is voor de publicatiedatum."
+
+#: scheduler.module:377;406
+msgid "view"
+msgstr "weergeven"
+
+#: scheduler.module:469
+msgid "Scheduler OS time check"
+msgstr "Planner OS tijdcontrole"
+
+#: scheduler.module:481
+msgid "Your server reports the UTC time as %time and \"localtime\" as %lt."
+msgstr "Jouw server laat de UTC tijd zien als %time en \"localtime\" als %lt."
+
+#: scheduler.module:483
+msgid "If all is well with your server's time configuration UTC should match <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC London Time</a> and the localtime should be the time where you are."
+msgstr "Als alles goed is met de tijdconfiguratie van jouw server, dan zal UTC hetzelfde zijn als <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC London Time</a> en localtime zal hetzelfde zijn als de tijd in jouw plaatselijke tijdzone."
+
+#: scheduler.module:485
+msgid "If this is not the case please have your Unix System Administrator fix your servers time/date configuration."
+msgstr "Als dit niet zo is, laat dan de Unix Systeembeheerder de datum- en tijdconfiguratie van jouw server goed zetten."
+
+#: scheduler.module:377;406;436;0
+msgid "scheduler"
+msgstr "planner"
+
+#: scheduler.module:377
+msgid "@type: scheduled publishing of %title."
+msgstr "@type: geplande publicatie van %title."
+
+#: scheduler.module:406
+msgid "@type: scheduled unpublishing of %title."
+msgstr "@type: geplande depublicatie van %title."
+
+#: scheduler.module:436
+msgid "Internal scheduler run activated"
+msgstr "Interne planneractie geactiveerd"
+
+#: scheduler.module:19
+msgid "schedule (un)publishing of nodes"
+msgstr "plan het (de)publiceren van nodes"
+
+#: scheduler.install:11
+msgid "The main table to hold the scheduler data."
+msgstr "De hoofdtabel om de plannerdata te bewaren."
+
+#: scheduler.install:14
+msgid "The foreign key to node.nid"
+msgstr "The foreign key to node.nid"
+
+#: scheduler.install:20
+msgid "The UNIX UTC timestamp when to publish"
+msgstr "De UNIX UTC timestamp wanneer te publiceren"
+
+#: scheduler.install:27
+msgid "The UNIX UTC timestamp when to unpublish"
+msgstr "De UNIX UTC timestamp wanneer te depubliceren"
+
+#: scheduler.info:0
+msgid "This module allows nodes to be published and unpublished on specified dates."
+msgstr "Deze module laat nodes gepubliceerd en gedepubliceerd worden op gespecificeerde momenten."
+

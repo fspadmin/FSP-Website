@@ -1,5 +1,4 @@
 <?php
-// $Id: location_cck.inc,v 1.1.2.1 2009/10/09 08:55:06 robrechtj Exp $
 
 /**
  * @file

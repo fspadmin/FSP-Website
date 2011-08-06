@@ -1,4 +1,3 @@
-// $Id: imce_set_app.js,v 1.4.2.5 2010/12/12 07:23:33 ufku Exp $
 /*
  * IMCE Integration by URL
  * Ex-1: http://example.com/imce?app=XEditor|url@urlFieldId|width@widthFieldId|height@heightFieldId

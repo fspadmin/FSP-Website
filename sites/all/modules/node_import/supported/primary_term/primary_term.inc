@@ -1,5 +1,4 @@
 <?php
-// $Id: primary_term.inc,v 1.1.2.1 2009/10/09 15:37:15 robrechtj Exp $
 
 /**
  * @file

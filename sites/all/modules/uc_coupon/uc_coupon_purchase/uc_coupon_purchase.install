@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon_purchase.install,v 1.3 2010/11/28 22:31:36 longwave Exp $
 
 function uc_coupon_purchase_schema() {
   $schema = array();

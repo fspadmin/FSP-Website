@@ -1,8 +1,7 @@
 <?php
-// $Id: ckeditor.install,v 1.2.2.10 2010/09/15 15:23:36 wwalc Exp $
 /*
- * CKEditor - The text editor for Internet - http://ckeditor.com
- * Copyright (C) 2003-2008 Frederico Caldeira Knabben
+ * CKEditor - The text editor for the Internet - http://ckeditor.com
+ * Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
  *
  * == BEGIN LICENSE ==
  *
@@ -57,6 +56,7 @@ function ckeditor_install() {
 
   switch ($f_sv) {
     case 6201:
+    case 6202:
       db_query("INSERT INTO {ckeditor_role}(name, rid) SELECT name, rid FROM {fckeditor_role}");
       $rs=db_query("SELECT * FROM {fckeditor_settings}");
       while ($row=db_fetch_array($rs)) {
@@ -192,7 +192,8 @@ function ckeditor_install() {
       "admin/*/logintoboggan\n".
       "admin/settings/actions/configure/*\n".
       "*.edit-target\n".
-      "*.edit-wysiwyg-filter-*\n"
+      "*.edit-wysiwyg-filter-*\n".
+      "admin/build/views/*\n"
       );
 
       //force by default simple toolbar on selected textareas
@@ -352,12 +353,12 @@ function _ckeditor_requirements_getinstalledversion() {
  */
 function _ckeditor_requirements_ckfinder_config_check($profile_name) {
   module_load_include('module', 'ckeditor');
-  $module_drupal_path = drupal_get_path('module', 'ckeditor');
-  $config_path = $module_drupal_path .'/ckfinder/config.php';
+  $lib_path = dirname(ckeditor_path(TRUE));
+  $config_path = $lib_path .'/ckfinder/config.php';
 
   if (!file_exists($config_path)) {
     return t('!ckfinder is not installed correctly: !config not found. Make sure that you have uploaded all files or didn\'t remove that file accidentally.', array(
-      '!config' => $module_drupal_path .'/ckfinder/config.php',
+      '!config' => $lib_path .'/ckfinder/config.php',
       '!ckfinder' => '<a href="http://ckfinder.com">CKFinder</a>'
     ));
   }
@@ -456,17 +457,14 @@ function _ckeditor_requirements_cookiedomainset() {
  *	Delete all plus signs from profiles name
  */
  
-function ckeditor_update_6100(){
-	
-	$ret = array();
-	
-	$ret[] = update_sql( "UPDATE {ckeditor_role} SET name = REPLACE(name,'+','')");
-	$ret[] = update_sql( "UPDATE {ckeditor_role} SET name = REPLACE(name,'/','')");
-	$ret[] = update_sql( "UPDATE {ckeditor_settings} SET name = REPLACE(name,'+','')");
-	$ret[] = update_sql( "UPDATE {ckeditor_settings} SET name = REPLACE(name,'/','')");
-	
-	return $ret;
-	
+function ckeditor_update_6100() {
+  $ret = array();
+  $ret[] = update_sql( "UPDATE {ckeditor_role} SET name = REPLACE(name,'+','')");
+  $ret[] = update_sql( "UPDATE {ckeditor_role} SET name = REPLACE(name,'/','')");
+  $ret[] = update_sql( "UPDATE {ckeditor_settings} SET name = REPLACE(name,'+','')");
+  $ret[] = update_sql( "UPDATE {ckeditor_settings} SET name = REPLACE(name,'/','')");
+  
+  return $ret;
 }
 
 /**

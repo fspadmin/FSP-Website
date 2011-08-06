@@ -1,5 +1,4 @@
 <?php
-// $Id: block.tpl.php,v 1.1.2.2 2010/04/16 21:09:14 sociotech Exp $
 ?>
 
 <div id="block-<?php print $block->module .'-'. $block->delta; ?>" class="block block-<?php print $block->module ?> <?php print $block_zebra; ?> <?php print $position; ?> <?php print $skinr; ?>">

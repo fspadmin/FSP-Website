@@ -1,5 +1,4 @@
 <?php
-// $Id: link.inc,v 1.1.2.3 2009/04/14 06:32:06 robrechtj Exp $
 
 /**
  * @file

@@ -1,4 +1,3 @@
-$Id: TROUBLESHOOTING.txt,v 1.2.2.3 2010/07/05 15:04:50 wwalc Exp $
 
 Note: the HTML version of this file (always up-to-date) is available online: http://drupal.ckeditor.com/troubleshooting
 

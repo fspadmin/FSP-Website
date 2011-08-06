@@ -1,5 +1,4 @@
 <?php
-// $Id: node-product.tpl.php,v 1.1.2.2 2009/11/11 05:25:58 sociotech Exp $
 ?>
 
 <div id="node-<?php print $node->nid; ?>" class="node clear-block <?php print $node_classes; ?>">

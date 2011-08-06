@@ -2,7 +2,7 @@
 /**
  * PHPExcel
  *
- * Copyright (c) 2006 - 2010 PHPExcel
+ * Copyright (c) 2006 - 2011 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel_Calculation
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license	http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version	1.7.5, 2010-12-10
+ * @version	1.7.6, 2011-02-27
  */
 
 
@@ -36,12 +36,28 @@ if (!defined('PHPEXCEL_ROOT')) {
 }
 
 
+if (!defined('CALCULATION_REGEXP_CELLREF')) {
+	//	Test for support of \P (multibyte options) in PCRE
+	if(defined('PREG_BAD_UTF8_ERROR')) {
+		//	Cell reference (cell or range of cells, with or without a sheet reference)
+		define('CALCULATION_REGEXP_CELLREF','((([^\s,!&%^\/\*\+<>=-]*)|(\'[^\']*\')|(\"[^\"]*\"))!)?\$?([a-z]{1,3})\$?(\d{1,7})');
+		//	Named Range of cells
+		define('CALCULATION_REGEXP_NAMEDRANGE','((([^\s,!&%^\/\*\+<>=-]*)|(\'[^\']*\')|(\"[^\"]*\"))!)?([_A-Z][_A-Z0-9\.]*)');
+	} else {
+		//	Cell reference (cell or range of cells, with or without a sheet reference)
+		define('CALCULATION_REGEXP_CELLREF','(((\w*)|(\'[^\']*\')|(\"[^\"]*\"))!)?\$?([a-z]{1,3})\$?(\d+)');
+		//	Named Range of cells
+		define('CALCULATION_REGEXP_NAMEDRANGE','(((\w*)|(\'.*\')|(\".*\"))!)?([_A-Z][_A-Z0-9\.]*)');
+	}
+}
+
+
 /**
  * PHPExcel_Calculation (Singleton)
  *
- * @category   PHPExcel
- * @package	PHPExcel_Calculation
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @category	PHPExcel
+ * @package		PHPExcel_Calculation
+ * @copyright	Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  */
 class PHPExcel_Calculation {
 
@@ -53,12 +69,12 @@ class PHPExcel_Calculation {
 	const CALCULATION_REGEXP_STRING		= '"(?:[^"]|"")*"';
 	//	Opening bracket
 	const CALCULATION_REGEXP_OPENBRACE	= '\(';
-	//	Function
+	//	Function (allow for the old @ symbol that could be used to prefix a function, but we'll ignore it)
 	const CALCULATION_REGEXP_FUNCTION	= '@?([A-Z][A-Z0-9\.]*)[\s]*\(';
 	//	Cell reference (cell or range of cells, with or without a sheet reference)
-	const CALCULATION_REGEXP_CELLREF	= '((((?:\P{M}\p{M}*)+?)|(\'[^\']*\')|(\"[^\"]*\"))!)?\$?([a-z]{1,3})\$?(\d+)';
+	const CALCULATION_REGEXP_CELLREF	= CALCULATION_REGEXP_CELLREF;
 	//	Named Range of cells
-	const CALCULATION_REGEXP_NAMEDRANGE	= '((((?:\P{M}\p{M}*)+?)|(\'[^\']*\')|(\"[^\"]*\"))!)?([_A-Z][_A-Z0-9]*)';
+	const CALCULATION_REGEXP_NAMEDRANGE	= CALCULATION_REGEXP_NAMEDRANGE;
 	//	Error
 	const CALCULATION_REGEXP_ERROR		= '\#[A-Z][A-Z0_\/]*[!\?]?';
 
@@ -165,6 +181,19 @@ class PHPExcel_Calculation {
 	public $writeDebugLog = false;
 
 	/**
+	 *	Flag to determine whether a debug log should be echoed by the calculation engine
+	 *		If true, then a debug log will be echoed
+	 *		If false, then a debug log will not be echoed
+	 *	A debug log can only be echoed if it is generated
+	 *
+	 *	@access	public
+	 *	@var boolean
+	 *
+	 */
+	public $echoDebugLog = false;
+
+
+	/**
 	 *	An array of the nested cell references accessed by the calculation engine, used for the debug log
 	 *
 	 *	@access	private
@@ -184,6 +213,9 @@ class PHPExcel_Calculation {
 	private $_cyclicFormulaCount = 0;
 	private $_cyclicFormulaCell = '';
 	public $cyclicFormulaCount = 0;
+
+
+	private $_savedPrecision	= 12;
 
 
 	private static $_localeLanguage = 'en_us';					//	US English	(default locale)
@@ -527,11 +559,11 @@ class PHPExcel_Calculation {
 												 'argumentCount'	=>	'4,5'
 												),
 				'DCOUNT'				=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DCOUNT',
 												 'argumentCount'	=>	'3'
 												),
 				'DCOUNTA'				=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DCOUNTA',
 												 'argumentCount'	=>	'3'
 												),
 				'DDB'					=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_FINANCIAL,
@@ -563,7 +595,7 @@ class PHPExcel_Calculation {
 												 'argumentCount'	=>	'1+'
 												),
 				'DGET'					=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DGET',
 												 'argumentCount'	=>	'3'
 												),
 				'DISC'					=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_FINANCIAL,
@@ -571,11 +603,11 @@ class PHPExcel_Calculation {
 												 'argumentCount'	=>	'4,5'
 												),
 				'DMAX'					=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DMAX',
 												 'argumentCount'	=>	'3'
 												),
 				'DMIN'					=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DMIN',
 												 'argumentCount'	=>	'3'
 												),
 				'DOLLAR'				=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_TEXT_AND_DATA,
@@ -591,19 +623,19 @@ class PHPExcel_Calculation {
 												 'argumentCount'	=>	'2'
 												),
 				'DPRODUCT'				=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DPRODUCT',
 												 'argumentCount'	=>	'3'
 												),
 				'DSTDEV'				=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DSTDEV',
 												 'argumentCount'	=>	'3'
 												),
 				'DSTDEVP'				=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DSTDEVP',
 												 'argumentCount'	=>	'3'
 												),
 				'DSUM'					=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DSUM',
 												 'argumentCount'	=>	'3'
 												),
 				'DURATION'				=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_FINANCIAL,
@@ -611,11 +643,11 @@ class PHPExcel_Calculation {
 												 'argumentCount'	=>	'5,6'
 												),
 				'DVAR'					=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DVAR',
 												 'argumentCount'	=>	'3'
 												),
 				'DVARP'					=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATABASE,
-												 'functionCall'		=>	'PHPExcel_Calculation_Functions::DUMMY',
+												 'functionCall'		=>	'PHPExcel_Calculation_Database::DVARP',
 												 'argumentCount'	=>	'3'
 												),
 				'EDATE'					=> array('category'			=>	PHPExcel_Calculation_Function::CATEGORY_DATE_AND_TIME,
@@ -1648,7 +1680,7 @@ class PHPExcel_Calculation {
 
 
 
-	function __construct() {
+	private function __construct() {
 		$localeFileDirectory = PHPEXCEL_ROOT.'PHPExcel/locale/';
 		foreach (glob($localeFileDirectory.'/*',GLOB_ONLYDIR) as $filename) {
 			$filename = substr($filename,strlen($localeFileDirectory)+1);
@@ -1656,8 +1688,18 @@ class PHPExcel_Calculation {
 				self::$_validLocaleLanguages[] = $filename;
 			}
 		}
+
+		$setPrecision = (PHP_INT_SIZE == 4) ? 12 : 16;
+		$this->_savedPrecision = ini_get('precision');
+		if ($this->_savedPrecision < $setPrecision) {
+			ini_set('precision',$setPrecision);
+		}
 	}	//	function __construct()
 
+
+	public function __destruct() {
+		ini_set('precision',$this->_savedPrecision);
+	}
 
 	/**
 	 *	Get an instance of this class
@@ -1672,6 +1714,20 @@ class PHPExcel_Calculation {
 
 		return self::$_instance;
 	}	//	function getInstance()
+
+
+	/**
+	 *	Flush the calculation cache for any existing instance of this class
+	 *		but only if a PHPExcel_Calculation instance exists
+	 *
+	 *	@access	public
+	 *	@return null
+	 */
+	public static function flushInstance() {
+		if (isset(self::$_instance) && !is_null(self::$_instance)) {
+			self::$_instance->clearCalculationCache();
+		}
+	}	//	function flushInstance()
 
 
 	/**
@@ -1917,9 +1973,10 @@ class PHPExcel_Calculation {
 				//	So instead we skip replacing in any quoted strings by only replacing in every other array element after we've exploded
 				//		the formula
 				$temp = explode('"',$formula);
-				foreach($temp as $i => &$value) {
-					//	Only count/replace in alternate array entries
-					if (($i % 2) == 0) {
+				$i = false;
+				foreach($temp as &$value) {
+					//	Only count/replace in alternating array entries
+					if ($i = !$i) {
 						$value = preg_replace($from,$to,$value);
 						$value = self::_translateSeparator($fromSeparator,$toSeparator,$value,$inBraces);
 					}
@@ -1930,7 +1987,7 @@ class PHPExcel_Calculation {
 			} else {
 				//	If there's no quoted strings, then we do a simple count/replace
 				$formula = preg_replace($from,$to,$formula);
-				$formula = self::_translateSeparator($fromSeparator,$toSeparator,$formula);
+				$formula = self::_translateSeparator($fromSeparator,$toSeparator,$formula,$inBraces);
 			}
 		}
 
@@ -2510,9 +2567,10 @@ class PHPExcel_Calculation {
 				$temp = explode('"',$formula);
 				//	Open and Closed counts used for trapping mismatched braces in the formula
 				$openCount = $closeCount = 0;
-				foreach($temp as $i => &$value) {
-					//	Only count/replace in alternate array entries
-					if (($i % 2) == 0) {
+				$i = false;
+				foreach($temp as &$value) {
+					//	Only count/replace in alternating array entries
+					if ($i = !$i) {
 						$openCount += substr_count($value,'{');
 						$closeCount += substr_count($value,'}');
 						$value = str_replace($matrixReplaceFrom,$matrixReplaceTo,$value);
@@ -2621,6 +2679,7 @@ class PHPExcel_Calculation {
 			//	Find out if we're currently at the beginning of a number, variable, cell reference, function, parenthesis or operand
 			$isOperandOrFunction = preg_match($regexpMatchString, substr($formula, $index), $match);
 //			echo '$isOperandOrFunction is '.(($isOperandOrFunction) ? 'True' : 'False').'<br />';
+//			var_dump($match);
 
 			if ($opCharacter == '-' && !$expectingOperator) {				//	Is it a negation instead of a minus?
 //				echo 'Element is a Negation operator<br />';
@@ -2898,7 +2957,7 @@ class PHPExcel_Calculation {
 				//	If we're expecting an operator, but only have a space between the previous and next operands (and both are
 				//		Cell References) then we have an INTERSECTION operator
 //				echo 'Possible Intersect Operator<br />';
-				if (($expectingOperator) && (preg_match('/^'.self::CALCULATION_REGEXP_CELLREF.'.*/i', substr($formula, $index), $match)) &&
+				if (($expectingOperator) && (preg_match('/^'.self::CALCULATION_REGEXP_CELLREF.'.*/Ui', substr($formula, $index), $match)) &&
 					($output[count($output)-1]['type'] == 'Cell Reference')) {
 //					echo 'Element is an Intersect Operator<br />';
 					while($stack->count() > 0 &&
@@ -3492,6 +3551,9 @@ class PHPExcel_Calculation {
 	private function _writeDebug($message) {
 		//	Only write the debug log if logging is enabled
 		if ($this->writeDebugLog) {
+			if ($this->echoDebugLog) {
+				echo implode(' -> ',$this->debugLogStack).' -> '.$message,'<br />';
+			}
 			$this->debugLog[] = implode(' -> ',$this->debugLogStack).' -> '.$message;
 		}
 	}	//	function _writeDebug()
@@ -3590,9 +3652,17 @@ class PHPExcel_Calculation {
 			$namedRange = PHPExcel_NamedRange::resolveRange($pRange, $pSheet);
 			if (!is_null($namedRange)) {
 				$pSheet = $namedRange->getWorksheet();
-////			echo 'Named Range '.$pRange.' (';
+//				echo 'Named Range '.$pRange.' (';
 				$pRange = $namedRange->getRange();
-////				echo $pRange.') is in sheet '.$namedRange->getWorksheet()->getTitle().'<br />';
+				$splitRange = PHPExcel_Cell::splitRange($pRange);
+				//	Convert row and column references
+				if (ctype_alpha($splitRange[0][0])) {
+					$pRange = $splitRange[0][0] . '1:' . $splitRange[0][1] . $namedRange->getWorksheet()->getHighestRow();
+				} elseif(ctype_digit($splitRange[0][0])) {
+					$pRange = 'A' . $splitRange[0][0] . ':' . $namedRange->getWorksheet()->getHighestColumn() . $splitRange[0][1];
+				}
+//				echo $pRange.') is in sheet '.$namedRange->getWorksheet()->getTitle().'<br />';
+
 //				if ($pSheet->getTitle() != $namedRange->getWorksheet()->getTitle()) {
 //					if (!$namedRange->getLocalOnly()) {
 //						$pSheet = $namedRange->getWorksheet();
@@ -3606,8 +3676,9 @@ class PHPExcel_Calculation {
 
 			// Extract range
 			$aReferences = PHPExcel_Cell::extractAllCellReferencesInRange($pRange);
+//			var_dump($aReferences);
 			if (!isset($aReferences[1])) {
-				//	Single cell in range
+				//	Single cell (or single column or row) in range
 				list($currentCol,$currentRow) = PHPExcel_Cell::coordinateFromString($aReferences[0]);
 				if ($pSheet->cellExists($aReferences[0])) {
 					$returnValue[$currentRow][$currentCol] = $pSheet->getCell($aReferences[0])->getCalculatedValue($resetLog);
@@ -3676,12 +3747,31 @@ class PHPExcel_Calculation {
 
 
 	/**
+	 * Get a list of all Excel function names
+	 *
+	 * @return	array
+	 */
+	public function listAllFunctionNames() {
+		return array_keys(self::$_PHPExcelFunctions);
+	}	//	function listAllFunctionNames()
+
+	/**
 	 * Get a list of implemented Excel function names
 	 *
 	 * @return	array
 	 */
 	public function listFunctionNames() {
-		return array_keys(self::$_PHPExcelFunctions);
+		// Return value
+		$returnValue = array();
+		// Loop functions
+		foreach(self::$_PHPExcelFunctions as $functionName => $function) {
+			if ($function['functionCall'] != 'PHPExcel_Calculation_Functions::DUMMY') {
+				$returnValue[] = $functionName;
+			}
+		}
+
+		// Return
+		return $returnValue;
 	}	//	function listFunctionNames()
 
 }	//	class PHPExcel_Calculation

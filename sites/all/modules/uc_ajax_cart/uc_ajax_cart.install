@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * @file
@@ -6,11 +6,25 @@
  */
 
 function uc_ajax_cart_uninstall() {
-  variable_del('ajax_cart_message_timeout' );
-  variable_del('ajax_cart_message_effect' );
-  variable_del('uc_ajax_cart_cart_view' );
-  variable_del('uc_ajax_cart_cart_cached_load' );
-  variable_del('uc_ajax_cart_closed' );
-  variable_del('uc_ajax_cart_closed_update' );
-  variable_del('uc_ajax_cart_closed_default' );
+  variable_del('ajax_cart_message_timeout');
+  variable_del('ajax_cart_message_effect');
+  variable_del('uc_ajax_cart_cart_view');
+  variable_del('uc_ajax_cart_cart_cached_load');
+  variable_del('uc_ajax_cart_registered_users_cart_cached_load');
+  variable_del('uc_ajax_cart_closed');
+  variable_del('uc_ajax_cart_closed_update');
+  variable_del('uc_ajax_cart_closed_default');
+  variable_del('uc_ajax_cart_track_closed_state');
+  variable_del('uc_ajax_cart_pane_effect');
+  variable_del('ajax_cart_pane_effect_duration');
+  variable_del('uc_ajax_cart_ajaxify_cart_page');
+  variable_del('uc_ajax_cart_hide_update_cart_bt');
+  variable_del('uc_ajax_cart_initial_state');
+  variable_del('uc_ajax_cart_hide_cart_op_msgs');
+  variable_del('uc_ajax_cart_include_exclude');
+  variable_del('uc_ajax_cart_ajaxify_class');
 }
+
+
+
+

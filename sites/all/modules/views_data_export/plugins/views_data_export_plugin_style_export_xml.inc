@@ -1,5 +1,4 @@
 <?php
-// $Id: views_data_export_plugin_style_export_xml.inc,v 1.1.2.3 2010/11/29 22:15:30 darthsteven Exp $
 /**
  * @file
  * Plugin include file for export style plugin.

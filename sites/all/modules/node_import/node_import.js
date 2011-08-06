@@ -1,4 +1,3 @@
-// $Id: node_import.js,v 1.1.2.1 2008/11/20 14:44:37 robrechtj Exp $
 
 /**
  * Attaches the batch behavior to progress bars.

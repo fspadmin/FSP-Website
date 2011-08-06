@@ -1,4 +1,3 @@
-// $Id: hoverIntent.js,v 1.1.2.1 2010/07/03 03:00:39 sociotech Exp $
 
 ;(function($){
 	/* hoverIntent by Brian Cherne */

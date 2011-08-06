@@ -1,0 +1,102 @@
+# $Id: ja.po,v 1.1.2.1 2009/01/15 04:47:24 pineray Exp $
+#
+# Japanese translation of Drupal (general)
+# Copyright PineRay <matsudaterutaka@gmail.com>
+# Generated from files:
+#  securepages.module,v 1.15.2.13 2009/01/08 13:25:46 gordon
+#  securepages.info,v 1.3.2.5 2008/11/15 00:21:05 gordon
+#  securepages.install,v 1.2.2.5 2008/11/15 00:21:05 gordon
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Secure Pages 6.x-1.x-dev\n"
+"POT-Creation-Date: 2009-01-15 11:44+0900\n"
+"PO-Revision-Date: 2009-01-15 13:44+0900\n"
+"Last-Translator: PineRay <matsudaterutaka@gmail.com>\n"
+"Language-Team: Japanese <matsudaterutaka@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: securepages.module:93
+msgid "Enable Secure Pages"
+msgstr "セキュアページを有効化"
+
+#: securepages.module:95
+msgid "Disabled"
+msgstr "無効"
+
+#: securepages.module:95
+msgid "Enabled"
+msgstr "有効"
+
+#: securepages.module:97
+msgid "To start using secure pages this setting must be enabled. This setting will only be able to changed when the web server has been configured for SSL.<br />If this test has failed then go <a href=\"!url\">here</a>"
+msgstr "セキュアページの使用を開始するには、この設定を有効にする必要があります。 ウェブサーバにSSLが設定されている場合にのみ、この設定を変更することができます。<br />もしも、このテストに失敗している場合は、<a href=\"!url\">こちら</a>にアクセスしてみてください。"
+
+#: securepages.module:101
+msgid "Switch back to http pages when there are no matches"
+msgstr "条件に合わない場合は http ページへ戻る"
+
+#: securepages.module:108
+msgid "Non-secure Base URL"
+msgstr "セキュアでないベースURL"
+
+#: securepages.module:114
+msgid "Secure Base URL"
+msgstr "セキュアなベースURL"
+
+#: securepages.module:120
+msgid "Pages which will be be secure"
+msgstr "セキュアにするページ"
+
+#: securepages.module:122
+msgid "Make secure every page except the listed pages."
+msgstr "リストに挙げられたページを除くすべてのページをセキュアにする。"
+
+#: securepages.module:122
+msgid "Make secure only the listed pages."
+msgstr "リストに挙げられたページだけをセキュアにする。"
+
+#: securepages.module:126
+msgid "Pages"
+msgstr "ページ"
+
+#: securepages.module:130
+msgid "Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are '<em>blog</em>' for the blog page and '<em>blog/*</em>' for every personal blog. '<em>&lt;front&gt;</em>' is the front page."
+msgstr " 1行に1ベージとして、Drupalパスを入力してください。 <strong>*</strong> はワイルドカードとして使えます。 例えばブログページのパスを指定するには <em>blog</em>、ユーザ別のブログは <em>blog/*</em> と入力してください。 また、フロントページを指定するには <em>&lt;front&gt;</em> と入力してください。"
+
+#: securepages.module:134
+msgid "Ignore pages"
+msgstr "除外ページ"
+
+#: securepages.module:138
+msgid "The pages listed here will be ignored and be either returned in http or https. Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are '<em>blog</em>' for the blog page and '<em>blog/*</em>' for every personal blog. '<em>&lt;front&gt;</em>' is the front page."
+msgstr "ここに挙げられたページは除外の対象となり、httpまたはhttpsを返します。 1行に1ベージとして、Drupalパスを入力してください。 <strong>*</strong> はワイルドカードとして使えます。 例えばブログページのパスを指定するには <em>blog</em>、ユーザ別のブログは <em>blog/*</em> と入力してください。 また、フロントページを指定するには <em>&lt;front&gt;</em> と入力してください。"
+
+#: securepages.module:73
+#: securepages.info:0
+msgid "Secure Pages"
+msgstr "セキュアページ"
+
+#: securepages.module:74
+msgid "Configure which pages are and are not to be viewed in SSL"
+msgstr "SSLで表示するページと表示しないページを設定します。"
+
+#: securepages.module:0
+msgid "securepages"
+msgstr "セキュアページ"
+
+#: securepages.install:12
+msgid "Secure pages needs to be enabled on !settings"
+msgstr "!settings でセキュアページを有効にする必要があります"
+
+#: securepages.install:12
+msgid "admin/settings/securepages"
+msgstr "セキュアページの管理画面"
+
+#: securepages.info:0
+msgid "Set which pages are always going to be used in secure mode (SSL) Warning: Do not enable this module without configuring your web server to handle SSL with this installation of Drupal"
+msgstr "どのページが常にセキュアモード (SSL) となるかを設定します。 注意: ウェブサーバにSSLを設定することなしに、このモジュールを有効にしないでください。"
+

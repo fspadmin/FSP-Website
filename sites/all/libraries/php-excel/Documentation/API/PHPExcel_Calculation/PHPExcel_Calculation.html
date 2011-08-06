@@ -14,7 +14,7 @@
     <td class="header_menu">
         
                                                                                                                                         
-                                                                                                                                                                                                                                                                                                                                          		  [ <a href="../classtrees_PHPExcel_Calculation.html" class="menu">class tree: PHPExcel_Calculation</a> ]
+                                                                                                                                                                                                                                                                                                                                                                                  		  [ <a href="../classtrees_PHPExcel_Calculation.html" class="menu">class tree: PHPExcel_Calculation</a> ]
 		  [ <a href="../elementindex_PHPExcel_Calculation.html" class="menu">index: PHPExcel_Calculation</a> ]
 		  	    [ <a href="../elementindex.html" class="menu">all elements</a> ]
     </td>
@@ -38,12 +38,14 @@
               <a href="../li_PHPExcel_Cell.html">PHPExcel_Cell</a><br />
               <a href="../li_PHPExcel_Reader.html">PHPExcel_Reader</a><br />
               <a href="../li_PHPExcel_Reader_Excel5.html">PHPExcel_Reader_Excel5</a><br />
+              <a href="../li_PHPExcel_Reader_Excel2007.html">PHPExcel_Reader_Excel2007</a><br />
               <a href="../li_PHPExcel_RichText.html">PHPExcel_RichText</a><br />
               <a href="../li_PHPExcel_Settings.html">PHPExcel_Settings</a><br />
               <a href="../li_PHPExcel_Shared.html">PHPExcel_Shared</a><br />
               <a href="../li_PHPExcel_Shared_Best_Fit.html">PHPExcel_Shared_Best_Fit</a><br />
               <a href="../li_PHPExcel_Shared_Escher.html">PHPExcel_Shared_Escher</a><br />
               <a href="../li_PHPExcel_Shared_OLE.html">PHPExcel_Shared_OLE</a><br />
+              <a href="../li_PHPExcel_Shared_ZipArchive.html">PHPExcel_Shared_ZipArchive</a><br />
               <a href="../li_PHPExcel_Style.html">PHPExcel_Style</a><br />
               <a href="../li_PHPExcel_Worksheet.html">PHPExcel_Worksheet</a><br />
               <a href="../li_PHPExcel_Worksheet_Drawing.html">PHPExcel_Worksheet_Drawing</a><br />
@@ -54,6 +56,8 @@
                         <b>Files:</b><br />
       	  <div class="package">
 			<a href="../PHPExcel_Calculation/_PHPExcel---Calculation.php.html">		Calculation.php
+		</a><br>
+			<a href="../PHPExcel_Calculation/_PHPExcel---Calculation---Database.php.html">		Database.php
 		</a><br>
 			<a href="../PHPExcel_Calculation/_PHPExcel---Calculation---DateTime.php.html">		DateTime.php
 		</a><br>
@@ -89,6 +93,7 @@
             <b>Classes:</b><br />
         <div class="package">
 		    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation.html">PHPExcel_Calculation</a><br />
+	    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation_Database.html">PHPExcel_Calculation_Database</a><br />
 	    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation_DateTime.html">PHPExcel_Calculation_DateTime</a><br />
 	    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation_Engineering.html">PHPExcel_Calculation_Engineering</a><br />
 	    		<a href="../PHPExcel_Calculation/PHPExcel_Calculation_Exception.html">PHPExcel_Calculation_Exception</a><br />
@@ -131,7 +136,7 @@ Source Location: /PHPExcel/Calculation.php<br /><br />
 
 <h4>Copyright:</h4>
 <ul>
-  <li>Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)</li>
+  <li>Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)</li>
 </ul>
         
 </td>
@@ -141,6 +146,7 @@ Source Location: /PHPExcel/Calculation.php<br /><br />
 <ul>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#var$cyclicFormulaCount">$cyclicFormulaCount</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#var$debugLog">$debugLog</a></li>
+    <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#var$echoDebugLog">$echoDebugLog</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#var$formulaError">$formulaError</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#var$suppressFormulaErrors">$suppressFormulaErrors</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#var$writeDebugLog">$writeDebugLog</a></li>
@@ -167,15 +173,16 @@ Source Location: /PHPExcel/Calculation.php<br /><br />
 <td valign="top">
 <h3><a href="#class_methods">Methods</a></h3>
 <ul>
+    <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#method__destruct">__destruct</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodcalculate">calculate</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodcalculateCellValue">calculateCellValue</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodcalculateFormula">calculateFormula</a></li>
-    <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#method__construct">__construct</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodclearCalculationCache">clearCalculationCache</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methoddisableCalculationCache">disableCalculationCache</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodenableCalculationCache">enableCalculationCache</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodextractCellRange">extractCellRange</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodextractNamedRange">extractNamedRange</a></li>
+    <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodflushInstance">flushInstance</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodgetArrayReturnType">getArrayReturnType</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodgetCalculationCacheEnabled">getCalculationCacheEnabled</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodgetCalculationCacheExpirationTime">getCalculationCacheExpirationTime</a></li>
@@ -184,6 +191,7 @@ Source Location: /PHPExcel/Calculation.php<br /><br />
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodgetLocale">getLocale</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodgetTRUE">getTRUE</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodisImplemented">isImplemented</a></li>
+    <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodlistAllFunctionNames">listAllFunctionNames</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodlistFunctionNames">listFunctionNames</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodlistFunctions">listFunctions</a></li>
     <li><a href="../PHPExcel_Calculation/PHPExcel_Calculation.html#methodparseFormula">parseFormula</a></li>
@@ -220,13 +228,13 @@ Source Location: /PHPExcel/Calculation.php<br /><br />
 <a name="class_details"></a>
 <h3>Class Details</h3>
 <div class="tags">
-[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a46">46</a>]<br />
+[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a62">62</a>]<br />
 PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
 <h4>Tags:</h4>
 <div class="tags">
 <table border="0" cellspacing="0" cellpadding="0">
   <tr>
-    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)</td>
+    <td><b>copyright:</b>&nbsp;&nbsp;</td><td>Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)</td>
   </tr>
 </table>
 </div>
@@ -243,7 +251,7 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'FALSE'&nbsp;&nbsp;&nbsp;=&gt;&nbsp;'FALSE',<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'NULL'&nbsp;&nbsp;&nbsp;=&gt;&nbsp;'NULL'<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a194">194</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a226">226</a>]</p>
   <br /><br />
 <h4>Tags:</h4>
 <div class="tags">
@@ -267,7 +275,7 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
 	<a name="var$cyclicFormulaCount"></a>
 	<p></p>
 	<h4>$cyclicFormulaCount = <span class="value">&nbsp;0</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a186">186</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a215">215</a>]</p>
   <br /><br />
 <h4>Tags:</h4>
 <div class="tags">
@@ -291,7 +299,7 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
 	<a name="var$debugLog"></a>
 	<p></p>
 	<h4>$debugLog = <span class="value">array()</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a183">183</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a212">212</a>]</p>
   The debug log generated by the calculation engine<br /><br /><br /><br />
 <h4>Tags:</h4>
 <div class="tags">
@@ -315,10 +323,34 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
       </table>
 	</div><br /><br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
+	<a name="var$echoDebugLog"></a>
+	<p></p>
+	<h4>$echoDebugLog = <span class="value">&nbsp;false</span></h4>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a193">193</a>]</p>
+  Flag to determine whether a debug log should be echoed by the calculation engine<br /><br /><p>If true, then a debug log will be echoed 		If false, then a debug log will not be echoed 	A debug log can only be echoed if it is generated</p><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>access:</b>&nbsp;&nbsp;</td><td>public</td>
+  </tr>
+</table>
+</div>
+
+  <br />
+	<div class="tags">
+  <table border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td><b>Type:</b>&nbsp;&nbsp;</td>
+      <td>boolean</td>
+    </tr>
+      </table>
+	</div><br /><br />
+	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="var$formulaError"></a>
 	<p></p>
 	<h4>$formulaError = <span class="value">&nbsp;null</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a154">154</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a170">170</a>]</p>
   Error message for any error that was raised/thrown by the calculation engine<br /><br /><br /><br />
 <h4>Tags:</h4>
 <div class="tags">
@@ -342,7 +374,7 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
 	<a name="var$suppressFormulaErrors"></a>
 	<p></p>
 	<h4>$suppressFormulaErrors = <span class="value">&nbsp;false</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a145">145</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a161">161</a>]</p>
   Flag to determine how formula errors should be handled 		If true, then a user error will be triggered 		If false, then an exception will be thrown<br /><br /><br /><br />
 <h4>Tags:</h4>
 <div class="tags">
@@ -366,7 +398,7 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
 	<a name="var$writeDebugLog"></a>
 	<p></p>
 	<h4>$writeDebugLog = <span class="value">&nbsp;false</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a165">165</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a181">181</a>]</p>
   Flag to determine whether a debug log should be generated by the calculation engine 		If true, then a debug log will be generated 		If false, then a debug log will not be generated<br /><br /><br /><br />
 <h4>Tags:</h4>
 <div class="tags">
@@ -394,8 +426,33 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
 <h3>Class Methods</h3>
 <div class="tags">
   <hr />
+	<a name="methodflushInstance"></a>
+	<h3>static method flushInstance <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1726">1726</a>]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>static null flushInstance(
+)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+	
+		Flush the calculation cache for any existing instance of this class 		but only if a PHPExcel_Calculation instance exists<br /><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>access:</b>&nbsp;&nbsp;</td><td>public</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+
+	
+        <div class="top">[ <a href="#top">Top</a> ]</div>
+  </div>
+  <hr />
 	<a name="methodgetArrayReturnType"></a>
-	<h3>static method getArrayReturnType <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1732">1732</a>]</span></h3>
+	<h3>static method getArrayReturnType <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1788">1788</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -423,7 +480,7 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetFALSE"></a>
-	<h3>static method getFALSE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1704">1704</a>]</span></h3>
+	<h3>static method getFALSE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1760">1760</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -451,7 +508,7 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetInstance"></a>
-	<h3>static method getInstance <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1668">1668</a>]</span></h3>
+	<h3>static method getInstance <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1710">1710</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -476,7 +533,7 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodgetTRUE"></a>
-	<h3>static method getTRUE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1694">1694</a>]</span></h3>
+	<h3>static method getTRUE <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1750">1750</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -504,7 +561,7 @@ PHPExcel_Calculation (Singleton)<br /><br /><br /><br />
   </div>
   <hr />
 	<a name="methodsetArrayReturnType"></a>
-	<h3>static method setArrayReturnType <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1715">1715</a>]</span></h3>
+	<h3>static method setArrayReturnType <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1771">1771</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -543,7 +600,7 @@ $returnType)</code>
   </div>
   <hr />
 	<a name="method_getMatrixDimensions"></a>
-	<h3>static method _getMatrixDimensions <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2332">2332</a>]</span></h3>
+	<h3>static method _getMatrixDimensions <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2389">2389</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -582,7 +639,7 @@ mixed
   </div>
   <hr />
 	<a name="method_localeFunc"></a>
-	<h3>static method _localeFunc <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1997">1997</a>]</span></h3>
+	<h3>static method _localeFunc <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2054">2054</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -618,7 +675,7 @@ $function)</code>
   </div>
   <hr />
 	<a name="method_translateSeparator"></a>
-	<h3>static method _translateSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1893">1893</a>]</span></h3>
+	<h3>static method _translateSeparator <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1949">1949</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -672,7 +729,7 @@ $formula,
   </div>
   <hr />
 	<a name="method_unwrapResult"></a>
-	<h3>static method _unwrapResult <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2042">2042</a>]</span></h3>
+	<h3>static method _unwrapResult <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2099">2099</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -708,7 +765,7 @@ $value)</code>
   </div>
   <hr />
 	<a name="method_wrapResult"></a>
-	<h3>static method _wrapResult <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2018">2018</a>]</span></h3>
+	<h3>static method _wrapResult <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2075">2075</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -744,8 +801,33 @@ $value)</code>
   </div>
 
   <hr />
+	<a name="method__destruct"></a>
+	<h3>destructor __destruct <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1700">1700</a>]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>void __destruct(
+)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+	
+		<br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>access:</b>&nbsp;&nbsp;</td><td>public</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+
+	
+        <div class="top">[ <a href="#top">Top</a> ]</div>
+  </div>
+  <hr />
 	<a name="methodcalculate"></a>
-	<h3>method calculate <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2066">2066</a>]</span></h3>
+	<h3>method calculate <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2123">2123</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -784,7 +866,7 @@ $pCell = null])</code>
   </div>
   <hr />
 	<a name="methodcalculateCellValue"></a>
-	<h3>method calculateCellValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2084">2084</a>]</span></h3>
+	<h3>method calculateCellValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2141">2141</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -829,7 +911,7 @@ $resetLog = true])</code>
   </div>
   <hr />
 	<a name="methodcalculateFormula"></a>
-	<h3>method calculateFormula <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2168">2168</a>]</span></h3>
+	<h3>method calculateFormula <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2225">2225</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -879,24 +961,8 @@ $pCell = null])</code>
         <div class="top">[ <a href="#top">Top</a> ]</div>
   </div>
   <hr />
-	<a name="method__construct"></a>
-	<h3>constructor __construct <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1651">1651</a>]</span></h3>
-	<div class="function">
-    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
-    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
-		<code>PHPExcel_Calculation __construct(
-)</code>
-    </td></tr></table>
-    </td></tr></table><br />
-	
-		<br /><br />
-
-	
-        <div class="top">[ <a href="#top">Top</a> ]</div>
-  </div>
-  <hr />
 	<a name="methodclearCalculationCache"></a>
-	<h3>method clearCalculationCache <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1779">1779</a>]</span></h3>
+	<h3>method clearCalculationCache <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1835">1835</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -921,7 +987,7 @@ $pCell = null])</code>
   </div>
   <hr />
 	<a name="methoddisableCalculationCache"></a>
-	<h3>method disableCalculationCache <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1771">1771</a>]</span></h3>
+	<h3>method disableCalculationCache <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1827">1827</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -946,7 +1012,7 @@ $pCell = null])</code>
   </div>
   <hr />
 	<a name="methodenableCalculationCache"></a>
-	<h3>method enableCalculationCache <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1763">1763</a>]</span></h3>
+	<h3>method enableCalculationCache <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1819">1819</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -971,7 +1037,7 @@ $pCell = null])</code>
   </div>
   <hr />
 	<a name="methodextractCellRange"></a>
-	<h3>method extractCellRange <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3516">3516</a>]</span></h3>
+	<h3>method extractCellRange <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3578">3578</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1025,7 +1091,7 @@ $resetLog = true])</code>
   </div>
   <hr />
 	<a name="methodextractNamedRange"></a>
-	<h3>method extractNamedRange <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3572">3572</a>]</span></h3>
+	<h3>method extractNamedRange <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3634">3634</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1079,7 +1145,7 @@ $resetLog = true])</code>
   </div>
   <hr />
 	<a name="methodgetCalculationCacheEnabled"></a>
-	<h3>method getCalculationCacheEnabled <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1743">1743</a>]</span></h3>
+	<h3>method getCalculationCacheEnabled <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1799">1799</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1104,7 +1170,7 @@ $resetLog = true])</code>
   </div>
   <hr />
 	<a name="methodgetCalculationCacheExpirationTime"></a>
-	<h3>method getCalculationCacheExpirationTime <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1789">1789</a>]</span></h3>
+	<h3>method getCalculationCacheExpirationTime <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1845">1845</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1129,7 +1195,7 @@ $resetLog = true])</code>
   </div>
   <hr />
 	<a name="methodgetLocale"></a>
-	<h3>method getLocale <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1811">1811</a>]</span></h3>
+	<h3>method getLocale <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1867">1867</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1154,7 +1220,7 @@ $resetLog = true])</code>
   </div>
   <hr />
 	<a name="methodisImplemented"></a>
-	<h3>method isImplemented <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3645">3645</a>]</span></h3>
+	<h3>method isImplemented <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3716">3716</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1189,8 +1255,33 @@ $pFunction = ''])</code>
         <div class="top">[ <a href="#top">Top</a> ]</div>
   </div>
   <hr />
+	<a name="methodlistAllFunctionNames"></a>
+	<h3>method listAllFunctionNames <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3754">3754</a>]</span></h3>
+	<div class="function">
+    <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
+		<code>array listAllFunctionNames(
+)</code>
+    </td></tr></table>
+    </td></tr></table><br />
+	
+		Get a list of all Excel function names<br /><br /><br /><br />
+<h4>Tags:</h4>
+<div class="tags">
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><b>access:</b>&nbsp;&nbsp;</td><td>public</td>
+  </tr>
+</table>
+</div>
+<br /><br />
+
+	
+        <div class="top">[ <a href="#top">Top</a> ]</div>
+  </div>
+  <hr />
 	<a name="methodlistFunctionNames"></a>
-	<h3>method listFunctionNames <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3683">3683</a>]</span></h3>
+	<h3>method listFunctionNames <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3763">3763</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1215,7 +1306,7 @@ $pFunction = ''])</code>
   </div>
   <hr />
 	<a name="methodlistFunctions"></a>
-	<h3>method listFunctions <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3660">3660</a>]</span></h3>
+	<h3>method listFunctions <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3731">3731</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1243,7 +1334,7 @@ $pFunction = ''])</code>
   </div>
   <hr />
 	<a name="methodparseFormula"></a>
-	<h3>method parseFormula <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2148">2148</a>]</span></h3>
+	<h3>method parseFormula <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2205">2205</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1282,7 +1373,7 @@ $formula)</code>
   </div>
   <hr />
 	<a name="methodsetCalculationCacheEnabled"></a>
-	<h3>method setCalculationCacheEnabled <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1754">1754</a>]</span></h3>
+	<h3>method setCalculationCacheEnabled <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1810">1810</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1318,7 +1409,7 @@ $pValue = true])</code>
   </div>
   <hr />
 	<a name="methodsetCalculationCacheExpirationTime"></a>
-	<h3>method setCalculationCacheExpirationTime <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1799">1799</a>]</span></h3>
+	<h3>method setCalculationCacheExpirationTime <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1855">1855</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1354,7 +1445,7 @@ $pValue = 15])</code>
   </div>
   <hr />
 	<a name="methodsetLocale"></a>
-	<h3>method setLocale <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1821">1821</a>]</span></h3>
+	<h3>method setLocale <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1877">1877</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1390,7 +1481,7 @@ $locale = 'en_us'])</code>
   </div>
   <hr />
 	<a name="method_calculateFormulaValue"></a>
-	<h3>method _calculateFormulaValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2200">2200</a>]</span></h3>
+	<h3>method _calculateFormulaValue <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2257">2257</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1441,7 +1532,7 @@ $pCell = null])</code>
   </div>
   <hr />
 	<a name="method_raiseFormulaError"></a>
-	<h3>method _raiseFormulaError <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3501">3501</a>]</span></h3>
+	<h3>method _raiseFormulaError <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a3563">3563</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1477,7 +1568,7 @@ $errorMessage)</code>
   </div>
   <hr />
 	<a name="method_translateFormulaToEnglish"></a>
-	<h3>method _translateFormulaToEnglish <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1972">1972</a>]</span></h3>
+	<h3>method _translateFormulaToEnglish <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2029">2029</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1513,7 +1604,7 @@ $formula)</code>
   </div>
   <hr />
 	<a name="method_translateFormulaToLocale"></a>
-	<h3>method _translateFormulaToLocale <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1943">1943</a>]</span></h3>
+	<h3>method _translateFormulaToLocale <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a2000">2000</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1549,7 +1640,7 @@ $formula)</code>
   </div>
   <hr />
 	<a name="method__clone"></a>
-	<h3>method __clone <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1683">1683</a>]</span></h3>
+	<h3>method __clone <span class="smalllinenumber">[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a1739">1739</a>]</span></h3>
 	<div class="function">
     <table width="90%" border="0" cellspacing="0" cellpadding="1"><tr><td class="code_border">
     <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td class="code">
@@ -1583,71 +1674,71 @@ $formula)</code>
 <div class="tags">
 	<a name="constCALCULATION_REGEXP_CELLREF"></a>
 	<p></p>
-	<h4>CALCULATION_REGEXP_CELLREF = <span class="value">&nbsp;'((((?:\P{M}\p{M}*)+?)|(\'[^\']*\')|(\&quot;[^\&quot;]*\&quot;))!)?\$?([a-z]{1,3})\$?(\d+)'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a59">59</a>]</p>
+	<h4>CALCULATION_REGEXP_CELLREF = <span class="value">&nbsp;CALCULATION_REGEXP_CELLREF</span></h4>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a75">75</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constCALCULATION_REGEXP_ERROR"></a>
 	<p></p>
 	<h4>CALCULATION_REGEXP_ERROR = <span class="value">&nbsp;'\#[A-Z][A-Z0_\/]*[!\?]?'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a63">63</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a79">79</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constCALCULATION_REGEXP_FUNCTION"></a>
 	<p></p>
 	<h4>CALCULATION_REGEXP_FUNCTION = <span class="value">&nbsp;'@?([A-Z][A-Z0-9\.]*)[\s]*\('</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a57">57</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a73">73</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constCALCULATION_REGEXP_NAMEDRANGE"></a>
 	<p></p>
-	<h4>CALCULATION_REGEXP_NAMEDRANGE = <span class="value">&nbsp;'((((?:\P{M}\p{M}*)+?)|(\'[^\']*\')|(\&quot;[^\&quot;]*\&quot;))!)?([_A-Z][_A-Z0-9]*)'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a61">61</a>]</p>
+	<h4>CALCULATION_REGEXP_NAMEDRANGE = <span class="value">&nbsp;CALCULATION_REGEXP_NAMEDRANGE</span></h4>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a77">77</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constCALCULATION_REGEXP_NUMBER"></a>
 	<p></p>
 	<h4>CALCULATION_REGEXP_NUMBER = <span class="value">&nbsp;'[-+]?\d*\.?\d+(e[-+]?\d+)?'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a51">51</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a67">67</a>]</p>
   Regular Expressions<br /><br />
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constCALCULATION_REGEXP_OPENBRACE"></a>
 	<p></p>
 	<h4>CALCULATION_REGEXP_OPENBRACE = <span class="value">&nbsp;'\('</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a55">55</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a71">71</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constCALCULATION_REGEXP_STRING"></a>
 	<p></p>
 	<h4>CALCULATION_REGEXP_STRING = <span class="value">&nbsp;'&quot;(?:[^&quot;]|&quot;&quot;)*&quot;'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a53">53</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a69">69</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constRETURN_ARRAY_AS_ARRAY"></a>
 	<p></p>
 	<h4>RETURN_ARRAY_AS_ARRAY = <span class="value">&nbsp;'array'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a69">69</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a85">85</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constRETURN_ARRAY_AS_ERROR"></a>
 	<p></p>
 	<h4>RETURN_ARRAY_AS_ERROR = <span class="value">&nbsp;'error'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a67">67</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a83">83</a>]</p>
   constants<br /><br />
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
 	<a name="constRETURN_ARRAY_AS_VALUE"></a>
 	<p></p>
 	<h4>RETURN_ARRAY_AS_VALUE = <span class="value">&nbsp;'value'</span></h4>
-	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a68">68</a>]</p>
+	<p>[line <a href="../__filesource/fsource_PHPExcel_Calculation__PHPExcelCalculation.php.html#a84">84</a>]</p>
   
   <br />
 	<div class="top">[ <a href="#top">Top</a> ]</div><br />
@@ -1655,7 +1746,7 @@ $formula)</code>
 
         <div class="credit">
 		    <hr />
-		    Documentation generated on Fri, 10 Dec 2010 08:34:26 +0100 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
+		    Documentation generated on Sun, 27 Feb 2011 16:28:53 -0800 by <a href="http://www.phpdoc.org">phpDocumentor 1.4.3</a>
 	      </div>
       </td></tr></table>
     </td>

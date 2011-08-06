@@ -1,5 +1,4 @@
 <?php
-// $Id: profile.inc,v 1.1.2.5 2009/02/23 21:54:41 robrechtj Exp $
 
 /**
  * @file

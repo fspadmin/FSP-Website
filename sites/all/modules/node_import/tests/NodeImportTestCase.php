@@ -1,5 +1,4 @@
 <?php
-// $Id: NodeImportTestCase.php,v 1.1.2.2 2010/03/19 17:22:19 robrechtj Exp $
 
 /**
  * @file

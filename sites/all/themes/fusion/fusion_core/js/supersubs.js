@@ -1,4 +1,3 @@
-// $Id: supersubs.js,v 1.1 2009/08/19 04:28:07 sociotech Exp $
 
 /*
  * Supersubs v0.2b - jQuery plugin

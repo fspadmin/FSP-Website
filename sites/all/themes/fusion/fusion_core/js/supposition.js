@@ -1,4 +1,3 @@
-// $Id: supposition.js,v 1.1 2009/08/19 04:28:07 sociotech Exp $
 
 /*
  * Supposition v0.2 - an optional enhancer for Superfish jQuery menu widget

@@ -1,11 +1,13 @@
-// $Id: CHANGELOG.txt,v 1.5.2.8 2010/09/09 03:04:34 sun Exp $
-
-jQuery UI x.x-x.x, xxxx-xx-xx
------------------------------
-
 
 jQuery UI 6.x-1.x, xxxx-xx-xx
 -----------------------------
+
+
+jQuery UI 6.x-1.x, 2011-06-16
+-----------------------------
+#489140 by g33nman, sun, oneoftwo: Fixed backwards compatibility.
+#489140 by DamienMcKenna, jcmarco, Rob Loach, Dave Reid, sun: Added Libraries
+  API support.
 
 
 jQuery UI 6.x-1.4, 2010-09-08

@@ -1,5 +1,4 @@
 <?php
-// $Id: book.inc,v 1.1.4.9 2009/01/17 08:49:42 robrechtj Exp $
 
 /**
  * @file

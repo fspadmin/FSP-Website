@@ -1,5 +1,4 @@
 <?php
-// $Id: views_data_export.views.inc,v 1.1.2.3.4.2 2010/12/06 12:30:25 darthsteven Exp $
 /**
  * @file
  * Views include file with views hooks.

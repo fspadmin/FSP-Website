@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_signup.install,v 1.7 2010/09/15 19:20:24 ezrag Exp $
 /*
  * Implementation of hook_schema.
  */

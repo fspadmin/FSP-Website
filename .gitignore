@@ -1,2 +1,10 @@
+/files/*
+/images/*
+/multimedia/banners/*
+/multimedia/images/*
+/multimedia/pdf/*
+/sites/*/files/*
 /sites/*/settings.php
 /backup
+*~
+/.idea

@@ -2,7 +2,7 @@
 /**
  * PHPExcel
  *
- * Copyright (c) 2006 - 2010 PHPExcel
+ * Copyright (c) 2006 - 2011 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel_Shared
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license    http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version    1.7.5, 2010-12-10
+ * @version    1.7.6, 2011-02-27
  */
 
 
@@ -31,7 +31,7 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel_Shared
- * @copyright  Copyright (c) 2006 - 2010 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2011 PHPExcel (http://www.codeplex.com/PHPExcel)
  */
 class PHPExcel_Shared_String
 {
@@ -68,6 +68,13 @@ class PHPExcel_Shared_String
 	 * @var string
 	 */
 	private static $_thousandsSeparator;
+
+	/**
+	 * Currency code
+	 *
+	 * @var string
+	 */
+	private static $_currencyCode;
 
 	/**
 	 * Is mbstring extension avalable?
@@ -598,8 +605,7 @@ class PHPExcel_Shared_String
 			self::$_decimalSeparator = $localeconv['decimal_point'] != ''
 				? $localeconv['decimal_point'] : $localeconv['mon_decimal_point'];
 
-			if (self::$_decimalSeparator == '')
-			{
+			if (self::$_decimalSeparator == '') {
 				// Default to .
 				self::$_decimalSeparator = '.';
 			}
@@ -643,6 +649,38 @@ class PHPExcel_Shared_String
 	public static function setThousandsSeparator($pValue = ',')
 	{
 		self::$_thousandsSeparator = $pValue;
+	}
+
+	/**
+	 *	Get the currency code. If it has not yet been set explicitly, try to obtain the
+	 *		symbol information from locale.
+	 *
+	 * @return string
+	 */
+	public static function getCurrencyCode()
+	{
+		if (!isset(self::$_currencyCode)) {
+			$localeconv = localeconv();
+			self::$_currencyCode = $localeconv['currency_symbol'] != ''
+				? $localeconv['currency_symbol'] : $localeconv['int_curr_symbol'];
+
+			if (self::$_currencyCode == '') {
+				// Default to $
+				self::$_currencyCode = '$';
+			}
+		}
+		return self::$_currencyCode;
+	}
+
+	/**
+	 *	Set the currency code. Only used by PHPExcel_Style_NumberFormat::toFormattedString()
+	 *		to format output by PHPExcel_Writer_HTML and PHPExcel_Writer_PDF
+	 *
+	 *	@param string $pValue Character for currency code
+	 */
+	public static function setCurrencyCode($pValue = '$')
+	{
+		self::$_currencyCode = $pValue;
 	}
 
 	/**

@@ -1,25 +1,33 @@
-CKEDITOR.on( 'dialogDefinition', function( ev )
-{
-  var dialogName = ev.data.name;
-  var dialogDefinition = ev.data.definition;
-
-  if ( dialogName == 'uicolor' )
-  {
-    // Get a reference to the configBox and hide it (cannot be removed).
-    var configBox = dialogDefinition.getContents( 'tab1' ).get( 'configBox' );
-    configBox.style = 'display:none';
-  }
-});
-
+/*
+Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+For licensing, see LICENSE.html or http://ckeditor.com/license
+*/
 $(document).ready(function() {
   if (typeof(CKEDITOR) == "undefined")
     return;
+
+  CKEDITOR.on( 'dialogDefinition', function( ev )
+  {
+    var dialogName = ev.data.name;
+    var dialogDefinition = ev.data.definition;
+
+    if ( dialogName == 'uicolor' )
+    {
+      // Get a reference to the configBox and hide it (cannot be removed).
+      var configBox = dialogDefinition.getContents( 'tab1' ).get( 'configBox' );
+      configBox.style = 'display:none';
+    }
+  });
 
   $('#edit-uicolor-textarea').show();
 
   Drupal.ckeditorUiColorOnChange = function() {
     var color = CKEDITOR.instances["edit-uicolor-textarea"].getUiColor();
-    if ($("#edit-uicolor").val() == "custom" && typeof(color) != "undefined") {
+    $("#edit-uicolor").val("custom");
+    if (typeof(color) != "undefined") {
+      if (color == "default"){
+        $("#edit-uicolor").val("default");
+      }
       $('#edit-uicolor-user').val(color);
     }
   };

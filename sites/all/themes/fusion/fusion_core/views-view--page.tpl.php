@@ -1,5 +1,4 @@
 <?php
-// $Id: views-view--page.tpl.php,v 1.1.2.3 2010/07/02 22:11:04 sociotech Exp $
 
 /**
  * @file views-view.tpl.php

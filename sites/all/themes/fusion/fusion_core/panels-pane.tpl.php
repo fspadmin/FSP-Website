@@ -1,5 +1,4 @@
 <?php
-// $Id: panels-pane.tpl.php,v 1.1.2.1 2009/11/05 03:20:35 sociotech Exp $
 /**
  * @file panels-pane.tpl.php
  * Main panel pane template

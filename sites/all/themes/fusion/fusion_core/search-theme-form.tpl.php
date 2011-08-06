@@ -1,5 +1,4 @@
 <?php
-// $Id: search-theme-form.tpl.php,v 1.1.2.2 2010/02/14 06:44:15 sociotech Exp $
 
 /**
  * @file search-theme-form.tpl.php

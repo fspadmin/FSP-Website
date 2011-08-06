@@ -1,0 +1,178 @@
+# $Id: fr.po,v 1.1.2.2 2009/08/26 17:40:43 ericschaefer Exp $
+#
+# French translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  scheduler.views.inc: n/a
+#  scheduler.info: n/a
+#  scheduler.module,v 1.50.2.10 2008/11/02 20:35:50 ericschaefer
+#  scheduler.install,v 1.5.2.3 2008/11/01 19:06:17 ericschaefer
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: French Translation for scheduler drupal module\n"
+"POT-Creation-Date: 2009-01-26 19:09+0100\n"
+"PO-Revision-Date: 2009-01-27 10:19+0100\n"
+"Last-Translator: Sylvain Moreau <sylvain.moreau@ows.fr>\n"
+"Language-Team: Sylvain Moreau, OWS <sylvain.moreau@ows.fr>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: French\n"
+
+#: scheduler.views.inc:5
+#: scheduler.info:0
+msgid "Scheduler"
+msgstr "Planificateur"
+
+#: scheduler.views.inc:15;23
+#: scheduler.module:139
+msgid "Publish on"
+msgstr "Publier le"
+
+#: scheduler.views.inc:16
+msgid "Date/time on which the article will be automatically published"
+msgstr "Date/heure à laquelle l'article sera automatiquement publié"
+
+#: scheduler.views.inc:31;39
+#: scheduler.module:148
+msgid "Unpublish on"
+msgstr "Dépublier le"
+
+#: scheduler.views.inc:32
+msgid "Date/time on which the article will be automatically unpublished"
+msgstr "Date/heure à laquelle l'article sera automatiquement dépublié"
+
+#: scheduler.module:28
+msgid "Light weight cron handler"
+msgstr "Gestionnaire de cron léger"
+
+#: scheduler.module:29
+msgid "A light weight cron handler to allow more frequent runs of Schedulers internal cron system"
+msgstr "Un gestionnaire de cron léger pour permettre l'exécution plus fréquente du système interne de cron des Planificateurs"
+
+#: scheduler.module:35
+msgid "Test your servers UTC clock"
+msgstr "Tester l'horloge UTC de vos serveurs"
+
+#: scheduler.module:36
+msgid "Allows site admin to check their servers internal clock"
+msgstr "Permet aux administrateurs de site de vérifier l'horloge interne de leurs serveurs"
+
+#: scheduler.module:42
+msgid "Scheduler module settings"
+msgstr "Paramètres du module Planificateur"
+
+#: scheduler.module:43
+msgid "Allows site admins to configure scheduler."
+msgstr "Permet aux administrateurs de site de configurer le planificateur."
+
+#: scheduler.module:55
+msgid "Date format"
+msgstr "Format de date"
+
+#: scheduler.module:59
+msgid "The input format for the (un)scheduling time/date. See the date() function for formatting options: http://www.php.net/manual/en/function.date.php"
+msgstr "Le format de saisie pour la date/heure de (dé)publication. Voir la fonction date() pour les options de formartage : http://www.php.net/manual/fr/function.date.php"
+
+#: scheduler.module:73
+msgid "Enable scheduled (un)publishing"
+msgstr "Activer la (dé)publication planifiée"
+
+#: scheduler.module:75
+msgid "Check this box to enable scheduled (un)publishing for this node type."
+msgstr "Cochez cette case pour activer la (dé)publication planifiée pour ce type de noeud."
+
+#: scheduler.module:79
+msgid "Alter published on time"
+msgstr "Altérer l'heure de publication"
+
+#: scheduler.module:81
+msgid "Check this box to alter the published on time to match the scheduled time (\"touch feature\")."
+msgstr "Cochez cette case pour altérer l'heure de publication pour correspondre à l'heure planifiée (\"fonctionnalité touch\")."
+
+#: scheduler.module:131
+msgid "Scheduling options"
+msgstr "Options de publication différée"
+
+#: scheduler.module:142
+msgid "Format: %time. Leave blank to disable scheduled publishing."
+msgstr "Format : %time. Laissez vide pour désactiver la publication planifiée."
+
+#: scheduler.module:151
+msgid "Format: %time. Leave blank to disable scheduled unpublishing."
+msgstr "Format : %time. Laissez vide pour désactiver la dépublication planifiée."
+
+#: scheduler.module:297
+msgid "The entered publication date is invalid."
+msgstr "La date de publication saisie n'est pas valide."
+
+#: scheduler.module:307
+msgid "The entered expiration date is invalid."
+msgstr "La date d'expiration saisie n'est pas valide."
+
+#: scheduler.module:314
+msgid "The expiration date is before publication date."
+msgstr "La date d'expiration est inférieure à la date de publication."
+
+#: scheduler.module:377;406
+msgid "view"
+msgstr "voir"
+
+#: scheduler.module:469
+msgid "Scheduler OS time check"
+msgstr "Vérification de l'heure du planificateur de tâches du Système d'Exploitation"
+
+#: scheduler.module:481
+msgid "Your server reports the UTC time as %time and \"localtime\" as %lt."
+msgstr "Votre serveur rapporte que l'heure UTC est %time, et que \"l'heure locale\" est %lt."
+
+#: scheduler.module:483
+msgid "If all is well with your server's time configuration UTC should match <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC London Time</a> and the localtime should be the time where you are."
+msgstr "Si la configuration de l'heure de votre serveur est correcte, l'heure UTC doit correspondre à <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">Heure UTC de Londes</a> et l'heure locale à l'heure de l'endroit où vous vous trouvez."
+
+#: scheduler.module:485
+msgid "If this is not the case please have your Unix System Administrator fix your servers time/date configuration."
+msgstr "Si ce n'est pas le cas veuillez contacter votre Administrateur Système Unix et lui demander de réparer la configuration date/heure de vos serveurs."
+
+#: scheduler.module:377;406;436;0
+msgid "scheduler"
+msgstr "planificateur"
+
+#: scheduler.module:377
+msgid "@type: scheduled publishing of %title."
+msgstr "@type : publication planifiée de %title."
+
+#: scheduler.module:406
+msgid "@type: scheduled unpublishing of %title."
+msgstr "@type : dépublication planifiée de %title."
+
+#: scheduler.module:436
+msgid "Internal scheduler run activated"
+msgstr "Exécution interne du planificateur activée"
+
+#: scheduler.module:19
+msgid "schedule (un)publishing of nodes"
+msgstr "planifier la (dé)publication de noeuds"
+
+#: scheduler.install:11
+msgid "The main table to hold the scheduler data."
+msgstr "La table principale devant contenir les données du planificateur."
+
+#: scheduler.install:14
+msgid "The foreign key to node.nid"
+msgstr "La clé étrangère pour node.nid"
+
+#: scheduler.install:20
+msgid "The UNIX UTC timestamp when to publish"
+msgstr "L'horodatage UTC UNIX pour la publication"
+
+#: scheduler.install:27
+msgid "The UNIX UTC timestamp when to unpublish"
+msgstr "L'horodatage UTC UNIX pour la dépublication"
+
+#: scheduler.info:0
+msgid "This module allows nodes to be published and unpublished on specified dates."
+msgstr "Ce module permet aux noeuds d'être publiés et dépubliés à des dates spécifiques."
+

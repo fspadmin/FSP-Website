@@ -1,6 +1,5 @@
 //$Id: uc_discounts.js,v 1.5.2.11 2010/12/11 03:53:15 jrust Exp $
 
-var uc_discountsLineItems = [];
 var uc_discountsisUpdating = false;
 
 //Handles onload calls for uc_discounts.
@@ -104,7 +103,6 @@ function uc_discountsProcessCalculateDiscountResponse(calculateDiscountResponse,
 
     //Process discount line items and update total (false to not display messages)
     uc_discountsRenderLineItems(line_items, true);
-    uc_discountsUpdateTotal();
 
     //Add errors and messages to messages container
     var discounts_messages_container = $(".uc-discounts-messages-container", context);
@@ -132,11 +130,12 @@ function uc_discountsProcessCalculateDiscountResponse(calculateDiscountResponse,
 
 //Updates the discount line items list and updates totals
 function uc_discountsRenderLineItems(line_items, show_message) {
-  uc_discountsRemoveDiscountLineItems();
-
-  if ( (window.set_line_item == null) || (line_items == null) ) {
+  if ((window.set_line_item == null) || (line_items == null)) {
     return;
   }
+
+  //Remove total discount line item
+  remove_line_item(Drupal.settings.uc_discounts.line_item_key_name);
 
   var total_amount = 0;
   for (i = 0; i < line_items.length; i++) {
@@ -147,35 +146,13 @@ function uc_discountsRenderLineItems(line_items, show_message) {
   //Add total discount line item
   if (line_items.length > 0) {
     set_line_item(Drupal.settings.uc_discounts.line_item_key_name,
-    Drupal.settings.uc_discounts.total_discount_text, total_amount,
-    parseFloat(Drupal.settings.uc_discounts.line_item_weight) + 0.5, 1, false);
-  }
-}
-
-//Removes existing discount line items and updates totals (if updateLineItems is true)
-function uc_discountsRemoveDiscountLineItems(updateLineItems) {
-  var line_items = uc_discountsLineItems;
-  uc_discountsLineItems = [];
-
-  //If there are no line items, there is nothing to do
-  if (line_items.length == 0) {
-    return;
+                  Drupal.settings.uc_discounts.total_discount_text, total_amount,
+                  parseFloat(Drupal.settings.uc_discounts.line_item_weight) + 0.5,
+                  1,
+                  false);
   }
 
-  for (i = 0; i < line_items.length; i++) {
-    remove_line_item(line_items[i]["id"]);
-  }
-
-  //Remove total discount line item
-  remove_line_item(Drupal.settings.uc_discounts.line_item_key_name);
-
-  if (updateLineItems) {
-    uc_discountsUpdateTotal();
-  }
-}
-
-//Updates total
-function uc_discountsUpdateTotal() {
+  // Update total
   if (window.render_line_items) {
     render_line_items();
   }

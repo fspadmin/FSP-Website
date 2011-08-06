@@ -1,5 +1,4 @@
 <?php
-// $Id: addtoany_handler_field_addtoany_link.inc,v 1.1.2.2 2010/06/27 06:13:21 micropat Exp $
 
 /**
  * @file

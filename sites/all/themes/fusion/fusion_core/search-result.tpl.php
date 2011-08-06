@@ -1,5 +1,4 @@
 <?php
-// $Id: search-result.tpl.php,v 1.1 2009/08/19 04:28:07 sociotech Exp $
 
 /**
  * @file search-result.tpl.php

@@ -1,5 +1,4 @@
 <?php
-// $Id: nodereference.inc,v 1.1.2.2 2009/04/14 06:32:02 robrechtj Exp $
 
 /**
  * @file

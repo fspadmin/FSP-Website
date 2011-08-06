@@ -1,5 +1,4 @@
 <?php
-// $Id: imce.admin.inc,v 1.1.2.3 2010/06/02 08:33:21 ufku Exp $
 
 /**
  * @file
@@ -273,8 +272,28 @@ function imce_profile_form(&$form_state, $pid = 0) {
   $form = array('profile' => $form);
   $form['pid'] = array('#type' => 'hidden', '#value' => $pid);
   $form['submit'] = array('#type' => 'submit', '#value' => t('Save configuration'));
+  $form['#validate'][] = 'imce_profile_validate';
   $form['#submit'][] = 'imce_profile_submit';
   return $form;
+}
+
+/**
+ * Profile form validate.
+ */
+function imce_profile_validate($form, &$form_state) {
+  $profile = &$form_state['values']['profile'];
+  $dim_re = '/^\d+x\d+$/';
+  $dim_error = t('Dimensions must be specified in <kbd>WIDTHxHEIGHT</kbd> format.');
+  // Check max image dimensions
+  if ($profile['dimensions'] && !preg_match($dim_re, $profile['dimensions'])) {
+    return form_set_error('profile][dimensions', $dim_error);
+  }
+  // Check thumbnails dimensions
+  foreach ($profile['thumbnails'] as $i => $thumb) {
+    if (trim($thumb['name']) != '' && !preg_match($dim_re, $thumb['dimensions'])) {
+      return form_set_error("profile][thumbnails][$i][dimensions", $dim_error);
+    }
+  }
 }
 
 /**
@@ -580,7 +599,7 @@ function imce_update_profiles($pid, $profile = NULL) {
 function imce_clean_profile_fields(&$profile) {
   $clean = array();
   foreach ($profile['thumbnails'] as $thumb) {
-    if (trim($thumb['name']) != '' && preg_match('/^\d+x\d+$/', $thumb['dimensions'])) {
+    if (trim($thumb['name']) != '') {
       $clean[] = $thumb;
     }
   }

@@ -1,0 +1,71 @@
+<?php
+// $Id: node_access.install,v 1.1 2009/03/25 17:23:41 emptyvoid Exp $
+/** 
+  * @file node_access.install
+  * This file provides the install and uninstall for the node access database schema.
+  */
+
+/**
+  * Implementation of hook_install().
+  */
+function node_access_install() {
+  drupal_install_schema('node_access');
+  
+  variable_set('node_access_settings', array('per_node' => '1', 'priority' => '10', 'view' => array('1', '2'), 'update' => array('2'), 'delete' => array('2')));
+}
+
+/**
+  * Implementation of hook_schema().
+  */
+function node_access_schema() {
+  
+  $schema['node_access_role'] = array(
+    'fields' => array(
+         'nid' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => t('The node identification number')),
+         'rid' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'disp-width' => '10', 'description' => t('The role identification number.')),
+         'realm' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE, 'default' => '', 'description' => t('The security realm.')),
+         'grant_view' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1', 'description' => t('Determines if the role has view access.')),
+         'grant_update' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1', 'description' => t('Determines if the role has create and edit access.')),
+         'grant_delete' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1',  'description' => t('Determines if the role has delete access.'))
+      ),
+    'primary key' => array('nid', 'rid', 'realm'),
+    'description' => t('the role table for node access.'),
+  );
+  $schema['node_access_user'] = array(
+    'fields' => array(
+         'nid' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => t('The node identification number')),
+         'uid' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'disp-width' => '10', 'description' => t('The user identification number.')),
+         'realm' => array('type' => 'varchar', 'length' => '255', 'not null' => TRUE, 'default' => '', 'description' => t('The security realm.')),
+         'grant_view' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1', 'description' => t('Determines if the user has view access.')),
+         'grant_update' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1', 'description' => t('Determines if the user has create and edit access.')),
+         'grant_delete' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1',  'description' => t('Determines if the user has delete access.'))
+      ),
+    'primary key' => array('nid', 'uid', 'realm'),
+    'description' => t('the user table for node access.'),
+  );
+  
+  return $schema;
+}
+
+
+/**
+  * Utility Methods for extending the menu_custom table.
+  */
+  
+
+/*
+ * Implementation of hook_uninstall()
+ */
+function node_access_uninstall() {
+  drupal_uninstall_schema('node_access');
+  
+  // delete global default
+  variable_del('node_access_settings');
+  
+  // delete per node type settings
+  foreach (node_get_types('types', NULL, TRUE) as $type) {
+    $type_url_str = str_replace('_', '-', $type->type);
+    variable_del('node_type_'. $type_url_str .'_access_settings');
+  }
+  
+}

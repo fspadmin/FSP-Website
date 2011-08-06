@@ -1,5 +1,4 @@
 <?php
-// $Id: template.php,v 1.1.2.9 2010/07/04 22:34:29 sociotech Exp $
 
 require_once('theme-settings.php');
 
@@ -145,6 +144,21 @@ function fusion_core_preprocess_page(&$vars) {
       $vars['styles'] = $styles;
     }
   }
+  
+  // Replace page title as Drupal core does, but strip tags from site slogan.
+  // Site name and slogan do not need to be sanitized because the permission
+  // 'administer site configuration' is required to set and should be given to
+  // trusted users only.
+  if (drupal_get_title()) {
+    $head_title = array(strip_tags(drupal_get_title()), variable_get('site_name', 'Drupal'));
+  }
+  else {
+    $head_title = array(variable_get('site_name', 'Drupal'));
+    if (variable_get('site_slogan', '')) {
+      $head_title[] = strip_tags(variable_get('site_slogan', ''));
+    }
+  }
+  $vars['head_title'] = implode(' | ', $head_title);  
 }
 
 
@@ -157,7 +171,7 @@ function fusion_core_preprocess_node(&$vars) {
   $node_classes[] = $vars['zebra'];                                      // Node is odd or even
   $node_classes[] = (!$vars['node']->status) ? 'node-unpublished' : '';  // Node is unpublished
   $node_classes[] = ($vars['sticky']) ? 'sticky' : '';                   // Node is sticky
-  $node_classes[] = (isset($vars['node']->teaser)) ? 'teaser' : 'full-node';    // Node is teaser or full-node
+  $node_classes[] = $vars['teaser'] ? 'teaser' : 'full-node';            // Node is teaser or full-node
   $node_classes[] = 'node-type-'. $vars['node']->type;                   // Node is type-x, e.g., node-type-page
   $node_classes[] = (isset($vars['skinr'])) ? $vars['skinr'] : '';       // Add Skinr classes if present
   $node_classes = array_filter($node_classes);                           // Remove empty elements
@@ -169,7 +183,7 @@ function fusion_core_preprocess_node(&$vars) {
 
   // Render Ubercart fields into separate variables for node-product.tpl.php
   if (module_exists('uc_product') && uc_product_is_product($vars) && $vars['template_files'][0] == 'node-product') {
-    $node = node_build_content(node_load($vars['nid']));
+    $node = node_build_content(node_load($vars['nid']), $vars['teaser'], $vars['page']);
     $vars['fusion_uc_image'] = drupal_render($node->content['image']);
     $vars['fusion_uc_body'] = drupal_render($node->content['body']);
     $vars['fusion_uc_display_price'] = drupal_render($node->content['display_price']);
@@ -234,6 +248,9 @@ function fusion_core_preprocess_comment_wrapper(&$vars) {
 function fusion_core_preprocess_block(&$vars) {
   global $theme_info, $user;
   static $regions, $sidebar_first_width, $sidebar_last_width, $grid_name, $grid_width, $grid_fixed;
+  
+  // Initialize position to avoid notice if function returns.
+  $vars['position'] = '';  
 
   // Do not process blocks outside defined regions
   if (!in_array($vars['block']->region, array_keys($theme_info->info['regions']))) {
@@ -365,9 +382,9 @@ function fusion_core_username($object) {
  * File element override
  * Sets form file input max width
  */
-function fusion_core_file($element) {
-  $element['#size'] = ($element['#size'] > 40) ? 40 : $element['#size'];
-  return theme_file($element);
+function fusion_core_file($variables) {
+  $variables['element']['#size'] = (!isset($variables['element']['#size']) || $variables['element']['#size'] > 40) ? 40 : $variables['element']['#size'];
+  return theme_file($variables);
 }
 
 

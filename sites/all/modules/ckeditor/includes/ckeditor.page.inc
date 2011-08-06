@@ -1,8 +1,7 @@
 <?php
-// $Id: ckeditor.page.inc,v 1.1.2.3 2010/09/15 15:03:33 wwalc Exp $
 /**
- * CKEditor - The text editor for Internet - http://ckeditor.com
- * Copyright (c) 2003-2009, CKSource - Frederico Knabben. All rights reserved.
+ * CKEditor - The text editor for the Internet - http://ckeditor.com
+ * Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
  *
  * == BEGIN LICENSE ==
  *
@@ -63,7 +62,7 @@ function ckeditor_help_delegate($path, $arg) {
         '<p>'. t('More information about the editor is located at the !ckeditorlink. A small !userguidelink is available.',
           array(
             '!ckeditorlink' => l(t('CKEditor homepage'), 'http://ckeditor.com'),
-            '!userguidelink' => l(t('user guide'), 'http://docs.cksource.com/FCKeditor_2.x/Users_Guide/Quick_Reference'),
+            '!userguidelink' => l(t('user guide'), 'http://docs.cksource.com/CKEditor_3.x/Users_Guide'),
           )) .'</p>'.
         '<p>'. t('Profiles can be defined based on user roles. A CKEditor profile can define which pages receive this CKEditor capability, what buttons or themes are enabled for the editor, how the editor is displayed, and a few other editor functions. It is possible also to define the Global Profile that will hold values that will be appended to all other profiles.') .'</p>'.
         '<p>'. t('Lastly, only users with the %accesspermission !permissionlink will be able to use CKEditor.',
@@ -81,7 +80,7 @@ function ckeditor_help_delegate($path, $arg) {
       $output .= '<p>'. t('More information about the editor is located at the !ckeditorlink. A small !userguidelink is available.',
           array(
             '!ckeditorlink' => l(t('CKEditor homepage'), 'http://ckeditor.com'),
-            '!userguidelink' => l(t('user guide'), 'http://docs.cksource.com/FCKeditor_2.x/Users_Guide/Quick_Reference'),
+            '!userguidelink' => l(t('user guide'), 'http://docs.cksource.com/CKEditor_3.x/Users_Guide'),
           )) .'</p>'.
       $output .= '<h3>'. t('Configuration') .'</h3>';
       $output .= '<ol>';
@@ -190,8 +189,8 @@ function ckeditor_filter_xss() {
 
   foreach ($_POST['filters'] as $module_delta) {
     if (!is_string($module_delta)) {
-	  continue;
-	}
+      continue;
+    }
     $module = strtok($module_delta, "/");
     $delta = strtok("/");
     $format = strtok("/");

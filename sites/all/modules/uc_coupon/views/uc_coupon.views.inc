@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon.views.inc,v 1.2 2010/11/29 00:14:34 longwave Exp $
 
 /**
  * @file
@@ -78,13 +77,6 @@ function uc_coupon_views_data() {
     'field' => array(
       'handler' => 'uc_coupon_handler_field_codes',
       'field' => 'cid',
-      'additional fields' => array(
-        'data' => 'data',
-        'bulk' => 'bulk',
-        'bulk_seed' => 'bulk_seed',
-        'code' => 'code',
-        'max_uses' => 'max_uses',
-      ),
     ),
   );
 

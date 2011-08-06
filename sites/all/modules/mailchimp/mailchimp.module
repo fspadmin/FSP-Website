@@ -1,5 +1,4 @@
 <?php
-// $Id: mailchimp.module,v 1.2.2.1.2.3.2.8.2.89 2010/12/28 23:52:25 loubabe Exp $
 
 /**
  * @file
@@ -63,13 +62,13 @@ function mailchimp_user($op, &$edit, &$account, $category = NULL) {
         $ret = _mailchimp_subscribe_user($list, $account->mail, $merge_vars, TRUE, $q);
   
         if (!$ret) {
-          watchdog('mailchimp', $q->errorMessage, NULL, WATCHDOG_ERROR);
+          watchdog('mailchimp', 'MCAPI Error: %errormsg', array('%errormsg' => $q->errorMessage), WATCHDOG_ERROR);
         }        
       }
     }    
   }
 
-  if (in_array($op, array('insert', 'delete', 'update')) && $q = _mailchimp_get_api_object()) {
+  if (in_array($op, array('insert', 'delete', 'after_update')) && $q = _mailchimp_get_api_object()) {
     foreach ((array)_mailchimp_get_required_lists() as $list) {
       $action_taken = FALSE;
       switch ($op) {
@@ -81,7 +80,7 @@ function mailchimp_user($op, &$edit, &$account, $category = NULL) {
           break;
         // insert or update a user to/in a MC list
         case 'insert':
-        case 'update':
+        case 'after_update':
           // don't repeat if already managing via cron
           if (!variable_get('mailchimp_cron', FALSE) ) {
             $action_taken = TRUE;
@@ -125,7 +124,7 @@ function mailchimp_user($op, &$edit, &$account, $category = NULL) {
               array('%email' => $account->mail, '%list' => $list->name, '%action' => $op), WATCHDOG_NOTICE);
         }
         else {
-          watchdog('mailchimp', $q->errorMessage, NULL, WATCHDOG_ERROR);
+          watchdog('mailchimp', 'MCAPI Error: %errormsg', array('%errormsg' => $q->errorMessage), WATCHDOG_ERROR);
         }
       }
     }
@@ -135,7 +134,7 @@ function mailchimp_user($op, &$edit, &$account, $category = NULL) {
 /**
  * Maichimp authenticated user subscription form.
  */
-function mailchimp_subscribe_auth_form($form_state, $account, $standalone = TRUE, $list = NULL, $page = TRUE) {
+function mailchimp_subscribe_auth_form($form_state, $account, $standalone = TRUE, $list = NULL) {
   $form = array();
 
   if ($q = _mailchimp_get_api_object()) {
@@ -172,12 +171,6 @@ function mailchimp_subscribe_auth_form($form_state, $account, $standalone = TRUE
         '#value' => t('save settings'),
         '#weight' => 100
       );
-      // if page display
-      if ($page) {
-        // for some reason drupal core hammers the page title callback by the time
-        // the H1 is rendered?
-        drupal_set_title(t(variable_get('mailchimp_user_settings_title', 'Newsletter Subscriptions')));
-      }
 
       $form['#submit'][] = 'mailchimp_subscribe_auth_form_submit';
     }
@@ -190,14 +183,21 @@ function mailchimp_subscribe_auth_form($form_state, $account, $standalone = TRUE
  * Implementation of hook_forms().
  */
 function mailchimp_forms($form_id, $args) {
-  // have all instances of  mailchimp_subscribe_auth_form map to a single form 
-  // factory. Needed in case more than one block on a single page.
+  // have all instances of mailchimp_subscribe_auth_form and 
+  // mailchimp_subscribe_auth_form map to a single form factory. Needed in 
+  // case more than one block on a single page.
   if (strpos($form_id, 'mailchimp_subscribe_auth_form') !== FALSE) {
     $forms[$form_id] = array(
       'callback' => 'mailchimp_subscribe_auth_form',
     );
     return $forms;
-   }
+  }
+  else if (strpos($form_id, 'mailchimp_subscribe_anon_form') !== FALSE) {
+    $forms[$form_id] = array(
+      'callback' => 'mailchimp_subscribe_anon_form',
+    );
+    return $forms;
+  }
 }
 
 /**
@@ -218,7 +218,7 @@ function mailchimp_auth_newsletter_form(&$form, $list, $account, $q) {
     if ($account && $account->uid) {
       $memberinfo = $q->listMemberInfo($list->id, $account->mail);
       $is_subscribed = $memberinfo['status'] == 'subscribed';
-      $member_interests = $memberinfo['merges']['GROUPINGS'];
+      $member_interests = isset($memberinfo['merges']['GROUPINGS']) ? $memberinfo['merges']['GROUPINGS'] : array();
       $default_value = $is_subscribed;
     }
     else {
@@ -304,7 +304,7 @@ function mailchimp_subscribe_auth_form_submit($form, &$form_state) {
         }
 
         if (!$ret) {
-          watchdog('mailchimp', $q->errorMessage, NULL, WATCHDOG_ERROR);
+          watchdog('mailchimp', 'MCAPI Error: %errormsg', array('%errormsg' => $q->errorMessage), WATCHDOG_ERROR);
         }
       }
     }
@@ -326,7 +326,7 @@ function mailchimp_cron() {
       $lists = _mailchimp_get_required_lists();
       foreach ($lists as $key => $list) {
         $lists[$key]->batch       = array();
-        $lists[$key]->mergevars   = $q->listMergeVars($list->id);
+        $lists[$key]->listMergeVars   = $q->listMergeVars($list->id);
         $lists[$key]->unsubscribe = array();
       }
       while ($row = db_fetch_object($result)) {
@@ -337,7 +337,7 @@ function mailchimp_cron() {
             $is_allowed = FALSE;
             foreach ((array)$account->roles as $rid => $info) {
               if ($list->roles[$rid]) {
-                $lists[$key]->batch[] = _mailchimp_load_user_list_mergevars($row->uid, $list->id, $lists[$key]->mergevars);
+                $lists[$key]->batch[] = _mailchimp_load_user_list_mergevars($row->uid, $list->id, $lists[$key]->listMergeVars);
                 $is_allowed = TRUE; // user is allowed in this list
                 break;
               }
@@ -363,7 +363,7 @@ function mailchimp_cron() {
           $ret = $q->listBatchSubscribe($list->id, $lists[$key]->batch, FALSE, TRUE);
           if ($ret['error_count'] > 0) {
             foreach ((array)$ret['errors'] as $error) {
-              watchdog('mailchimp', $error['message'], NULL, WATCHDOG_ERROR);
+              watchdog('mailchimp', 'MCAPI Error: %errormsg', array('%errormsg' => $error['message']), WATCHDOG_ERROR);
             }
           }
           $count += $ret['success_count'];
@@ -374,14 +374,14 @@ function mailchimp_cron() {
           $ret = $q->listBatchUnsubscribe($list->id, $lists[$key]->unsubscribe, FALSE, FALSE);
           if ($ret['error_count'] > 0) {
             foreach ((array)$ret['errors'] as $error) {
-              watchdog('mailchimp', $error['message'], NULL, WATCHDOG_ERROR);
+              watchdog('mailchimp', 'MCAPI Error: %errormsg', array('%errormsg' => $error['message']), WATCHDOG_ERROR);
             }
           }
           $unsub_count += $ret['success_count'];
         }        
       }
 
-      watchdog('mailchimp', 'Updated !count records in MailChimp and unsuscribed !unsub emails.', array('!count' => $count, '!unsub' => $unsub_count), WATCHDOG_NOTICE);
+      watchdog('mailchimp', 'Updated !count records in MailChimp and unsubscribed !unsub emails.', array('!count' => $count, '!unsub' => $unsub_count), WATCHDOG_NOTICE);
     }
   }
 }
@@ -403,17 +403,17 @@ function mailchimp_menu() {
     'weight' => 10,
   );
   $items['mailchimp/subscribe'] = array(
-      'page callback' => 'mailchimp_subscribe_page',
-      'title callback' => 'mailchimp_subscribe_page_title',
-      'type' => MENU_NORMAL_ITEM,
-      'access arguments' => array('access content'),
+    'page callback' => 'mailchimp_subscribe_page',
+    'title callback' => 'mailchimp_subscribe_page_title',
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('access content'),
   );
   $items['mailchimp/unsubscribe'] = array(
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('mailchimp_unsubscribe_form'),
-      'title callback' => 'mailchimp_unsubscribe_page_title',
-      'type' => MENU_CALLBACK,
-      'access callback' => TRUE,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mailchimp_unsubscribe_form'),
+    'title callback' => 'mailchimp_unsubscribe_page_title',
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
   );
   $items['admin/settings/mailchimp'] = array(
     'title' => 'MailChimp Configuration',
@@ -434,6 +434,9 @@ function mailchimp_menu() {
   return $items;
 }
 
+/**
+ * Access callback for the newseltter signup form from a user account.
+ */
 function mailchimp_user_edit_access($user){
   if(variable_get('mailchimp_user_edit', TRUE) && user_edit_access($user)){
     return TRUE;
@@ -460,7 +463,7 @@ function mailchimp_subscribe_page(){
   global $user;
   $ret = '';
   if($user->uid){
-    $ret = drupal_get_form('mailchimp_subscribe_auth_form', $user, TRUE, NULL, FALSE);
+    $ret = drupal_get_form('mailchimp_subscribe_auth_form', $user, TRUE, NULL);
 
   }
   elseif ($q = _mailchimp_get_api_object()) {
@@ -486,7 +489,7 @@ function mailchimp_subscribe_anon_form_all($form_state, $q) {
     $form['mailchimp_lists'][$list->id] = array(
       '#type' => 'fieldset',
       '#title' => t('@name', array('@name' => $list->name)),
-      '#description' => t('@desc', array('@desc' => $list->description)),
+      '#description' => t('!desc', array('!desc' => $list->description)),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
@@ -532,10 +535,10 @@ function mailchimp_subscribe_anon_form_submit($form, &$form_state) {
       $success = _mailchimp_subscribe_user($list['list'], $list['EMAIL'], $list, TRUE);
 
       if ($success) {
-        $msg = variable_get('mailchimp_subscription_success_message', t('Thank you, you have been successfully subscribed.'));
+        $msg = t(variable_get('mailchimp_subscription_success_message', 'Thank you, you have been successfully subscribed.'));        
       }
       else {
-        $msg = variable_get('mailchimp_subscription_failure_message', t('We were unable to subscribe you at this time. Please try again later.'));
+        $msg = t(variable_get('mailchimp_subscription_failure_message', 'We were unable to subscribe you at this time. Please try again later.'));        
       }
 
       drupal_set_message($msg);
@@ -567,7 +570,8 @@ function mailchimp_unsubscribe_page_title() {
  * @return <type> page title
  */
 function mailchimp_user_settings_page_title() {
-  return t(variable_get('mailchimp_user_settings_title', 'Newsletter Subscriptions'));
+  $title = t(variable_get('mailchimp_user_settings_title', 'Newsletter Subscriptions'));
+  return $title;
 }
 
 /**
@@ -590,6 +594,8 @@ function mailchimp_subscribe_anon_form($form_state, $list, $q) {
 
   _mailchimp_subscribe_anon_form($list, $q, $form['mailchimp_lists'][$list->id]);
 
+  $form['#submit'][] = 'mailchimp_subscribe_anon_form_submit';
+  
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Sign Up!'),
@@ -629,9 +635,9 @@ function _mailchimp_subscribe_anon_form($list, $q, &$form){
   }
 
   // present interest groups
-    // $form['GROUPINGS'] = _mailchimp_interest_groups_element($q, $list->id, array(), TRUE);
+  if (variable_get('mailchimp_interest_groups_user_forms', FALSE)) {
     $form = array_merge($form, _mailchimp_interest_groups_element($q, $list->id, array(), TRUE));
-    // $form = array_merge($form['wrapper'. $list->id], $interests);
+  }
 }
 
 /**
@@ -893,10 +899,11 @@ function mailchimp_get_merge_keys() {
  * Get all the potential merge var values for a given user
  */
 function mailchimp_get_merge_values($uid) {
+  $values = array();
   if ($user = user_load(array('uid' => $uid))) {
-    return module_invoke_all('mailchimp_merge_values', $user);
+    $values = module_invoke_all('mailchimp_merge_values', $user);
   }
-  return array();
+  return $values;
 }
 
 
@@ -1040,7 +1047,7 @@ function _mailchimp_get_api_object() {
   $q->setTimeout(60);
 
   if ($q->errorCode) {
-    watchdog('mailchimp', $q->errorMessage, NULL, WATCHDOG_ERROR);
+    watchdog('mailchimp', 'MCAPI Error: %errormsg', array('%errormsg' => $q->errorMessage), WATCHDOG_ERROR);
     return NULL;
   }
   return $q;
@@ -1058,7 +1065,10 @@ function mailchimp_block($op='list', $delta=0) {
       foreach ($all_lists as $key => $list) {
         // exclude required lists
         if ($list->listtype !== MAILCHIMP_LISTTYPE_REQUIRED) {
-          $blocks[$list->id]["info"] = t('Mailchimp Subscription Form: @name', array('@name' => $list->name));
+          $blocks[$list->id] = array(
+            'info' => t('Mailchimp Subscription Form: @name', array('@name' => $list->name)),
+            'cache' => BLOCK_CACHE_PER_USER,
+          );
         }
       }
     }
@@ -1078,7 +1088,7 @@ function mailchimp_block($op='list', $delta=0) {
           $block['content'] = drupal_get_form('mailchimp_subscribe_auth_form_' . $list->id, $user, 1, $list);
         }
         else {
-          $block['content'] = drupal_get_form('mailchimp_subscribe_anon_form', $list, $q);
+          $block['content'] = drupal_get_form('mailchimp_subscribe_anon_form_' . $list->id, $list, $q);
         }
       }
     }
@@ -1092,7 +1102,7 @@ function mailchimp_block($op='list', $delta=0) {
  */
 function mailchimp_rebuild_users() {
   db_query("DELETE FROM {mailchimp_user}");
-  db_query("INSERT INTO {mailchimp_user} (uid, status) SELECT uid, '". MAILCHIMP_USERSTATUS_PENDING ."' FROM {users} WHERE uid > 0");
+  db_query("INSERT INTO {mailchimp_user} (uid, status) SELECT uid, '%s' FROM {users} WHERE uid > 0", MAILCHIMP_USERSTATUS_PENDING);  
   drupal_set_message('The MailChimp User\'s Table has been rebuilt with all user\'s status set to pending.', 'status');
   drupal_goto('admin/settings/mailchimp');
 }

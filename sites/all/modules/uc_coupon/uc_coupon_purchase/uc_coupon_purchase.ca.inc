@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_coupon_purchase.ca.inc,v 1.1 2009/11/20 16:44:02 longwave Exp $
 
 /**
  * Implementation of hook_ca_predicate().

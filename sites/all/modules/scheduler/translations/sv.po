@@ -1,0 +1,244 @@
+# $Id: sv.po,v 1.1.2.1 2010/11/22 17:15:02 ericschaefer Exp $
+#
+# Swedish translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  scheduler.views.inc,v 1.1.2.3 2009/08/26 17:40:44 ericschaefer
+#  scheduler.module,v 1.50.2.36 2010/05/02 16:36:06 ericschaefer
+#  scheduler.info: n/a
+#  scheduler.install,v 1.5.2.6 2009/08/26 17:40:43 ericschaefer
+#  scheduler_vertical_tabs.js,v 1.1.2.2 2010/01/17 16:24:33 ericschaefer
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-10-22 09:46+0200\n"
+"PO-Revision-Date: 2010-11-22 13:59+0100\n"
+"Last-Translator: Peter Törnstrand <peter@happiness.se>\n"
+"Language-Team: Swedish <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Bookmarks: 10,-1,-1,-1,-1,-1,-1,-1,-1,-1\n"
+
+#: scheduler.views.inc:10
+#: scheduler.module:579
+#: scheduler.info:0
+msgid "Scheduler"
+msgstr "Schemaläggaren"
+
+#: scheduler.views.inc:20;28
+#: scheduler.module:141;181;188
+msgid "Publish on"
+msgstr "Publicera"
+
+#: scheduler.views.inc:21
+msgid "Date/time on which the article will be automatically published"
+msgstr "Datum/tid när artikeln automatiskt kommer att publiceras"
+
+#: scheduler.views.inc:36;44
+#: scheduler.module:149;182
+msgid "Unpublish on"
+msgstr "Avpublicera"
+
+#: scheduler.views.inc:37
+msgid "Date/time on which the article will be automatically unpublished"
+msgstr "Datum/tid när artikeln automatiskt kommer att avpubliceras"
+
+#: scheduler.module:60
+msgid "Date format"
+msgstr "Format på datum"
+
+#: scheduler.module:64
+msgid "The input format for the (un)scheduling time/date. See the date() function for formatting options: http://www.php.net/manual/en/function.date.php (only the following format characters are supported (don't use 'G', 'a' or 'A' with Date Popup): djmnyYhHgGisaA)"
+msgstr "Inmatningsformat för tid och datum vid publicering och avpublicering. För formateringshjälp se date()-funktionens dokumentation på http://www.php.net/manual/en/function.date.php (endast följande format stöds: djmnyYhHgGisaA)."
+
+#: scheduler.module:78
+msgid "Enable scheduled (un)publishing"
+msgstr "Aktivera schemalagd publicering"
+
+#: scheduler.module:80
+msgid "Check this box to enable scheduled (un)publishing for this node type."
+msgstr "Markera denna ruta för att aktivera schemalagd publicering för denna nodtyp."
+
+#: scheduler.module:84
+msgid "Alter published on time"
+msgstr "Ändra datumet för publikation"
+
+#: scheduler.module:86
+msgid "Check this box to alter the published on time to match the scheduled time (\"touch feature\")."
+msgstr "Markera denna ruta för att ändra datumet för publikation för att matcha den schemalagda tiden (\"touch\")."
+
+#: scheduler.module:127
+msgid "Scheduling options"
+msgstr "Inställningar för schemaläggning"
+
+#: scheduler.module:144
+msgid "Format: %time. Leave blank to disable scheduled publishing."
+msgstr "Format: %time. Lämna tomt för att avaktivera schemalagd publicering."
+
+#: scheduler.module:152
+msgid "Format: %time. Leave blank to disable scheduled unpublishing."
+msgstr "Format: %time. Lämna tomt för att avaktivera schemalagd avpublicering."
+
+#: scheduler.module:160
+msgid "Leave blank to disable scheduled publishing."
+msgstr "Lämna tomt för att avaktivera schemalagd publicering."
+
+#: scheduler.module:165
+msgid "Leave blank to disable scheduled unpublishing."
+msgstr "Lämna tomt för att avaktivera schemalagd avpublicering."
+
+#: scheduler.module:179
+msgid "Title"
+msgstr "Titel"
+
+#: scheduler.module:180
+msgid "Author"
+msgstr "Författare"
+
+#: scheduler.module:183
+msgid "Operations"
+msgstr "Åtgärder"
+
+#: scheduler.module:201
+msgid "edit"
+msgstr "redigera"
+
+#: scheduler.module:213
+msgid "There are no scheduled nodes."
+msgstr "Det finns inga schemalagda publiceringar."
+
+#: scheduler.module:367
+msgid "The 'publish on' value does not match the expected format of %time"
+msgstr "Datumet för 'publicering' följer inte formatet %time."
+
+#: scheduler.module:370
+msgid "The 'publish on' date must be in the future"
+msgstr "Publiceringsdatumet måste vara i framtiden"
+
+#: scheduler.module:380
+msgid "The 'unpublish on' value does not match the expected format of %time"
+msgstr "Datumet för 'avpublicering' följer inte formatet %time."
+
+#: scheduler.module:383
+msgid "The 'unpublish on' date must be in the future"
+msgstr "Avpubliceringsdatumet måste vara i framtiden."
+
+#: scheduler.module:391
+msgid "The 'unpublish on' date must be later than the 'publish on' date."
+msgstr "Avpubliceringsdatumet måste inträffa vid en senare tidpunkt än publiceringsdatumet."
+
+#: scheduler.module:453;482
+msgid "view"
+msgstr "visa"
+
+#: scheduler.module:545
+msgid "Scheduler OS time check"
+msgstr "Schemaläggaren OS tidskontroll"
+
+#: scheduler.module:557
+msgid "Your server reports the UTC time as %time and \"localtime\" as %lt."
+msgstr "Din server rapporterar UTC-tiden som %time och den lokala tiden som %lt."
+
+#: scheduler.module:559
+msgid "If all is well with your server's time configuration UTC should match <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC London Time</a> and the localtime should be the time where you are."
+msgstr "Om din servers tidsinställningar är korrekt konfiguererad borde UTC stämma överens med <a target=\"_blank\" href=\"http://wwp.greenwichmeantime.com/\">UTC London Time</a> och den lokala tiden bör stämma överens med vart du befinner dig."
+
+#: scheduler.module:561
+msgid "If this is not the case please have your Unix System Administrator fix your servers time/date configuration."
+msgstr "Om detta inte stämmer var god kontakta din serveradministratör för att åtgärda serverns datum/tid-konfiguration."
+
+#: scheduler.module:580
+msgid "Scheduler module form."
+msgstr "Schemaläggarens modulformulär."
+
+#: scheduler.module:453;482;512
+msgid "scheduler"
+msgstr "schemaläggaren"
+
+#: scheduler.module:453
+msgid "@type: scheduled publishing of %title."
+msgstr "@type: schemalagda publicering av %title."
+
+#: scheduler.module:482
+msgid "@type: scheduled unpublishing of %title."
+msgstr "@type: schemalagda avpublicering av %title."
+
+#: scheduler.module:512
+msgid "Internal scheduler run activated"
+msgstr "Körning av interna schemläggaren aktiverad"
+
+#: scheduler.module:10
+msgid "schedule (un)publishing of nodes"
+msgstr "schemalägg publicering/avpublicering av noder"
+
+#: scheduler.module:10
+msgid "administer scheduler"
+msgstr "administrera schemaläggaren"
+
+#: scheduler.module:19
+msgid "Light weight cron handler"
+msgstr "Enkel cron-hanterare"
+
+#: scheduler.module:20
+msgid "A light weight cron handler to allow more frequent runs of Schedulers internal cron system"
+msgstr "En enkel cron-hanterare som möjliggör mer frekventa körningar av Schemläggarens interna cron-system"
+
+#: scheduler.module:26
+msgid "Test your servers UTC clock"
+msgstr "Testa din servers UTC-klocka"
+
+#: scheduler.module:27
+msgid "Allows site admin to check their servers internal clock"
+msgstr "Gör det möjligt för administratörer att granska serverns interna klocka"
+
+#: scheduler.module:33
+msgid "Scheduler module settings"
+msgstr "Schemaläggarens modulinställningar"
+
+#: scheduler.module:34
+msgid "Allows site admins to configure scheduler."
+msgstr "Gör det möjligt för administratörer att konfigurera schemaläggaren."
+
+#: scheduler.module:42
+msgid "Scheduled"
+msgstr "Schemalagd"
+
+#: scheduler.module:45
+msgid "Display a list of scheduled nodes"
+msgstr "Visa en lista med schemalagda noder"
+
+#: scheduler.install:15
+msgid "The main table to hold the scheduler data."
+msgstr "Huvudtabellen för schemaläggarens data."
+
+#: scheduler.install:18
+msgid "The foreign key to node.nid"
+msgstr "Den främmande nyckeln för node.nid"
+
+#: scheduler.install:24
+msgid "The UNIX UTC timestamp when to publish"
+msgstr "UNIX UTC timestamp för publicering"
+
+#: scheduler.install:31
+msgid "The UNIX UTC timestamp when to unpublish"
+msgstr "UNIX UTC timestamp för avpublicering"
+
+#: scheduler.info:0
+msgid "This module allows nodes to be published and unpublished on specified dates."
+msgstr "Denna modul för det möjligt för noder att publiceras eller avpubliceras på specifika datum."
+
+#: scheduler_vertical_tabs.js:0
+msgid "Scheduled for publishing"
+msgstr "Schemalagd för publicering"
+
+#: scheduler_vertical_tabs.js:0
+msgid "Scheduled for unpublishing"
+msgstr "Schemalagd för avpublicering"
+
+#: scheduler_vertical_tabs.js:0
+msgid "Not scheduled"
+msgstr "Ej schemalagd"
+
