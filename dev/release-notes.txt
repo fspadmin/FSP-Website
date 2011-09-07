@@ -1,7 +1,11 @@
-Release #626 on 9/6/2011, by lcalitz
+Release #626 9/6/2011, by lcalitz
+- Merged pressflow branch to master
+
+Release #625 (non-production, to new Linode server) mid-August, by lcalitz
 - Pressflow for transition to Linode
 - Reorganized file folders
 - Got rid of non-standard media folders
+- Merged changes on main
 
 Release #624.1 on 7/26/2011, by lcalitz
 - Restored missing fsp modules inadvertently dropped during clean upgrade
