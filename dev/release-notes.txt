@@ -1,3 +1,8 @@
+Release #626 on 9/6/2011, by lcalitz
+- Pressflow for transition to Linode
+- Reorganized file folders
+- Got rid of non-standard media folders
+
 Release #624.1 on 7/26/2011, by lcalitz
 - Restored missing fsp modules inadvertently dropped during clean upgrade
 
