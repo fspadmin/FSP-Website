@@ -1,0 +1,16 @@
+Index: image.module
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/image/Attic/image.module,v
+retrieving revision 1.322.2.4
+diff -u -p -r1.322.2.4 image.module
+--- image.module	18 Aug 2010 16:40:06 -0000	1.322.2.4
++++ image.module	21 Dec 2010 00:44:39 -0000
+@@ -631,7 +631,7 @@ function image_delete($node) {
+ /**
+  * Create an <img> tag for an image.
+  */
+-function image_display(&$node, $label = IMAGE_PREVIEW, $attributes = array()) {
++function image_display($node, $label = IMAGE_PREVIEW, $attributes = array()) {
+   if (empty($node->images[$label])) {
+     return;
+   }

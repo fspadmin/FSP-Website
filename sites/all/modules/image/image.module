@@ -631,7 +631,7 @@ function image_delete($node) {
 /**
  * Create an <img> tag for an image.
  */
-function image_display(&$node, $label = IMAGE_PREVIEW, $attributes = array()) {
+function image_display($node, $label = IMAGE_PREVIEW, $attributes = array()) {
   if (empty($node->images[$label])) {
     return;
   }
