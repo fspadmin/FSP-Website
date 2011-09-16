@@ -1,3 +1,7 @@
+Release #628 9/15/2011, by lcalitz
+- Fixed old stats chart writing location - caused cron job to fail writing to
+  location on old servers
+
 Release #627 9/15/2011, by lcalitz
 - Patch to image module to fix php 5.3 compatibility problem
 
