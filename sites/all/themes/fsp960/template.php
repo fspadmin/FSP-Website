@@ -63,7 +63,6 @@ function fsp960_preprocess_page(&$vars, $hook) {
       //drupal_add_js(path_to_theme() . '/js/jquery-ui.js', 'theme');
       $vars['styles'] = drupal_get_css();
       $vars['script'] = drupal_get_js();
-      dsm($vars);
     }
   }
 
