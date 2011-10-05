@@ -53,7 +53,6 @@ function polished_preprocess(&$vars, $hook) {
  */
 function fsp960_preprocess_page(&$vars, $hook) {
   // Change 960 grid for content and sidebar if in registration views
-    dsm($vars);
   $wide_pages = array('page-registration','page-cart');
   foreach ($vars['template_files'] as $template) {
     if (in_array($template, $wide_pages)) {
