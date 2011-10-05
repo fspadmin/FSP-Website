@@ -12,19 +12,14 @@ text-align: right;
 background-color: LightGrey;
 background-image: None;
 color: DarkSlateGray;
-padding: 5px;
-margin: 0 0 10px;
 font-size: 9pt;
-
-position: fixed;
-top: 140px;
-left: 0;
+margin: 0 0 10px;
+padding: 5px;
 }
 
 #sidebar-first .block-uc_ajax_cart hr { display: none; }
 #sidebar-first .block-uc_ajax_cart .cart-block-item-desc { text-align: right; }
- 
-
+#sidebar-first .block-uc_ajax_cart .kit-component-cart-desc { display: none; }
 
 /* styling of event registration form and views */
 .view-fsp-registration table.views-table {
