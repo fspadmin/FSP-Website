@@ -58,6 +58,12 @@ function fsp960_preprocess_page(&$vars, $hook) {
     if (in_array($template, $wide_pages)) {
       $vars['sidebar_first_classes'] = 'grid-4 pull-12';
       $vars['main_content_classes'] = 'grid-12 push-4';
+
+      drupal_add_css(path_to_theme() . '/css/registration.css', 'theme');
+      //drupal_add_js(path_to_theme() . '/js/jquery-ui.js', 'theme');
+      $vars['styles'] = drupal_get_css();
+      $vars['script'] = drupal_get_js();
+      dsm($vars);
     }
   }
 

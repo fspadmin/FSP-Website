@@ -6,7 +6,7 @@ core       = 6.x
 base theme = omega
 
 stylesheets[all][] = css/style.css
-stylesheets[all][] = css/registration.css
+; stylesheets[all][] = css/registration.css
 
 scripts[] = js/fsp960.js
 
