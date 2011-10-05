@@ -6,7 +6,7 @@
  */
 ?>
 <div id="cart-block-contents-ajax">
-  <table class="cart-block-items">
+  <table class="cart-block-items" width="100%">
     <thead>
       <tr>
         <th colspan="4">
@@ -20,7 +20,7 @@
         <td class="cart-block-item-qty">
           <?php print $item['qty'] ?>
         </td>
-        <td class="cart-block-item-title">
+        <td class="cart-block-item-title" width="100%">
           <?php print $item['title']; print $item['descr']; ?>
         </td>
         <td>
@@ -30,7 +30,7 @@
       </tr>
       <tr>
         -->
-        <td colspan="4" class="cart-block-item-desc">
+        <td class="cart-block-item-desc">
           <?php print $item['remove_link'] ?>
         </td>
       </tr>
@@ -38,18 +38,26 @@
     </tbody>
   </table>
 </div>
-<table>
+<p></p>
+<table width="100%">
+    <thead>
+      <tr>
+        <th colspan="4">
+          <?php print t('Totals')?>
+        </th>
+      </tr>
+    </thead>
   <tbody>
     <tr>
       <td class="cart-block-summary-items">
         <?php print $items_text; ?>
       </td>
-      <td class="cart-block-summary-total">
+      <td class="cart-block-summary-total" width="50%">
         <label><?php print t('Total'); ?>: </label><?php print $total ;?>
       </td>
     </tr>
     <tr class="cart-block-summary-links">
-      <td colspan="2">
+      <td colspan="4">
         <?php print $cart_links; ?>
       </td>
     </tr>

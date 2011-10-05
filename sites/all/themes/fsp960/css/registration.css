@@ -5,7 +5,6 @@
 
 #sidebar-first .block-uc_ajax_cart a {
 color: Navy !important;
-text-align: right;
 }
 
 #sidebar-first .block-uc_ajax_cart {
@@ -18,7 +17,7 @@ padding: 5px;
 }
 
 #sidebar-first .block-uc_ajax_cart hr { display: none; }
-#sidebar-first .block-uc_ajax_cart .cart-block-item-desc { text-align: right; }
+#sidebar-first .block-uc_ajax_cart .cart-block-item-desc { font-size: 8pt; }
 #sidebar-first .block-uc_ajax_cart .kit-component-cart-desc { display: none; }
 
 /* styling of event registration form and views */
