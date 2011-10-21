@@ -3,33 +3,35 @@
  */
 #ajax-cart-headline { padding-left: 0 !important; }
 
-#sidebar-first .block-uc_ajax_cart a {
-color: Navy !important;
-text-align: right;
-}
+#sidebar-first .block-uc_ajax_cart a { color: Navy !important; }
 
 #sidebar-first .block-uc_ajax_cart {
 background-color: LightGrey;
 background-image: None;
 color: DarkSlateGray;
-padding: 5px;
-margin: 0 0 10px;
 font-size: 9pt;
-
-position: fixed;
-top: 140px;
-left: 0;
+margin: 0 0 10px;
+padding: 5px;
 }
 
 #sidebar-first .block-uc_ajax_cart hr { display: none; }
-#sidebar-first .block-uc_ajax_cart .cart-block-item-desc { text-align: right; }
- 
-
+#sidebar-first .block-uc_ajax_cart .cart-block-item-desc { font-size: 8pt; }
+#sidebar-first .block-uc_ajax_cart .kit-component-cart-desc { display: none; }
+#sidebar-first .block-uc_ajax_cart .cart-block-summary-links ul.links { padding-top: 1em; }
+#sidebar-first .block-uc_ajax_cart .cart-block-summary-links ul.links li {
+  border: 1px solid DarkSlateGray;
+  display: inline-block;
+}
 
 /* styling of event registration form and views */
-.view-fsp-registration table.views-table {
+.view-fsp-registration table.views-table,
+.view-fsp-sponsor-registration table.views-table {
   width: 100%;
 	margin-bottom: 40px;
+}
+.view-fsp-sponsor-registration table.views-table td{
+  vertical-align: top;
+  padding-top: .5em;
 }
 
 .view-fsp-registration .views-field {

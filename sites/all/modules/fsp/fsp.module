@@ -40,7 +40,7 @@ define(FSP_DAILYSTATS_HR, 1);       // Run at 1AM Pacific time, 4AM Eastern
 define(FSP_EPOCH_DATE_STR, "2001/08/01");
 define(FSP_EPOCH_DATE, strtotime(FSP_EPOCH_DATE_STR));
 // Storage location for plot files
-define(FSP_PLOT_PATH, '/var/www/www-files/fsp-graphs');
+define(FSP_PLOT_PATH, '/var/www/drupal_files/fsp/fsp-graphs');
 
 //define(FSP_TWITTER_COUNTER_NAME, 'FSPCounter');
 define(FSP_TWITTER_COUNTER_NAME, 'DanDevAccount');

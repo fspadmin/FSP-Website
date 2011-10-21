@@ -52,8 +52,22 @@ function polished_preprocess(&$vars, $hook) {
  *   The name of the template being rendered ("page" in this case.)
  */
 function fsp960_preprocess_page(&$vars, $hook) {
+  // Change 960 grid for content and sidebar if in registration views
+  $wide_pages = array('page-registration','page-cart');
+  foreach ($vars['template_files'] as $template) {
+    if (in_array($template, $wide_pages)) {
+      $vars['sidebar_first_classes'] = 'grid-4 pull-12';
+      $vars['main_content_classes'] = 'grid-12 push-4';
+
+      drupal_add_css(path_to_theme() . '/css/registration.css', 'theme');
+      //drupal_add_js(path_to_theme() . '/js/jquery-ui.js', 'theme');
+      $vars['styles'] = drupal_get_css();
+      $vars['script'] = drupal_get_js();
+    }
+  }
+
   // Hide front page title - garthwaited 2009-12-08
-  if( $vars['is_front'] ){
+  if ( $vars['is_front'] ){
     $vars['original_title'] = $vars['title'];
     $vars['title'] = '';
   }

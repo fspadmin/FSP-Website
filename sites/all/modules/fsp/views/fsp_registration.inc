@@ -113,7 +113,7 @@ $handler->override_option('fields', array(
     'empty_zero' => 0,
     'link_to_node' => 0,
     'label_type' => 'none',
-    'format' => 'cart_default',
+    'format' => 'product_list_default',
     'multiple' => array(
       'group' => 1,
       'multiple_number' => '',
@@ -152,7 +152,7 @@ $handler->override_option('fields', array(
     'empty' => '',
     'hide_empty' => 0,
     'empty_zero' => 0,
-    'link_to_node' => 1,
+    'link_to_node' => 0,
     'exclude' => 0,
     'id' => 'title',
     'table' => 'node',
@@ -301,22 +301,22 @@ $handler->override_option('fields', array(
   ),
 ));
 $handler->override_option('sorts', array(
+  'ordering' => array(
+    'order' => 'ASC',
+    'id' => 'ordering',
+    'table' => 'uc_products',
+    'field' => 'ordering',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'relationship' => 'none',
+  ),
   'field_date_value' => array(
     'order' => 'ASC',
     'delta' => -1,
     'id' => 'field_date_value',
     'table' => 'node_data_field_date',
     'field' => 'field_date_value',
-    'override' => array(
-      'button' => 'Override',
-    ),
-    'relationship' => 'none',
-  ),
-  'ordering' => array(
-    'order' => 'ASC',
-    'id' => 'ordering',
-    'table' => 'uc_products',
-    'field' => 'ordering',
     'override' => array(
       'button' => 'Override',
     ),
@@ -354,7 +354,7 @@ $handler->override_option('filters', array(
   ),
   'name' => array(
     'operator' => '=',
-    'value' => '2011 Liberty Forum',
+    'value' => '2012 Liberty Forum',
     'group' => '0',
     'exposed' => FALSE,
     'expose' => array(
@@ -366,12 +366,18 @@ $handler->override_option('filters', array(
     'table' => 'term_data',
     'field' => 'name',
     'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
   ),
   'type' => array(
-    'operator' => 'not in',
+    'operator' => 'in',
     'value' => array(
+      'product' => 'product',
       'day_pass' => 'day_pass',
       'meal_ticket' => 'meal_ticket',
+      'side_show' => 'side_show',
+      'product_kit' => 'product_kit',
     ),
     'group' => '0',
     'exposed' => FALSE,
@@ -387,6 +393,30 @@ $handler->override_option('filters', array(
     ),
     'relationship' => 'none',
   ),
+  'tid' => array(
+    'operator' => 'not',
+    'value' => array(
+      '0' => '148',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'type' => 'textfield',
+    'limit' => TRUE,
+    'vid' => '15',
+    'id' => 'tid',
+    'table' => 'term_node',
+    'field' => 'tid',
+    'hierarchy' => 0,
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'relationship' => 'none',
+    'reduce_duplicates' => 0,
+  ),
 ));
 $handler->override_option('access', array(
   'type' => 'none',
@@ -394,16 +424,16 @@ $handler->override_option('access', array(
 $handler->override_option('cache', array(
   'type' => 'none',
 ));
-$handler->override_option('title', 'Liberty Forum 2011 Registration');
-$handler->override_option('header', 'Marketing text goes here....
-
-Liberty Forum 2011, be there or be not there.');
+$handler->override_option('title', 'NH Liberty Forum 2012 Registration');
+$handler->override_option('header', '<small>Early bird pricing until December 1st!
+Coupon codes may be entered during <a href="/cart">checkout.</a><small>');
 $handler->override_option('header_format', '1');
 $handler->override_option('header_empty', 1);
 $handler->override_option('items_per_page', 0);
+$handler->override_option('distinct', 1);
 $handler->override_option('style_plugin', 'table');
 $handler->override_option('style_options', array(
-  'grouping' => 'field_date_value',
+  'grouping' => '',
   'override' => 1,
   'sticky' => 0,
   'order' => 'asc',
@@ -455,8 +485,296 @@ $handler->override_option('row_options', array(
   'separator' => '',
   'hide_empty' => 0,
 ));
-$handler = $view->new_display('page', 'Page', 'page_1');
-$handler->override_option('path', 'registration/libertyforum/2011');
+$handler = $view->new_display('page', 'Liberty Forum', 'page_1');
+$handler->override_option('fields', array(
+  'field_image_cache_fid' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'link_to_node' => 0,
+    'label_type' => 'none',
+    'format' => 'product_list_default',
+    'multiple' => array(
+      'group' => 1,
+      'multiple_number' => '',
+      'multiple_from' => '',
+      'multiple_reversed' => 0,
+    ),
+    'exclude' => 0,
+    'id' => 'field_image_cache_fid',
+    'table' => 'node_data_field_image_cache',
+    'field' => 'field_image_cache_fid',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'link_to_node' => 0,
+    'exclude' => 1,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+  ),
+  'body' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'exclude' => 1,
+    'id' => 'body',
+    'table' => 'node_revisions',
+    'field' => 'body',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'nothing' => array(
+    'label' => '',
+    'alter' => array(
+      'text' => '<strong>[title]</strong>
+<br />
+[body]',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'exclude' => 0,
+    'id' => 'nothing',
+    'table' => 'views',
+    'field' => 'nothing',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'addtocartlink' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'exclude' => 0,
+    'id' => 'addtocartlink',
+    'table' => 'uc_products',
+    'field' => 'addtocartlink',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'sell_price' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'set_precision' => 0,
+    'precision' => '0',
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '',
+    'suffix' => '',
+    'format' => 'uc_price',
+    'revision' => 'themed',
+    'exclude' => 1,
+    'id' => 'sell_price',
+    'table' => 'uc_products',
+    'field' => 'sell_price',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+  ),
+  'phpcode' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'value' => '<?php
+global $user;
+$permitted = array(\'admin user\', \'editor\', \'Store Manager\');
+$roles = array_values($user->roles);
+foreach ( $roles as $role ) {
+  if ( in_array($role, $permitted) ) {
+    printf(\'<a href="/node/%s/edit">edit</a>\', $data->nid);
+    break;
+  }
+}
+?>',
+    'exclude' => 1,
+    'id' => 'phpcode',
+    'table' => 'customfield',
+    'field' => 'phpcode',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'nothing_1' => array(
+    'label' => '',
+    'alter' => array(
+      'text' => '[sell_price]<br/>
+[phpcode]',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'exclude' => 0,
+    'id' => 'nothing_1',
+    'table' => 'views',
+    'field' => 'nothing',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('path', 'registration/libertyforum/2012');
 $handler->override_option('menu', array(
   'type' => 'none',
   'title' => '',
@@ -471,5 +789,117 @@ $handler->override_option('tab_options', array(
   'weight' => 0,
   'name' => 'navigation',
 ));
+$handler = $view->new_display('page', 'Porc Fest', 'page_2');
+$handler->override_option('filters', array(
+  'is_product' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'is_product',
+    'table' => 'uc_products',
+    'field' => 'is_product',
+    'relationship' => 'none',
+  ),
+  'name' => array(
+    'operator' => '=',
+    'value' => '2011 Porcfest',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'case' => 1,
+    'id' => 'name',
+    'table' => 'term_data',
+    'field' => 'name',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+  ),
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'product' => 'product',
+      'day_pass' => 'day_pass',
+      'meal_ticket' => 'meal_ticket',
+      'side_show' => 'side_show',
+      'product_kit' => 'product_kit',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'relationship' => 'none',
+  ),
+  'stock' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => '0',
+      'min' => '',
+      'max' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'stock',
+    'table' => 'uc_product_stock',
+    'field' => 'stock',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('path', 'registration/porcfest/2011');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+
 
 $views[$view->name] = $view;
