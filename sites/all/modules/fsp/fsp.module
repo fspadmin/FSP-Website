@@ -1618,11 +1618,11 @@ function fsp_spotlight_contents() {
 		<table border="0" class="center-table">
 			<tr class="center">
 				<td width="46">
-					<img src="/images/spotlight-left.gif" alt="" width="23" height="22" />
+					<img src="/files/images/spotlight-left.gif" alt="" width="23" height="22" />
 				</td>
 				<td><h5><em>'.$fsp_spotlight_title.'</em></h5></td>
 				<td width="46">
-					<img src="/images/spotlight-right.gif" alt="" width="23" height="22" />
+					<img src="/files/images/spotlight-right.gif" alt="" width="23" height="22" />
 				</td>
 			</tr>
 		</table>
