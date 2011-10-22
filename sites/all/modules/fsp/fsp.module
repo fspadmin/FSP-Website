@@ -11,8 +11,8 @@
  * Constants for this module. Some of these should really be made available 
  * on the module settings page instead of being defined here
  */
-define(FSP_GREETER_SUBJECT, "Greet Me!");
-define(FSP_GREETER_CONTENT, 
+define('FSP_GREETER_SUBJECT', "Greet Me!");
+define('FSP_GREETER_CONTENT',
   "User Status: %member_type\n" .
   "Honorific: %title\n" .
   "First Name: %first_name\n" .
@@ -25,26 +25,26 @@ define(FSP_GREETER_CONTENT,
   "Phone(C): %cell_phone\n" .
   "Email: %email\n"
   );
-define(FSP_GREETER_MAILKEY, "fsp_mailkey_greeter");
-define(FSP_REGISTER_MAILKEY, "fsp_mailkey_register");
+define('FSP_GREETER_MAILKEY', "fsp_mailkey_greeter");
+define('FSP_REGISTER_MAILKEY', "fsp_mailkey_register");
 // Record of statistics brought over from old system
-define(FSP_OLD_PARTICIPANTS, 7650); // Participants at switch time
-define(FSP_OLD_QUERY, 8745);        // Result of raw query at switch time
-define(FSP_OLD_OFFSET, 825);        // Subtracted from old system query 
+define('FSP_OLD_PARTICIPANTS', 7650); // Participants at switch time
+define('FSP_OLD_QUERY', 8745);        // Result of raw query at switch time
+define('FSP_OLD_OFFSET', 825);        // Subtracted from old system query
                                     // (8745) to get to 7650
-define(FSP_NEW_OFFSET, 53);         // New offset with new query, and 
+define('FSP_NEW_OFFSET', 53);         // New offset with new query, and
                                     // after Jon handled pending confs
 // Hour to run daily stats at
-define(FSP_DAILYSTATS_HR, 1);       // Run at 1AM Pacific time, 4AM Eastern
+define('FSP_DAILYSTATS_HR', 1);       // Run at 1AM Pacific time, 4AM Eastern
 // Start date for stats plots (Contributed by Curry Taylor)
-define(FSP_EPOCH_DATE_STR, "2001/08/01");
-define(FSP_EPOCH_DATE, strtotime(FSP_EPOCH_DATE_STR));
+define('FSP_EPOCH_DATE_STR', "2001/08/01");
+define('FSP_EPOCH_DATE', strtotime(FSP_EPOCH_DATE_STR));
 // Storage location for plot files
-define(FSP_PLOT_PATH, '/var/www/drupal_files/fsp/fsp-graphs');
+define('FSP_PLOT_PATH', '/var/www/drupal_files/fsp/fsp-graphs');
 
 //define(FSP_TWITTER_COUNTER_NAME, 'FSPCounter');
-define(FSP_TWITTER_COUNTER_NAME, 'DanDevAccount');
-define(FSP_TWITTER_COUNTER_PASS, 'porc20K');
+define('FSP_TWITTER_COUNTER_NAME', 'DanDevAccount');
+define('FSP_TWITTER_COUNTER_PASS', 'porc20K');
 
 /**
  * Standard module help functions
