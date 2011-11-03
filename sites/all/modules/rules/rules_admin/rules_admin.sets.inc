@@ -1,12 +1,11 @@
 <?php
 // $Id: rules_admin.sets.inc,v 1.1.2.10 2010/11/25 11:14:53 fago Exp $
 
-
 /**
  * @file Rules Sets Admin UI
  */
 
-rules_include('rules_admin');
+require_once dirname(__FILE__) . '/rules_admin.inc';
 
 function rules_admin_sets_overview() {
   $sets = rules_get_configured_items('rule_sets');
