@@ -1,0 +1,25 @@
+diff --git a/sites/all/modules/supercron/supercron.module b/sites/all/modules/supercron/supercron.module
+index bdc12f8..94fd948 100644
+--- a/sites/all/modules/supercron/supercron.module
++++ b/sites/all/modules/supercron/supercron.module
+@@ -7,14 +7,14 @@
+ * The supercron module functions.
+ */
+ 
+-define(SUPERCRON_INVOKE_ALL, 'admin/reports/status/run-supercron');
++define('SUPERCRON_INVOKE_ALL', 'admin/reports/status/run-supercron');
+ 
+ // Variable constants; duplicating literals is an open invitation to bugs
+-define(SUPERCRON_SAFETY_VARIABLE, 'supercron_safety');
+-define(SUPERCRON_FIREWALL_ENABLED_VARIABLE, 'supercron_firewall_enabled');
+-define(SUPERCRON_FIREWALL_MODE_VARIABLE, 'supercron_firewall_mode');
+-define(SUPERCRON_THROTTLE_SUPPORT_VARIABLE, 'supercron_respond_to_throttling');
+-define(SUPERCRON_SCRIPT_NAME, 'supercron.php');
++define('SUPERCRON_SAFETY_VARIABLE', 'supercron_safety');
++define('SUPERCRON_FIREWALL_ENABLED_VARIABLE', 'supercron_firewall_enabled');
++define('SUPERCRON_FIREWALL_MODE_VARIABLE', 'supercron_firewall_mode');
++define('SUPERCRON_THROTTLE_SUPPORT_VARIABLE', 'supercron_respond_to_throttling');
++define('SUPERCRON_SCRIPT_NAME', 'supercron.php');
+ 
+ function supercron_menu() {
+   $items = array();
