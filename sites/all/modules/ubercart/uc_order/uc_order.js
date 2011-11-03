@@ -1,4 +1,3 @@
-// $Id: uc_order.js,v 1.9.2.9 2009/09/21 14:34:46 islandusurper Exp $
 
 /**
  * @file
@@ -10,7 +9,7 @@ var add_product_browser = '';
 var order_save_holds = 0;
 
 /**
- * Add the double click behavior to the order table at admin/store/orders.
+ * Adds the double click behavior to the order table at admin/store/orders.
  */
 Drupal.behaviors.ucOrderClick = function(context) {
   $('.uc-orders-table tr.odd, .uc-orders-table tr.even:not(.ucOrderClick-processed)', context).addClass('ucOrderClick-processed').each(
@@ -26,7 +25,7 @@ Drupal.behaviors.ucOrderClick = function(context) {
 }
 
 /**
- * Add the submit behavior to the order form
+ * Adds the submit behavior to the order form.
  */
 Drupal.behaviors.ucOrderSubmit = function(context) {
   $('#uc-order-edit-form:not(.ucOrderSubmit-processed)', context).addClass('ucOrderSubmit-processed').submit(
@@ -68,7 +67,7 @@ $(document).ready(
 );
 
 /**
- * Copy the shipping data on the order edit screen to the corresponding billing
+ * Copys the shipping data on the order edit screen to the corresponding billing
  * fields if they exist.
  */
 function uc_order_copy_shipping_to_billing() {
@@ -86,7 +85,25 @@ function uc_order_copy_shipping_to_billing() {
 }
 
 /**
- * Load the address book div on the order edit screen.
+ * Copys the billing data on the order edit screen to the corresponding shipping
+ * fields if they exist.
+ */
+function uc_order_copy_billing_to_shipping() {
+  if ($('#edit-billing-zone').html() != $('#edit-delivery-zone').html()) {
+    $('#edit-delivery-zone').empty().append($('#edit-billing-zone').children().clone());
+  }
+
+  $('#uc-order-edit-form input, select, textarea').each(
+    function() {
+      if (this.id.substring(0, 12) == 'edit-billing') {
+        $('#edit-delivery' + this.id.substring(12)).val($(this).val());
+      }
+    }
+  );
+}
+
+/**
+ * Loads the address book div on the order edit screen.
  */
 function load_address_select(uid, div, address_type) {
   var options = {
@@ -103,7 +120,7 @@ function load_address_select(uid, div, address_type) {
 }
 
 /**
- * Apply the selected address to the appropriate fields in the order edit form.
+ * Applys the selected address to the appropriate fields in the order edit form.
  */
 function apply_address(type, address_str) {
   eval('var address = ' + address_str + ';');
@@ -128,7 +145,7 @@ function apply_address(type, address_str) {
 }
 
 /**
- * Close the address book div.
+ * Closes the address book div.
  */
 function close_address_select(div) {
   $(div).empty().removeClass('address-select-box');
@@ -136,7 +153,7 @@ function close_address_select(div) {
 }
 
 /**
- * Load the customer select div on the order edit screen.
+ * Loads the customer select div on the order edit screen.
  */
 function load_customer_search() {
   if (customer_select == 'search' && $('#customer-select #edit-back').val() == null) {
@@ -156,34 +173,24 @@ function load_customer_search() {
 }
 
 /**
- * Display the results of the customer search.
+ * Displays the results of the customer search.
  */
 function load_customer_search_results() {
-  var first_name = $('#customer-select #edit-first-name').val();
-  var last_name = $('#customer-select #edit-last-name').val();
-  var email = $('#customer-select #edit-email').val();
-
-  if (first_name == '') {
-    first_name = '0';
-  }
-  if (last_name == '') {
-    last_name = '0';
-  }
-  if (email == '') {
-    email = '0';
-  }
-
-  $.post(Drupal.settings.ucURL.adminOrders + 'customer/search/' + encodeURIComponent(first_name) + '/' + encodeURIComponent(last_name) + '/' + encodeURIComponent(email),
-         { },
-         function (contents) {
-           $('#customer-select').empty().append(contents);
-         }
+  $.post(Drupal.settings.ucURL.adminOrders + 'customer/search',
+    {
+      first_name: $('#customer-select #edit-first-name').val(),
+      last_name: $('#customer-select #edit-last-name').val(),
+      email: $('#customer-select #edit-email').val()
+    },
+    function (contents) {
+      $('#customer-select').empty().append(contents);
+    }
   );
   return false;
 }
 
 /**
- * Set customer values from search selection.
+ * Sets customer values from search selection.
  */
 function select_customer_search() {
   var data = $('#edit-cust-select').val();
@@ -200,7 +207,7 @@ function select_customer_search() {
 }
 
 /**
- * Display the new customer form.
+ * Displays the new customer form.
  */
 function load_new_customer_form() {
   if (customer_select == 'new') {
@@ -217,14 +224,14 @@ function load_new_customer_form() {
 }
 
 /**
- * Validate the customer's email address.
+ * Validates the customer's email address.
  */
 function check_new_customer_address() {
   var options = {
     'email' : $('#customer-select #edit-email').val(),
     'sendmail' : $('#customer-select #edit-sendmail').attr('checked')
   };
-  $.post(Drupal.settings.ucURL.adminOrders + 'customer/new/check/' + encodeURIComponent(options['email']), options,
+  $.post(Drupal.settings.ucURL.adminOrders + 'customer/new/check', options,
          function (contents) {
            $('#customer-select').empty().append(contents);
          }
@@ -233,7 +240,7 @@ function check_new_customer_address() {
 }
 
 /**
- * Load existing customer as new order's customer.
+ * Loads existing customer as new order's customer.
  */
 function select_existing_customer(uid, email) {
   $('#edit-uid').val(uid);
@@ -249,7 +256,7 @@ function select_existing_customer(uid, email) {
 }
 
 /**
- * Hide the customer selection form.
+ * Hides the customer selection form.
  */
 function close_customer_select() {
   $('#customer-select').empty().removeClass('customer-select-box');
@@ -258,7 +265,7 @@ function close_customer_select() {
 }
 
 /**
- * Load the products div on the order edit screen.
+ * Loads the products div on the order edit screen.
  */
 function uc_order_load_product_edit_div(order_id) {
   $(document).ready(
@@ -281,7 +288,7 @@ function uc_order_load_product_edit_div(order_id) {
 }
 
 /**
- * Load the product selection form.
+ * Loads the product selection form.
  */
 function load_product_select(order_id, search) {
   if (search == true) {
@@ -312,7 +319,7 @@ function select_product() {
 }
 
 /**
- * Hide product selection form.
+ * Hides product selection form.
  */
 function close_product_select() {
   $('#products-selector').empty().removeClass('product-select-box2');
@@ -320,7 +327,7 @@ function close_product_select() {
 }
 
 /**
- * Load the quantity and other extra product fields.
+ * Loads the quantity and other extra product fields.
  */
 function add_product_form() {
   add_product_browser = $('#products-selector').html();
@@ -338,7 +345,7 @@ function add_product_form() {
 }
 
 /**
- * Add the selected product to the order.
+ * Adds the selected product to the order.
  */
 function add_product_to_order(order_id, node_id) {
   var post_vars = fetch_product_data();
@@ -369,7 +376,7 @@ function add_product_to_order(order_id, node_id) {
 }
 
 /**
- * Gather all of the products' data fields into one array.
+ * Gathers all of the products' data fields into one array.
  */
 function fetch_product_data() {
   var pdata = { };
@@ -432,7 +439,7 @@ function remove_product_button(message, opid) {
 }
 
 /**
- * Prevent mistakes by confirming deletion.
+ * Prevents mistakes by confirming deletion.
  */
 function confirm_line_item_delete(message, img_id) {
   if (confirm(message)) {
@@ -443,7 +450,7 @@ function confirm_line_item_delete(message, img_id) {
 }
 
 /**
- * Disable order submit button while parts of the page are still loading.
+ * Disables order submit button while parts of the page are still loading.
  */
 function add_order_save_hold() {
   order_save_holds++;
@@ -451,7 +458,7 @@ function add_order_save_hold() {
 }
 
 /**
- * Remove a hold and enable the save buttons when all holds are gone!
+ * Removes a hold and enable the save buttons when all holds are gone!
  */
 function remove_order_save_hold() {
   order_save_holds--;
@@ -462,7 +469,7 @@ function remove_order_save_hold() {
 }
 
 /**
- * Remove the disable attribute on any input item with the save-button class.
+ * Removes the disable attribute on any input item with the save-button class.
  */
 function release_held_buttons() {
   $('#uc-order-edit-form input.save-button').removeAttr('disabled');
@@ -481,4 +488,3 @@ function show_product_throbber() {
 function hide_product_throbber() {
   $('#product-div-throbber').removeAttr('style').empty();
 }
-

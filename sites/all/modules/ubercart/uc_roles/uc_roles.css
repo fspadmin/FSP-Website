@@ -1,9 +1,11 @@
-/* $Id: uc_roles.css,v 1.2.2.4 2008/08/06 13:41:27 islandusurper Exp $ */
-
+/**
+ * @file
+ * Styles for uc_roles module.
+ */
 .expiration {
-  display:inline;
+  display: inline;
 }
 
 .expiration .form-item {
-  display:inline;
+  display: inline;
 }

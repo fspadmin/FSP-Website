@@ -1,3 +1,8 @@
+6.x-2.2
+Issue #847182 by zolikonta: Fixed id and name attribute value mismatch in map tag (cornermap)
+Issue #719164 by Zoltán Balogh: Fixed wrong template name (corner_corner -> corner)
+by kirie: Misc code cleanup according to Coder module
+
 6.x-2.1
 #478148 by Razorraser: Miscellaneous code improvements and cleanup 
 #469496 by manfer: Bug on description of image select in details fieldset

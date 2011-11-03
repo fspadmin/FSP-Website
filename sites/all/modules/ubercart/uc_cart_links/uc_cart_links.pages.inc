@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_cart_links.pages.inc,v 1.1.2.8 2010/08/11 17:52:20 islandusurper Exp $
 
 /**
  * @file
@@ -7,18 +6,18 @@
  */
 
 /**
- * Process a cart link to fiddle with the cart and redirect the user.
+ * Preprocess a cart link and confirm with the user if a destructive action
+ * is included.
  *
- * @param $arg1
- *   An action.
+ * @see uc_cart_links_form_submit()
  */
-function uc_cart_links_process($arg1) {
-  $messages = array();
-
+function uc_cart_links_form($form_state, $arg1) {
   // Fail if the link is restricted.
   $data = variable_get('uc_cart_links_restrictions', '');
   if (!empty($data)) {
     $restrictions = explode("\n", variable_get('uc_cart_links_restrictions', ''));
+    $restrictions = array_map('trim', $restrictions);
+
     if (!empty($restrictions) && !in_array($arg1, $restrictions)) {
       $url = variable_get('uc_cart_links_invalid_page', '');
       if (empty($url)) {
@@ -29,9 +28,42 @@ function uc_cart_links_process($arg1) {
     }
   }
 
-  // Split apart the cart link on the -.
+  // Confirm with the user if the form contains a destructive action.
+  $items = uc_cart_get_contents();
+  if (variable_get('uc_cart_links_empty', TRUE) && !empty($items)) {
+    $actions = explode('-', urldecode($arg1));
+    foreach ($actions as $action) {
+      $action = drupal_substr($action, 0, 1);
+      if ($action == 'e' || $action == 'E') {
+        return confirm_form(array(), t('The current contents of your shopping cart will be lost. Are you sure you want to continue?'), variable_get('uc_cart_links_invalid_page', ''));
+      }
+    }
+  }
+
+  // No destructive actions, so process the link immediately.
+  uc_cart_links_process($arg1);
+}
+
+/**
+ * Submit handler for uc_cart_links_form().
+ *
+ * @see uc_cart_links_form()
+ */
+function uc_cart_links_form_submit($form, &$form_state) {
+  uc_cart_links_process(arg(2));
+}
+
+/**
+ * Process a cart link to fiddle with the cart and redirect the user.
+ *
+ * @param $arg1
+ *   An action.
+ */
+function uc_cart_links_process($arg1) {
   $actions = explode('-', urldecode($arg1));
   $rebuild_cart = FALSE;
+  $messages = array();
+  $id = t('(not specified)');
 
   foreach ($actions as $action) {
     switch (drupal_substr($action, 0, 1)) {
@@ -57,22 +89,37 @@ function uc_cart_links_process($arg1) {
             case 'P':
               $p['nid'] = intval(drupal_substr($part, 1));
               break;
-            // Set the quantity to add to cart: q2
+            // Set the quantity to add to cart: _q2
             case 'q':
             case 'Q':
               $p['qty'] = intval(drupal_substr($part, 1));
               break;
-            // Set an attribute/option for the product: a3o6
+            // Set an attribute/option for the product: _a3o6
             case 'a':
             case 'A':
               $attribute = intval(drupal_substr($part, 1, stripos($part, 'o') - 1));
               $option = (string) drupal_substr($part, stripos($part, 'o') + 1);
-              // Multiple options for this attribute implies checkbox
-              // attribute, which we must store as an array. However, all other
-              // types can be stored as arrays as well.
-              $p['attributes'][$attribute][$option] = $option;
+              if (!isset($p['attributes'][$attribute])) {
+                $p['attributes'][$attribute] = $option;
+              }
+              else {
+                // Multiple options for this attribute implies checkbox
+                // attribute, which we must store as an array
+                if (is_array($p['attributes'][$attribute])) {
+                  // Already an array, just append this new option
+                  $p['attributes'][$attribute][$option] = $option;
+                }
+                else {
+                  // Set but not an array, means we already have at least one
+                  // option, so put that into an array with this new option
+                  $p['attributes'][$attribute] = array(
+                    $p['attributes'][$attribute] => $p['attributes'][$attribute],
+                    $option => $option
+                  );
+                }
+              }
               break;
-            // Suppress the add to cart message: m0
+            // Suppress the add to cart message: _m0
             case 'm':
             case 'M':
               $msg = intval(drupal_substr($part, 1)) == 1 ? TRUE : FALSE;
@@ -86,7 +133,7 @@ function uc_cart_links_process($arg1) {
           // right. In other words, we have to simulate FAPI's form values.
           $node = node_load(array('nid' => $p['nid']));
           if ($node->status) {
-            if (is_array($node->products)) {
+            if (isset($node->products) && is_array($node->products)) {
               foreach ($node->products as $nid => $product) {
                 $p['data']['products'][$nid] = array(
                   'nid' => $nid,
@@ -103,6 +150,14 @@ function uc_cart_links_process($arg1) {
         }
         break;
 
+      // Empty the shopping cart.
+      case 'e':
+      case 'E':
+        if (variable_get('uc_cart_links_empty', TRUE)) {
+          uc_cart_empty(uc_cart_get_id());
+        }
+        break;
+
       // Display a pre-configured message.
       case 'm':
       case 'M':
@@ -111,7 +166,7 @@ function uc_cart_links_process($arg1) {
           $data = explode("\n", variable_get('uc_cart_links_messages', ''));
           foreach ($data as $message) {
             $mdata = explode('|', $message);
-            $messages[$mdata[0]] = $mdata[1];
+            $messages[trim($mdata[0])] = trim($mdata[1]);
           }
         }
 

@@ -1,21 +1,23 @@
 <?php
 
 function uc_attribute_add_to_cart($nid, $qty, $data) {
-  $atts = uc_product_get_attributes($nid);
-  if (!is_array($atts) || count($atts) == 0) return;
-  if (!is_array($data) || !is_array($data['attributes'])) {
-    $data['attributes'] = array();
-  }
-  $attsSubmitted = $data['attributes'];
-  foreach ($atts as $key => $att) {
-    if (!$att->required) {
-      continue ;
+  if (module_exists('uc_cart_links')) {
+    $atts = uc_product_get_attributes($nid);
+    if (!is_array($atts) || count($atts) == 0) return;
+    if (!is_array($data) || !is_array($data['attributes'])) {
+      $data['attributes'] = array();
     }
-    if (!isset($data['attributes'][$att->aid]) || empty($data['attributes'][$att->aid])) {
-      return array(array(
-        'success' => FALSE,
-        'message' => t('You must specify an option for !attribute', array('!attribute'=>$att->name)),
-      ));
+    $attsSubmitted = $data['attributes'];
+    foreach ($atts as $key => $att) {
+      if (!$att->required) {
+        continue ;
+      }
+      if (!isset($data['attributes'][$att->aid]) || empty($data['attributes'][$att->aid])) {
+        return array(array(
+          'success' => FALSE,
+          'message' => t('You must specify an option for !attribute', array('!attribute'=>$att->name)),
+        ));
+      }
     }
   }
 }

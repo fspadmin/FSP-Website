@@ -1,5 +1,4 @@
 <?php
-// $Id: print.install,v 1.1.4.26 2010/08/17 23:10:43 jcnventura Exp $
 
 /**
  * @file
@@ -55,6 +54,7 @@ function print_uninstall() {
   variable_del('print_html_new_window');
   variable_del('print_html_sendtoprinter');
   variable_del('print_html_windowclose');
+  variable_del('print_display_sys_urllist');
   variable_del('print_robots_noindex');
   variable_del('print_robots_nofollow');
   variable_del('print_robots_noarchive');
@@ -62,8 +62,6 @@ function print_uninstall() {
   variable_del('print_footer_user');
   variable_del('print_html_link_text');
   variable_del('print_html_link_use_alias');
-  variable_del('print_text_by');
-  variable_del('print_text_created');
   variable_del('print_text_links');
   variable_del('print_text_published');
   variable_del('print_text_retrieved');
@@ -379,5 +377,17 @@ function print_update_6007() {
       }
     }
   }
+  return $ret;
+}
+
+/**
+ * Update to version 6.x-1.13
+ */
+function print_update_6008() {
+  $ret = array();
+
+  variable_del('print_text_by');
+  variable_del('print_text_created');
+
   return $ret;
 }

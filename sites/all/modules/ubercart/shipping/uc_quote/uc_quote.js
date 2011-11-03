@@ -1,4 +1,3 @@
-// $Id: uc_quote.js,v 1.5.2.9 2009/10/20 20:58:07 islandusurper Exp $
 
 /**
  * @file
@@ -100,7 +99,6 @@ function quoteCallback(products) {
       products += "|" + $("input[name^='products[" + i + "]']").filter("[name$='[nid]']").val();
       products += "^" + $("input[name^='products[" + i + "]']").filter("[name$='[title]']").val();
       products += "^" + $("input[name^='products[" + i + "]']").filter("[name$='[model]']").val();
-      products += "^" + $("input[name^='products[" + i + "]']").filter("[name$='[manufacturer]']").val();
       products += "^" + $("input[name^='products[" + i + "]']").filter("[name$='[qty]']").val();
       products += "^" + $("input[name^='products[" + i + "]']").filter("[name$='[cost]']").val();
       products += "^" + $("input[name^='products[" + i + "]']").filter("[name$='[price]']").val();

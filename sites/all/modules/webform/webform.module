@@ -626,7 +626,7 @@ function webform_theme() {
       'file' => 'includes/webform.submissions.inc',
     ),
     'webform_submission_page' => array(
-      'arguments' => array('node' => NULL, 'submission' => NULL, 'submission_content' => NULL, 'submission_navigation' => NULL, 'submission_information' => NULL, 'submission_actions' => NULL),
+      'arguments' => array('node' => NULL, 'submission' => NULL, 'submission_content' => NULL, 'submission_navigation' => NULL, 'submission_information' => NULL, 'submission_actions' => NULL, 'mode' => NULL),
       'template' => 'templates/webform-submission-page',
       'file' => 'includes/webform.submissions.inc',
     ),
@@ -818,6 +818,8 @@ function webform_webform_select_options_info() {
  */
 function webform_webform_submission_actions($node, $submission) {
   $actions = array();
+  $destination = drupal_get_destination();
+
   if (module_exists('print_pdf') && user_access('access PDF version')) {
     $actions['printpdf'] = array(
       'title' => t('Download PDF'),
@@ -1002,7 +1004,7 @@ function webform_node_update($node) {
     $original_cids = array_keys($original->webform['components']);
     $current_cids = array_keys($node->webform['components']);
 
-    $all_cids = $original_cids + $current_cids;
+    $all_cids = array_unique(array_merge($original_cids, $current_cids));
     $deleted_cids = array_diff($original_cids, $current_cids);
     $inserted_cids = array_diff($current_cids, $original_cids);
 
@@ -1027,7 +1029,7 @@ function webform_node_update($node) {
     $original_eids = array_keys($original->webform['emails']);
     $current_eids = array_keys($node->webform['emails']);
 
-    $all_eids = $original_eids + $current_eids;
+    $all_eids = array_unique(array_merge($original_eids, $current_eids));
     $deleted_eids = array_diff($original_eids, $current_eids);
     $inserted_eids = array_diff($current_eids, $original_eids);
 
@@ -1075,6 +1077,7 @@ function webform_node_delete($node) {
   db_query('DELETE FROM {webform_roles} WHERE nid = %d', $node->nid);
   db_query('DELETE FROM {webform_submissions} WHERE nid = %d', $node->nid);
   db_query('DELETE FROM {webform_submitted_data} WHERE nid = %d', $node->nid);
+  db_query('DELETE FROM {webform_last_download} WHERE nid = %d', $node->nid);
 }
 
 /**
@@ -1166,7 +1169,7 @@ function webform_node_load($node) {
     $component['nid'] = $node->nid;
     $component['cid'] = $c['cid'];
     $component['form_key'] = $c['form_key'] ? $c['form_key'] : $c['cid'];
-    $component['name'] = t($c['name']);
+    $component['name'] = $c['name'];
     $component['type'] = $c['type'];
     $component['value'] = $c['value'];
     $component['extra'] = unserialize($c['extra']);
@@ -1246,6 +1249,11 @@ function webform_node_view(&$node, $teaser, $page) {
     return;
   }
 
+  // Do not include the form in the search index if indexing is disabled.
+  if (module_exists('search') && $node->build_mode == NODE_BUILD_SEARCH_INDEX && !variable_get('webform_search_index', 1)) {
+    return;
+  }
+
   $info = array();
   $submission = array();
   $submission_count = 0;
@@ -1255,7 +1263,7 @@ function webform_node_view(&$node, $teaser, $page) {
   $closed = FALSE;
   $allowed_roles = array();
 
-  // When logging in using a form on the same page as a webform node, surpress
+  // When logging in using a form on the same page as a webform node, suppress
   // output messages so that they don't show up after the user has logged in.
   // See http://drupal.org/node/239343.
   if (isset($_POST['op']) && isset($_POST['name']) && isset($_POST['pass'])) {
@@ -1386,7 +1394,7 @@ function theme_webform_view($node, $teaser, $page, $form, $enabled) {
 function theme_webform_view_messages($node, $teaser, $page, $submission_count, $limit_exceeded, $allowed_roles, $closed, $cached) {
   global $user;
 
-  $type = 'notice';
+  $type = 'status';
 
   if ($closed) {
     $message = t('Submissions for this form are closed.');
@@ -1506,6 +1514,7 @@ function webform_block_view($delta = '') {
   $settings = isset($webform_blocks[$delta]) ? $webform_blocks[$delta] : array();
   $settings += array(
     'display' => 'form',
+    'pages_block' => 0,
   );
 
   // Get the node ID from delta.
@@ -1560,6 +1569,7 @@ function webform_block_configure($delta = '') {
   $settings = isset($webform_blocks[$delta]) ? $webform_blocks[$delta] : array();
   $settings += array(
     'display' => 'form',
+    'pages_block' => 0,
   );
 
   $form = array();
@@ -1574,6 +1584,14 @@ function webform_block_configure($delta = '') {
     ),
     '#description' => t('The display mode determines how much of the webform to show within the block.'),
   );
+
+  $form['pages_block'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show all webform pages in block'),
+    '#default_value' => $settings['pages_block'],
+    '#description' => t('By default multi-page webforms redirect to the node page for all pages after the first one. If checked, all pages will be shown in the block instead.'),
+  );
+
   return $form;
 }
 
@@ -1586,6 +1604,7 @@ function webform_block_save($delta = '', $edit = array()) {
   // Build the settings array.
   $new_settings[$delta] = array(
     'display' => $edit['display'],
+    'pages_block' => $edit['pages_block'],
   );
   // We store settings for multiple blocks in just one variable
   // so we merge the existing settings with the new ones before save.
@@ -1639,9 +1658,18 @@ function webform_client_form(&$form_state, $node, $submission, $is_draft = FALSE
   // Set the encoding type (necessary for file uploads).
   $form['#attributes']['enctype'] = 'multipart/form-data';
 
+  // If this is a webform block, load the block-specific configuration settings.
+  $pages_in_node = TRUE;
+  if (isset($node->webform_block)) {
+    $webform_blocks = variable_get('webform_blocks', array());
+    $delta = 'client-block-' . $node->nid;
+    $block_settings = isset($webform_blocks[$delta]) ? $webform_blocks[$delta] : array();
+    $pages_in_node = empty($block_settings['pages_block']);
+  }
+
   // Set the form action to the node ID in case this is being displayed on the
-  // teaser, subsequent pages should be on the node page directly.
-  if (!isset($node->webform_block) && empty($submission)) {
+  // teaser or in a block, subsequent pages should be on the node page directly.
+  if ($pages_in_node && empty($submission)) {
     $query = $_GET;
     unset($query['q']);
     $form['#action'] = url('node/' . $node->nid, array('query' => $query));
@@ -1824,6 +1852,11 @@ function _webform_client_form_rule_check($node, $component, $page_num, $form_sta
     if ($component['extra']['conditional_operator'] == '!=') {
       $show_component = !$show_component;
     }
+  }
+
+  // Private component?
+  if ($component['extra']['private']) {
+    $show_component = webform_results_access($node);
   }
 
   return $show_component;
@@ -2315,10 +2348,8 @@ function _webform_client_form_submit_flatten($node, $fieldset, $parent = 0) {
 function _webform_confirmation($node) {
   drupal_set_title(check_plain($node->title));
   webform_set_breadcrumb($node);
-  if (empty($output)) {
-    $output = theme(array('webform_confirmation_' . $node->nid, 'webform_confirmation'), $node, $_GET['sid']);
-  }
-  return $output;
+  $sid = isset($_GET['sid']) ? $_GET['sid'] : NULL;
+  return theme(array('webform_confirmation_' . $node->nid, 'webform_confirmation'), $node, $sid);
 }
 
 /**
@@ -2858,8 +2889,9 @@ function theme_webform_token_help($groups = array()) {
       'tokens' => array(
         '%profile[' . t('key') . ']' => t('Any user profile field or value, such as %profile[name] or %profile[profile_first_name]'),
         '%get[' . t('key') . ']' => t('Tokens may be populated from the URL by creating URLs of the form http://example.com/my-form?foo=bar. Using the token %get[foo] would print "bar".'),
+        '%post[' . t('key') . ']' => t('Tokens may also be populated from POST values that are submitted by forms.'),
       ),
-      'description' => t('In addition to %get, the following super tokens may be used, though only with logged-in users: %server, %cookie, %request and %post. For example %server[HTTP_USER_AGENT] or %session[id].'),
+      'description' => t('In addition to %get and %post, the following super tokens may be used, though only with logged-in users: %server, %cookie, and %request. For example %server[HTTP_USER_AGENT] or %session[id].'),
     );
 
     $tokens['email'] = array(
@@ -3240,7 +3272,7 @@ function webform_set_breadcrumb($node, $submission = NULL) {
 /**
  * Convert an ISO 8601 date or time into an array.
  *
- * This converst full format dates or times. Either a date or time may be
+ * This converts full format dates or times. Either a date or time may be
  * provided, in which case only those portions will be returned. Dashes and
  * colons must be used, never implied.
  *
@@ -3359,7 +3391,7 @@ function webform_strtodate($format, $string, $timezone_name = NULL) {
   }
 
   if (!empty($timezone_name) && class_exists('DateTimeZone')) {
-    // Surpress errors if encountered during string conversion. Exceptions are
+    // Suppress errors if encountered during string conversion. Exceptions are
     // only supported for DateTime in PHP 5.3 and higher.
     try {
       @$timezone = new DateTimeZone($timezone_name);

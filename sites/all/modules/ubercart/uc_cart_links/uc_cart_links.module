@@ -1,21 +1,17 @@
 <?php
-// $Id: uc_cart_links.module,v 1.2.2.8 2010/02/12 15:23:42 islandusurper Exp $
 
 /**
  * @file
  * Allows store owners to create links to add products to carts and send
  * customers on to checkout.
- *
- * Development sponsored by the Ubercart project.  http://www.ubercart.org
  */
-
 
 /*******************************************************************************
  * Hook Functions (Drupal)
  ******************************************************************************/
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function uc_cart_links_menu() {
   $items['admin/store/settings/cart_links'] = array(
@@ -38,15 +34,16 @@ function uc_cart_links_menu() {
   $items['admin/store/help/cart_links'] = array(
     'title' => 'Creating cart links',
     'description' => 'Learn how to create cart links for your products.',
-    'page callback' => 'uc_cart_links_creation_help',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_cart_links_creation_help'),
     'access arguments' => array('administer store'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'uc_cart_links.admin.inc',
   );
   $items['cart/add/%'] = array(
     'title' => 'Add to cart',
-    'page callback' => 'uc_cart_links_process',
-    'page arguments' => array(2),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_cart_links_form', 2),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
     'file' => 'uc_cart_links.pages.inc',
@@ -56,14 +53,14 @@ function uc_cart_links_menu() {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_perm().
  */
 function uc_cart_links_perm() {
   return array('administer cart links', 'view cart links report');
 }
 
 /**
- * Implementation of hook_add_to_cart().
+ * Implements hook_add_to_cart().
  */
 function uc_cart_links_add_to_cart($nid, $qty, $data) {
   if (user_access('administer cart links') &&

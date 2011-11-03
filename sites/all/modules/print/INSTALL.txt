@@ -52,7 +52,9 @@ TCPDF support:
   2. Extract the contents of the downloaded package into one of the
   supported paths.  There is no need to modify the config/tcpdf_config.php
   file, as the module self-configures TCPDF.
-  3. Check http://tcpdf.sourceforge.net/ for further information.
+  3. Grant write access to the cache and images directories to your
+  webserver user.
+  4. Check http://tcpdf.sourceforge.net/ for further information.
 
 wkhtmltopdf support:
 
@@ -91,4 +93,3 @@ Note that pattern matching in robots.txt is a Google extension (see
 http://www.google.com/support/webmasters/bin/answer.py?answer=40367 for more
 information).
 
-// $Id: INSTALL.txt,v 1.10.2.14 2010/08/11 23:53:13 jcnventura Exp $

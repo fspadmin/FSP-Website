@@ -1,5 +1,4 @@
 <?php
-// $Id: ca.admin.inc,v 1.1.2.17 2010/03/13 18:22:26 tr Exp $
 
 /**
  * @file
@@ -14,6 +13,7 @@ function ca_admin($groupby = 'trigger') {
 
   // Load all the module defined predicates into a temporary array.
   $temp = module_invoke_all('ca_predicate');
+  drupal_alter('ca_predicate', $temp);
 
   // Assign a default weight if need be.
   foreach ($temp as $key => $value) {
@@ -115,6 +115,7 @@ function ca_admin($groupby = 'trigger') {
   ksort($tables);
 
   // Add the tables for each trigger to the output.
+  $output = '';
   foreach ($tables as $key => $value) {
     // Accommodate empty class names.
     if (empty($key)) {
@@ -133,6 +134,8 @@ function ca_admin($groupby = 'trigger') {
  * Form to allow the creation and editing of conditional action predicates.
  */
 function ca_predicate_meta_form($form_state, $pid) {
+  $predicate = array();
+
   // Load the predicate if an ID is passed in.
   if (!empty($pid) && $pid !== 0) {
     $predicate = ca_load_predicate($pid);
@@ -183,7 +186,7 @@ function ca_predicate_meta_form($form_state, $pid) {
   );
 
   // Accommodate the mandatory custom prefix for predicate classes.
-  $class = $predicate['#class'];
+  $class = isset($predicate['#class']) ? $predicate['#class'] : '';
   if (strpos($class, 'custom') === 0) {
     $class = ltrim(substr($class, 6), ':');
   }
@@ -1124,16 +1127,16 @@ function _ca_convert_configurations(&$context) {
         switch ($configuration['#event']) {
           case 'order_status_update':
             $trigger = 'uc_order_status_update';
-          break;
+            break;
           case 'payment_entered':
             $trigger = 'uc_payment_entered';
-          break;
+            break;
           case 'checkout_complete':
             $trigger = 'uc_checkout_complete';
-          break;
+            break;
           default:
             $trigger = $configuration['#event'];
-          break;
+            break;
         }
 
         // In UC 1.x, taxes had an event for each tax rate, using the same
@@ -1219,7 +1222,7 @@ function _ca_convert_conditions($condition_tree) {
       }
     }
   }
-  else if ($condition_tree['#type'] == 'condition') {
+  elseif ($condition_tree['#type'] == 'condition') {
     // Some conditions were renamed but check the same things.
     switch ($condition_tree['#name']) {
       case 'uc_order_condition_order_total':

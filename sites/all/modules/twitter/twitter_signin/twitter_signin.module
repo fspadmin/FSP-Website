@@ -48,15 +48,6 @@ function twitter_signin_block($op = 'list', $delta = 0, $edit = array()) {
 }
 
 /**
- * Implementation of hook_user().
- */
-function twitter_signin_user($op, &$edit, &$account, $category = NULL) {
-  if ($op == 'insert' && isset($_SESSION['twitter']['values'])) {
-    unset($_SESSION['twitter']);
-  }
-}
-
-/**
  * returns an image link for signing in with twitter
  */
 function twitter_signin_button() {
@@ -65,7 +56,6 @@ function twitter_signin_button() {
   
   return l(theme('image', $img, t('Sign in with Twitter')), 'twitter/redirect', array('html' => TRUE));
 }
-
 
 /**
  * Submit handler for twitter signin
@@ -95,7 +85,7 @@ function twitter_signin_form_alter(&$form, $form_state, $form_id) {
     return;
   }
   
-  if ($form_id == 'twitter_oauth_callback' && $_SESSION['twitter_oauth']['signin']) {
+  if ($form_id == 'twitter_oauth_callback' && isset($_SESSION['twitter_oauth']['signin'])) {
     $form['#submit'] = array_merge(array('twitter_signin_oauth_callback_submit'), $form['#submit']);
   }
   
@@ -168,5 +158,29 @@ function twitter_signin_oauth_callback_submit(&$form, &$form_state) {
   if (!$success) {
     $_SESSION['twitter']['values'] = $response;
     drupal_goto('user/register');
+  }
+}
+
+/**
+ * Implementation of hook_user().
+ *
+ * Relates a Twitter account with a created user account if the user
+ * signed in with Twitter but did not have an account in the site yet
+ */
+function twitter_signin_user($op, &$edit, &$account, $category = NULL) {
+  if ($op == 'insert' && isset($_SESSION['twitter']['values'])) {
+    module_load_include('lib.php', 'oauth');
+    module_load_include('lib.php', 'twitter');
+    module_load_include('inc', 'twitter');
+    $key = variable_get('twitter_consumer_key', '');
+    $secret = variable_get('twitter_consumer_secret', '');
+    $response = $_SESSION['twitter']['values'];
+
+    $twitter = new TwitterOAuth($key, $secret, $response['oauth_token'], $response['oauth_token_secret']);
+    $twitter_account = $twitter->users_show($response['screen_name']);
+    $twitter_account->set_auth($response);
+    twitter_account_save($twitter_account, TRUE, $account);
+
+    unset($_SESSION['twitter']);
   }
 }

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_paypal.module,v 1.5.2.26 2010/08/11 17:52:20 islandusurper Exp $
 
 /**
  * @file
@@ -22,7 +21,7 @@
  ******************************************************************************/
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function uc_paypal_menu() {
   // Always accessible, helps for testing while site is offline.
@@ -77,20 +76,15 @@ function uc_paypal_menu() {
   return $items;
 }
 
-// Make sure PayPal always has access to send IPNs.
+/**
+ * Access callback. Makes sure PayPal always has access to send IPNs.
+ */
 function uc_paypal_ipn_access() {
   return TRUE;
 }
 
 /**
- * Implementation of hook_perm().
- */
-function uc_paypal_perm() {
-  return array('administer paypal');
-}
-
-/**
- * Implementation of hook_init().
+ * Implements hook_init().
  */
 function uc_paypal_init() {
   global $conf;
@@ -98,7 +92,8 @@ function uc_paypal_init() {
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implements hook_form_alter().
+ *
  * Notice how we alter the checkout review form to post the order to PayPal.
  */
 function uc_paypal_form_alter(&$form, $form_state, $form_id) {
@@ -127,7 +122,7 @@ function uc_paypal_form_alter(&$form, $form_state, $form_id) {
  ******************************************************************************/
 
 /**
- * Implementation of hook_cart_pane().
+ * Implements hook_cart_pane().
  */
 function uc_paypal_cart_pane() {
   $panes[] = array(
@@ -142,9 +137,14 @@ function uc_paypal_cart_pane() {
 }
 
 /**
- * Implementation of hook_payment_gateway().
+ * Implements hook_payment_gateway().
  */
 function uc_paypal_payment_gateway() {
+  if (!module_exists('uc_credit')) {
+    drupal_set_message(t('You must <a href="@modules">enable the Credit Card module</a> to use PayPal Website Payments Pro.', array('@modules' => url('admin/build/modules', array('fragment' => 'edit-modules-ubercart-payment')))), 'warning');
+    return;
+  }
+
   $gateways[] = array(
     'id' => 'paypal_wpp',
     'title' => t('PayPal Website Payments Pro'),
@@ -158,7 +158,7 @@ function uc_paypal_payment_gateway() {
 }
 
 /**
- * Implementation of hook_payment_method().
+ * Implements hook_payment_method().
  */
 function uc_paypal_payment_method() {
   $path = base_path() . drupal_get_path('module', 'uc_credit');
@@ -204,7 +204,9 @@ function uc_paypal_payment_method() {
  * Callback Functions, Forms, and Tables
  ******************************************************************************/
 
-// Settings for Website Payments Pro on the Payment gateways form.
+/**
+ * Settings for Website Payments Pro on the Payment gateways form.
+ */
 function uc_paypal_wpp_settings_form() {
   // The DoDirectPayment API call allows fewer currencies than PayPal in general.
   $form['paypal_wpp']['uc_paypal_wpp_currency'] = array(
@@ -288,7 +290,9 @@ function uc_paypal_wpp_settings_form() {
   return $form;
 }
 
-// Process a credit card payment through Website Payments Pro.
+/**
+ * Processes a credit card payment through Website Payments Pro.
+ */
 function uc_paypal_wpp_charge($order_id, $amount, $data) {
   global $user;
 
@@ -485,7 +489,7 @@ function uc_paypal_wpp_charge($order_id, $amount, $data) {
 }
 
 /**
- * Build error message(s) from PayPal failure responses.
+ * Builds error message(s) from PayPal failure responses.
  */
 function _uc_paypal_build_error_messages($nvp_response) {
   $code = 0;
@@ -497,7 +501,9 @@ function _uc_paypal_build_error_messages($nvp_response) {
   return $message;
 }
 
-// Handles the Website Payments Standard payment method.
+/**
+ * Handles the Website Payments Standard payment method.
+ */
 function uc_payment_method_paypal_wps($op, &$arg1) {
   switch ($op) {
     case 'order-view':
@@ -606,7 +612,9 @@ function uc_payment_method_paypal_wps($op, &$arg1) {
   }
 }
 
-// Handles the Express Checkout payment method.
+/**
+ * Handles the Express Checkout payment method.
+ */
 function uc_payment_method_paypal_ec($op, &$arg1) {
   switch ($op) {
     case 'order-view':
@@ -620,6 +628,16 @@ function uc_payment_method_paypal_ec($op, &$arg1) {
       $form['redirect'] = array(
         '#value' => '<div>'. t('For Express Checkout, you need to <a href="!cp_link">enable the cart pane</a> and <a href="!wpp_link">configure the Website Payments Pro settings</a>.', array('!cp_link' => url('admin/store/settings/cart/edit/panes'), '!wpp_link' => url('admin/store/settings/payment/edit/gateways'))) .'</div>',
       );
+      $form['uc_paypal_ec_landingpage_style'] = array(
+        '#type' => 'radios',
+        '#title' => t('PayPal landing page style'),
+        '#description' => t('PayPal Express Checkout landing page may show a credit card submission form (allowing credit card payments without a PayPal account) or may show only a PayPal login form, thereby restricting payment to PayPal users.'),
+        '#options' => array(
+          'Billing' => t('Show credit card submission form.'),
+          'Login' => t('Do not show credit card submission form.'),
+        ),
+        '#default_value' => variable_get('uc_paypal_ec_landingpage_style', 'Billing'),
+      );
       return $form;
   }
 }
@@ -628,7 +646,9 @@ function uc_payment_method_paypal_ec($op, &$arg1) {
  * Module and Helper Functions
  ******************************************************************************/
 
-// Redirects if a customer selects PayPal Express Checkout as a payment method.
+/**
+ * Redirects if a customer selects PayPal Express Checkout as a payment method.
+ */
 function uc_paypal_ec_checkout($form, &$form_state) {
   if ($form_state['values']['panes']['payment']['payment_method'] != 'paypal_ec') {
     return;
@@ -684,6 +704,7 @@ function uc_paypal_ec_checkout($form, &$form_state) {
     'SHIPTOCOUNTRYCODE' => $country[0]['country_iso_code_2'],
     'SHIPTOZIP' => substr($order->delivery_postal_code, 0, 20),
     'PHONENUM' => substr($order->delivery_phone, 0, 20),
+    'LANDINGPAGE' => variable_get('uc_paypal_ec_landingpage_style', 'Billing'),
   );
 
   if (!uc_cart_is_shippable()) {
@@ -708,12 +729,12 @@ function uc_paypal_ec_checkout($form, &$form_state) {
   exit();
 }
 
-// Returns the form for Express Checkout Shortcut Flow.
+/**
+ * Returns the form for Express Checkout Shortcut Flow.
+ *
+ * @see uc_paypal_ec_form_submit()
+ */
 function uc_paypal_ec_form() {
-  if (!variable_get('uc_cap_uc_paypal_ec_enabled', FALSE)) {
-    return;
-  }
-
   // Hack to allow the image button to submit.
   if (isset($_POST['submit_x'])) {
     $form['submit'] = array(
@@ -729,6 +750,11 @@ function uc_paypal_ec_form() {
   return $form;
 }
 
+/**
+ * Submit handler for uc_paypal_ec_form().
+ *
+ * @see uc_paypal_ec_form()
+ */
 function uc_paypal_ec_form_submit($form, &$form_state) {
   global $user;
   $items = uc_cart_get_contents();
@@ -764,6 +790,7 @@ function uc_paypal_ec_form_submit($form, &$form_state) {
     'REQCONFIRMSHIPPING' => variable_get('uc_paypal_ec_rqconfirmed_addr', 0),
     'BUTTONSOURCE' => 'Ubercart_ShoppingCart_EC_US',
     'NOTIFYURL' => url('uc_paypal/ipn/'. $order->order_id, array('absolute' => TRUE)),
+    'LANDINGPAGE' => variable_get('uc_paypal_ec_landingpage_style', 'Billing'),
   );
 
   $order->products = $items;
@@ -774,6 +801,7 @@ function uc_paypal_ec_form_submit($form, &$form_state) {
   $_SESSION['cart_order'] = $order->order_id;
   $_SESSION['TOKEN'] = $nvp_response['TOKEN'];
 
+  $sandbox = '';
   if (strpos(variable_get('uc_paypal_wpp_server', 'https://api-3t.sandbox.paypal.com/nvp'), 'sandbox') > 0) {
     $sandbox = 'sandbox.';
   }
@@ -782,6 +810,11 @@ function uc_paypal_ec_form_submit($form, &$form_state) {
   exit();
 }
 
+/**
+ * Additional submit handler for uc_cart_checkout_review_form().
+ *
+ * @see uc_cart_checkout_review_form()
+ */
 function uc_paypal_ec_submit_form_submit($form, &$form_state) {
   $order = uc_order_load($_SESSION['cart_order']);
 
@@ -847,7 +880,9 @@ function uc_paypal_ec_submit_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'cart/checkout/complete';
 }
 
-// Returns the form elements for the Website Payments Standard form.
+/**
+ * Returns the form elements for the Website Payments Standard form.
+ */
 function uc_paypal_wps_form($form_state, $order) {
   $shipping = 0;
   foreach ($order->line_items as $item) {
@@ -922,7 +957,7 @@ function uc_paypal_wps_form($form_state, $order) {
     // Transaction information
     'currency_code' => variable_get('uc_paypal_wps_currency', 'USD'),
     'handling_cart' => uc_price($shipping, $context, $options),
-    'invoice' => $order->order_id .'-'. time(),
+    'invoice' => $order->order_id .'-'. uc_cart_get_id(),
     'tax_cart' => uc_price($tax, $context, $options),
 
     // Shopping cart specific variables
@@ -973,7 +1008,7 @@ function uc_paypal_wps_form($form_state, $order) {
       $data['quantity_'. $i] = $item->qty;
 
       // PayPal will only display the first two...
-      if (is_array($item->data['attributes']) && count($item->data['attributes']) > 0) {
+      if (!empty($item->data['attributes']) && count($item->data['attributes']) > 0) {
         $o = 0;
         foreach ($item->data['attributes'] as $name => $setting) {
           $data['on'. $o .'_'. $i] = $name;
@@ -981,6 +1016,20 @@ function uc_paypal_wps_form($form_state, $order) {
           $o++;
         }
       }
+    }
+
+    // Apply discounts (negative amount line items). For example, this handles line items created by uc_coupon.
+    $discount = 0;
+
+    foreach ($order->line_items as $item) {
+      if ($item['amount'] < 0) {
+        // The minus sign is not an error! The discount amount must be positive.
+        $discount -= $item['amount'];
+      }
+    }
+
+    if ($discount != 0) {
+      $data['discount_amount_cart'] = $discount;
     }
   }
   else {
@@ -1006,26 +1055,12 @@ function uc_paypal_wps_form($form_state, $order) {
     '#value' => variable_get('uc_paypal_wps_checkout_button', t('Submit Order')),
   );
 
-  foreach (module_implements('order') as $module) {
-    $result = module_invoke($module, 'order', 'submit', $order, NULL);
-    $msg_type = 'status';
-    if ($result[0]['pass'] === FALSE) {
-      $error = TRUE;
-      $msg_type = 'error';
-    }
-    if (!empty($result[0]['message'])) {
-      drupal_set_message($result[0]['message'], $msg_type);
-    }
-    if ($error) {
-      $_SESSION['do_review'] = TRUE;
-      drupal_goto('cart/checkout/review');
-    }
-  }
-
   return $form;
 }
 
-// Sends a request to PayPal and returns a response array.
+/**
+ * Sends a request to PayPal and returns a response array.
+ */
 function uc_paypal_api_request($request, $server) {
   // We use $request += to add API credentials so that
   // if a key already exists, it will not be overridden
@@ -1060,7 +1095,9 @@ function uc_paypal_api_request($request, $server) {
   return _uc_paypal_nvp_to_array($response);
 }
 
-// Returns the description and subtotal of the products on an order.
+/**
+ * Returns the description and subtotal of the products on an order.
+ */
 function _uc_paypal_product_details($items) {
   $desc = '';
   $subtotal = 0;
@@ -1070,7 +1107,7 @@ function _uc_paypal_product_details($items) {
       if (!empty($desc)) {
         $desc .= ' / ';
       }
-      $desc .= $item->qty .'&times; '. $item->title;
+      $desc .= $item->qty .'× '. $item->title;
       $subtotal += $item->qty * $item->price;
     }
   }
@@ -1078,7 +1115,9 @@ function _uc_paypal_product_details($items) {
   return array($desc, $subtotal);
 }
 
-// Returns the PayPal approved credit card type for a card number.
+/**
+ * Returns the PayPal approved credit card type for a card number.
+ */
 function _uc_paypal_card_type($cc_number) {
   switch (substr(strval($cc_number), 0, 1)) {
     case '3':
@@ -1094,7 +1133,9 @@ function _uc_paypal_card_type($cc_number) {
   return FALSE;
 }
 
-// Turns PayPal's NVP response to an API call into an associative array.
+/**
+ * Turns PayPal's NVP response to an API call into an associative array.
+ */
 function _uc_paypal_nvp_to_array($nvpstr) {
   foreach (explode('&', $nvpstr) as $nvp) {
     list($key, $value) = explode('=', $nvp);
@@ -1104,9 +1145,9 @@ function _uc_paypal_nvp_to_array($nvpstr) {
   return $nvp_array;
 }
 
-
-
-// Returns a human readable message for the AVS code.
+/**
+ * Returns a human readable message for the AVS code.
+ */
 function _uc_paypal_avscode_message($code) {
   if (is_numeric($code)) {
     switch ($code) {
@@ -1159,7 +1200,9 @@ function _uc_paypal_avscode_message($code) {
   }
 }
 
-// Returns a human readable message for the CVV2 match code.
+/**
+ * Returns a human readable message for the CVV2 match code.
+ */
 function _uc_paypal_cvvmatch_message($code) {
   if (is_numeric($code)) {
     switch ($code) {
@@ -1196,7 +1239,9 @@ function _uc_paypal_cvvmatch_message($code) {
   }
 }
 
-// Return a message for the pending reason of a PayPal payment.
+/**
+ * Return a message for the pending reason of a PayPal payment.
+ */
 function _uc_paypal_pending_message($reason) {
   switch ($reason) {
     case 'address':
@@ -1221,7 +1266,9 @@ function _uc_paypal_pending_message($reason) {
   }
 }
 
-// Return a message for the reason code of a PayPal reversal.
+/**
+ * Return a message for the reason code of a PayPal reversal.
+ */
 function _uc_paypal_reversal_message($reason) {
   switch ($reason) {
     case 'chargeback':
@@ -1238,7 +1285,9 @@ function _uc_paypal_reversal_message($reason) {
   }
 }
 
-// Returns an array of possible currency codes.
+/**
+ * Returns an array of possible currency codes.
+ */
 function _uc_paypal_currency_array() {
   return drupal_map_assoc(array('AUD', 'BRL', 'CAD', 'CHF', 'CZK', 'DKK', 'EUR', 'GBP', 'HKD', 'HUF', 'ILS', 'JPY', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'SEK', 'SGD', 'THB', 'TWD', 'USD'));
 }

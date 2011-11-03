@@ -1,5 +1,4 @@
 <?php
-// $Id: print_pdf.admin.inc,v 1.1.2.29 2010/08/19 23:28:32 jcnventura Exp $
 
 /**
  * @file
@@ -173,6 +172,12 @@ function print_pdf_settings() {
       '#default_value' => variable_get('print_pdf_page_orientation', PRINT_PDF_PAGE_ORIENTATION_DEFAULT),
       '#description' => t('Choose the page orientation of the generated PDF.'),
     );
+    $form['settings']['print_pdf_images_via_file'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Access images via local file access'),
+      '#default_value' => variable_get('print_pdf_images_via_file', PRINT_PDF_IMAGES_VIA_FILE_DEFAULT),
+      '#description' => t("Enabling this option will make the tool use local file access for image files. This option is not recommended to use in conjunction with modules like imagecache which generate the image after it's first accessed. However, it may be necessary in low-end hosting services where the web server is not allowed to open URLs and the user can't modify that configuration setting."),
+    );
     $form['settings']['print_pdf_autoconfig'] = array(
       '#type' => 'checkbox',
       '#title' => t('Auto-configure the PDF tool settings'),
@@ -196,6 +201,12 @@ function print_pdf_settings() {
       '#maxlength' => 3,
       '#description' => t('(TCPDF only) Set the font size to be used for normal text. This is the base value for the scaling applied to other text styles.'),
     );
+    $form['settings']['print_pdf_font_subsetting'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable font subsetting'),
+      '#default_value' => variable_get('print_pdf_font_subsetting', PRINT_PDF_FONT_SUBSETTING_DEFAULT),
+      '#description' => t('(TCPDF only) Only embed those font characters that are actually used.  This can generates smaller PDF files but may significantly slow down processing.'),
+    );
     $form['settings']['print_pdf_dompdf_unicode'] = array(
       '#type' => 'checkbox',
       '#title' => t("Use dompdf's Unicode Mode"),
@@ -206,7 +217,7 @@ function print_pdf_settings() {
       '#type' => 'textfield',
       '#title' => t('wkhtmltopdf options'),
       '#size' => 60,
-      '#maxlength' => 250,
+      '#maxlength' => 500,
       '#default_value' => variable_get('print_pdf_wkhtmltopdf_options', PRINT_PDF_WKHTMLTOPDF_OPTIONS),
       '#description' => t('(wkhtmltopdf only) Set any additional options to be passed to the wkhtmltopdf executable. Tokens may be used in these options (see list below).'),
     );
@@ -229,6 +240,14 @@ function print_pdf_settings() {
         '#value' => theme('token_help', array('node', 'global')),
       );
     }
+
+    $form['settings']['print_pdf_display_sys_urllist'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Printer-friendly URLs list in system pages'),
+      '#default_value' => variable_get('print_pdf_display_sys_urllist', PRINT_TYPE_SYS_URLLIST_DEFAULT),
+      '#description' => t('Enabling this option will display a list of printer-friendly destination URLs at the bottom of the page.'),
+    );
+
     $form['#validate'][] = '_print_pdf_settings_validate';
   }
   else {
@@ -266,6 +285,12 @@ function _print_pdf_tools() {
   $tools = array_merge($tools, array_keys(file_scan_directory(PRINT_PDF_LIB_PATH, '^dompdf_config.inc.php$')));
   $tools = array_merge($tools, array_keys(file_scan_directory(PRINT_PDF_LIB_PATH, '^tcpdf.php$')));
   $tools = array_merge($tools, array_keys(file_scan_directory(PRINT_PDF_LIB_PATH, '^wkhtmltopdf')));
+  if (module_exists('libraries')) {
+    $tools = array_merge($tools, array_keys(file_scan_directory(libraries_get_path('dompdf'), '^dompdf_config.inc.php$')));
+    $tools = array_merge($tools, array_keys(file_scan_directory(libraries_get_path('tcpdf'), '^tcpdf.php$')));
+    $tools = array_merge($tools, array_keys(file_scan_directory(libraries_get_path('wkhtmltopdf'), '^wkhtmltopdf')));
+  }
+
 
   $num_tools = count($tools);
 

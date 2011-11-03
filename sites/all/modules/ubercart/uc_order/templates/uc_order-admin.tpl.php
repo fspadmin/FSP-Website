@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_order-admin.tpl.php,v 1.1.2.1 2010/07/16 15:45:09 islandusurper Exp $
 
 /**
  * @file
@@ -20,19 +19,20 @@
 $context = array(
   'revision' => 'themed',
   'type' => 'order_product',
+  'subject' => array(
+    'order' => $order,
+  ),
 );
 foreach ($products as $product) {
   $price_info = array(
     'price' => $product->price,
     'qty' => $product->qty,
   );
-  $context['subject'] = array(
-    'order_product' => $product,
-  );
+  $context['subject']['order_product'] = $product;
 ?>
 - <?php echo $product->qty; ?> x <?php echo $product->title .' - '. uc_price($price_info, $context); ?><br />
 &nbsp;&nbsp;<?php echo t('SKU: ') . $product->model; ?><br />
-    <?php if (is_array($product->data['attributes']) && count($product->data['attributes']) > 0) {?>
+    <?php if (isset($product->data['attributes']) && is_array($product->data['attributes']) && count($product->data['attributes']) > 0) {?>
     <?php foreach ($product->data['attributes'] as $attribute => $option) {
       echo '&nbsp;&nbsp;'. t('@attribute: @options', array('@attribute' => $attribute, '@options' => implode(', ', (array)$option))) .'<br />';
     } ?>

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_shipping.module,v 1.6.2.20 2010/07/30 15:06:21 islandusurper Exp $
 
 /**
  * @file
@@ -15,7 +14,7 @@ require_once('uc_shipping.ca.inc');
  ******************************************************************************/
 
 /**
- * Implementation of hook_shipping_menu().
+ * Implements hook_shipping_menu().
  */
 function uc_shipping_menu() {
   $items = array();
@@ -165,14 +164,14 @@ function uc_shipping_order_access($order) {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_perm().
  */
 function uc_shipping_perm() {
   return array('fulfill orders');
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function uc_shipping_theme() {
   return array(
@@ -238,7 +237,7 @@ function template_preprocess_uc_packing_slip(&$variables) {
  ******************************************************************************/
 
 /**
- * Implementation of hook_order_pane().
+ * Implements hook_order_pane().
  */
 function uc_shipping_order_pane() {
   $panes[] = array(
@@ -301,10 +300,11 @@ function uc_shipping_package_view($package) {
   $rows[] = array(t('Contents:'), filter_xss_admin($package->description));
   if ($shipment) {
     $methods = module_invoke_all('shipping_method');
-    $method = $methods[$shipment->shipping_method];
-    $pkg_type = $method['ship']['pkg_types'][$package->pkg_type];
+    if (isset($methods[$shipment->shipping_method])) {
+      $pkg_type = $methods[$shipment->shipping_method]['ship']['pkg_types'][$package->pkg_type];
+    }
   }
-  $rows[] = array(t('Package type:'), strlen($pkg_type) ? $pkg_type : check_plain($package->pkg_type));
+  $rows[] = array(t('Package type:'), isset($pkg_type) ? $pkg_type : check_plain($package->pkg_type));
   if ($package->length && $package->width && $package->height) {
     $rows[] = array(t('Dimensions:'), t('!l x !w x !h', array('!l' => uc_length_format($package->length), '!w' => uc_length_format($package->width), '!h' => uc_length_format($package->height))));
   }
@@ -398,7 +398,7 @@ function uc_shipping_package_load($package_id) {
     $result = db_query("SELECT * FROM {uc_packages} WHERE package_id = %d", $package_id);
     if ($package = db_fetch_object($result)) {
       $products = array();
-      $descripion = '';
+      $description = '';
       $weight = 0;
       $units = variable_get('uc_weight_unit', 'lb');
       $addresses = array();
@@ -439,7 +439,7 @@ function uc_shipping_package_save($package) {
     db_query("INSERT INTO {uc_packages} (order_id) VALUES (%d)", $package->order_id);
     $package->package_id = db_last_insert_id('uc_packages', 'package_id');
   }
-  if (count($package->products)) {
+  if (isset($package->products) && count($package->products)) {
     $types = array();
     $values = array();
     foreach ($package->products as $id => $product) {
@@ -526,7 +526,7 @@ function uc_shipping_shipment_load($shipment_id) {
  * Save a shipment.
  */
 function uc_shipping_shipment_save($shipment) {
-  if (!$shipment->sid) {
+  if (!isset($shipment->sid)) {
     db_query("INSERT INTO {uc_shipments} (order_id) VALUES (%d)", $shipment->order_id);
     $shipment->sid = db_last_insert_id('uc_shipments', 'sid');
     $shipment->is_new = TRUE;
@@ -557,8 +557,8 @@ function uc_shipping_shipment_save($shipment) {
       $shipment->$field = $value;
     }
   }
-  db_query("UPDATE {uc_shipments} SET order_id = %d, o_first_name = '%s', o_last_name = '%s', o_company = '%s', o_street1 = '%s', o_street2 = '%s', o_city = '%s', o_zone = %d, o_postal_code = '%s', o_country = %d, d_first_name = '%s', d_last_name = '%s', d_company = '%s', d_street1 = '%s', d_street2 = '%s', d_city = '%s', d_zone = %d, d_postal_code = '%s', d_country = %d, shipping_method = '%s', accessorials = '%s', carrier = '%s', transaction_id = '%s', tracking_number = '%s', ship_date = %d, expected_delivery = %d, cost = %f WHERE sid = %d",
-    $shipment->order_id, $shipment->o_first_name, $shipment->o_last_name, $shipment->o_company, $shipment->o_street1, $shipment->o_street2, $shipment->o_city, $shipment->o_zone, $shipment->o_postal_code, $shipment->o_country, $shipment->d_first_name, $shipment->d_last_name, $shipment->d_company, $shipment->d_street1, $shipment->d_street2, $shipment->d_city, $shipment->d_zone, $shipment->d_postal_code, $shipment->d_country, $shipment->shipping_method, $shipment->accessorials, $shipment->carrier, $shipment->transaction_id, $shipment->tracking_number, $shipment->ship_date, $shipment->expected_delivery, $shipment->cost, $shipment->sid
+  db_query("UPDATE {uc_shipments} SET order_id = %d, o_first_name = '%s', o_last_name = '%s', o_company = '%s', o_street1 = '%s', o_street2 = '%s', o_city = '%s', o_zone = %d, o_postal_code = '%s', o_country = %d, d_first_name = '%s', d_last_name = '%s', d_company = '%s', d_street1 = '%s', d_street2 = '%s', d_city = '%s', d_zone = %d, d_postal_code = '%s', d_country = %d, shipping_method = '%s', accessorials = '%s', carrier = '%s', transaction_id = '%s', tracking_number = '%s', ship_date = %d, expected_delivery = %d, cost = %f, changed = %d WHERE sid = %d",
+    $shipment->order_id, $shipment->o_first_name, $shipment->o_last_name, $shipment->o_company, $shipment->o_street1, $shipment->o_street2, $shipment->o_city, $shipment->o_zone, $shipment->o_postal_code, $shipment->o_country, $shipment->d_first_name, $shipment->d_last_name, $shipment->d_company, $shipment->d_street1, $shipment->d_street2, $shipment->d_city, $shipment->d_zone, $shipment->d_postal_code, $shipment->d_country, $shipment->shipping_method, $shipment->accessorials, $shipment->carrier, $shipment->transaction_id, $shipment->tracking_number, $shipment->ship_date, $shipment->expected_delivery, $shipment->cost, time(), $shipment->sid
   );
 
   module_invoke_all('shipment', 'save', $shipment);
@@ -595,21 +595,19 @@ function uc_shipping_order_pane_packages($op, $arg1) {
       while ($shipment = db_fetch_object($result)) {
         $shipment = uc_shipping_shipment_load($shipment->sid);
         if ($shipment->tracking_number) {
+          $tracking[$shipment->carrier]['data'] = $shipment->carrier;
           $tracking[$shipment->carrier]['children'][] = check_plain($shipment->tracking_number);
         }
         else {
           foreach ($shipment->packages as $package) {
             if ($package->tracking_number) {
+              $tracking[$shipment->carrier]['data'] = $shipment->carrier;
               $tracking[$shipment->carrier]['children'][] = check_plain($package->tracking_number);
             }
           }
         }
       }
-      $output = '';
-      foreach ($tracking as $carrier => $item) {
-        $output .= '<strong>'. $carrier .':</strong>'. theme('item_list', $item);
-      }
-      return $output;
+      return theme('item_list', $tracking);
     break;
   }
 }
@@ -662,7 +660,8 @@ function uc_shipping_select_address($addresses, $onchange = '', $title = NULL, $
 function uc_shipping_address_form($form_state, $addresses, $order) {
   drupal_add_js(drupal_get_path('module', 'uc_shipping') .'/uc_shipping.js');
   $form = array();
-  $form['origin'] = array('#type' => 'fieldset',
+  $form['origin'] = array(
+    '#type' => 'fieldset',
     '#title' => t('Origin address'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
@@ -672,7 +671,7 @@ function uc_shipping_address_form($form_state, $addresses, $order) {
   $address = reset($addresses);
   $form['origin']['pickup_address_select'] = uc_shipping_select_address($addresses, 'apply_address(\'pickup\', this.value);', t('Saved Addresses'), TRUE);
   $form['origin']['pickup_address_select']['#weight'] = -2;
-  $form['origin']['pickup_email'] = uc_textfield(uc_get_field_name('email'), variable_get('uc_store_email', NULL), FALSE, NULL, 255);
+  $form['origin']['pickup_email'] = uc_textfield(uc_get_field_name('email'), uc_store_email(), FALSE, NULL, 255);
   $form['origin']['pickup_email']['#weight'] = -1;
   $form['origin']['pickup_first_name'] = uc_textfield(uc_get_field_name('first_name'), $address->first_name, FALSE);
   $form['origin']['pickup_last_name'] = uc_textfield(uc_get_field_name('last_name'), $address->last_name, FALSE);

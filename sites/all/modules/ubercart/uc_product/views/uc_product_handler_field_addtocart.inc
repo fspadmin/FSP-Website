@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_product_handler_field_addtocart.inc,v 1.1.2.4 2009/05/07 20:52:29 islandusurper Exp $
 
 /**
  * @file

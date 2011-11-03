@@ -1,5 +1,4 @@
 <?php
-// $Id: ireland_372_2.cif,v 1.1.2.9 2010/04/14 05:18:19 tr Exp $
 
 // Note: Ireland does not currently have postal codes but it has been announced
 // that they will be implemented - so I left the postal code in the address definition.

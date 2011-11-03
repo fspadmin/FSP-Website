@@ -1,13 +1,12 @@
 <?php
-// $Id: uc_product_kit.install,v 1.11.2.12 2010/07/09 13:16:02 islandusurper Exp $
 
 /**
  * @file
- * Install file for uc_product_kit
+ * Install, update and uninstall functions for the uc_product_kit module.
  */
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_product_kit_schema() {
   $schema['uc_product_kits'] = array(
@@ -77,14 +76,14 @@ function uc_product_kit_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_product_kit_install() {
   drupal_install_schema('uc_product_kit');
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_product_kit_uninstall() {
   drupal_uninstall_schema('uc_product_kit');
@@ -92,7 +91,7 @@ function uc_product_kit_uninstall() {
 }
 
 /**
- * Implementation of hook_enable().
+ * Implements hook_enable().
  */
 function uc_product_kit_enable() {
   // For some time in Drupal 5, CCK would delete its field data if a node
@@ -128,87 +127,11 @@ function uc_product_kit_enable() {
   }
 }
 
-function uc_product_kit_update_1() {
-  $ret = array();
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} ADD PRIMARY KEY (nid, product_id)");
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} ADD COLUMN mutable tinyint(1) NOT NULL default 0 AFTER product_id");
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} ADD COLUMN discount float NOT NULL default 0.0 AFTER qty");
-    break;
-    case 'pgsql':
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} ADD PRIMARY KEY (nid, product_id)");
-      db_add_column($ret, 'uc_product_kits', 'mutable', 'smallint', array('not null' => TRUE, 'default' => 0));
-      db_add_column($ret, 'uc_product_kits', 'discount', 'float', array('not null' => TRUE, 'default' => 0.0));
-    break;
-  }
-  return $ret;
-}
-
-function uc_product_kit_update_2() {
-  $ret = array();
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} ADD COLUMN ordering smallint NOT NULL default 0");
-    break;
-    case 'pgsql':
-      db_add_column($ret, 'uc_product_kits', 'ordering', 'smallint', array('not null' => TRUE, 'default' => 0));
-    break;
-  }
-  return $ret;
-}
-
-function uc_product_kit_update_3() {
-  $ret = array();
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} ADD COLUMN vid mediumint(9) NOT NULL default 0 FIRST");
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} DROP PRIMARY KEY");
-      $result = db_query("SELECT nid, vid FROM {node}");
-      while ($product = db_fetch_object($result)) {
-        db_query("UPDATE {uc_product_kits} SET vid = %d WHERE nid = %d", $product->vid, $product->nid);
-      }
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} ADD PRIMARY KEY (vid, product_id)");
-    break;
-    case 'pgsql':
-      db_add_column($ret, 'uc_product_kits', 'vid', 'mediumint', array('not null' => TRUE, 'default' => 0));
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} DROP CONSTRAINT {uc_products}_pkey");
-      $result = db_query("SELECT nid, vid FROM {node}");
-      while ($product = db_fetch_object($result)) {
-        db_query("UPDATE {uc_product_kits} SET vid = %d WHERE nid = %d", $product->vid, $product->nid);
-      }
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} ADD PRIMARY KEY (vid, product_id)");
-    break;
-  }
-  return $ret;
-}
-
-function uc_product_kit_update_4() {
-  $ret = array();
-  db_query("UPDATE {node} SET type = 'product_kit' WHERE type = 'kit'");
-  if (module_exists('content')) {
-    $ret[] = update_sql("ALTER TABLE {content_type_kit} RENAME TO {content_type_product_kit}");
-  }
-  node_types_rebuild();
-  menu_rebuild();
-  return $ret;
-}
-
-function uc_product_kit_update_5() {
-  $ret = array();
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} DROP data");
-    break;
-    case 'pgsql':
-      $ret[] = update_sql("ALTER TABLE {uc_product_kits} DROP data");
-    break;
-  }
-  return $ret;
+/**
+ * Implements hook_update_last_removed().
+ */
+function uc_product_kit_update_last_removed() {
+  return 5;
 }
 
 function uc_product_kit_update_6000() {

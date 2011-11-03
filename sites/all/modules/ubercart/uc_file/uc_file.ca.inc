@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_file.ca.inc,v 1.1.2.9 2010/07/15 17:18:58 islandusurper Exp $
 
 /**
  * @file
@@ -12,7 +11,7 @@
  ******************************************************************************/
 
 /**
- * Implementation of hook_ca_entity().
+ * Implements hook_ca_entity().
  *
  * An entity is defined in order to get file expiration(s) down
  * to token in the email.
@@ -29,7 +28,7 @@ function uc_file_ca_entity() {
 }
 
 /**
- * Implementation of hook_ca_predicate().
+ * Implements hook_ca_predicate().
  */
 function uc_file_ca_predicate() {
 
@@ -45,12 +44,12 @@ function uc_file_ca_predicate() {
       '#conditions' => array(
         array(
           '#name' => 'uc_order_status_condition',
-          '#title' => t('If the order status is completed.'),
+          '#title' => t('If the updated order status is payment received.'),
           '#argument_map' => array(
             'order' => 'updated_order',
           ),
           '#settings' => array(
-            'order_status' => 'completed',
+            'order_status' => 'payment_received',
           ),
         ),
       ),
@@ -98,7 +97,7 @@ function uc_file_ca_predicate() {
 }
 
 /**
- * Implementation of hook_ca_action().
+ * Implements hook_ca_action().
  */
 function uc_file_ca_action() {
 
@@ -135,7 +134,7 @@ function uc_file_ca_action() {
 }
 
 /**
- * Implementation of hook_ca_trigger().
+ * Implements hook_ca_trigger().
  */
 function uc_file_ca_trigger() {
 
@@ -160,7 +159,7 @@ function uc_file_ca_trigger() {
 }
 
 /**
- * Send an email with order and file replacement tokens.
+ * Sends an email with order and file replacement tokens.
  *
  * The recipients, subject, and message fields take order token replacements.
  *
@@ -202,16 +201,16 @@ function uc_file_action_order_email_form($form_state, $settings = array()) {
 }
 
 /**
- * Renew an orders product files.
- *
- * @param $order
- *   An Ubercart order object.
+ * Renews an orders product files.
  *
  * This function updates access limits on all files found on all products
  * on a given order. First, the order user is loaded, then the order's products
- * are scanned for file product features. An order comment is saved, and the user is
- * notified in Drupal, as well as through the email address associated with the
- * order.
+ * are scanned for file product features. An order comment is saved, and the
+ * user is notified in Drupal, as well as through the email address associated
+ * with the order.
+ *
+ * @param $order
+ *   An Ubercart order object.
  */
 function uc_file_action_order_renew($order) {
 
@@ -227,7 +226,7 @@ function uc_file_action_order_renew($order) {
     $files = db_query("SELECT * FROM {uc_file_products} AS fp ".
       "INNER JOIN {uc_product_features} AS pf ON pf.pfid = fp.pfid ".
       "INNER JOIN {uc_files} as f ON f.fid = fp.fid ".
-      "WHERE nid = %d", $product->nid, $order_user->uid);
+      "WHERE nid = %d", $product->nid);
 
     while ($file = db_fetch_object($files)) {
 
@@ -244,7 +243,7 @@ function uc_file_action_order_renew($order) {
       $file_modification = array(
         'download_limit' => uc_file_get_download_limit($file),
         'address_limit' => uc_file_get_address_limit($file),
-        'expiration' => _uc_file_expiration_date(uc_file_get_time_limit($file), $file_user->expiration),
+        'expiration' => _uc_file_expiration_date(uc_file_get_time_limit($file), max($file_user->expiration, time())),
       );
 
       // Add file_user(s) for this file/directory. (No overwrite)
@@ -260,7 +259,7 @@ function uc_file_action_order_renew($order) {
       else {
         $comment = t('User can now download the file %file.', array('%file' => basename($file->filename)));
       }
-      uc_order_comment_save($order->order_id, $user->uid, $comment);
+      uc_order_comment_save($order->order_id, $order_user->uid, $comment);
     }
   }
 

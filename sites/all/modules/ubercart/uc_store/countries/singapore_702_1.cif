@@ -1,5 +1,4 @@
 <?php
-// $Id: singapore_702_1.cif,v 1.4.4.2 2010/04/14 05:18:19 tr Exp $
 
 /**
  * Implementation of hook_install().

@@ -113,7 +113,7 @@ Drupal.behaviors.ucAjaxCart = function (context) {
 function ajaxCartSubmit() {
   jQuery(this).parents('form').ajaxSubmit({
     url: Drupal.settings.uc_ajax_cart.UPDATE_CALLBACK,
-    success: ajaxCartUpdateCartView,
+    success: ajaxCartFormSubmitted,
     beforeSubmit: function () {
       jQuery('#uc-cart-view-form input').attr('disabled', 'disabled');
       ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.ADD_TITLE, '<div class="messages status">' + Drupal.settings.uc_ajax_cart.UPDATE_MESSAGE + '</div>');
@@ -363,15 +363,11 @@ function ajaxCartUpdateBlockCart() {
 }
 
 
-// Updates cart from cart page.
-function ajaxCartUpdateCartView(e) {
-  ajaxCartFormSubmitted(e);
-  ajaxCartReloadCartView();
-}
-
-
+// Reloads standard Ubercart cart form from cart page.
 function ajaxCartReloadCartView() {
-  jQuery('#cart-form-pane').parent().load(Drupal.settings.uc_ajax_cart.SHOW_VIEW_CALLBACK, ajaxCartInitCartView);
+  if (jQuery('#cart-form-pane').length) {
+    jQuery('#cart-form-pane').parent().load(Drupal.settings.uc_ajax_cart.SHOW_VIEW_CALLBACK, ajaxCartInitCartView);
+  }
 }
 
 

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_price.inc,v 1.1.2.6 2010/07/12 22:51:30 tr Exp $
 
 /**
  * @file
@@ -38,10 +37,6 @@
  *     any alteration/formatting/theming functions implemented. A list of accepted
  *     options follows.
  *
- *     'cache':
- *     Default: TRUE
- *     If set FALSE, this price won't be cached.
- *
  *     'sign':
  *     Default: variable_get('uc_currency_sign', '$')
  *     The sign to use when formatting this price.
@@ -64,12 +59,10 @@
  *
  *     'label':
  *     Default: TRUE
- *     If set to TRUE, the
- *
+ *     If set to TRUE, themed prices will include any prefixes and suffixes.
  */
-function uc_price($price_info, $context, $options = array()) {
+function uc_price($price_info, $context = array(), $options = array()) {
   global $user;
-  $values = array();
 
   // If we're passed just a number for price, we'll set the quantity to 1.
   if (is_numeric($price_info)) {
@@ -85,11 +78,7 @@ function uc_price($price_info, $context, $options = array()) {
     );
   }
 
-  // Initialize the options and context.
-  $options += array(
-    'cache' => variable_get('uc_price_caching', TRUE),
-  );
-
+  // Initialize the context.
   $context += array(
     'revision' => 'themed',
     'type' => 'amount',
@@ -97,13 +86,21 @@ function uc_price($price_info, $context, $options = array()) {
 
   // Clamp to allowed revisions.
   $revisions = array('original', 'altered', 'formatted-original', 'formatted', 'themed-original', 'themed');
-
   if (!in_array($context['revision'], $revisions)) {
     $context['revision'] = 'themed';
   }
 
+  // Calculate the original price.
+  $original = $price_info['price'] * $price_info['qty'];
+
+  // Exit early if the original price was requested.
+  if ($context['revision'] == 'original') {
+    return $original;
+  }
+
   // Get all the active handlers.
   $handlers = _uc_price_get_handlers($options);
+  $formatter = $handlers['formatter'];
 
   // Use the global user if none was passed in.
   if (!isset($context['account'])) {
@@ -113,62 +110,41 @@ function uc_price($price_info, $context, $options = array()) {
   // Merge any incoming options, giving them precedence.
   $options += $handlers['options'];
 
-  // Build the cache key with the original state, trimming down the account to
-  // an array with a limited set of keys that don't change every pageload; the
-  // uid, name, mail, and roles of the user account.
-  $context_clone = $context;
-  // TODO: array_intersect_key() isn't available until PHP 5.1.0. (Drupal 7)
-  //$context_clone['account'] = array_intersect_key((array) $context['account'], drupal_map_assoc(array()));
-  $context_clone['account'] = array(
-    'uid' => $context['account']->uid,
-    'name' => $context['account']->name,
-    'mail' => $context['account']->mail,
-    'roles' => $context['account']->roles,
-  );
+  // Exit early if no alterations are needed.
+  switch ($context['revision']) {
+    case 'formatted-original':
+      return $formatter($original, $options);
 
-  $key = md5(serialize($price_info + $context_clone + $options));
+    case 'themed-original':
+      return theme('uc_price', $formatter($original, $options), $context, $options);
+  }
 
-  // If this price has already been calculated and cached...
-  if ($options['cache'] && $cache = cache_get($key, 'cache_uc_price')) {
-    // Use the cached price data.
-    $values = $cache->data;
+  // Alter the price, context, and options.
+  foreach ($handlers['alterers'] as $alterer) {
+    $alterer($price_info, $context, $options);
+  }
+  $altered = $price_info['price'] * $price_info['qty'];
+
+  if ($context['revision'] == 'altered') {
+    return $altered;
+  }
+
+  // Use a price placeholder if specified.
+  if (isset($price_info['placeholder'])) {
+    $formatted = $price_info['placeholder'];
   }
   else {
-    // Otherwise, build it from scratch.
-    $values['original'] = $price_info['price'] * $price_info['qty'];
-
-    // Alter the price, context, and options.
-    foreach ($handlers['alterers'] as $alterer) {
-      $alterer($price_info, $context, $options);
-    }
-
-    // If a price placeholder was specified in the price info array...
-    if (isset($price_info['placeholder'])) {
-      // Force the formatted value to the placeholder.
-      $values['formatted'] = $price_info['placeholder'];
-    }
-    else {
-      // Otherwise use the actual numeric and formatted numeric values.
-      $values['altered'] = $price_info['price'] * $price_info['qty'];
-
-      // Format the original and altered prices using the formatter callback.
-      $values['formatted-original'] = $handlers['formatter']($values['original'], $options);
-      $values['formatted'] = $handlers['formatter']($values['altered'], $options);
-    }
-
-    // Theme the price.
-    $values['themed-original'] = theme('uc_price', $values['formatted-original'], $context, $options);
-    $values['themed'] = theme('uc_price', $values['formatted'], $context, $options);
-
-    // Cache this price values.
-    // TODO: Determine if we can safely cache these things...
-    if ($options['cache']) {
-      cache_set($key, $values, 'cache_uc_price', CACHE_TEMPORARY);
-    }
+    $formatted = $formatter($altered, $options);
   }
 
   // Return the requested revision.
-  return $values[$context['revision']];
+  switch ($context['revision']) {
+    case 'formatted':
+      return $formatted;
+
+    case 'themed':
+      return theme('uc_price', $formatted, $context, $options);
+  }
 }
 
 /**
@@ -255,7 +231,7 @@ function _uc_price_get_handlers($options = array()) {
       }
 
       if (isset($hook['options']) && is_array($hook['options'])) {
-        $handlers['options'] += $hook['options'];
+        $handlers['options'] = $hook['options'] + $handlers['options'];
       }
     }
   }
@@ -264,7 +240,7 @@ function _uc_price_get_handlers($options = array()) {
 }
 
 /**
- * Implementation of hook_uc_price_handler().
+ * Implements hook_uc_price_handler().
  */
 function uc_store_uc_price_handler() {
   return array(
@@ -287,7 +263,7 @@ function uc_store_uc_price_handler() {
  */
 function uc_store_price_handler_alter(&$price, &$context, &$options) {
   // If a class was specified in the price's context array...
-  if (is_array($context['class'])) {
+  if (isset($context['class']) && is_array($context['class'])) {
     // Look for a product price type in the class array and adjust the price
     // prefix accordingly.
     if (in_array('list', $context['class'])) {

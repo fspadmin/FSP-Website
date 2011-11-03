@@ -1,29 +1,31 @@
-/* $Id: uc_file.css,v 1.2.2.6 2009/01/19 20:31:25 islandusurper Exp $ */
-
+/**
+ * @file
+ * Styles for uc_file module.
+ */
 .download-table-row {
   vertical-align: top;
 }
 
 .download-table-index {
-  display:inline;
+  display: inline;
 }
 
 .download-table-index .form-item {
-  display:inline;
+  display: inline;
 }
 
 .duration  {
-  display:inline;
+  display: inline;
   white-space: nowrap;
 }
 
 .duration .form-item {
-  display:inline;
+  display: inline;
   white-space: nowrap;
 }
 
 tr.group {
-  border:0px;
+  border: 0px;
 }
 
 .file-name {

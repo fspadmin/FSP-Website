@@ -1,5 +1,4 @@
 <?php
-// $Id: print_pdf.install,v 1.1.2.20 2010/08/17 23:10:43 jcnventura Exp $
 
 /**
  * @file
@@ -38,6 +37,7 @@ function print_pdf_uninstall() {
   variable_del('print_pdf_content_disposition');
   variable_del('print_pdf_paper_size');
   variable_del('print_pdf_page_orientation');
+  variable_del('print_pdf_images_via_file');
   variable_del('print_pdf_font_family');
   variable_del('print_pdf_font_size');
   variable_del('print_pdf_link_text');
@@ -46,6 +46,7 @@ function print_pdf_uninstall() {
   variable_del('print_pdf_autoconfig');
   variable_del('print_pdf_dompdf_unicode');
   variable_del('print_pdf_wkhtmltopdf_options');
+  variable_del('print_pdf_display_sys_urllist');
   $settings = db_query("SELECT name FROM {variable} WHERE name LIKE 'print\_pdf\_display\_%'");
   while ($variable = db_fetch_object($settings)) {
     variable_del($variable->name);

@@ -1,5 +1,4 @@
 <?php
-// $Id: hooks.php,v 1.1.2.24 2010/07/16 15:45:09 islandusurper Exp $
 
 /**
  * @file
@@ -264,6 +263,8 @@ function hook_cart_display($item) {
  *       specifically related to tangible products if nothing in the cart is
  *       shippable. hook_cart_item functions that check for this op are expected
  *       to return TRUE or FALSE based on whether a product is shippable or not.
+ *   - "remove" - Passed when an item is removed from the cart.
+ *   - "checkout" - Passed for each item when the cart is being emptied for checkout.
  * @return
  *   No return value for load.
  *   TRUE or FALSE for can_ship.
@@ -718,11 +719,14 @@ function hook_line_item_data_alter(&$items) {
  * @param $op
  *   The action being performed.
  * @param &$arg1
- *   This is the order object or a reference to it as noted below.
+ *   This is the order object.
  * @param $arg2
  *   This is variable and is based on the value of $op:
  *   - new: Called when an order is created. $arg1 is a reference to the new
  *       order object, so modules may add to or modify the order at creation.
+ *   - presave: Before an order object is saved, the hook gets invoked with this
+ *       op to let other modules alter order data before it is written to the
+ *       database. $order is a reference to the order object.
  *   - save: When an order object is being saved, the hook gets invoked with this
  *       op to let other modules do any necessary saving. $arg1 is a reference to
  *       the order object.
@@ -761,7 +765,7 @@ function hook_line_item_data_alter(&$items) {
  *       Expects in return a value (positive or negative) by which to modify the
  *       order total.
  */
-function hook_order($op, &$arg1, $arg2) {
+function hook_order($op, $arg1, $arg2) {
   switch ($op) {
     case 'save':
       // Do something to save payment info!
@@ -840,6 +844,21 @@ function hook_order_pane() {
     'show' => array('view', 'edit', 'customer'),
   );
   return $panes;
+}
+
+/**
+ * Alter order pane definitions.
+ *
+ * @param $panes
+ *   Array with the panes information as defined in hook_order_pane(), passed
+ *   by reference.
+ */
+function hook_order_pane_alter(&$panes) {
+  foreach ($panes as &$pane) {
+    if ($pane['id'] == 'payment') {
+      $pane['callback'] = 'my_custom_module_callback';
+    }
+  }
 }
 
 /**
@@ -933,6 +952,20 @@ function hook_payment_gateway() {
     'credit' => 'test_gateway_charge',
   );
   return $gateways;
+}
+
+/**
+ * Alter payment gateways.
+ *
+ * @param $gateways
+ *   Payment gateways passed by reference.
+ */
+function hook_payment_gateway_alter(&$gateways) {
+  // Change the title of all gateways.
+  foreach ($gateways as &$gateway) {
+    // $gateway was passed by reference.
+    $gateway['title'] = t('Altered gateway @original', array('@original' => $gateway['title']));
+  }
 }
 
 /**
@@ -1521,6 +1554,23 @@ function hook_uc_price_handler() {
       'label' => FALSE,
       'my_option_that_my_formatter_recognizes' => 1337,
     )
+  );
+}
+
+/**
+ * Define default product classes.
+ *
+ * The results of this hook are eventually passed through hook_node_info(),
+ * so you may include any keys that hook_node_info() uses. Defaults will
+ * be provided where keys are not set. This hook can also be used to
+ * override the default "product" product class name and description.
+ */
+function hook_uc_product_default_classes() {
+  return array(
+    'my_class' => array(
+      'name' => t('My product class'),
+      'description' => t('Content type description for my product class.'),
+    ),
   );
 }
 

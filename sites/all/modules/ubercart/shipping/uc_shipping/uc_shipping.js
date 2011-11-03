@@ -1,4 +1,3 @@
-// $Id: uc_shipping.js,v 1.5.2.2 2009/07/21 14:37:18 islandusurper Exp $
 
 /**
  * @file

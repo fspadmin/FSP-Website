@@ -1,5 +1,4 @@
 <?php
-// $Id: corner.admin.inc,v 1.5.2.3 2009/06/08 09:23:06 kirie Exp $
 
 /**
  * @file
@@ -266,7 +265,7 @@ function corner_admin_configure($form_state, $corner, $op = 'configure') {
       '#value' => t('Delete'),
     );
   }
-  else if ($op == 'add' || $op == 'clone') {
+  elseif ($op == 'add' || $op == 'clone') {
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Save'),
@@ -336,7 +335,7 @@ function corner_admin_configure_submit($form, &$form_state) {
     // Redirect to the corner overview
     $form_state['redirect'] = 'admin/build/corner';
   }
-  else if ($form_state['clicked_button']['#value'] == t('Delete')) {
+  elseif ($form_state['clicked_button']['#value'] == t('Delete')) {
     $form_state['redirect'] = 'admin/build/corner/'. $values['cid'] .'/delete';
   }
 

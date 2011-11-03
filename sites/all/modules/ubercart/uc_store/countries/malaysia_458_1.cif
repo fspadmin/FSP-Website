@@ -1,5 +1,4 @@
 <?php
-// $Id: malaysia_458_1.cif,v 1.1.4.7 2010/04/14 05:18:19 tr Exp $
 
 function malaysia_install() {
   // VALUES = Country ID, Country Name, 2-digit Code, 3-digit Code, File Version

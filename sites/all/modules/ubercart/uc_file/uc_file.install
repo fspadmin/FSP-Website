@@ -1,16 +1,15 @@
 <?php
-// $Id: uc_file.install,v 1.2.2.15 2010/03/19 21:27:18 tr Exp $
 
 /**
  * @file
- * DB Schema and upgrade path for uc_file.
+ * Install, update and uninstall functions for the uc_file module.
  */
 
 // -1 is the UC_FILE_LIMIT_SENTINEL constant in uc_file.module, but
 // it might not be available (like when upgrading from 5 -> 6.
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_file_schema() {
   $schema = array();
@@ -33,6 +32,9 @@ function uc_file_schema() {
       ),
     ),
     'primary key' => array('fid'),
+    'indexes' => array(
+      'filename' => array('filename'),
+    ),
   );
 
   $schema['uc_file_products'] = array(
@@ -197,19 +199,26 @@ function uc_file_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_file_install() {
   drupal_install_schema('uc_file');
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_file_uninstall() {
   drupal_uninstall_schema('uc_file');
   db_query("DELETE FROM {uc_product_features} WHERE fid = 'file'");
   db_query("DELETE FROM {variable} WHERE name LIKE 'uc_file_%%'");
+}
+
+/**
+ * Implements hook_update_last_removed().
+ */
+function uc_file_update_last_removed() {
+  return 4;
 }
 
 function uc_file_update_6000() {
@@ -425,5 +434,14 @@ function uc_file_update_6006(&$sandbox) {
 
   $ret['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
 
+  return $ret;
+}
+
+/**
+ * Add a index on filename since we query on it fairly frequently.
+ */
+function uc_file_update_6007() {
+  $ret = array();
+  db_add_index($ret, 'uc_files', 'filename', array('filename'));
   return $ret;
 }

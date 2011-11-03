@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_quote.pages.inc,v 1.1.2.9 2010/07/12 01:57:35 tr Exp $
 
 /**
  * @file
@@ -22,19 +21,18 @@ function uc_quote_request_quotes() {
     $product->nid = $props[0];
     $product->title = $props[1];
     $product->model = $props[2];
-    $product->manufacturer = $props[3];
-    $product->qty = $props[4];
-    $product->cost = $props[5];
-    $product->price = $props[6];
-    $product->weight = $props[7];
-    if ($data = unserialize($props[8])) {
+    $product->qty = $props[3];
+    $product->cost = $props[4];
+    $product->price = $props[5];
+    $product->weight = $props[6];
+    if ($data = unserialize($props[7])) {
       $product->data = $data;
     }
     else {
-      $product->data = $props[8];
+      $product->data = $props[7];
     }
     if ($product->nid) {
-      $node = (array)node_load($product->nid);
+      $node = (array) node_load($product->nid);
       foreach ($node as $key => $value) {
         if (!isset($product->$key)) {
           $product->$key = $value;
@@ -72,7 +70,7 @@ function uc_quote_request_quotes() {
 }
 
 /**
- * Pull the get_quote_from_* triggers and assemble their returned data.
+ * Pulls the get_quote_from_* triggers and assembles their returned data.
  */
 function _uc_quote_assemble_quotes($order) {
   global $user;

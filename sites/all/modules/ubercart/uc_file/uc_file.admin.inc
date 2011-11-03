@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_file.admin.inc,v 1.1.2.10 2009/07/21 14:37:18 islandusurper Exp $
 
 /**
  * @file
@@ -15,10 +14,9 @@ define('UC_FILE_FORM_ACTION', 1   );
 /**
  * Form builder for file products admin.
  *
+ * @see uc_file_admin_files_form_show_files()
+ * @see uc_file_admin_files_form_action()
  * @ingroup forms
- * @see
- *   uc_file_admin_files_form_show_files()
- *   uc_file_admin_files_form_action()
  */
 function uc_file_admin_files_form($form_state) {
 
@@ -46,14 +44,13 @@ function uc_file_admin_files_form($form_state) {
 }
 
 /**
- * Display all files that may be purchased and downloaded for administration.
+ * Displays all files that may be purchased and downloaded for administration.
  *
+ * @see uc_file_admin_files_form()
+ * @see uc_file_admin_files_form_show_validate()
+ * @see uc_file_admin_files_form_show_submit()
+ * @see theme_uc_file_admin_files_form_show()
  * @ingroup forms
- * @see
- *   uc_file_admin_files_form()
- *   uc_file_admin_files_form_show_validate()
- *   uc_file_admin_files_form_show_submit()
- *   theme_uc_file_admin_files_form_show()
  */
 function uc_file_admin_files_form_show_files($form_state) {
 
@@ -140,9 +137,10 @@ function uc_file_admin_files_form_show_files($form_state) {
 }
 
 /**
- * Ensure at least one file is selected when deleting.
+ * Ensures at least one file is selected when deleting.
  *
  * @see uc_file_admin_files_form_show_files()
+ * @see uc_file_admin_files_form_show_submit()
  */
 function uc_file_admin_files_form_show_validate($form, &$form_state) {
 
@@ -168,9 +166,10 @@ function uc_file_admin_files_form_show_validate($form, &$form_state) {
 }
 
 /**
- * Move to the next step of the administration form.
+ * Moves to the next step of the administration form.
  *
  * @see uc_file_admin_files_form_show_files()
+ * @see uc_file_admin_files_form_show_validate()
  */
 function uc_file_admin_files_form_show_submit($form, &$form_state) {
   // Increment the form step.
@@ -179,8 +178,10 @@ function uc_file_admin_files_form_show_submit($form, &$form_state) {
 }
 
 /**
- * @ingroup themeable
+ * Returns HTML for uc_file_admin_files_form_show().
+ *
  * @see uc_file_admin_files_form_show_files()
+ * @ingroup themeable
  */
 function theme_uc_file_admin_files_form_show($form) {
   $output = '';
@@ -225,13 +226,12 @@ function theme_uc_file_admin_files_form_show($form) {
 }
 
 /**
- * Perform file action (upload, delete, hooked in actions).
+ * Performs file action (upload, delete, hooked in actions).
  *
+ * @see uc_file_admin_files_form()
+ * @see uc_file_admin_files_form_action_validate()
+ * @see uc_file_admin_files_form_action_submit()
  * @ingroup forms
- * @see
- *   uc_file_admin_files_form()
- *   uc_file_admin_files_form_action_validate()
- *   uc_file_admin_files_form_action_submit()
  */
 function uc_file_admin_files_form_action($form_state) {
   $file_ids = array();
@@ -270,7 +270,7 @@ function uc_file_admin_files_form_action($form_state) {
       // Base files/dirs the user selected.
       $form['selected_files'] = array(
         '#type' => 'markup',
-        '#value' => theme_item_list($file_list, NULL, 'ul', array('class' => 'selected-file-name')),
+        '#value' => theme('item_list', $file_list, NULL, 'ul', array('class' => 'selected-file-name')),
       );
 
       $form = confirm_form(
@@ -292,7 +292,7 @@ function uc_file_admin_files_form_action($form_state) {
         // don't have JS enabled over not defaulting to any info.
         $form['affected_files'] = array(
           '#type' => 'markup',
-          '#value' => theme_item_list($affected_list[FALSE], 'Affected file(s)', 'ul', array('class' => 'affected-file-name')),
+          '#value' => theme('item_list', $affected_list[FALSE], 'Affected file(s)', 'ul', array('class' => 'affected-file-name')),
         );
       }
 
@@ -311,7 +311,8 @@ function uc_file_admin_files_form_action($form_state) {
           $max_bytes *= 1024;
       }
 
-      // Gather list of directories under the sleected one(s). '/' is always available.
+      // Gather list of directories under the selected one(s).
+      // '/' is always available.
       $directories = array('' => '/');
       $files = db_query("SELECT * FROM {uc_files}");
       while ($file = db_fetch_object($files)) {
@@ -332,7 +333,7 @@ function uc_file_admin_files_form_action($form_state) {
         '#description' => t('The maximum file size that can be uploaded is %size bytes. You will need to use a different method to upload the file to the directory (e.g. (S)FTP, SCP) if your file exceeds this size.<br />The module will automatically detect files you upload using an alternate method.', array('%size' => number_format($max_bytes))),
       );
 
-      $form['#attributes']['class'] .= 'foo';
+      $form['#attributes']['class'] = 'foo';
       $form = confirm_form(
         $form, t('Upload file'),
         'admin/store/products/files',
@@ -362,6 +363,8 @@ function uc_file_admin_files_form_action($form_state) {
 }
 
 /**
+ * Validation handler for uc_file_admin_files_form().
+ *
  * @see uc_file_admin_files_form_action()
  */
 function uc_file_admin_files_form_action_validate($form, &$form_state) {
@@ -401,6 +404,8 @@ function uc_file_admin_files_form_action_validate($form, &$form_state) {
 }
 
 /**
+ * Submit handler for uc_file_admin_files_form().
+ *
  * @see uc_file_admin_files_action()
  */
 function uc_file_admin_files_form_action_submit($form, &$form_state) {
@@ -495,7 +500,7 @@ function _uc_file_display_arrays_equivalent($recur, $no_recur) {
 }
 
 /**
- * Show all possible files in selectable list.
+ * Shows all possible files in selectable list.
  */
 function _uc_file_build_js_file_display($file_ids) {
 

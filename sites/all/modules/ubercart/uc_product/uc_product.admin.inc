@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_product.admin.inc,v 1.1.2.20 2010/07/12 01:30:05 tr Exp $
 
 /**
  * @file
@@ -7,7 +6,7 @@
  */
 
 /**
- * List all products.
+ * Lists all products.
  */
 function uc_product_administration() {
   $output = '';
@@ -38,17 +37,17 @@ function uc_product_administration() {
 }
 
 /**
- * Display a list of product classes.
+ * Displays a list of product classes.
  */
 function uc_product_class_default() {
-  $result = db_query("SELECT * FROM {uc_product_classes}");
+  $classes = uc_product_class_load();
   $header = array(t('Class ID'), t('Name'), t('Description'), t('Operations'));
   $rows = array();
-  while ($class = db_fetch_object($result)) {
-    $ops = array(
-      l(t('edit'), 'admin/store/products/classes/'. $class->pcid .'/edit'),
-      l(t('delete'), 'admin/store/products/classes/'. $class->pcid .'/delete'),
-    );
+  foreach ($classes as $class) {
+    $ops = array(l(t('edit'), 'admin/store/products/classes/'. $class->pcid .'/edit'));
+    if (empty($class->locked)) {
+      $ops[] = l(t('delete'), 'admin/store/products/classes/'. $class->pcid .'/delete');
+    }
     $rows[] = array(
       $class->pcid,
       $class->name,
@@ -68,11 +67,10 @@ function uc_product_class_default() {
 }
 
 /**
- * Display overview of product settings.
+ * Displays overview of product settings.
  *
- * @see
- *   uc_product_settings_form()
- *   uc_product_field_settings_form()
+ * @see uc_product_settings_form()
+ * @see uc_product_field_settings_form()
  */
 function uc_product_settings_overview() {
   // Load the form summaries for pages beneath this path.
@@ -86,8 +84,8 @@ function uc_product_settings_overview() {
 /**
  * Form to change product settings.
  *
- * @ingroup forms
  * @see uc_product_settings_overview()
+ * @ingroup forms
  */
 function uc_product_settings_form() {
   $form = array();
@@ -164,13 +162,12 @@ function uc_product_settings_form() {
 /**
  * Allows store administrators to control what product information is relavent to their store.
  *
+ * @see uc_product_settings_overview()
+ * @see _uc_product_fields_summarize()
+ * @see theme_uc_product_field_settings_form()
+ * @see uc_product_field_settings_form_reset()
+ * @see uc_product_field_settings_form_submit()
  * @ingroup forms
- * @see
- *   uc_product_settings_overview()
- *   _uc_product_fields_summarize()
- *   theme_uc_product_field_settings_form()
- *   uc_product_field_settings_form_reset()
- *   uc_product_field_settings_form_submit()
  */
 function uc_product_field_settings_form() {
   $form = array();
@@ -190,12 +187,16 @@ function uc_product_field_settings_form() {
     'model' => 'model',
     'image' => 'image',
     'display_price' => 'display_price',
+    'list_price' => FALSE,
+    'cost' => FALSE,
     'sell_price' => 'sell_price',
+    'weight' => FALSE,
+    'dimensions' => FALSE,
     'add_to_cart' => 'add_to_cart',
   ));
   $weight = variable_get('uc_product_field_weight', array(
     'image' => -2,
-    'display_price' -1,
+    'display_price' => -1,
     'model' => 0,
     'list_price' => 2,
     'cost' => 3,
@@ -218,13 +219,16 @@ function uc_product_field_settings_form() {
   $form['fields']['#summary arguments'] = array($options, $enabled, $weight);
 
   foreach ($fields as $label => $field) {
-    $form['fields'][$label]['enabled'] = array('#type' => 'checkbox',
+    $form['fields'][$label]['enabled'] = array(
+      '#type' => 'checkbox',
       '#default_value' => $field['enabled'],
     );
-    $form['fields'][$label]['title'] = array('#type' => 'markup',
+    $form['fields'][$label]['title'] = array(
+      '#type' => 'markup',
       '#value' => $field['title'],
     );
-    $form['fields'][$label]['weight'] = array('#type' => 'weight',
+    $form['fields'][$label]['weight'] = array(
+      '#type' => 'weight',
       '#delta' => 10,
       '#default_value' => $field['weight'],
     );
@@ -234,7 +238,8 @@ function uc_product_field_settings_form() {
     '#type' => 'submit',
     '#value' => t('Save configuration'),
   );
-  $form['buttons']['reset'] = array('#type' => 'submit',
+  $form['buttons']['reset'] = array(
+    '#type' => 'submit',
     '#value' => t('Reset to defaults'),
     '#submit' => array('uc_product_field_settings_form_reset'),
   );
@@ -273,10 +278,10 @@ function _uc_product_fields_summarize($form, $options, $enabled, $weight) {
 }
 
 /**
- * Display the product field settings form.
+ * Displays the product field settings form.
  *
- * @ingroup themeable
  * @see uc_product_field_settings_form()
+ * @ingroup themeable
  */
 function theme_uc_product_field_settings_form($form) {
   $header = array(t('Enable'), t('Product field'), t('List position'));
@@ -288,14 +293,14 @@ function theme_uc_product_field_settings_form($form) {
     $row[] = drupal_render($form['fields'][$field]['weight']);
     $rows[] = $row;
   }
-  $output .= theme('table', $header, $rows);
+  $output  = theme('table', $header, $rows);
 
   $output .= drupal_render($form);
   return $output;
 }
 
 /**
- * Reset field settings to their default values.
+ * Resets field settings to their default values.
  *
  * @see uc_product_field_settings_form()
  */
@@ -307,7 +312,7 @@ function uc_product_field_settings_form_reset($form, &$form_state) {
 }
 
 /**
- * Save the product fields settings.
+ * Saves the product fields settings.
  *
  * @see uc_product_field_settings_form()
  */
@@ -325,10 +330,10 @@ function uc_product_field_settings_form_submit($form, &$form_state) {
 }
 
 /**
- * Display the settings form for all product features.
+ * Displays the settings form for all product features.
  *
- * @ingroup forms
  * @see _uc_product_features_summarize()
+ * @ingroup forms
  */
 function uc_product_feature_settings_form() {
   $titles = array();
@@ -347,7 +352,8 @@ function uc_product_feature_settings_form() {
   );
 
   foreach ($features as $feature) {
-    if (function_exists($feature['settings'])) {
+    if (isset($feature['settings']) &&
+        function_exists($feature['settings'])) {
       $form[$feature['id']] = array(
         '#type' => 'fieldset',
         '#title' => t('!feature settings', array('!feature' => $feature['title'])),
@@ -389,18 +395,11 @@ function uc_product_features($node) {
   if (arg(4)) {
     // First check to see if we're trying to remove a feature.
     if (intval(arg(5)) > 0 && arg(6) == 'delete') {
-      $result = db_query("SELECT * FROM {uc_product_features} WHERE pfid = %d AND fid = '%s'", intval(arg(5)), arg(4));
-      if ($feature = db_fetch_array($result)) {
+      $feature = uc_product_feature_load(intval(arg(5)), arg(4));
+      if (isset($feature)) {
         // If the user confirmed the delete, process it!
         if ($_POST['pf_delete']) {
-          // Call the delete function for this product feature if it exists.
-          $func = uc_product_feature_data($feature['fid'], 'delete');
-          if (function_exists($func)) {
-            $func($feature);
-          }
-
-          // Remove the product feature data from the database.
-          db_query("DELETE FROM {uc_product_features} WHERE pfid = %d", intval(arg(5)));
+          uc_product_feature_delete(intval(arg(5)));
 
           drupal_set_message(t('The product feature has been deleted.'));
           drupal_goto('node/'. arg(1) .'/edit/features');
@@ -425,8 +424,8 @@ function uc_product_features($node) {
         $output = drupal_get_form($func, $node, array());
       }
       elseif (intval(arg(5)) > 0) {
-        $result = db_query("SELECT * FROM {uc_product_features} WHERE pfid = %d AND fid = '%s'", intval(arg(5)), arg(4));
-        if ($feature = db_fetch_array($result)) {
+        $feature = uc_product_feature_load(intval(arg(5)), arg(4));
+        if (isset($feature)) {
           $output = drupal_get_form($func, $node, $feature);
         }
       }
@@ -446,26 +445,27 @@ function uc_product_features($node) {
 
   $header = array(t('Type'), t('Description'), t('Operations'));
 
-  $result = db_query("SELECT * FROM {uc_product_features} WHERE nid = %d ORDER BY pfid ASC", $node->nid);
-  while ($feature = db_fetch_object($result)) {
-    $operations = array(
-      l(t('edit'), 'node/'. $node->nid .'/edit/features/'. $feature->fid .'/'. $feature->pfid),
-      l(t('delete'), 'node/'. $node->nid .'/edit/features/'. $feature->fid .'/'. $feature->pfid .'/delete'),
-    );
-    $rows[] = array(
-      'data' => array(
-        array('data' => uc_product_feature_data($feature->fid, 'title'), 'nowrap' => 'nowrap'),
-        array('data' => $feature->description, 'width' => '100%'),
-        array('data' => implode(' ', $operations), 'nowrap' => 'nowrap'),
-      ),
-      'valign' => 'top',
-    );
-  }
-
-  if (empty($rows)) {
+  $features = uc_product_feature_load_multiple($node->nid);
+  if (empty($features)) {
     $rows[] = array(
       array('data' => t('No features found for this product.'), 'colspan' => 3),
     );
+  }
+  else {
+    foreach ($features as $feature) {
+      $operations = array(
+        l(t('edit'), 'node/'. $node->nid .'/edit/features/'. $feature->fid .'/'. $feature->pfid),
+        l(t('delete'), 'node/'. $node->nid .'/edit/features/'. $feature->fid .'/'. $feature->pfid .'/delete'),
+      );
+      $rows[] = array(
+        'data' => array(
+          array('data' => uc_product_feature_data($feature->fid, 'title'), 'nowrap' => 'nowrap'),
+          array('data' => $feature->description, 'width' => '100%'),
+          array('data' => implode(' ', $operations), 'nowrap' => 'nowrap'),
+        ),
+        'valign' => 'top',
+      );
+    }
   }
 
   $output = theme('table', $header, $rows)
@@ -475,12 +475,11 @@ function uc_product_features($node) {
 }
 
 /**
- * Add the form for adding a product feature to the features tab.
+ * Adds the form for adding a product feature to the features tab.
  *
+ * @see theme_uc_product_feature_add_form()
+ * @see uc_product_feature_add_form_submit()
  * @ingroup forms
- * @see
- *   theme_uc_product_feature_add_form()
- *   uc_product_feature_add_form_submit()
  */
 function uc_product_feature_add_form() {
   foreach (module_invoke_all('product_feature') as $feature) {
@@ -503,8 +502,10 @@ function uc_product_feature_add_form() {
 }
 
 /**
- * @ingroup themeable
+ * Theme function for uc_product_feature_add_form().
+ *
  * @see uc_product_feature_add_form()
+ * @ingroup themeable
  */
 function theme_uc_product_feature_add_form($form) {
   $output = '<table class="add-feature"><tr><td>'. drupal_render($form) .'</td></tr></table>';
@@ -512,6 +513,8 @@ function theme_uc_product_feature_add_form($form) {
 }
 
 /**
+ * Form submission handler for uc_product_feature_add_form().
+ *
  * @see uc_product_feature_add_form().
  */
 function uc_product_feature_add_form_submit($form, &$form_state) {
@@ -519,13 +522,14 @@ function uc_product_feature_add_form_submit($form, &$form_state) {
 }
 
 /**
- * Set up imagefield and imagecache for products.
+ * Sets up imagefield and imagecache for products.
  *
  * @param $checks
  *   A bitmap describing the state of the image modules. Four checks are made
  *   to fill this bitmap: an imagefield exists, an imagefield is attached to
  *   product, the imagecache presets exist, and each preset has at least one
  *   action.
+ *
  * @see uc_product_store_status()
  */
 function uc_product_image_defaults() {
@@ -539,10 +543,9 @@ function uc_product_image_defaults() {
 /**
  * Form builder for product classes.
  *
+ * @see uc_product_class_form_validate()
+ * @see uc_product_class_form_submit()
  * @ingroup forms
- * @see
- *   uc_product_class_form_validate()
- *   uc_product_class_form_submit()
  */
 function uc_product_class_form($form_state, $class = NULL) {
   if (!is_null($class)) {
@@ -586,9 +589,10 @@ function uc_product_class_form($form_state, $class = NULL) {
 }
 
 /**
- * Ensure the new product class is unique.
+ * Ensures the new product class is unique.
  *
  * @see uc_product_class_form()
+ * @see uc_product_class_form_submit()
  */
 function uc_product_class_form_validate($form, &$form_state) {
   if ($form['pcid']['#type'] == 'textfield') {
@@ -605,7 +609,10 @@ function uc_product_class_form_validate($form, &$form_state) {
 }
 
 /**
+ * Form submission handler for uc_product_class_form().
+ *
  * @see uc_product_class_form()
+ * @see uc_product_class_form_validate()
  */
 function uc_product_class_form_submit($form, &$form_state) {
   $is_new = $form['pcid']['#type'] == 'textfield';
@@ -628,6 +635,7 @@ function uc_product_class_form_submit($form, &$form_state) {
   }
   else {
     db_query("UPDATE {uc_product_classes} SET name = '%s', description = '%s' WHERE pcid = '%s'", $form_state['values']['name'], $form_state['values']['description'], $pcid);
+    db_query("UPDATE {node_type} SET name = '%s', description = '%s' WHERE type = '%s'", $form_state['values']['name'], $form_state['values']['description'], $pcid);
     uc_product_node_info(TRUE);
 
     module_invoke_all('product_class', $pcid, 'update');
@@ -643,7 +651,7 @@ function uc_product_class_form_submit($form, &$form_state) {
 }
 
 /**
- * Confirm the deletion of a product class.
+ * Confirms the deletion of a product class.
  *
  * @see uc_product_class_delete_confirm_submit()
  */
@@ -669,6 +677,8 @@ function uc_product_class_delete_confirm($form_state, $class) {
 }
 
 /**
+ * Form submission handler for uc_product_class_delete_confirm().
+ *
  * @see uc_product_class_delete_confirm()
  */
 function uc_product_class_delete_confirm_submit($form, &$form_state) {

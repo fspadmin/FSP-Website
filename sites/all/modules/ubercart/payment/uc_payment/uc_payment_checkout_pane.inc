@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_payment_checkout_pane.inc,v 1.5.2.8 2009/09/21 14:34:46 islandusurper Exp $
 
 /**
  * @file
@@ -9,7 +8,7 @@
  * preview of the line items and order total.
  */
 
-function uc_checkout_pane_payment($op, &$arg1, $arg2) {
+function uc_checkout_pane_payment($op, &$order, $arg2) {
   switch ($op) {
     case 'view':
       // Add the default payment message as a JS variable.
@@ -29,7 +28,7 @@ function uc_checkout_pane_payment($op, &$arg1, $arg2) {
 
         $contents['current_total'] = array(
           '#type' => 'hidden',
-          '#value' => $arg1->order_total > 0 ? $arg1->order_total : NULL,
+          '#value' => $order->order_total > 0 ? $order->order_total : NULL,
         );
         $contents['shown_total'] = array(
           '#value' => '<div style="padding: .5em 1em; margin-bottom: 1em; border: dashed 1px #bbb;" id="line-items-div"><em>'. t('Javascript must be enabled to view the order total preview.') .'</em></div>',
@@ -41,6 +40,8 @@ function uc_checkout_pane_payment($op, &$arg1, $arg2) {
       }
 
       $methods = _payment_method_list();
+      $options = array();
+      $default = NULL;
 
       foreach ($methods as $method) {
         if ($method['checkout']) {
@@ -48,12 +49,14 @@ function uc_checkout_pane_payment($op, &$arg1, $arg2) {
         }
       }
 
-      if (is_array($options)) {
-        if (isset($_POST['panes']) && in_array($_POST['panes']['payment']['payment_method'], array_keys($options))) {
+      if (count($options)) {
+        if (isset($_POST['panes']) &&
+            isset($_POST['panes']['payment']['payment_method']) &&
+            in_array($_POST['panes']['payment']['payment_method'], array_keys($options))) {
           $default = $_POST['panes']['payment']['payment_method'];
         }
         else {
-          $default = (count($options) == 1 || !isset($arg1->payment_method)) ? key($options) : $arg1->payment_method;
+          $default = (count($options) == 1 || empty($order->payment_method)) ? key($options) : $order->payment_method;
         }
       }
 
@@ -81,10 +84,10 @@ function uc_checkout_pane_payment($op, &$arg1, $arg2) {
       return array('description' => $description, 'contents' => $contents);
 
     case 'process':
-      $arg1->payment_method = $arg2['payment_method'];
-      $func = _payment_method_data($arg1->payment_method, 'callback');
+      $order->payment_method = $arg2['payment_method'];
+      $func = _payment_method_data($order->payment_method, 'callback');
       if (function_exists($func)) {
-        $result = $func('cart-process', $arg1);
+        $result = $func('cart-process', $order);
         if ($result === FALSE) {
           return FALSE;
         }
@@ -92,11 +95,11 @@ function uc_checkout_pane_payment($op, &$arg1, $arg2) {
       return TRUE;
 
     case 'review':
-      $line_items = $arg1->line_items;
+      $line_items = $order->line_items;
       $items = _line_item_list();
       foreach ($items as $item) {
         if (isset($item['display_only']) && $item['display_only'] == TRUE) {
-          $result = $item['callback']('display', $arg1);
+          $result = $item['callback']('display', $order);
           if (is_array($result)) {
             foreach ($result as $line) {
               $line_items[] = array(
@@ -114,21 +117,21 @@ function uc_checkout_pane_payment($op, &$arg1, $arg2) {
         'revision' => 'themed',
         'type' => 'line_item',
         'subject' => array(
-          'order' => $arg1,
+          'order' => $order,
         ),
       );
       foreach ($line_items as $line_item) {
         $context['subject']['line_item'] = $line_item;
         $review[] = array('title' => $line_item['title'], 'data' => uc_price($line_item['amount'], $context));
       }
-      $review_data = _payment_method_data($arg1->payment_method, 'review');
+      $review_data = _payment_method_data($order->payment_method, 'review');
       if (empty($review_data)) {
-        $review_data = _payment_method_data($arg1->payment_method, 'name');
+        $review_data = _payment_method_data($order->payment_method, 'name');
       }
       $review[] = array('border' => 'top', 'title' => t('Paying by'), 'data' => $review_data);
-      $func = _payment_method_data($arg1->payment_method, 'callback');
+      $func = _payment_method_data($order->payment_method, 'callback');
       if (function_exists($func)) {
-        $result = $func('cart-review', $arg1);
+        $result = $func('cart-review', $order);
         if (is_array($result)) {
           $review = array_merge($review, $result);
         }

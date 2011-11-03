@@ -43,14 +43,12 @@ CKEDITOR.plugins.add( 'drupalbreaks',
 					command : 'drupalbreak'
 				});
 
-			if ( Drupal.settings.ckeditor.pagebreak ) {
-				editor.ui.addButton( 'DrupalPageBreak',
-						{
-							label : Drupal.t( 'Insert Page Break' ),
-							icon : this.path + 'images/drupalpagebreak.png',
-							command : 'drupalpagebreak'
-						});
-			}
+                        editor.ui.addButton( 'DrupalPageBreak',
+                                {
+                                        label : Drupal.t( 'Insert Page Break' ),
+                                        icon : this.path + 'images/drupalpagebreak.png',
+                                        command : 'drupalpagebreak'
+                                });
 		}
 
 		// Register the commands.

@@ -1,5 +1,4 @@
 <?php
-// $Id: argentina_32_1.cif,v 1.2.2.8 2010/04/14 05:18:19 tr Exp $
 
 function argentina_install() {
   // VALUES = Country ID, Country Name, 2-digit Code, 3-digit Code, File Version

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_usps.install,v 1.5.2.8 2010/03/19 21:27:17 tr Exp $
 
 /**
  * @file
@@ -7,26 +6,26 @@
  */
 
 /**
- * Implementation of hook_requirements().
+ * Implements hook_requirements().
  */
 function uc_usps_requirements($phase) {
   $t = get_t();
 
-  $has_simplexml = class_exists('SimpleXMLElement');
+  $has_simplexml = extension_loaded('SimpleXML');
   $requirements['uc_usps_simplexml'] = array(
     'title' => $t('SimpleXML'),
     'value' => $has_simplexml ? $t('Enabled') : $t('Not found'),
   );
   if (!$has_simplexml) {
     $requirements['uc_usps_simplexml']['severity'] = REQUIREMENT_ERROR;
-    $requirements['uc_usps_simplexml']['description'] = $t('USPS requires the PHP <a href="!simplexml_url">SimpleXML</a> library.', array('!simplexml_url' => 'http://php.net/manual/en/simplexml.setup.php'));
+    $requirements['uc_usps_simplexml']['description'] = $t('USPS requires the PHP <a href="!simplexml_url">SimpleXML</a> library.', array('!simplexml_url' => 'http://www.php.net/simplexml'));
   }
 
   return $requirements;
 }
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_usps_schema() {
   $schema = array();
@@ -63,20 +62,33 @@ function uc_usps_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_usps_install() {
   drupal_install_schema('uc_usps');
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_usps_uninstall() {
   drupal_uninstall_schema('uc_usps');
+  variable_del('uc_usps_markup');
+
   variable_del('uc_usps_user_id');
   variable_del('uc_usps_services');
-  variable_del('uc_usps_markup');
+  variable_del('uc_usps_env_services');
+  variable_del('uc_usps_intl_services');
+  variable_del('uc_usps_intl_env_services');
+  variable_del('uc_usps_rate_markup');
+  variable_del('uc_usps_rate_markup_type');
+  variable_del('uc_usps_weight_markup');
+  variable_del('uc_usps_weight_markup_type');
+  variable_del('uc_usps_all_in_one');
+  variable_del('uc_usps_insurance');
+  variable_del('uc_usps_delivery_confirmation');
+  variable_del('uc_usps_signature_confirmation');
+  variable_del('uc_usps_online_rates');
 }
 
 function uc_usps_update_1() {

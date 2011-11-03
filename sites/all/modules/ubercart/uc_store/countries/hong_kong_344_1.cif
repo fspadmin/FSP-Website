@@ -1,5 +1,4 @@
 <?php
-// $Id: hong_kong_344_1.cif,v 1.2.2.7 2010/04/14 05:18:19 tr Exp $
 
 function hong_kong_install() {
   db_query("INSERT INTO {uc_countries} (country_id, country_name, country_iso_code_2, country_iso_code_3, version) VALUES (344, 'Hong Kong', 'HK', 'HKG', 1)");

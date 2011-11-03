@@ -1,19 +1,22 @@
 <?php
-// $Id: uc_payment.admin.inc,v 1.1.2.12 2010/07/12 01:57:44 tr Exp $
 
 /**
  * @file
  * Payment administration menu items.
- *
  */
 
 
-// Displays an overview of the payment settings.
+/**
+ * Displays an overview of the payment settings.
+ */
 function uc_payment_settings_overview() {
   // Theme all the pages beneath this path into summary overviews.
   return theme('summary_overview', summarize_child_form_pages('admin/store/settings/payment/edit'));
 }
 
+/**
+ * Payment settings form.
+ */
 function uc_payment_settings_form() {
   $form['uc_payment_tracking'] = array(
     '#type' => 'checkbox',
@@ -57,6 +60,11 @@ function uc_payment_settings_form() {
   return system_settings_form($form);
 }
 
+/**
+ * Displays an overview of the available payment methods.
+ *
+ * @see theme_uc_payment_methods_table()
+ */
 function uc_payment_methods_form() {
   $methods = _payment_method_list();
 
@@ -92,7 +100,7 @@ function uc_payment_methods_form() {
         '#default_value' => variable_get('uc_payment_method_'. $method['id'] .'_weight', $method['weight']),
       );
 
-      if ($method['no_gateway'] === TRUE) {
+      if (isset($method['no_gateway']) && $method['no_gateway'] === TRUE) {
         $form['pmtable'][$method['id']]['uc_payment_'. $method['id'] .'_gateway'] = array(
           '#value' => '-',
         );
@@ -121,16 +129,18 @@ function uc_payment_methods_form() {
       }
 
       $null = NULL;
-      $method_settings = $method['callback']('settings', $null);
-      if (is_array($method_settings)) {
-        $form['method_'. $method['id']] = array(
-          '#type' => 'fieldset',
-          '#summary callback' => 'summarize_null',
-          '#title' => t('!method settings', array('!method' => $method['name'], '!weight' => $method['weight'])),
-          '#collapsible' => TRUE,
-          '#collapsed' => TRUE,
-        );
-        $form['method_'. $method['id']] = array_merge($form['method_'. $method['id']], $method_settings);
+      if (function_exists($method['callback'])) {
+        $method_settings = $method['callback']('settings', $null);
+        if (is_array($method_settings)) {
+          $form['method_'. $method['id']] = array(
+            '#type' => 'fieldset',
+            '#summary callback' => 'summarize_null',
+            '#title' => t('!method settings', array('!method' => $method['name'], '!weight' => $method['weight'])),
+            '#collapsible' => TRUE,
+            '#collapsed' => TRUE,
+          );
+          $form['method_'. $method['id']] = array_merge($form['method_'. $method['id']], $method_settings);
+        }
       }
     }
   }
@@ -138,6 +148,12 @@ function uc_payment_methods_form() {
   return system_settings_form($form);
 }
 
+/**
+ * Themes the table that displays available payment methods.
+ *
+ * @see uc_payment_methods_form()
+ * @ingroup themeable
+ */
 function theme_uc_payment_method_table($form) {
   $header = array(t('Enabled'), t('Payment method'), t('List position'), t('Default gateway'));
 
@@ -159,6 +175,9 @@ function theme_uc_payment_method_table($form) {
   return theme('table', $header, $rows);
 }
 
+/**
+ * Displays an overview of the available payment gateways.
+ */
 function uc_payment_gateways_form() {
   $gateways = _payment_gateway_list();
   $methods = _payment_method_list();
@@ -202,7 +221,7 @@ function uc_payment_gateways_form() {
       );
 
       // Find any additional settings defined in the payment gateway callback.
-      if (function_exists($gateway['settings'])) {
+      if (isset($gateway['settings']) && function_exists($gateway['settings'])) {
         $gateway_settings = $gateway['settings']();
         if (is_array($gateway_settings)) {
           $form['gateways'][$gateway['id']] = array_merge($form['gateways'][$gateway['id']], $gateway_settings);
@@ -210,11 +229,20 @@ function uc_payment_gateways_form() {
       }
     }
   }
+  else {
+    $form['gateways_info'] = array(
+      '#markup' => '<div><strong>' . t('Payment gateways') . '</strong><br />'
+                . t('Payment gateways are web services that allow you to process various types of payments remotely. No payment gateways are currently enabled.') . '</div>',
+      '#weight' => -10,
+    );
+  }
 
   return system_settings_form($form);
 }
 
-// Returns an array of enabled payment gateways for the form summary.
+/**
+ * Returns an array of enabled payment gateways for the form summary.
+ */
 function _uc_payment_gateways_summarize($form, $gateways) {
   $items = array();
 
@@ -230,7 +258,7 @@ function _uc_payment_gateways_summarize($form, $gateways) {
 }
 
 /**
- * Select a payment gateway to process a payment when multiple gateways
+ * Selects a payment gateway to process a payment when multiple gateways
  * exist for a given payment method.
  */
 function uc_payment_gateway_select() {
@@ -248,6 +276,10 @@ function uc_payment_gateway_select() {
   return $output;
 }
 
+/**
+ * @see uc_payment_gateway_select_form_submit()
+ * @ingroup forms
+ */
 function uc_payment_gateway_select_form($form_state, $options, $method, $order_id, $amount, $data) {
   $form['method'] = array(
     '#type' => 'hidden',
@@ -279,6 +311,11 @@ function uc_payment_gateway_select_form($form_state, $options, $method, $order_i
   return $form;
 }
 
+/**
+ * Submit handler for uc_payment_gateway_select_form().
+ *
+ * @see uc_payment_gateway_select_form()
+ */
 function uc_payment_gateway_select_form_submit($form, &$form_state) {
   unset($_SESSION['uc_payment_method']);
   unset($_SESSION['uc_payment_order_id']);
@@ -292,7 +329,14 @@ function uc_payment_gateway_select_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/store/orders/'. $form_state['values']['order_id'];
 }
 
-// Displays a list of payments attached to an order.
+/**
+ * Displays a list of payments attached to an order.
+ *
+ * @see uc_payment_by_order_form_validate()
+ * @see uc_payment_by_order_form_submit()
+ * @see theme_uc_payment_by_order_form()
+ * @ingroup forms
+ */
 function uc_payment_by_order_form($form_state, $order) {
   $total = $order->order_total;
   $payments = uc_payment_load_payments($order->order_id);
@@ -390,6 +434,12 @@ function uc_payment_by_order_form($form_state, $order) {
   return $form;
 }
 
+/**
+ * Themes uc_payment_by_order_form().
+ *
+ * @see uc_payment_by_order_form()
+ * @ingroup themeable
+ */
 function theme_uc_payment_by_order_form($form) {
   $output = '<p><strong>'. t('Order total:') .'</strong> '. drupal_render($form['order_total'])
            .'<br /><strong>'. t('Current balance:') .'</strong> '
@@ -400,6 +450,12 @@ function theme_uc_payment_by_order_form($form) {
   return $output;
 }
 
+/**
+ * Form validation for uc_payment_by_order_form().
+ *
+ * @see uc_payment_by_order_form()
+ * @see uc_payment_by_order_form_submit()
+ */
 function uc_payment_by_order_form_validate($form, &$form_state) {
   if (!is_numeric($form_state['values']['payments']['new']['amount'])) {
     form_set_error('payments][new][amount', t('You must enter a number for the amount.'));
@@ -407,6 +463,12 @@ function uc_payment_by_order_form_validate($form, &$form_state) {
   return TRUE;
 }
 
+/**
+ * Form submission handler for uc_payment_by_order_form().
+ *
+ * @see uc_payment_by_order_form()
+ * @see uc_payment_by_order_form_validate()
+ */
 function uc_payment_by_order_form_submit($form, &$form_state) {
   global $user;
 
@@ -417,7 +479,12 @@ function uc_payment_by_order_form_submit($form, &$form_state) {
   drupal_set_message(t('Payment entered.'));
 }
 
-// Confirmation form to delete a payment from an order.
+/**
+ * Confirmation form to delete a payment from an order.
+ *
+ * @see uc_payment_delete_confirm_form_submit()
+ * @ingroup forms
+ */
 function uc_payment_delete_confirm_form($form_state, $order, $payment) {
   // Make sure the payment is for the specified order.
   if ($payment->order_id != $order->order_id) {
@@ -448,6 +515,11 @@ function uc_payment_delete_confirm_form($form_state, $order, $payment) {
   return confirm_form($form, t('Are you sure you want to delete this payment?'), 'admin/store/orders/'. $order->order_id .'/payments', $desc, t('Delete'));
 }
 
+/**
+ * Form submission handler for uc_payment_delete_confirm_form().
+ *
+ * @see uc_payment_delete_confirm_form()
+ */
 function uc_payment_delete_confirm_form_submit($form, &$form_state) {
   uc_payment_delete($form_state['values']['receipt_id']);
 

@@ -1,5 +1,4 @@
 <?php
-// $Id: print.admin.inc,v 1.1.2.35 2010/08/18 17:30:07 jcnventura Exp $
 
 /**
  * @file
@@ -316,6 +315,13 @@ function print_html_settings() {
     '#description' => t("When the above options are enabled, this option will close the window after its contents are printed."),
   );
 
+  $form['settings']['print_display_sys_urllist'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Printer-friendly URLs list in system pages'),
+    '#default_value' => variable_get('print_display_sys_urllist', PRINT_TYPE_SYS_URLLIST_DEFAULT),
+    '#description' => t('Enabling this option will display a list of printer-friendly destination URLs at the bottom of the page.'),
+  );
+
   $form['settings']['print_robots_settings'] = array(
       '#type' => 'fieldset',
       '#title' => t('Robots META tags'),
@@ -363,14 +369,6 @@ function print_main_strings_settings() {
   $form['print_main_text']['print_text_published'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('print_text_published', t('Published on %site_name')),
-  );
-  $form['print_main_text']['print_text_by'] = array(
-    '#type' => 'textfield',
-    '#default_value' => variable_get('print_text_by', t('By %author')),
-  );
-  $form['print_main_text']['print_text_created'] = array(
-    '#type' => 'textfield',
-    '#default_value' => variable_get('print_text_created', t('Created %date')),
   );
   $form['print_main_text']['print_text_source_url'] = array(
     '#type' => 'textfield',

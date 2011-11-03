@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_weightquote.install,v 1.5.2.10 2010/03/19 21:27:17 tr Exp $
 
 /**
  * @file
@@ -7,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_weightquote_schema() {
   $schema = array();
@@ -94,14 +93,14 @@ function uc_weightquote_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_weightquote_install() {
   drupal_install_schema('uc_weightquote');
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_weightquote_uninstall() {
   drupal_uninstall_schema('uc_weightquote');

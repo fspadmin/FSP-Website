@@ -1,12 +1,14 @@
-/* $Id: uc_store.css,v 1.8.2.6 2009/07/08 12:56:49 islandusurper Exp $ */
-
+/**
+ * @file
+ * Styles for uc_store module.
+ */
 .uc-price {
   white-space: nowrap;
 }
 
 .uc-store-admin-table {
   margin: 1em auto;
-  border: 1px dashed #bbb;
+  border: 1px dashed #BBB;
 }
 
 .uc-store-admin-table tbody {
@@ -38,12 +40,14 @@
   margin-right: .5em;
 }
 
-.uc-customer-table tr.odd:hover, .uc-customer-table tr.even:hover {
-  background-color: #ddd;
+.uc-customer-table tr.odd:hover,
+.uc-customer-table tr.even:hover {
+  background-color: #DDD;
 }
 
-.uc-cust-orders-table tr.odd:hover, .uc-cust-orders-table tr.even:hover {
-  background-color: #ddd;
+.uc-cust-orders-table tr.odd:hover,
+.uc-cust-orders-table tr.even:hover {
+  background-color: #DDD;
 }
 
 .uc-cust-orders-table .uc-store-icon {
@@ -58,6 +62,14 @@
   clear: both;
 }
 
+.uc-default-submit {
+  height: 0px;
+  left: -9999px;
+  position: absolute;
+  visibility: hidden;
+  width: 0px;
+}
+
 table.section-items {
   width: auto;
 }
@@ -66,7 +78,8 @@ table.section-items td {
   padding: .25em;
 }
 
-#uc-country-import-form .form-item, #uc-country-import-form .form-item label {
+#uc-country-import-form .form-item,
+#uc-country-import-form .form-item label {
   display: inline;
   float: left;
   margin-right: 1em;
@@ -87,7 +100,7 @@ table.section-items td {
 
 .summary-overview {
   padding: .5em;
-  border: 1px dashed #bbb;
+  border: 1px dashed #BBB;
   margin-bottom: -1px;
 }
 
@@ -100,7 +113,7 @@ table.section-items td {
 }
 
 .summaryOnclick-processed:hover {
-  background-color: #ddd;
+  background-color: #DDD;
 }
 
 .summary-edit-icon {

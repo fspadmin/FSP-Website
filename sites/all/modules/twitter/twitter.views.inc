@@ -48,7 +48,7 @@ function twitter_views_data() {
 
   // Twitter screen name
   $data['twitter']['screen_name'] = array(
-    'title' => t('Login name'),
+    'title' => t('Twitter message login name author'),
     'help' => t('The login account of the Twitter user.'),
     'field' => array(
       'handler' => 'views_handler_field',
@@ -62,6 +62,23 @@ function twitter_views_data() {
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_string',
+    ),
+  );
+
+  // Twitter status id
+  $data['twitter']['twitter_id'] = array(
+    'title' => t('Status ID'),
+    'help' => t('The ID of the Twitter status message.'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+      'allow empty' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
     ),
   );
 
@@ -110,8 +127,42 @@ function twitter_views_data() {
     ),
   );
 
+  // Twitter reply-to-status id
+  $data['twitter']['in_reply_to_status_id'] = array(
+    'title' => t('Reply ID'),
+    'help' => t('The ID of the Twitter status this message is replying to.'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+      'allow empty' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
 
-
+  // Twitter reply-to-status screen name
+  $data['twitter']['in_reply_to_screen_name'] = array(
+    'title' => t('Reply name'),
+    'help' => t('The login account of the Twitter user this message is replying to.'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+      'allow empty' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+    ),
+  );
 
   $data['twitter_account']['table']['group']  = t('Twitter');
 

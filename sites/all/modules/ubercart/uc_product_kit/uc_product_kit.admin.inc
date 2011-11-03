@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_product_kit.admin.inc,v 1.1.2.6 2010/07/12 01:29:11 tr Exp $
 
 /**
  * @file
@@ -7,7 +6,7 @@
  */
 
 /**
- * Build the product kit settings form.
+ * Builds the product kit settings form.
  *
  * @ingroup forms
  */

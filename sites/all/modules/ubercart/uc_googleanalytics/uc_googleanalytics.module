@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_googleanalytics.module,v 1.6.2.9 2010/07/12 01:31:31 tr Exp $
 
 /**
  * @file
@@ -12,7 +11,7 @@
  */
 
 /**
- * Implementation of hook_enable().
+ * Implements hook_enable().
  */
 function uc_googleanalytics_enable() {
   // Get the weight of the Google Analytics module.
@@ -24,7 +23,7 @@ function uc_googleanalytics_enable() {
 }
 
 /**
- * Implementation of hook_footer().
+ * Implements hook_footer().
  */
 function uc_googleanalytics_footer($main = 0) {
   // Check to see if we are at the order completion page.
@@ -44,9 +43,9 @@ function uc_googleanalytics_footer($main = 0) {
 }
 
 /**
- * Implementation of hook_order().
+ * Implements hook_order().
  */
-function uc_googleanalytics_order($op, &$arg1, $arg2) {
+function uc_googleanalytics_order($op, $arg1, $arg2) {
   // If a new order is created during the checkout process...
   if ($op == 'new' && arg(0) == 'cart') {
     // Store the order ID for later use.
@@ -69,7 +68,7 @@ function uc_googleanalytics_display() {
   // Or if the URL is the custom completion page.
   $completion_page = variable_get('uc_cart_checkout_complete_page', '');
 
-  if (!empty($completion_page) && $completion_page == $_GET['q']) {
+  if (!empty($completion_page) && $completion_page == drupal_get_path_alias($_GET['q'])) {
     return TRUE;
   }
 
@@ -93,7 +92,9 @@ function uc_googleanalytics_display() {
  *   The JS that should be added to the page footer.
  */
 function uc_googleanalytics_ecommerce_js($order) {
-  $script = '';
+  // Support both Google Analytics versions 2.x and 3.x.
+  $script2 = '';
+  $script3 = '';
 
   // Lookup the name of the country or default to the ID if it can't be found
   // for some reason.
@@ -148,7 +149,8 @@ function uc_googleanalytics_ecommerce_js($order) {
   );
 
   // Add the transaction line to the JS.
-  $script .= 'pageTracker._addTrans('. implode(', ', $args) .');';
+  $script2 .= 'pageTracker._addTrans('. implode(', ', $args) .');';
+  $script3 .= '_gaq.push(["_addTrans", '. implode(', ', $args) .']);';
 
   // Loop through the products on the order.
   foreach ($order->products as $product) {
@@ -180,22 +182,38 @@ function uc_googleanalytics_ecommerce_js($order) {
     // Allow modules to alter the item arguments.
     drupal_alter('ucga_item', $item, $product, $trans, $order);
 
+      // Create a context for uc_price
+      $context = array(
+      'revision' => 'altered',
+      'type' => 'order_product',
+      'caller' => 'uc_googleanalytics',
+      'subject' => array(
+         'order_product' => $product,
+         'order' => $order,
+         'node' => node_load($product->nid),
+      ),
+    );
+
     // Put the arguments into an array that is safe to implode directly.
     $args = array(
       '"'. $item['order_id'] .'"',
       drupal_to_js($item['sku']),
       drupal_to_js($item['name']),
       drupal_to_js((string) $item['category']),
-      '"'. $item['price'] .'"',
+      '"'. uc_price($item['price'], $context) .'"',
       '"'. $item['qty'] .'"',
     );
 
     // Add the item line to the JS.
-    $script .= 'pageTracker._addItem('. implode(', ', $args) .');';
+    $script2 .= 'pageTracker._addItem('. implode(', ', $args) .');';
+    $script3 .= '_gaq.push(["_addItem", '. implode(', ', $args) .']);';
   }
 
   // Add the function to submit the transaction to GA.
-  $script .= 'pageTracker._trackTrans();';
+  $script2 .= 'pageTracker._trackTrans();';
+  $script3 .= '_gaq.push(["_trackTrans"]);';
 
-  return $script;
+  // Google Analytics 3.x starts with schema version 6300.
+  $version = db_result(db_query("SELECT schema_version FROM {system} WHERE type = 'module' AND name = 'googleanalytics'"));
+  return $version >= 6300 ? $script3 : $script2;
 }

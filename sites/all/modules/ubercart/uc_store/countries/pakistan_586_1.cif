@@ -1,5 +1,4 @@
 <?php
-// $Id: pakistan_586_1.cif,v 1.1.2.3 2010/04/14 05:18:19 tr Exp $
 
 function pakistan_install() {
 

@@ -4,9 +4,9 @@ package = "Ubercart - extra"
 core = 6.x
 dependencies[] = uc_cart
 
-; Information added by drupal.org packaging script on 2011-07-22
-version = "6.x-2.0-rc3"
+; Information added by drupal.org packaging script on 2011-08-25
+version = "6.x-2.0"
 core = "6.x"
 project = "uc_ajax_cart"
-datestamp = "1311322320"
+datestamp = "1314266824"
 

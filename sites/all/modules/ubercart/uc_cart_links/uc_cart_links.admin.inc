@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_cart_links.admin.inc,v 1.1.2.5 2010/08/11 17:52:20 islandusurper Exp $
 
 /**
  * @file
@@ -28,16 +27,21 @@ function uc_cart_links_settings_form() {
     '#title' => t('Track clicks through cart links that specify tracking IDs.'),
     '#default_value' => variable_get('uc_cart_links_track', TRUE),
   );
+  $form['uc_cart_links_empty'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow cart links to empty customer carts.'),
+    '#default_value' => variable_get('uc_cart_links_empty', TRUE),
+  );
   $form['uc_cart_links_messages'] = array(
     '#type' => 'textarea',
     '#title' => t('Cart links messages'),
-    '#description' => t('Enter in messages available to the cart links API for display through a link. Separate messages with a line break.<br />Messages should have a numeric key and text value. Example: 1337|Message text.'),
+    '#description' => t('Enter messages available to the cart links API for display through a link. Separate messages with a line break. Each message should have a numeric key and text value, separated by "|". For example: 1337|Message text.'),
     '#default_value' => variable_get('uc_cart_links_messages', ''),
   );
   $form['uc_cart_links_restrictions'] = array(
     '#type' => 'textarea',
     '#title' => t('Cart links restrictions'),
-    '#description' => t('To restrict what cart links may be used on your site, enter valid cart links in this textbox.  Separate links with a line break. Leave blank to permit any cart link.'),
+    '#description' => t('To restrict what cart links may be used on your site, enter all valid cart links in this textbox.  Separate links with a line break. Leave blank to permit any cart link.'),
     '#default_value' => variable_get('uc_cart_links_restrictions', ''),
   );
   $form['uc_cart_links_invalid_page'] = array(
@@ -66,7 +70,7 @@ function uc_cart_links_report() {
   );
 
   $rows = array();
-  $result = pager_query("SELECT * FROM {uc_cart_link_clicks}". tablesort_sql($header), 25, 1);
+  $result = pager_query("SELECT * FROM {uc_cart_link_clicks}". tablesort_sql($header), 25);
   while ($data = db_fetch_object($result)) {
     $rows[] = array(
       check_plain($data->cart_link_id),
@@ -81,42 +85,98 @@ function uc_cart_links_report() {
     );
   }
 
-  return theme('table', $header, $rows) . theme('pager', array(), 25, 1);
+  return theme('table', $header, $rows) . theme('pager', array(), 25);
 }
 
 /**
- * Learn how to create cart links for your products.
+ * Provides instructions on how to create cart links.
  *
  * @return
  *   Help text in HTML format.
  */
 function uc_cart_links_creation_help() {
-  $items = array(
-    t('The cart link should be /cart/add/cart_link_content.'),
-    t('Chain together as many actions as you want with dashes.'),
-    t('Do not put any spaces or use dashes in any action arguments.'),
-    t('Use the table below to learn about actions and their arguments.'),
-    t('Arguments come directly after their action letters.'),
-    t('Specify the redirection by adding ?destination=url where url is the page to go to.'),
+  $build = array(
+    '#prefix' => '<p>',
+    '#suffix' => '</p>',
   );
+  $build['introduction'] = array(
+    '#prefix' => '<p>',
+    '#value' => t("Cart Links allow you to craft links that add products to customer shopping carts and redirect customers to any page on the site. A store owner might use a Cart Link as a 'Buy it now' link in an e-mail, in a blog post, or on any page, either on or off site. These links may be identified with a unique ID, and clicks on these links may be reported to the administrator in order to track the effectiveness of each unique ID. You may track affiliate sales, see basic reports, and make sure malicious users don't create unapproved links."),
+    '#suffix' => '</p>',
+  );
+  $build['uses'] = array(
+    '#prefix' => t('The following actions may be configured to occur when a link is clicked:'),
+    '#value' => theme('item_list', array(
+      t("Add any quantity of any number of products to the customer's cart, with specific attributes and options for each added product, if applicable."),
+      t('Display a custom message to the user.'),
+      t('Track the click for display on a store report.'),
+      t("Empty the customer's shopping cart."),
+      t('Redirect to any page on the site.'),
+    )),
+  );
+
+  $build['suggestions'] = array(
+    '#prefix' => '<p>',
+    '#value' => t('A Cart Link URL looks like:<blockquote><code>/cart/add/<em>&lt;cart_link_content&gt;</em></code></blockquote>where <code><em>&lt;cart_link_content&gt;</em></code> consists of one or more actions separated by a dash. Absolute URLs may also be used, e.g.:<blockquote><code>http://www.example.com/cart/add/<em>&lt;cart_link_content&gt;</em></code></blockquote>'),
+    '#suffix' => '</p>',
+  );
+
+//  t('Specify the redirection by adding ?destination=url where url is the page to go to.'),
+
   $header = array(t('Action'), t('Description'), t('Argument'));
   $rows = array(
-    array('i', t('Sets the ID of the cart link.'), t('A custom text ID for the link.')),
-    array('e', t("Empties the customer's cart."), t('None.')),
-    array('m', t('Displays a preset message to the customer.'), t('A message ID.')),
-    array('p', t('Adds a product to the cart.'), t('A product string using the rules below...')),
-  );
-  $items2 = array(
-    t("You must at least specify a node ID immediately after the 'p'."),
-    t('Add additional specifications separated by underscores.'),
-    t('Specify the quantity with q followed by the number to add.'),
-    t('Specify attributes/options using a#o#, replacing # with the ID of the attribute and option.'),
-    t('Turn off the add to cart message with m0.'),
+    array('p', t('Adds a product to the cart.'), t('A product node number, followed by optional arguments described in the table below.')),
+    array('i', t('Sets the ID of the cart link.'), t('An alphanumeric string (32 characters max) to identify the link.')),
+    array('m', t('Displays a message to the customer when the link is clicked.'), t('A <a href="!url">numeric message ID</a> to identify which message to display.', array('!url' => url('admin/store/settings/cart_links')))),
+    array('e', t('Empties the cart. If used, this should be the first action.'), t('None.')),
   );
 
-  $output = '<div>'. t('There is currently no user interface for creating cart links, but this section includes some basic instructions.<br />Cart links are simple to form using a few actions and arguments with the following rules:')
-    .'<p>'. theme('item_list', $items) .'</p><p>'. theme('table', $header, $rows) .'</p><p>'. theme('item_list', $items2) .'</p><p>'. t('<b>Example:</b> /cart/add/e-p1_q5-imonday_special?destination=cart<br /><br />This example will empty the cart, add 5 of product 1 to the cart, track clicks with the ID "monday_special", and redirect the user to the cart. To use this on your site, simply create an HTML link to the URL you create:')
-    .'</p><p>&lt;a href="http://www.example.com/cart/add/e-p1_q5-imonday_special?destination=cart">'. t('Link text.') .'&lt;/a></p></div>';
+  $build['commands'] = array(
+    '#prefix' => t('Allowed actions are:'),
+    '#value' => theme('table', $header, $rows),
+  );
 
-  return $output;
+  $build['required'] = array(
+    '#prefix' => '<p>',
+    '#value' => t('The only required part of the <code><em>&lt;cart_link_content&gt;</em></code> is the "p" action, which must be immediately followed by a product node number.  For example, to add product node 23 to a cart, use the following:<blockquote><code>/cart/add/p23</code></blockquote>To use this on your site, simply create an HTML anchor tag referencing your Cart Link URL:<blockquote><code>&lt;a href="http://www.example.com/cart/add/p23"&gt;' . t('Link text.') . '&lt;/a&gt;</code></blockquote>'),
+    '#suffix' => '</p>',
+  );
+
+  $header = array(t('Argument'), t('Description'), t('Values'));
+  $rows = array(
+    array('q', t('Specifies quantity of this product to add.'), t('A positive integer.')),
+    array('a&lt;aid&gt;o&lt;oid&gt;', t('Specifies attribute/option for this product.'), t('aid is the integer attribute ID. oid is the integer option ID for radio, checkbox, and select options, or a url-escaped text string for textfield options.')),
+    array('m0', t('Silent.  Supresses add-to-cart message for this product.
+    (The add-to-cart message may be enabled on the <a href="!url">cart settings page</a>).', array('!url' => url('admin/store/settings/cart/edit'))), t('None.')),
+  );
+  $build['args'] = array(
+    '#prefix' => t('Optional arguments for "p" allow you to control the quantity, set product attributes and options, and supress the default product action message normally shown when a product is added to a cart. These optional arguments are appended to the "p" action and separated with an underscore.  Allowed arguments for "p" are:'),
+    '#value' => theme('table', $header, $rows),
+  );
+
+  $build['quantity'] = array(
+    '#prefix' => '<p>',
+    '#value' => t('For example, you may set the product quantity by appending the "q" argument to the "p" action. To add 5 items of product 23 you would use the link:<blockquote><code>/cart/add/p23_q5</code></blockquote>'),
+    '#suffix' => '</p>',
+  );
+
+  $build['optional'] = array(
+    '#prefix' => '<p>',
+    '#value' => t('Product attributes and options may be set with the <code>a&lt;aid&gt;o&lt;oid&gt;</code> argument.  For example, if product 23 has an attribute named "Size" with attribute ID = 12, and if there are three options defined for this attribute ("Small", "Medium", and "Large", with option IDs 4, 5, and 6 respectively), then to add a "Medium" to the cart you would use the link:<blockquote><code>/cart/add/p23_a12o5</code></blockquote>To add two products, one "Medium" and one "Small", you would use two actions:<blockquote><code>/cart/add/p23_a12o5-p23_a12o4</code></blockquote>Or, to just add two "Medium" products:<blockquote><code>/cart/add/p23_q2_a12o5</code></blockquote>'),
+    '#suffix' => '</p>',
+  );
+
+  $build['example'] = array(
+    '#prefix' => '<p>',
+    '#value' => t('A Cart Link that uses all of the available actions and arguments might look something like this:<blockquote><code>/cart/add/e-p23_q5_a12o5_a19o9_a1oA%20Text%20String_m0-ispecialoffer-m77?destination=cart/checkout</code></blockquote>Note that the "e", "p", "i", and "m" actions are separated by dashes, while the optional arguments within the "p" action are separated by underscores. This example will first empty the shopping cart, then add 5 items of product 23 to the cart, track clicks with the ID "specialoffer", display a custom message with the ID "77", then redirect the user to the checkout page. In this case product 23 has three attributes which are set (aid = 12, 19, and 1), one of which is a textfield attribute (aid = 1).'),
+    '#suffix' => '</p>',
+  );
+
+  $build['help'] = array(
+    '#prefix' => '<p>',
+    '#value' => t('<a href="!url">Visit the settings page</a> to set preferences, define messages, and restrict links that may be used.', array('!url' => url('admin/store/settings/cart_links'))),
+    '#suffix' => '</p>',
+  );
+
+  return $build;
 }

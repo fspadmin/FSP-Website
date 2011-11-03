@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_credit.admin.inc,v 1.1.2.6 2010/07/12 01:57:43 tr Exp $
 
 /**
  * @file
@@ -7,7 +6,9 @@
  *
  */
 
-// Displays the credit card terminal page.
+/**
+ * Displays the credit card terminal page.
+ */
 function uc_credit_terminal($order) {
   $output = l(t('Return to order view screen.'), 'admin/store/orders/'. $order->order_id);
 
@@ -32,7 +33,9 @@ function uc_credit_terminal($order) {
   return $output;
 }
 
-// Displays the credit card terminal form for administrators.
+/**
+ * Displays the credit card terminal form for administrators.
+ */
 function uc_credit_terminal_form($form_state, $order, $lock_amount = FALSE) {
   // Get the transaction types available to our default gateway.
   $types = uc_credit_gateway_txn_types(uc_credit_default_gateway());
@@ -217,8 +220,11 @@ function uc_credit_terminal_form($form_state, $order, $lock_amount = FALSE) {
   return $form;
 }
 
+/**
+ * Validation handler for credit terminal form.
+ */
 function uc_credit_terminal_form_validate($form, &$form_state) {
-  switch ($form_states['values']['op']) {
+  switch ($form_state['values']['op']) {
     case t('Charge amount'):
     case t('Authorize amount only'):
     case t('Capture amount to this authorization'):
@@ -233,6 +239,9 @@ function uc_credit_terminal_form_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Submit handler for credit terminal form.
+ */
 function uc_credit_terminal_form_submit($form, &$form_state) {
   // Load the order.
   $order = uc_order_load($form_state['values']['order_id']);

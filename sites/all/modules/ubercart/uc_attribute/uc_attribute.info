@@ -1,14 +1,13 @@
-; $Id: uc_attribute.info,v 1.6.2.3 2010/06/19 19:43:08 tr Exp $
-name = Attribute
-description = Extends product content type to support product variations.  Allows customers to select these product attributes before purchase.
+name = Product attributes
+description = Extends product content types to support product variations that customers may select before purchase.
 dependencies[] = uc_product
-package = "Ubercart - core (optional)"
+package = Ubercart - core (optional)
 core = 6.x
 php = 5.0
 
-; Information added by drupal.org packaging script on 2010-08-11
-version = "6.x-2.4"
+; Information added by drupal.org packaging script on 2011-10-19
+version = "6.x-2.7"
 core = "6.x"
 project = "ubercart"
-datestamp = "1281551792"
+datestamp = "1319067635"
 

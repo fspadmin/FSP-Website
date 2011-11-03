@@ -1,5 +1,4 @@
 <?php
-// $Id: print.pages.inc,v 1.1.2.68 2010/08/21 23:11:03 jcnventura Exp $
 
 /**
  * @file
@@ -75,17 +74,16 @@ function print_controller($path, $cid = NULL, $format = PRINT_HTML_FORMAT, $teas
       $path = '';
     }
   }
-  if (!is_numeric($path)) {
+  if ($alias = drupal_lookup_path('source', $path)) {
     // Indirect call with print/alias
     // If there is a path alias with these arguments, generate a printer-friendly version for it
-    $path = drupal_get_normal_path($path);
-    $ret = preg_match('!^node/(.*)!i', $path, $matches);
+    $ret = preg_match('!^node/(.*)!i', $alias, $matches);
     if ($ret == 1) {
       $path = $matches[1];
     }
   }
   $parts = explode('/', $path);
-  if (is_numeric($parts[0]) && (count($parts) == 1)) {
+  if (ctype_digit($parts[0]) && (count($parts) == 1)) {
     $print = _print_generate_node($path, $cid, $format, $teaser, $message);
   }
   else {
@@ -278,30 +276,7 @@ function _print_var_generator($node, $message = NULL, $cid = NULL) {
     $print['source_url'] = '';
   }
 
-  if (isset($node->type)) {
-    $node_type = $node->type;
-
-    if (theme_get_setting("toggle_node_info_$node_type")) {
-      $print_text_by = filter_xss(variable_get('print_text_by', t('By %author')));
-      $by_author = ($node->name ? $node->name : variable_get('anonymous', t('Anonymous')));
-      $print['submitted'] = t($print_text_by, array('%author' => $by_author));
-
-      $print_text_created = filter_xss(variable_get('print_text_created', t('Created %date')));
-      $created_datetime = format_date($node->created, 'small');
-      $print['created'] = t($print_text_created, array('%date' => $created_datetime));
-    }
-    else {
-      $print['submitted'] = '';
-      $print['created'] = '';
-    }
-
-    $print['type'] = $node->type;
-  }
-  else {
-    $print['submitted'] = '';
-    $print['created'] = '';
-    $print['type'] = '';
-  }
+  $print['type'] = (isset($node->type)) ? $node->type : '';
 
   menu_set_active_item($path);
   $breadcrumb = drupal_get_breadcrumb();
@@ -326,11 +301,6 @@ function _print_var_generator($node, $message = NULL, $cid = NULL) {
       $links = filter_xss(variable_get('print_text_links', t('Links')));
       $print['pfp_links'] = "<p><strong>$links:</strong><br />$pfp_links</p>";
     }
-  }
-
-  if (module_exists('taxonomy')) {
-    $terms = taxonomy_link('taxonomy terms', $node);
-    $print['taxonomy'] = theme('links', $terms);
   }
 
   $print['node'] = $node;
@@ -380,7 +350,7 @@ function _print_rewrite_urls($matches) {
             $path = explode('/', $_GET['q']);
             unset($path[0]);
             $path = implode('/', $path);
-            if (is_numeric($path)) {
+            if (ctype_digit($path)) {
               $path = "node/$path";
             }
             // Printer-friendly URLs is on, so we need to make it absolute
@@ -458,24 +428,35 @@ function _print_friendly_urls($url = 0) {
  */
 function _print_url_list_enabled($node, $format = PRINT_HTML_FORMAT) {
   if (!isset($node->type)) {
-    return TRUE;
+    switch ($format) {
+      case PRINT_HTML_FORMAT:
+        $node_urllist = variable_get('print_display_sys_urllist', PRINT_TYPE_SYS_URLLIST_DEFAULT);
+        break;
+      case PRINT_MAIL_FORMAT:
+        $node_urllist = variable_get('print_mail_display_sys_urllist', PRINT_TYPE_SYS_URLLIST_DEFAULT);
+        break;
+      case PRINT_PDF_FORMAT:
+        $node_urllist = variable_get('print_pdf_display_sys_urllist', PRINT_TYPE_SYS_URLLIST_DEFAULT);
+        break;
+      default:
+        $node_urllist = PRINT_TYPE_SYS_URLLIST_DEFAULT;
+    }
   }
-
-  switch ($format) {
-    case PRINT_HTML_FORMAT:
-      $node_urllist = isset($node->print_display_urllist) ? $node->print_display_urllist : variable_get('print_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
-      $fmt = '';
-      break;
-    case PRINT_MAIL_FORMAT:
-      $node_urllist = isset($node->print_mail_display_urllist) ? $node->print_mail_display_urllist : variable_get('print_mail_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
-      $fmt = $format .'_';
-      break;
-    case PRINT_PDF_FORMAT:
-      $node_urllist = isset($node->print_pdf_display_urllist) ? $node->print_pdf_display_urllist : variable_get('print_pdf_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
-      $fmt = $format .'_';
-      break;
+  else {
+    switch ($format) {
+      case PRINT_HTML_FORMAT:
+        $node_urllist = isset($node->print_display_urllist) ? $node->print_display_urllist : variable_get('print_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
+        break;
+      case PRINT_MAIL_FORMAT:
+        $node_urllist = isset($node->print_mail_display_urllist) ? $node->print_mail_display_urllist : variable_get('print_mail_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
+        break;
+      case PRINT_PDF_FORMAT:
+        $node_urllist = isset($node->print_pdf_display_urllist) ? $node->print_pdf_display_urllist : variable_get('print_pdf_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
+        break;
+      default:
+        $node_urllist = PRINT_TYPE_URLLIST_DEFAULT;
+    }
   }
-  if (!isset($node_urllist)) $node_urllist = PRINT_TYPE_URLLIST_DEFAULT;
 
   // Get value of Printer-friendly URLs setting
   return (variable_get('print_urls', PRINT_URLS_DEFAULT) && ($node_urllist));
@@ -619,7 +600,7 @@ function _print_generate_path($path, $format = PRINT_HTML_FORMAT, $teaser = FALS
 
   // Handle node tabs
   $parts = explode('/', $path);
-  if (is_numeric($parts[0]) && (count($parts) > 1)) {
+  if (ctype_digit($parts[0]) && (count($parts) > 1)) {
     $path = 'node/'. $path;
   }
 

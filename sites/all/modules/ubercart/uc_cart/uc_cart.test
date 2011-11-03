@@ -1,266 +1,408 @@
 <?php
-// $Id: uc_cart.test,v 1.1.2.5 2009/09/21 14:34:47 islandusurper Exp $
 
 /**
  * @file
  * Shopping cart and checkout tests.
  */
 
+// Ensure UbercartTestHelper is available.
+module_load_include('test', 'uc_store', 'uc_store');
 
 /**
- * Define our own TestCase class that comes pre-loaded with Ubercart methods.
+ * Tests the cart and checkout functionality.
  */
-class UbercartTestCase extends DrupalWebTestCase {
-  // Perform the initial setup.
+class UbercartCartCheckoutTestCase extends UbercartTestHelper {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Cart and checkout',
+      'description' => 'Ensures the cart and checkout process is functioning for both anonymous and authenticated users.',
+      'group' => 'Ubercart',
+    );
+  }
+
   function setUp() {
-    // Enable the core Ubercart modules and dependencies, along with any other modules passed as arguments.
-    $args = array_merge(func_get_args(), array('uc_store', 'uc_cart', 'ca', 'uc_order', 'uc_product', 'token'));
-    call_user_func_array(array('parent', 'setUp'), $args);
+    $modules = array('uc_payment', 'uc_payment_pack', 'uc_roles');
+    $permissions = array('administer permissions', 'administer product features');
+    parent::setUp($modules, $permissions);
+  }
 
-    // Create a store administrator user account.
-    $this->user_store_admin = $this->drupalCreateUser(array(
-      'administer conditional actions',
-      'administer order workflow',
-      'create orders',
-      'delete orders',
-      'edit orders',
-      'view all orders',
-      'administer product classes',
-      'administer product features',
-      'administer products',
-      'create products',
-      'delete all products',
-      'edit all products',
-      'administer store',
-      'view customers',
-      'view store reports',
+  /**
+   * Creates a new order.
+   */
+  function createOrder($fields = array()) {
+    $order = uc_order_new();
+    foreach ($fields as $key => $value) {
+      $order->$key = $value;
+    }
+
+    if (empty($order->primary_email)) {
+      $order->primary_email = $this->randomString() .'@example.org';
+    }
+
+    if (!isset($fields['products'])) {
+      $item = clone $this->product;
+      $item->qty = 1;
+      $item->price = $item->sell_price;
+      $item->data = array();
+      $order->products = array($item);
+    }
+
+    $order->order_total = uc_order_get_total($order, TRUE);
+    $order->line_items = uc_order_load_line_items($order, TRUE);
+    uc_order_save($order);
+
+    return $order;
+  }
+
+  function testCart() {
+    // Test the empty cart text.
+    $this->drupalGet('cart');
+    $this->assertText('There are no products in your shopping cart.');
+
+    // Add an item to the cart as an anonymous user.
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->assertText($this->product->title . ' added to your shopping cart.');
+
+    // Log in and check the item is still in the cart.
+    $this->drupalLogin($this->customer);
+    $this->drupalGet('cart');
+    $this->assertText($this->product->title, t('The product remains in the cart after logging in.'));
+    $this->assertFieldByName('items[0][qty]', 1, t('The product quantity is 1.'));
+
+    // Update the quantity.
+    $qty = mt_rand(2, 100);
+    $this->drupalPost('cart', array('items[0][qty]' => $qty), t('Update cart'));
+    $this->assertText('Your cart has been updated.');
+    $this->assertFieldByName('items[0][qty]', $qty, t('The product quantity was updated.'));
+
+    // Test the remove item button.
+    $this->drupalPost('cart', array(), t('Remove'));
+    $this->assertText($this->product->title . ' removed from your shopping cart.');
+    $this->assertText('There are no products in your shopping cart.');
+    $this->drupalLogout();
+  }
+
+  function testDeletedCartItem() {
+    // Add a product to the cart, then delete the node.
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    node_delete($this->product->nid);
+
+    // Test that the cart is empty.
+    $this->drupalGet('cart');
+    $this->assertText('There are no products in your shopping cart.');
+    $this->assertEqual(uc_cart_get_total_qty(), 0, 'There are no items in the cart.');
+  }
+
+  function testCheckout() {
+    // Allow customer to specify username and password, and log in new users after checkout.
+    $settings = array(
+      'uc_cart_new_account_name' => TRUE,
+      'uc_cart_new_account_password' => TRUE,
+    );
+    $this->drupalLogin($this->adminUser);
+    $this->drupalPost('admin/store/settings/checkout/edit', array('uc_new_customer_login' => TRUE), t('Save configuration'));
+    $this->drupalPost('admin/store/settings/checkout/edit/panes', $settings, t('Save configuration'));
+    $this->drupalLogout();
+
+    $new_user = new stdClass;
+    $new_user->name = $this->randomName(20);
+    $new_user->pass_raw = $this->randomString(20);
+
+    // Test as anonymous user.
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->checkout(array(
+      'panes[customer][new_account][name]' => $new_user->name,
+      'panes[customer][new_account][pass]' => $new_user->pass_raw,
+      'panes[customer][new_account][pass_confirm]' => $new_user->pass_raw,
     ));
+    $this->assertRaw('Your order is complete!');
+    $this->assertRaw('you are already logged in');
 
-    // Create a simple customer user account.
-    $this->user_customer = $this->drupalCreateUser();
+    // Confirm login.
+    $this->drupalGet('<front>');
+    $this->assertText('My account', 'User is logged in.');
+
+    // Check that cart is now empty.
+    $this->drupalGet('cart');
+    $this->assertText('There are no products in your shopping cart.');
+
+    // Check that the password works.
+    $this->drupalLogout();
+    $this->drupalLogin($new_user);
+
+    // Test again as authenticated user.
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->checkout();
+    $this->assertRaw('Your order is complete!');
+    $this->assertRaw('While logged in');
+
+    // Test again with generated username and password.
+    $this->drupalLogout();
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->checkout();
+    $this->assertRaw('Your order is complete!');
+    $this->assertRaw('you are already logged in');
+
+    // New account email is last but two.
+    $mail = array_pop(array_slice($this->drupalGetMails(), -3, 1));
+
+    $new_user = new stdClass;
+    $new_user->name = $mail['params']['account']->name;
+    $new_user->pass_raw = $mail['params']['account']->password;
+    $this->assertTrue(!empty($new_user->name), 'New username is not empty.');
+    $this->assertTrue(!empty($new_user->pass_raw), 'New password is not empty.');
+    $this->assertTrue(strpos($mail['body'], $new_user->name) !== FALSE, 'Mail body contains username.');
+    $this->assertTrue(strpos($mail['body'], $new_user->pass_raw) !== FALSE, 'Mail body contains password.');
+
+    // Invoice email is last.
+    $mail = array_pop(array_slice($this->drupalGetMails(), -1, 1));
+    $this->assertTrue(strpos($mail['body'], $new_user->name) !== FALSE, 'Invoice body contains username.');
+    $this->assertTrue(strpos($mail['body'], $new_user->pass_raw) !== FALSE, 'Invoice body contains password.');
+
+    // Check that the password works.
+    $this->drupalLogout();
+    $this->drupalLogin($new_user);
+
+    // Test again with an existing email address
+    $this->drupalLogout();
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->checkout(array('panes[customer][primary_email]' => $this->customer->mail));
+    $this->assertRaw('Your order is complete!');
+    $this->assertRaw('order has been attached to the account we found');
   }
 
-  /**
-   * Configure basic Ubercart store components.
-   */
-  function setUpShop() {
-    $this->setupPayment();
-    $this->setupShipping();
+  function testCheckoutComplete() {
+    // Payment notification is received first.
+    $order_data = array('primary_email' => 'simpletest@ubercart.org');
+    $order = $this->createOrder($order_data);
+    uc_payment_enter($order->order_id, 'SimpleTest', $order->order_total);
+    uc_cart_complete_sale($order);
+
+    // Check that a new account was created.
+    $this->assertTrue($order->data['complete_sale'] == 'new_user', 'A new account was created.');
+
+    // 3 e-mails: new account, customer invoice, admin invoice
+    $mails = $this->drupalGetMails();
+    $this->assertEqual(count($mails), 3, '3 e-mails were sent.');
+    variable_del('drupal_test_email_collector');
+
+    $password = $mails[0]['params']['account']->password;
+    $this->assertTrue(!empty($password), 'New password is not empty.');
+    $this->assertTrue(strpos($mails[0]['body'], $password) !== FALSE, 'Mail body contains password.');
+
+    // Different user, sees the checkout page first.
+    $order_data = array('primary_email' => 'simpletest2@ubercart.org');
+    $order = $this->createOrder($order_data);
+    uc_cart_complete_sale($order, TRUE);
+    uc_payment_enter($order->order_id, 'SimpleTest', $order->order_total);
+
+    // Check that a new account was created.
+    $this->assertTrue($order->data['complete_sale'] == 'new_user', 'A new account was created.');
+
+    // 3 e-mails: new account, customer invoice, admin invoice
+    $mails = $this->drupalGetMails();
+    $this->assertEqual(count($mails), 3, '3 e-mails were sent.');
+    variable_del('drupal_test_email_collector');
+
+    $password = $mails[0]['params']['account']->password;
+    $this->assertTrue(!empty($password), 'New password is not empty.');
+    $this->assertTrue(strpos($mails[0]['body'], $password) !== FALSE, 'Mail body contains password.');
+
+    // Same user, new order.
+    $order = $this->createOrder($order_data);
+    uc_cart_complete_sale($order, TRUE);
+    uc_payment_enter($order->order_id, 'SimpleTest', $order->order_total);
+
+    // Check that no new account was created.
+    $this->assertTrue($order->data['complete_sale'] == 'existing_user', 'The order was attached to an existing account.');
+
+    // 2 e-mails: customer invoice, admin invoice
+    $mails = $this->drupalGetMails();
+    $this->assertEqual(count($mails), 2, '2 e-mails were sent.');
+    variable_del('drupal_test_email_collector');
   }
 
-  /**
-   * function setupPaymentMethods() performs the installation and configuration
-   * of payment methods
-   */
-  function setupPayment() {
+  function testCheckoutRoleAssignment() {
+    // Add role assignment to the test product.
+    $rid = $this->drupalCreateRole(array('access content'));
+    $this->drupalLogin($this->adminUser);
+    $this->drupalPost('node/'. $this->product->nid .'/edit/features', array('feature' => 'role'), t('Add'));
+    $this->drupalPost(NULL, array('uc_roles_role' => $rid), t('Save feature'));
 
-  }
+    // Process an anonymous, shippable order.
+    $item = clone $this->product;
+    $item->qty = 1;
+    $item->price = $item->sell_price;
+    $item->data = array('shippable' => TRUE);
+    $order = $this->createOrder(array(
+      'products' => array($item),
+    ));
+    uc_payment_enter($order->order_id, 'SimpleTest', $order->order_total);
 
-  /**
-   * function setupShipping() performs the installation and configuraion of
-   * shipping
-   */
-  function setupShipping() {
+    // Find the order uid.
+    $uid = db_result(db_query("SELECT uid FROM {uc_orders} ORDER BY order_id DESC"));
+    $account = user_load($uid);
+    $this->assertTrue(isset($account->roles[$rid]), 'New user was granted role.');
+    $order = uc_order_load($order->order_id);
+    $this->assertEqual($order->order_status, 'payment_received', 'Shippable order was set to payment received.');
 
-  }
+    // 4 e-mails: new account, customer invoice, admin invoice, role assignment
+    $mails = $this->drupalGetMails();
+    $this->assertEqual(count($mails), 4, '4 e-mails were sent.');
+    variable_del('drupal_test_email_collector');
 
-  /**
-   * function createProduct() adds a new product - You must first login using
-   * $this->drupalLogin. The user must also have create product priviliges
-   */
-  function createProduct($product = array()) {
-    // Set the default required fields.
-    $defaults = array(
-      'title' => $this->randomName(8),
-      'body' => $this->randomName(8),
-      'model' => $this->randomName(8),
-      'sell_price' => rand(1, 9999),
-    );
-    // Merge in any added fields.
-    $product += $defaults;
-    $this->drupalPost('node/add/product', $product, t('Save'));
-    $this->assertRaw(t('Product %title has been created.', array('%title' => $product['title'])), t('"Product %title has been created" was displayed on the node page', array('%title'=> $product['title'])));
+    // Test again with an existing email address and a non-shippable order.
+    $item->data = array('shippable' => FALSE);
+    $order = $this->createOrder(array(
+      'primary_email' => $this->customer->mail,
+      'products' => array($item),
+    ));
+    uc_payment_enter($order->order_id, 'SimpleTest', $order->order_total);
+    $account = user_load($this->customer->uid);
+    $this->assertTrue(isset($account->roles[$rid]), 'Existing user was granted role.');
+    $order = uc_order_load($order->order_id);
+    $this->assertEqual($order->order_status, 'completed', 'Non-shippable order was set to completed.');
 
-    // Find the node id and return the node object.
-    if (preg_match('!node/(\d+)!', $this->getUrl(), $matches)) {
-      return node_load($matches[1]);
-    }
-    else {
-      return FALSE;
-    }
-  }
-
-  /**
-   * function checkout() executes the checkout process
-   */
-  function checkout($edit = array()) {
-    $this->drupalPost('cart', array(), 'Checkout');
-    $this->assertText('Enter your billing address and information here.', t('Viewed cart page: Billing pane has been displayed.'));
-    //build the panes
-    $edit += array(
-      'panes[delivery][delivery_first_name]' => $this->randomName(10, 'Firstname_'),
-      'panes[delivery][delivery_last_name]' => $this->randomName(10, 'Lastname_'),
-      'panes[delivery][delivery_street1]' => $this->randomName(10, 'Street_'),
-      'panes[delivery][delivery_city]' => $this->randomName(10, 'City_'),
-      'panes[delivery][delivery_zone]' => db_result(db_query('SELECT zone_id FROM {uc_zones} WHERE zone_country_id = %s ORDER BY rand() LIMIT 1', variable_get('uc_store_country', 840))),
-      'panes[delivery][delivery_postal_code]' => $this->randomName(4, 'Zip_'),
-
-      'panes[billing][billing_first_name]' => $this->randomName(10, 'Firstname_'),
-      'panes[billing][billing_last_name]' => $this->randomName(10, 'Lastname_'),
-      'panes[billing][billing_street1]' => $this->randomName(10, 'Street_'),
-      'panes[billing][billing_city]' => $this->randomName(10, 'City_'),
-      'panes[billing][billing_zone]' => db_result(db_query('SELECT zone_id FROM {uc_zones} WHERE zone_country_id = %s ORDER BY rand() LIMIT 1', variable_get('uc_store_country', 840))),
-      'panes[billing][billing_postal_code]' => $this->randomName(4, 'Zip_')
-      );
-
-    //If the email address has not been set, and the user has not logged in,
-    //Add a primary email address.
-    if (!isset($edit['panes[customer][primary_email]']) && !$this->loggedInUser) {
-      $edit['panes[customer][primary_email]'] = $this->randomName(8, 'Email_') . '@example.com';
-    }
-    $this->drupalPost('cart/checkout', $edit, t('Review order'));
-    $this->assertRaw('Your order is almost complete.', t('Review order page: Found text "Your order is almost complete."'));
-    //Complete the review page
-    $this->drupalPost(NULL, array(), t('Submit order'));
-    if ($order_id = db_result(db_query("SELECT order_id FROM {uc_orders} WHERE delivery_first_name = '%s'", $edit['panes[delivery][delivery_first_name]']))){
-      $this->pass(t('Order %order_id has been created', array('%order_id' => $order_id)));
-    }
-  }
-
-  /**
-   * Implementation of tearDown().
-   */
-  function tearDown() {
-    parent::tearDown();
+    // 3 e-mails: customer invoice, admin invoice, role assignment
+    $mails = $this->drupalGetMails();
+    $this->assertEqual(count($mails), 3, '3 e-mails were sent.');
+    variable_del('drupal_test_email_collector');
   }
 }
 
-class ucCartBasicCheckout extends UbercartTestCase {
+/**
+ * Tests the cart settings page.
+ */
+class UbercartCartSettingsTestCase extends UbercartTestHelper {
+
   public static function getInfo() {
     return array(
-      'name' => t('Basic Checkout'),
-      'description' => t('Ensures the basic checkout process is functioning for both anonymous and authenticated users'),
-      'group' => t('Ubercart'),
-    );
-  }
-  /**
-   * Test the basic ubercart checkout process
-   */
-  function testBasicCheckout() {
-    $this->drupalLogin($this->user_store_admin);
-    $product = $this->createProduct();
-    $this->drupalLogout();
-    $this->pass(t('Testing authenticated checkout.'));
-    $this->drupalLogin($this->user_customer);
-    $this->drupalPost('node/'.$product->nid, array(), t('Add to cart'));
-    $this->assertRaw($product->title, t('The product name has been displayed on the cart page.'));
-    $this->assertRaw('added to', t('The product name has been displayed on the cart page.'));
-    $this->checkout();
-    $this->assertRaw('Your order is complete!', t('"Your order is complete!" appears on the thank you page.'));
-    $this->drupalLogout();
-
-    $this->pass(t('Testing anonymous checkout.'));
-    $this->drupalPost('node/'.$product->nid, array(), t('Add to cart'));
-    $this->assertRaw($product->title, t('The product name has been displayed on the cart page.'));
-    $this->assertRaw('added to', t('The product name has been displayed on the cart page.'));
-    $this->checkout();
-    $this->assertRaw('Your order is complete!', t('"Your order is complete!" appears on the thank you page.'));
-  }
-
-
-}
-
-class ucCartAdminSettings extends UbercartTestCase {
-  public static function getInfo() {
-    return array(
-      'name' => t('Cart Settings'),
-      'description' => t('Tests the ubercart uc_cart administration settings.'),
-      'group' => t('Ubercart'),
+      'name' => 'Cart settings',
+      'description' => 'Tests the cart settings page.',
+      'group' => 'Ubercart',
     );
   }
 
-  function testCartSettings() {
-    $this->DrupalLogin($this->user_store_admin);
+  function testAddToCartRedirect() {
+    $this->drupalLogin($this->adminUser);
     $this->drupalGet('admin/store/settings/cart/edit');
     $this->assertField('uc_add_item_redirect', t('Add to cart redirect field exists'));
+
+    $redirect = $this->randomName(8);
+    $this->drupalPost('admin/store/settings/cart/edit', array('uc_add_item_redirect' => $redirect), t('Save configuration'));
+
+    $this->drupalPost('node/'. $this->product->nid, array(), t('Add to cart'));
+    $url_pass = ($this->getUrl() == url($redirect, array('absolute' => TRUE)));
+    $this->assertTrue($url_pass, t('Add to cart redirect takes user to the correct URL.'));
+  }
+
+  function testMinimumSubtotal() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet('admin/store/settings/cart/edit');
     $this->assertField('uc_minimum_subtotal', t('Minimum order subtotal field exists'));
-    $this->assertField('uc_cart_anon_duration', t('Anonymous cart duration field exists'));
-    $this->assertField('uc_cart_anon_unit', t('Anonymous cart unit of time field exists'));
-    $this->assertField('uc_cart_auth_duration', t('Authenticated cart duration field exists'));
-    $this->assertField('uc_cart_auth_unit', t('Authenticated cart unit of time field exists'));
+
+    $minimum_subtotal = mt_rand(2, 9999);
+    $this->drupalPost(NULL, array('uc_minimum_subtotal' => $minimum_subtotal), t('Save configuration'));
+
+    // Create two products, one below the minimum price, and one above the minimum price.
+    $product_below_limit = $this->createProduct(array('sell_price' => $minimum_subtotal - 1));
+    $product_above_limit = $this->createProduct(array('sell_price' => $minimum_subtotal + 1));
+    $this->drupalLogout();
+
+    // Check to see if the lower priced product triggers the minimum price logic.
+    $this->drupalPost('node/' . $product_below_limit->nid, array(), t('Add to cart'));
+    $this->drupalPost('cart', array(), t('Checkout'));
+    $this->assertRaw('The minimum order subtotal for checkout is', t('Prevented checkout below the minimum order total.'));
+
+    // Add another product to the cart, and verify that we land on the checkout page.
+    $this->drupalPost('node/' . $product_above_limit->nid, array(), t('Add to cart'));
+    $this->drupalPost('cart', array(), t('Checkout'));
+    $this->assertText('Enter your billing address and information here.');
+  }
+
+  function testContinueShopping() {
+    // Continue shopping link should take you back to the product page.
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->assertLink(t('Continue shopping'), 0, t('Continue shopping link appears on the page.'));
+    $links = $this->xpath('//a[@href="' . url('node/' . $this->product->nid, array('absolute' => FALSE)) . '"]');
+    $this->assertTrue(isset($links[0]), t('Continue shopping link returns to the product page.'));
+
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet('admin/store/settings/cart/edit');
     $this->assertField('uc_continue_shopping_type', t('Continue shopping element display field exists'));
     $this->assertField('uc_continue_shopping_url', t('Default continue shopping link URL field exists'));
     $this->assertField('uc_continue_shopping_text', t('Custom continue shopping link text field exists'));
-    $this->assertField('uc_cart_breadcrumb_text', t('Custom cart breadcrumb text field exists'));
-    $this->assertField('uc_cart_breadcrumb_url',t('Custom cart breadcrumb URL'));
 
-    //Test the empty cart text
-    $this->drupalGet('cart');
-    $this->assertText('There are no products in your shopping cart.', t('Cart View: An empty cart displays the empty cart text'));
-
-    $product = $this->createProduct();
-    $this->drupalPost('node/'.$product->nid, array(), t('Add to cart'));
-    $this->assertTrue(($this->getUrl() == url('cart', array('absolute' => TRUE))), t('Redirected to the cart page after adding a product to the cart'));
-
-    //Ensure one item was added to the cart
-    $this->drupalGet('cart');
-    $this->assertFieldByName('items[0][qty]', 1, t('One product was added to the cart'));
-
-    //Continue shopping link should take you back to the product page
-    $shopping_url = url('node/'.$product->nid, array('absolute' => true));
-    $shopping_link = $this->xpath("a[@href='$shopping_url'][@text()='Continue shopping']");
-    $this->assertTrue(isset($shopping_link), t('Continue shopping link directs you back to the node page'));
-
-    $this->drupalPost('cart', array('items[0][remove]' => 1), t('Update cart'));
-    $this->assertText('Your cart has been updated.', t('Update cart button redirects to the view cart page'));
-    $this->assertText('There are no products in your shopping cart.', t('The product was successfully removed from the shopping cart'));
-
-    //Modify the default settings
-        $settings = array(
-      'uc_minimum_subtotal' => rand(2, 9999), //greater than 2 dollars to test the above/below limit
+    // Test continue shopping button that sends users to a fixed URL.
+    $settings = array(
       'uc_continue_shopping_type' => 'button',
       'uc_continue_shopping_use_last_url' => FALSE,
       'uc_continue_shopping_url' => $this->randomName(8),
       'uc_continue_shopping_text' => $this->randomName(16),
+    );
+    $this->drupalPost(NULL, $settings, t('Save configuration'));
+
+    $this->drupalPost('cart', array(), $settings['uc_continue_shopping_text']);
+    $url_pass = ($this->getUrl() == url($settings['uc_continue_shopping_url'], array('absolute' => TRUE)));
+    $this->assertTrue($url_pass, t('Continue shopping button is properly labelled, and takes the user to the correct URL.'));
+  }
+
+  function testCartBreadcrumb() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet('admin/store/settings/cart/edit');
+    $this->assertField('uc_cart_breadcrumb_text', t('Custom cart breadcrumb text field exists'));
+    $this->assertField('uc_cart_breadcrumb_url',t('Custom cart breadcrumb URL'));
+
+    $settings = array(
       'uc_cart_breadcrumb_text' => $this->randomName(8),
       'uc_cart_breadcrumb_url' => $this->randomName(7),
     );
+    $this->drupalPost(NULL, $settings, t('Save configuration'));
 
-    $this->drupalPost('admin/store/settings/cart/edit', $settings, t('Save configuration'));
-    $this->assertText('The configuration options have been saved.', t('Saved Cart settings. Found text "The configuration options have been saved."'));
+    $this->drupalPost('node/'. $this->product->nid, array(), t('Add to cart'));
+    $this->assertLink($settings['uc_cart_breadcrumb_text'], 0, t('The breadcrumb link text is set correctly.'));
+    $links = $this->xpath('//a[@href="' . url($settings['uc_cart_breadcrumb_url']) . '"]');
+    $this->assertTrue(isset($links[0]), t('The breadcrumb link is set correctly.'));
+  }
+}
 
-    //Create two products, one below the minimum price, and one above the minimum price
-    $sell_price_below_limit = $settings['uc_minimum_subtotal'] - 1;
-    $sell_price_above_limit = $settings['uc_minimum_subtotal'] + 1;
-    $product_price_below_limit = $this->createProduct(array('sell_price' => $sell_price_below_limit));
-    $product_price_above_limit = $this->createProduct(array('sell_price' => $sell_price_above_limit));
-    $this->DrupalLogout();
+/**
+ * Tests the checkout settings page.
+ */
+class UbercartCheckoutSettingsTestCase extends UbercartTestHelper {
 
-    // Check to see if the lower priced product triggers the minimum price logic
-    $this->drupalPost('node/'.$product_price_below_limit->nid, array(), t('Add to cart'));
-    $this->drupalPost('cart', array(), t('Checkout'));
-    $this->assertRaw('The minimum order subtotal for checkout is', t('Minimum checkout check: Ubercart prevented checkout below the minimum order'));
+  public static function getInfo() {
+    return array(
+      'name' => 'Checkout settings',
+      'description' => 'Tests the checkout settings page.',
+      'group' => 'Ubercart',
+    );
+  }
 
-    // Check the custom breadcrumb text
-    $breadcrumb = $this->xpath("div[@class='". $settings['uc_cart_breadcrumb_url'] . "']/a[@href='/ubertest/asdf'][@text()='". $settings['uc_cart_breadcrumb_text']."']");
-    $this->assertTrue(isset($breadcrumb), t('The breadcrumb text and url are properly displayed on the view cart page'));
+  function testEnableCheckout() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet('admin/store/settings/checkout/edit');
+    $this->assertField('uc_checkout_enabled', t('Enable checkout field exists'));
 
-    // Check the back button to ensure it goes to the proper page
-    $this->drupalPost('cart', array(), $settings['uc_continue_shopping_text']);
-    $url_pass = ($this->getUrl() == url($settings['uc_continue_shopping_url'], array('absolute' => TRUE)));
-    $this->assertTrue($url_pass, t('View cart back button is properly labled, and takes the user to the proper url.'));
+    $this->drupalPost('admin/store/settings/checkout/edit', array('uc_checkout_enabled' => FALSE), t('Save configuration'));
 
-    // Add another product to the cart, and verify that we land on the checkout page
-    $this->drupalPost('node/'.$product_price_above_limit->nid, array(), t('Add to cart'));
-    $this->drupalPost('cart', array(), t('Checkout'));
-    $this->assertText('Enter your billing address and information here.', t('Viewed cart page: Billing pane has been displayed.'));
+    $this->drupalPost('node/'. $this->product->nid, array(), t('Add to cart'));
+    $this->assertNoRaw(t('Checkout'));
+    $buttons = $this->xpath('//input[@value="' . t('Checkout') . '"]');
+    $this->assertFalse(isset($buttons[0]), t('The checkout button is not shown.'));
+  }
 
-    // Check the redirect path
-    $this->drupalLogin($this->user_store_admin);
-    $uc_add_item_redirect = $this->randomName(8);
-    $this->drupalPost('admin/store/settings/cart/edit', array('uc_add_item_redirect' => $uc_add_item_redirect), t('Save configuration'));
-    $this->drupalPost('node/'. $product_price_above_limit->nid, array(), t('Add to cart'));
-    $url_pass = ($this->getUrl() == url($uc_add_item_redirect, array('absolute' => TRUE)));
-    $this->assertTrue($url_pass, t('Add item and was redirected to url %url', array('%url' => $uc_add_item_redirect)));
+  function testAnonymousCheckout() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet('admin/store/settings/checkout/edit');
+    $this->assertField('uc_checkout_anonymous', t('Anonymous checkout field exists'));
+
+    $this->drupalPost('admin/store/settings/checkout/edit', array('uc_checkout_anonymous' => FALSE), t('Save configuration'));
+
+    $this->drupalLogout();
+    $this->drupalPost('node/'. $this->product->nid, array(), t('Add to cart'));
+    $this->drupalPost('cart', array(), 'Checkout');
+    $this->assertNoText('Enter your billing address and information here.', t('The checkout page is not displayed.'));
   }
 }

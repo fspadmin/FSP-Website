@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_attribute.ca.inc,v 1.1.2.2 2009/07/21 14:37:21 islandusurper Exp $
 
 /**
  * @file
@@ -7,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_ca_condition().
+ * Implements hook_ca_condition().
  */
 function uc_attribute_ca_condition() {
   $conditions = array();
@@ -31,12 +30,8 @@ function uc_attribute_ca_condition() {
  * @see uc_attribute_condition_ordered_product_option_form()
  */
 function uc_attribute_condition_ordered_product_option($order, $settings) {
-  $result = FALSE;
-
-  $match = unserialize($settings['attribute_option']);
-
   foreach ($order->products as $product) {
-    if (!isset($product->data['attributes'])) {
+    if (empty($product->data['attributes'])) {
       continue;
     }
 
@@ -44,10 +39,16 @@ function uc_attribute_condition_ordered_product_option($order, $settings) {
 
     // Once the order is made, the attribute data is changed to just the names.
     // If we can't find it by ID, check the names.
-    if (is_int(key($attributes))) {
-      if (in_array($settings['attribute_option'], $attributes)) {
-        $result = TRUE;
-        break;
+    if (is_int(array_shift(array_keys($attributes)))) {
+      foreach ($attributes as $options) {
+        // Only checkboxes are stored in an array, so fix up other option types.
+        if (!is_array($options)) {
+          $options = array($options);
+        }
+
+        if (in_array($settings['attribute_option'], $options)) {
+          return TRUE;
+        }
       }
     }
     else {
@@ -58,16 +59,22 @@ function uc_attribute_condition_ordered_product_option($order, $settings) {
         }
       }
 
-      if ($attribute) {
-        if (isset($attributes[$attribute->name]) && $attributes[$attribute->name] == $option->name) {
-          $result = TRUE;
-          break;
+      if (isset($attribute) && isset($attributes[$attribute->name])) {
+        $options = $attributes[$attribute->name];
+
+        // Orders created before checkbox options were introduced are not stored in an array.
+        if (!is_array($options)) {
+          $options = array($options);
+        }
+
+        if (in_array($option->name, $options)) {
+          return TRUE;
         }
       }
     }
   }
 
-  return $result;
+  return FALSE;
 }
 
 /**

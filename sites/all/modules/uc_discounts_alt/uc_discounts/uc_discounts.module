@@ -19,16 +19,22 @@ define("DISCOUNT_TYPE_FIXED_AMOUNT_OFF", 3);
 define("DISCOUNT_TYPE_FIXED_AMOUNT_OFF_PER_QUALIFYING_ITEM", 4);
 define("DISCOUNT_TYPE_PERCENTAGE_OFF_PER_QUALIFYING_ITEM", 5);
 
+define("FILTER_TYPE_NONE", 0);
 define("FILTER_TYPE_PRODUCTS", 1);
 define("FILTER_TYPE_TERMS", 2);
 define("FILTER_TYPE_SKUS", 3);
 define("FILTER_TYPE_CLASS", 4);
+define("FILTER_TYPE_AUTHORS", 5);
+
+define('DISCOUNT_FILTER_GROUPING_APPLICATION', 1);
+define('DISCOUNT_FILTER_GROUPING_QUALIFICATION', 2);
 
 define("ALL_PRODUCTS", "-1");
 define("ALL_TERMS", "-1");
 define("ALL_SKUS", "");
 define("ALL_CLASSES", "");
 define("ALL_ROLES", "-1");
+define("ALL_AUTHORS", "-1");
 
 define("IS_ACTIVE", TRUE);
 
@@ -49,6 +55,69 @@ define("CALCULATE_DISCOUNT_RESPONSE_MESSAGES_KEY", "messages");
  */
 function uc_discounts_init() {
   drupal_add_css(drupal_get_path('module', 'uc_discounts')  . '/uc_discounts.css');
+  // @see uc_discounts_add_to_cart()
+  if (isset($_SESSION['uc_discounts_after_add_to_cart'])) {
+    $nid = $_SESSION['uc_discounts_after_add_to_cart']['nid'];
+    $added_qty = $_SESSION['uc_discounts_after_add_to_cart']['qty'];
+    unset($_SESSION['uc_discounts_after_add_to_cart']);
+
+    $items_to_add = $new_product_ids = array();
+
+    // Discounts are checked against the product(s) specified in Discount Application,
+    // not Discount Qualifications. Therefore, we have to look up the discount by its
+    // required_product_type field and check for discounts on the product(s) associated
+    // with it
+    $product = node_load($nid);
+    $result = db_query("SELECT * FROM {uc_discounts} d
+                        WHERE d.add_to_cart = 1
+                          AND (d.has_activation = 0 OR d.activates_on < %d)
+                          AND (d.has_expiration = 0 OR d.expiration > %d)
+                          AND d.is_active = 1
+                          AND d.discount_type = %d
+                        ORDER BY weight", time(), time(), DISCOUNT_TYPE_FREE_ITEMS);
+    while ($discount = db_fetch_object($result)) {
+      if (in_array($product->nid, get_product_ids_for_discount_object($discount, DISCOUNT_FILTER_GROUPING_QUALIFICATION, TRUE))) {
+        $new_product_ids = get_product_ids_for_discount_object($discount, DISCOUNT_FILTER_GROUPING_APPLICATION, TRUE);
+        break;
+      }
+    }
+
+    if (!empty($new_product_ids)) {
+      foreach ($new_product_ids as $id) {
+        $potential_product = node_load($id);
+        // How many of the item are in the cart? We're only interested in node IDs right now.
+        $items = uc_cart_get_contents();
+        $qty = 0;
+        $source_qty = 0;
+        foreach ($items as $item) {
+          if ($item->nid == $potential_product->nid) {
+            $qty += $item->qty;
+          }
+          if ($item->nid == $product->nid) {
+            $source_qty += $item->qty;
+          }
+        }
+
+        $target_qty = $discount->discount_amount;
+        $qualifying_amount = $discount->qualifying_amount;
+        $times_applied = floor($qty / $target_qty);
+        $times_to_apply = ((($target_qty / $qualifying_amount) * $added_qty) / $target_qty);
+        // Make sure max_times_applied is respected
+        if ($times_applied < $discount->max_times_applied || $discount->max_times_applied == 0) {
+          // Calculate how many there should be and subtract what we already have
+          $to_add = ($target_qty * ($discount->max_times_applied ? min($discount->max_times_applied - $times_applied, $times_to_apply) : $times_to_apply));
+        }
+        // Don't add items immediately so that uc_cart_get_contents() will behave predictably.
+        if ($to_add > 0) {
+          $items_to_add[] = array('nid' => $potential_product->nid, 'qty' => $to_add, 'data' => array());
+        }
+      }
+    }
+
+    foreach ($items_to_add as $p) {
+      uc_cart_add_item($p['nid'], $p['qty'], $p['data'] + module_invoke_all('add_to_cart_data', $p), NULL, FALSE, FALSE, FALSE);
+    }
+  }
 }
 
 /**
@@ -159,8 +228,7 @@ function uc_discounts_order($op, &$arg1, $arg2) {
   switch ($op) {
     case 'load':
       //Get order's codes from database
-      $codes_string = uc_discounts_order_codes_get($arg1->order_id);
-      $arg1->uc_discounts_codes = get_codes($codes_string);
+      $arg1->uc_discounts_codes = uc_discounts_get_codes_for_order($arg1->order_id);
       break;
 
     case 'save':
@@ -170,7 +238,7 @@ function uc_discounts_order($op, &$arg1, $arg2) {
         uc_discounts_order_codes_delete($arg1->order_id);
 
         //Save order's codes as string
-        $codes_string = create_codes_string($arg1->uc_discounts_codes);
+        $codes_string = uc_discounts_codes_to_str($arg1->uc_discounts_codes);
         $new_discount_order_code = array('order_id' => $arg1->order_id, 'codes' => $codes_string);
         drupal_write_record('uc_discounts_order_codes', $new_discount_order_code);
 
@@ -179,7 +247,7 @@ function uc_discounts_order($op, &$arg1, $arg2) {
           $existing_line_items = $arg1->line_items;
         }
         else {
-          $existing_line_items = uc_order_load_line_items($arg1->order_id, TRUE);
+          $existing_line_items = uc_order_load_line_items($arg1, TRUE);
         }
 
         // Use new_order_line_items to populate $arg1->line_items by:
@@ -225,52 +293,10 @@ function uc_discounts_order($op, &$arg1, $arg2) {
 
     // Ensure stored discounts are accurate (recalculate and match new amounts against stored amounts)
     case 'submit':
-      // Store existing discount amounts
-      $existing_discount_amounts = array();
-      foreach (get_existing_discount_line_items($arg1) as $line_item) {
-        $existing_discount_amounts[] = uc_currency_format($line_item["amount"]);
+      $result = uc_discounts_apply($arg1, FALSE);
+      if (!$result['success']) {
+        return array(array('pass' => FALSE, 'message' => $result['message']));
       }
-
-      // Regenerate discount amounts
-      $errors    = array();
-      $warnings  = array();
-      $messages  = array();
-      $discounts = get_discounts_for_order($arg1, $errors, $warnings, $messages);
-
-      // If there were errors, print and return FALSE
-      if (!empty($errors)) {
-        foreach ($errors as $error) {
-          drupal_set_message($error, "error");
-        }
-
-        return array(array(
-            'pass' => FALSE,
-            'message' => t('Discounts have changed.  Please review your cart and continue checkout.'),
-          ));
-      }
-
-      // Add discount line items to order
-      add_discount_line_items_to_order($arg1, $discounts);
-
-      $new_discount_amounts = array();
-      foreach ($arg1->uc_discounts_line_items as $line_item) {
-        $new_discount_amounts[] = uc_currency_format($line_item["amount"]);
-      }
-
-      $discount_intersection = array_intersect($existing_discount_amounts, $new_discount_amounts);
-      if (count($discount_intersection) != count($existing_discount_amounts)) {
-        // Save new discount line items
-        $arg1->uc_discounts_line_items_need_updating = TRUE;
-        uc_discounts_order('save', $arg1, NULL);
-
-        return array(array(
-            'pass' => FALSE,
-            'message' => t('Discounts have changed.  Please review your cart and continue checkout.'),
-          ));
-      }
-
-      // Add discount messages to order
-      uc_order_log_changes($arg1->order_id, $messages);
       break;
 
     case 'delete':
@@ -290,6 +316,14 @@ function uc_discounts_uc_checkout_complete($order, $account) {
   uc_discounts_uses_save_for_order($order);
   // Don't allow user to re-use codes on another order without re-entering them
   unset($_SESSION['uc_discounts_codes']);
+}
+
+/**
+ * Implementation of hook_add_to_cart()
+ */
+function uc_discounts_add_to_cart($nid, $qty, $data) {
+  // @see hook_init()
+  $_SESSION['uc_discounts_after_add_to_cart'] = array('nid' => $nid, 'qty' => $qty);
 }
 
 /**
@@ -320,7 +354,7 @@ function uc_discounts_order_pane() {
     'id' => 'uc_discounts',
     'callback' => 'uc_discounts_order_pane_callback',
     'title' => t('Discount codes'),
-    'weight' => 7,
+    'weight' => 8,
     'show' => array('edit'),
   );
 
@@ -335,9 +369,7 @@ function uc_discounts_order_pane_callback($op, $arg1) {
     case 'edit-form':
       $form['uc-discounts']['uc-discounts-codes'] = array(
         '#type' => 'textarea',
-        '#rows' => 5,
-        '#prefix' => '<div class="discount-codes-wrapper">',
-        '#suffix' => '</div>',
+        '#rows' => 3,
       );
       $form['uc-discounts']['uc-discounts-button'] = array(
         '#type' => 'submit',
@@ -354,7 +386,11 @@ function uc_discounts_order_pane_callback($op, $arg1) {
 
     case t('Apply discounts'):
       if ($order = uc_order_load($arg1['order_id'])) {
-        $order->uc_discounts_codes = get_codes($arg1['uc-discounts-codes']);
+        $order->uc_discounts_codes = array_merge($order->uc_discounts_codes, uc_discounts_codes_to_array($arg1['uc-discounts-codes']));
+        $result = uc_discounts_apply($order, TRUE, FALSE);
+        drupal_set_message($result['message'], ($result['success'] ? 'notice' : 'error'));
+
+        /*
         $has_code_errors = FALSE;
         $errors = array();
         $warnings = array();
@@ -379,6 +415,7 @@ function uc_discounts_order_pane_callback($op, $arg1) {
             drupal_set_message(t('Discount code(s) applied to order.'));
           }
         }
+        */
       }
       break;
   }
@@ -481,6 +518,7 @@ function uc_discounts_checkout_pane() {
 function uc_discounts_form_uc_cart_checkout_form_alter(&$form, $form_state) {
   drupal_add_js(array(
       'uc_discounts' => array(
+        'url' => url('cart/checkout/uc_discounts/calculate'),
         'line_item_key_name' => LINE_ITEM_KEY_NAME,
         'line_item_weight' => LINE_ITEM_WEIGHT,
         'total_discount_text' => t('Total discount'),
@@ -516,7 +554,7 @@ function uc_checkout_pane_discounts($op, &$arg1, $arg2) {
 
       //If viewing an existing order, load order's codes
       if (!empty($arg1->order_id)) {
-        $codes_string = uc_discounts_order_codes_get($arg1->order_id);
+        $codes_string = uc_discounts_codes_to_str(uc_discounts_get_codes_for_order($arg1->order_id));
       }
 
       $contents["uc-discounts-codes"] = array(
@@ -541,10 +579,9 @@ function uc_checkout_pane_discounts($op, &$arg1, $arg2) {
       return array("description" => $description, "contents" => $contents);
 
     case "process":
-      //TO DO: only update codes if codes_string ($arg2["uc-discounts-codes"]) has changed
-
       // Save form values from checkout pane in order ($arg1).
-      $arg1->uc_discounts_codes = get_codes($arg2['uc-discounts-codes']);
+      $arg1->uc_discounts_codes = uc_discounts_codes_to_array($arg2['uc-discounts-codes']);
+      drupal_alter('uc_discounts_codes', $arg1, 'pane_submit');
 
       $has_code_errors = FALSE;
 
@@ -604,26 +641,6 @@ function add_discount_line_items_to_order(&$order, $discounts) {
 }
 
 /**
- * Returns existing discounts line items for order.
- */
-function get_existing_discount_line_items($order) {
-  if (is_array($order->line_items)) {
-    $existing_line_items = $order->line_items;
-  }
-  else $existing_line_items = uc_order_load_line_items($order->order_id, TRUE);
-
-  $line_items = array();
-  foreach ($existing_line_items as $line_item) {
-    //If line item type is LINE_ITEM_KEY_NAME, add it to array
-    if ($line_item["type"] == LINE_ITEM_KEY_NAME) {
-      $line_items[] = $line_item;
-    }
-  }
-
-  return $line_items;
-}
-
-/**
  * AJAX callback for discounts calculation.
  *
  * Calculate discount for an order in the checkout page.
@@ -647,7 +664,8 @@ function uc_discounts_js_calculate() {
     $order->products = uc_cart_get_contents();
   }
 
-  $order->uc_discounts_codes = get_codes($_POST['uc-discounts-codes']);
+  $order->uc_discounts_codes = uc_discounts_codes_to_array($_POST['uc-discounts-codes']);
+  drupal_alter('uc_discounts_codes', $order, 'js_calculate');
 
   $line_items = array();
   $errors     = array();
@@ -832,14 +850,31 @@ function theme_uc_discounts_cart_checkout_table($show_subtotal = TRUE) {
 /**
  * Deletes a uc_discounts row and all dependencies.
  */
-function uc_discounts_delete_all($discount_id) {
-  db_query("DELETE FROM {uc_discounts_uses} WHERE discount_id=%d", $discount_id);
-  db_query("DELETE FROM {uc_discounts_products} WHERE discount_id=%d", $discount_id);
-  db_query("DELETE FROM {uc_discounts_terms} WHERE discount_id=%d", $discount_id);
-  db_query("DELETE FROM {uc_discounts_skus} WHERE discount_id=%d", $discount_id);
-  db_query("DELETE FROM {uc_discounts_roles} WHERE discount_id=%d", $discount_id);
-  db_query("DELETE FROM {uc_discounts_codes} WHERE discount_id=%d", $discount_id);
-  db_query("DELETE FROM {uc_discounts} WHERE discount_id=%d", $discount_id);
+function uc_discounts_delete_all($discount) {
+  foreach (module_implements('uc_discount') as $module) {
+    $function = $module . '_uc_discount';
+    $function('delete', $discount);
+  }
+  db_query("DELETE FROM {uc_discounts_uses} WHERE discount_id=%d", $discount->discount_id);
+  db_query("DELETE FROM {uc_discounts_products} WHERE discount_id=%d", $discount->discount_id);
+  db_query("DELETE FROM {uc_discounts_terms} WHERE discount_id=%d", $discount->discount_id);
+  db_query("DELETE FROM {uc_discounts_skus} WHERE discount_id=%d", $discount->discount_id);
+  db_query("DELETE FROM {uc_discounts_roles} WHERE discount_id=%d", $discount->discount_id);
+  db_query("DELETE FROM {uc_discounts_codes} WHERE discount_id=%d", $discount->discount_id);
+  db_query("DELETE FROM {uc_discounts_authors} WHERE discount_id=%d", $discount->discount_id);
+  db_query("DELETE FROM {uc_discounts} WHERE discount_id=%d", $discount->discount_id);
+}
+
+/**
+ * Loads a discount
+ */
+function uc_discounts_load($discount_id) {
+  $discount = db_fetch_object(db_query("SELECT * FROM {uc_discounts} WHERE discount_id=%d", $discount_id));
+   foreach (module_implements('uc_discount') as $module) {
+     $function = $module . '_uc_discount';
+     $function('load', $discount);
+   }
+  return $discount;
 }
 
 /**
@@ -859,7 +894,6 @@ function get_codes_for_discount($discount_id) {
  */
 function uc_discounts_codes_delete($discount_id) {
   $query = "DELETE FROM {uc_discounts_codes} WHERE discount_id=%d";
-  uc_discounts_log("query=". $query);
   db_query($query, $discount_id);
 }
 
@@ -869,19 +903,21 @@ function uc_discounts_codes_delete($discount_id) {
  *
  * @param $discount object
  * @param $exclude_all_products bool
+ * @param $grouping const
  *
  * @return array of product ids (nids)
  */
-function get_product_ids_for_discount_object($discount, $exclude_all_products = FALSE) {
-  switch ($discount->filter_type) {
+function get_product_ids_for_discount_object($discount, $grouping = DISCOUNT_FILTER_GROUPING_APPLICATION, $exclude_all_products = FALSE) {
+  $filter = $grouping == DISCOUNT_FILTER_GROUPING_APPLICATION ? $discount->filter_type : $discount->required_product_type;
+  switch ($filter) {
     case FILTER_TYPE_PRODUCTS:
-      return get_product_ids_for_discount($discount->discount_id, $exclude_all_products);
+      return get_product_ids_for_discount($discount->discount_id, $grouping, $exclude_all_products);
 
     case FILTER_TYPE_TERMS:
       $product_ids = array();
 
       //Get products for terms
-      $terms = get_term_ids_for_discount($discount->discount_id, TRUE);
+      $terms = get_term_ids_for_discount($discount->discount_id, $grouping, $exclude_all_products);
       $query = 'SELECT DISTINCT p.nid FROM {uc_products} p';
       if (!empty($terms)) {
         $query .= ' INNER JOIN {term_node} tn ON p.nid=tn.nid
@@ -895,7 +931,7 @@ function get_product_ids_for_discount_object($discount, $exclude_all_products = 
       return $product_ids;
 
     case FILTER_TYPE_SKUS:
-      $skus = get_skus_for_discount($discount->discount_id, TRUE);
+      $skus = get_skus_for_discount($discount->discount_id, $grouping, $exclude_all_products);
       $query = 'SELECT DISTINCT p.nid FROM {uc_products} p';
       if (!empty($skus)) {
         $query .= ' INNER JOIN {uc_discounts_skus} ds ON p.model=ds.sku
@@ -908,11 +944,24 @@ function get_product_ids_for_discount_object($discount, $exclude_all_products = 
       return $product_ids;
 
     case FILTER_TYPE_CLASS:
-      $classes = get_classes_for_discount($discount->discount_id, TRUE);
+      $classes = get_classes_for_discount($discount->discount_id, $grouping, $exclude_all_products);
       $query = 'SELECT DISTINCT n.nid FROM {node} n';
       if (!empty($classes)) {
           $query .= ' INNER JOIN {uc_discounts_classes} dcl ON n.type=dcl.class
                       WHERE dcl.discount_id=%d';
+      }
+      $result = db_query($query, $discount->discount_id);
+      while ($row = db_fetch_object($result)) {
+        $product_ids[] = $row->nid;
+      }
+      return $product_ids;
+
+    case FILTER_TYPE_AUTHORS:
+      $authors = get_author_ids_for_discount($discount->discount_id, $grouping, $exclude_all_products);
+      $query = 'SELECT DISTINCT n.nid FROM {node} n';
+      if (!empty($authors)) {
+          $query .= ' INNER JOIN {uc_discounts_authors} dau ON n.uid=dau.author_id
+                      WHERE dau.discount_id=%d';
       }
       $result = db_query($query, $discount->discount_id);
       while ($row = db_fetch_object($result)) {
@@ -929,22 +978,120 @@ function get_product_ids_for_discount_object($discount, $exclude_all_products = 
  *    FILTER_TYPE_PRODUCTS will return no values.
  *
  * @param $discount_id
+ * @param $grouping
  * @param $exclude_all_products
  *
  * @return array of product ids (nids)
  */
-function get_product_ids_for_discount($discount_id, $exclude_all_products = FALSE) {
-  $product_ids = array();
-  //Get products from database
+function get_product_ids_for_discount($discount_id, $grouping, $exclude_all_products = FALSE) {
+  $query = "SELECT product_id FROM {uc_discounts_products} WHERE discount_id = %d AND grouping = %d";
+  $args = array($discount_id, $grouping);
   if ($exclude_all_products) {
-    $result = db_query("SELECT product_id FROM {uc_discounts_products} WHERE discount_id=%d AND product_id<>%d",
-      $discount_id, ALL_PRODUCTS
-    );
+    $query .= ' AND product_id <> %d';
+    $args[] = ALL_PRODUCTS;
   }
-  else $result = db_query("SELECT product_id FROM {uc_discounts_products} WHERE discount_id=%d", $discount_id);
 
-  while ($row = db_fetch_array($result)) $product_ids[] = $row["product_id"];
-  return $product_ids;
+  $result = db_query($query, $args);
+  $ids = array();
+  while ($row = db_fetch_array($result)) {
+    $ids[] = $row["product_id"];
+  }
+  return $ids;
+}
+
+/**
+ * Returns term_ids for discount.
+ */
+function get_term_ids_for_discount($discount_id, $grouping, $exclude_all_terms = FALSE) {
+  $query = "SELECT term_id FROM {uc_discounts_terms} WHERE discount_id = %d AND grouping = %d";
+  $args = array($discount_id, $grouping);
+  if ($exclude_all_products) {
+    $query .= ' AND term_id <> %d';
+    $args[] = ALL_TERMS;
+  }
+
+  $result = db_query($query, $args);
+  $ids = array();
+  while ($row = db_fetch_array($result)) {
+    $ids[] = $row["term_id"];
+  }
+  return $ids;
+}
+
+/**
+ * Returns SKUs for discount.
+ */
+function get_skus_for_discount($discount_id, $grouping, $exclude_all_skus = FALSE) {
+  $query = "SELECT sku FROM {uc_discounts_skus} WHERE discount_id = %d AND grouping = %d";
+  $args = array($discount_id, $grouping);
+  if ($exclude_all_products) {
+    $query .= ' AND sku <> "%s"';
+    $args[] = ALL_SKUS;
+  }
+
+  $result = db_query($query, $args);
+  $ids = array();
+  while ($row = db_fetch_array($result)) {
+    $ids[] = $row["sku"];
+  }
+  return $ids;
+}
+
+/**
+ * Returns Product Class names for discount.
+ */
+function get_classes_for_discount($discount_id, $grouping, $exclude_all_classes = FALSE) {
+  $query = "SELECT class FROM {uc_discounts_classes} WHERE discount_id = %d AND grouping = %d";
+  $args = array($discount_id, $grouping);
+  if ($exclude_all_products) {
+    $query .= ' AND class <> "%s"';
+    $args[] = ALL_CLASSES;
+  }
+
+  $result = db_query($query, $args);
+  $ids = array();
+  while ($row = db_fetch_array($result)) {
+    $ids[] = $row["class"];
+  }
+  return $ids;
+}
+
+/**
+ * Returns author_ids for discount.
+ */
+function get_author_ids_for_discount($discount_id, $grouping, $exclude_all_authors = FALSE) {
+  $query = "SELECT author_id FROM {uc_discounts_authors} WHERE discount_id = %d AND grouping = %d";
+  $args = array($discount_id, $grouping);
+  if ($exclude_all_products) {
+    $query .= ' AND author_id <> %d';
+    $args[] = ALL_AUTHORS;
+  }
+
+  $result = db_query($query, $args);
+  $ids = array();
+  while ($row = db_fetch_array($result)) {
+    $ids[] = $row["author_id"];
+  }
+  return $ids;
+}
+
+/**
+ * Returns role_ids for discount.
+ */
+function get_role_ids_for_discount($discount_id, $exclude_all_roles = FALSE) {
+  $query = "SELECT role_id FROM {uc_discounts_roles} WHERE discount_id = %d";
+  $args = array($discount_id);
+  if ($exclude_all_products) {
+    $query .= ' AND role_id <> %d';
+    $args[] = ALL_ROLES;
+  }
+
+  $result = db_query($query, $args);
+  $ids = array();
+  while ($row = db_fetch_array($result)) {
+    $ids[] = $row["role_id"];
+  }
+  return $ids;
 }
 
 /**
@@ -952,80 +1099,7 @@ function get_product_ids_for_discount($discount_id, $exclude_all_products = FALS
  */
 function uc_discounts_products_delete($discount_id) {
   $query = "DELETE FROM {uc_discounts_products} WHERE discount_id=%d";
-  uc_discounts_log("query=". $query);
   db_query($query, $discount_id);
-}
-
-/**
- * Returns term_ids for discount.
- */
-function get_term_ids_for_discount($discount_id, $exclude_all_terms = FALSE) {
-  $term_ids = array();
-
-  //Get terms from database
-  if ($exclude_all_terms) {
-    $result = db_query("SELECT term_id FROM {uc_discounts_terms} WHERE discount_id=%d AND term_id<>%d",
-      $discount_id, ALL_TERMS
-    );
-  }
-  else $result = db_query("SELECT term_id FROM {uc_discounts_terms} WHERE discount_id=%d", $discount_id);
-
-  while ($row = db_fetch_array($result)) $term_ids[] = $row["term_id"];
-  return $term_ids;
-}
-
-/**
- * Returns SKUs for discount.
- */
-function get_skus_for_discount($discount_id, $exclude_all_skus = FALSE) {
-  $skus = array();
-
-  //Get SKUs from database
-  if ($exclude_all_skus) {
-    $result = db_query("SELECT sku FROM {uc_discounts_skus} WHERE discount_id=%d AND sku<>%d",
-      $discount_id, ALL_SKUS
-    );
-  }
-  else $result = db_query("SELECT sku FROM {uc_discounts_skus} WHERE discount_id=%d", $discount_id);
-
-  while ($row = db_fetch_array($result)) $skus[] = $row["sku"];
-  return $skus;
-}
-
-/**
- * Returns Product Class names for discount.
- */
-function get_classes_for_discount($discount_id, $exclude_all_classes = FALSE) {
-  $classes = array();
-
-  //Get Classes from database
-  if ($exclude_all_classes) {
-    $result = db_query("SELECT class FROM {uc_discounts_classes} WHERE discount_id=%d AND class<>%d",
-      $discount_id, ALL_CLASSES
-    );
-  }
-  else $result = db_query("SELECT class FROM {uc_discounts_classes} WHERE discount_id=%d", $discount_id);
-
-  while ($row = db_fetch_array($result)) $classes[] = $row["class"];
-  return $classes;
-}
-
-/**
- * Returns role_ids for discount.
- */
-function get_role_ids_for_discount($discount_id, $exclude_all_roles = FALSE) {
-  $role_ids = array();
-
-  //Get roles from database
-  if ($exclude_all_roles) {
-    $result = db_query("SELECT role_id FROM {uc_discounts_roles} WHERE discount_id=%d AND role_id<>%d",
-      $discount_id, ALL_ROLES
-    );
-  }
-  else $result = db_query("SELECT role_id FROM {uc_discounts_roles} WHERE discount_id=%d", $discount_id);
-
-  while ($row = db_fetch_array($result)) $role_ids[] = $row["role_id"];
-  return $role_ids;
 }
 
 /**
@@ -1033,7 +1107,6 @@ function get_role_ids_for_discount($discount_id, $exclude_all_roles = FALSE) {
  */
 function uc_discounts_terms_delete($discount_id) {
   $query = "DELETE FROM {uc_discounts_terms} WHERE discount_id=%d";
-  uc_discounts_log("query=". $query);
   db_query($query, $discount_id);
 }
 
@@ -1042,7 +1115,6 @@ function uc_discounts_terms_delete($discount_id) {
  */
 function uc_discounts_skus_delete($discount_id) {
   $query = "DELETE FROM {uc_discounts_skus} WHERE discount_id=%d";
-  uc_discounts_log("query=". $query);
   db_query($query, $discount_id);
 }
 
@@ -1051,7 +1123,14 @@ function uc_discounts_skus_delete($discount_id) {
  */
 function uc_discounts_classes_delete($discount_id) {
   $query = "DELETE FROM {uc_discounts_classes} WHERE discount_id=%d";
-  uc_discounts_log("query=". $query);
+  db_query($query, $discount_id);
+}
+
+/**
+ * Deletes all uc_discounts_authors rows for a discount.
+ */
+function uc_discounts_authors_delete($discount_id) {
+  $query = "DELETE FROM {uc_discounts_authors} WHERE discount_id=%d";
   db_query($query, $discount_id);
 }
 
@@ -1060,7 +1139,6 @@ function uc_discounts_classes_delete($discount_id) {
  */
 function uc_discounts_roles_delete($discount_id) {
   $query = "DELETE FROM {uc_discounts_roles} WHERE discount_id=%d";
-  uc_discounts_log("query=". $query);
   db_query($query, $discount_id);
 }
 
@@ -1173,6 +1251,18 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
     FILTER_TYPE_CLASS, join(",", $temp_classes)
   );
 
+  //Create IN string of authors in order
+  $temp_authors = array();
+  $temp_authors[] = "'". db_escape_string(ALL_AUTHORS) ."'";
+  if (is_array($order->products) && !empty($order->products)) {
+    //Get authors for order's products
+    $result = db_query("SELECT DISTINCT uid FROM {node} WHERE nid IN(%s)", join(",", $order_product_ids));
+    while ($row = db_fetch_array($result)) $temp_authors[] = "'". db_escape_string($row["uid"]) ."'";
+  }
+  $authors_clause = sprintf("d.filter_type<>%d OR dau.author_id IN(%s)",
+    FILTER_TYPE_AUTHORS, join(",", $temp_authors)
+  );
+
   //Create codes clause
   $escaped_codes_string = NULL;
   if (!empty($order->uc_discounts_codes)) {
@@ -1197,17 +1287,21 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
     $order->uid, ALL_ROLES, $auth_rid
   );
 
+  $grouping = DISCOUNT_FILTER_GROUPING_APPLICATION;
+
   //Add warnings for expired discounts with codes (if necessary)
   if (!empty($order->uc_discounts_codes)) {
     $query = sprintf("SELECT DISTINCT d.*, dc.code code FROM {uc_discounts} d
-      LEFT JOIN {uc_discounts_products} dp ON d.discount_id=dp.discount_id
-      LEFT JOIN {uc_discounts_terms} dt ON d.discount_id=dt.discount_id
-      LEFT JOIN {uc_discounts_skus} ds ON d.discount_id=ds.discount_id
+      LEFT JOIN {uc_discounts_products} dp ON d.discount_id=dp.discount_id AND dp.grouping = $grouping
+      LEFT JOIN {uc_discounts_terms} dt ON d.discount_id=dt.discount_id AND dt.grouping = $grouping
+      LEFT JOIN {uc_discounts_skus} ds ON d.discount_id=ds.discount_id AND ds.grouping = $grouping
+      LEFT JOIN {uc_discounts_classes} dcl ON d.discount_id=dcl.discount_id AND dcl.grouping = $grouping
+      LEFT JOIN {uc_discounts_authors} dau ON d.discount_id=dau.discount_id AND dau.grouping = $grouping
       LEFT JOIN {uc_discounts_roles} dr ON d.discount_id=dr.discount_id
       LEFT JOIN {uc_discounts_codes} dc ON d.discount_id=dc.discount_id
-      LEFT JOIN {uc_discounts_classes} dcl ON d.discount_id=dcl.discount_id
       WHERE dc.code IN(%s)
       AND (d.has_role_filter=0%s)
+      AND (%s)
       AND (%s)
       AND (%s)
       AND (%s)
@@ -1215,9 +1309,8 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
       AND (d.has_expiration<>0 AND d.expiration<=%d)
       AND (d.is_active=%d)
       ORDER BY weight", $escaped_codes_string, $roles_clause, $product_ids_clause,
-      $term_ids_clause, $skus_clause, $classes_clause, time(), IS_ACTIVE
+      $term_ids_clause, $skus_clause, $classes_clause, $authors_clause, time(), IS_ACTIVE
     );
-    uc_discounts_log("query=". $query);
     $result = db_query($query);
     while ($discount = db_fetch_object($result)) {
       $warnings[] = t('The discount for code "@code" has expired.',
@@ -1227,12 +1320,14 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
   }
 
   $query = sprintf("SELECT DISTINCT d.* FROM {uc_discounts} d
-    LEFT JOIN {uc_discounts_products} dp ON d.discount_id=dp.discount_id
-    LEFT JOIN {uc_discounts_terms} dt ON d.discount_id=dt.discount_id
-    LEFT JOIN {uc_discounts_skus} ds ON d.discount_id=ds.discount_id
-    LEFT JOIN {uc_discounts_classes} dcl ON d.discount_id=dcl.discount_id
+    LEFT JOIN {uc_discounts_products} dp ON d.discount_id=dp.discount_id AND dp.grouping = $grouping
+    LEFT JOIN {uc_discounts_terms} dt ON d.discount_id=dt.discount_id AND dt.grouping = $grouping
+    LEFT JOIN {uc_discounts_skus} ds ON d.discount_id=ds.discount_id AND ds.grouping = $grouping
+    LEFT JOIN {uc_discounts_classes} dcl ON d.discount_id=dcl.discount_id AND dcl.grouping = $grouping
+    LEFT JOIN {uc_discounts_authors} dau ON d.discount_id=dau.discount_id AND dau.grouping = $grouping
     WHERE (d.requires_code=0%s)
     AND (d.has_role_filter=0%s)
+    AND (%s)
     AND (%s)
     AND (%s)
     AND (%s)
@@ -1241,7 +1336,7 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
     AND (d.has_expiration=0 OR d.expiration>%d)
     AND (d.is_active=%d)
     ORDER BY weight", $codes_clause, $roles_clause, $product_ids_clause,
-    $term_ids_clause, $skus_clause, $classes_clause, time(), time(), IS_ACTIVE
+    $term_ids_clause, $skus_clause, $classes_clause, $authors_clause, time(), time(), IS_ACTIVE
   );
   
   $result = db_query($query);
@@ -1250,6 +1345,16 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
 
   // Appears to check if order qualifies for each discount then applies discount.  Functionality should be separated, no?
   while ($discount = db_fetch_object($result)) {
+    foreach (module_implements('uc_discount') as $module) {
+      $function = $module . '_uc_discount';
+      $function('load', $discount, $order);
+    }
+
+    // In case the hook modified the discount
+    if (!$discount->is_active) {
+      continue;
+    }
+
     //Get code for discount (if one exists)
     $discount->code = NULL;
     if (!empty($escaped_codes_string)) {
@@ -1265,7 +1370,7 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
     //The query handled valid codes and expiration, this block must:
     //  check max uses (if applicable)
     //  check if discount is being combined and can be combined
-    //  check if order qualifies (type, requires_single_product_to_qualify, required_product, can_be_combined_with_other_discounts)
+    //  check if order qualifies (type, requires_single_product_to_qualify, required_products, can_be_combined_with_other_discounts)
     //  determine number of times to apply discount
 
     //If this discount has a max uses amount, check max uses
@@ -1347,7 +1452,7 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
       }
     }
 
-    //Check if order qualifies for this discount (check type, requires_single_product_to_qualify, required_product)
+    //Check if order qualifies for this discount (check type, requires_single_product_to_qualify, required_products)
     //Get product IDs for determining discount application
     $discount_product_ids = get_product_ids_for_discount_object($discount);
     if (in_array(ALL_PRODUCTS, $discount_product_ids)) {
@@ -1355,82 +1460,65 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
     }
 
     // Get product IDs for determining discount qualification
-    $qualification_product_ids = $discount->use_only_discounted_products_to_qualify ? $discount_product_ids : $order_product_ids;
-
-    //Determine total qualifying amount of order (store in order_qualifying_amount)
-    //and qualifying subtotal of order (store in order_qualifying_subtotal)
-
-    $order_qualifying_amount = 0;
-    $order_qualifying_subtotal = 0;
-
-    // Check if required_product is set.
-    if ($discount->required_product != '') {
-      // Get nid of required_product
-      $required_product_result = db_query("SELECT DISTINCT nid from {uc_products} WHERE model='%s'", $discount->required_product);
-      $required_product_id = db_result($required_product_result);
-      // Check if required_product nid is in cart
-      if (in_array($required_product_id, $order_product_ids)) {
-        switch ($discount->qualifying_type) {
-          // Buy $50 of X product
-          case QUALIFYING_TYPE_MINIMUM_PRICE:
-            //Determine the maximum product subtotal
-            $order_qualifying_amount = max($order_qualifying_amount, $order_product_id_subtotal_map[$required_product_id]);
-            //Subtract already discounted amount
-            $order_qualifying_amount -= $total_discount_amount;
-            //TO DO: keep track of each item's subtotal and decrement upon applying discount
-            break;
-            // Buy 5 of X product...
-          case QUALIFYING_TYPE_MINIMUM_QUANTITY:
-            //Determine the maximum product quantity
-            $order_qualifying_amount = max($order_qualifying_amount, $order_product_id_quantity_map[$required_product_id]);
-            //TO DO: keep track of each item's quantity and decrement upon applying discount
-            break;
-        }
-      }
+    $required_product_ids = get_product_ids_for_discount_object($discount, DISCOUNT_FILTER_GROUPING_QUALIFICATION);
+    $required_ids_in_order = array_intersect($required_product_ids, $order_product_ids);
+    if (!empty($discount->code) && !empty($required_product_ids) && empty($required_ids_in_order)) {
+      $warnings[] = t('The discount for code "@code" requires a product that is not in your cart.',
+                      array('@code' => $discount->code));
+      continue;
     }
 
-    //Otherwise sum product subtotals or quantities
+    if ($discount->use_only_discounted_products_to_qualify) {
+      $qualification_product_ids = $discount_product_ids;
+    }
+    elseif (!empty($required_product_ids)) {
+      $qualification_product_ids = $required_product_ids;
+    }
     else {
-      switch ($discount->qualifying_type) {
-        case QUALIFYING_TYPE_MINIMUM_PRICE:
-          //Determine the total subtotal of discount's products
-          foreach ($qualification_product_ids as $product_id) {
-            if (isset($order_product_id_subtotal_map[$product_id])) {
-              if ($discount->requires_single_product_to_qualify) {
-                if ($order_product_id_subtotal_map[$product_id] >= $order->qualifying_amount) {
-                  //In this case, $order_qualifying amount should be the sum of
-                  //prices of products that both qualify and meet the minimum
-                  //qualification amount based on their individual price.
-                  $order_qualifying_amount += $order_product_id_subtotal_map[$product_id];
-                }
-              }
-              else {
+      $qualification_product_ids = $order_product_ids;
+    }
+
+    //Determine total qualifying amount of order (store in order_qualifying_amount)
+    $order_qualifying_amount = 0;
+
+    switch ($discount->qualifying_type) {
+      case QUALIFYING_TYPE_MINIMUM_PRICE:
+        //Determine the total subtotal of discount's products
+        foreach ($qualification_product_ids as $product_id) {
+          if (isset($order_product_id_subtotal_map[$product_id])) {
+            if ($discount->requires_single_product_to_qualify) {
+              if ($order_product_id_subtotal_map[$product_id] >= $order->qualifying_amount) {
+                //In this case, $order_qualifying amount should be the sum of
+                //prices of products that both qualify and meet the minimum
+                //qualification amount based on their individual price.
                 $order_qualifying_amount += $order_product_id_subtotal_map[$product_id];
               }
             }
+            else {
+              $order_qualifying_amount += $order_product_id_subtotal_map[$product_id];
+            }
           }
-          //Subtract already discounted amount
-          $order_qualifying_amount -= $total_discount_amount;
-          break;
+        }
+        //Subtract already discounted amount
+        $order_qualifying_amount -= $total_discount_amount;
+        break;
 
-        case QUALIFYING_TYPE_MINIMUM_QUANTITY:
-          //Determine the total quantity of discount's products
-          foreach ($qualification_product_ids as $product_id) {
-            if (isset($order_product_id_quantity_map[$product_id])) {
-              if ($discount->requires_single_product_to_qualify) {
-                if ($order_product_id_quantity_map[$product_id] >= $discount->qualifying_amount) {
-                  //In this case, $order_qualifying amount should be the sum of products that both qualify and meet the minimum qualification amount based on their quantity.  
-                  $order_qualifying_amount += $order_product_id_quantity_map[$product_id];
-                }
-              }
-              else {
+      case QUALIFYING_TYPE_MINIMUM_QUANTITY:
+        //Determine the total quantity of discount's products
+        foreach ($qualification_product_ids as $product_id) {
+          if (isset($order_product_id_quantity_map[$product_id])) {
+            if ($discount->requires_single_product_to_qualify) {
+              if ($order_product_id_quantity_map[$product_id] >= $discount->qualifying_amount) {
+                //In this case, $order_qualifying amount should be the sum of products that both qualify and meet the minimum qualification amount based on their quantity.
                 $order_qualifying_amount += $order_product_id_quantity_map[$product_id];
               }
             }
+            else {
+              $order_qualifying_amount += $order_product_id_quantity_map[$product_id];
+            }
           }
-          //TO DO: keep track of each item's subtotal and decrement upon applying discount
-          break;
-      }
+        }
+        break;
     }
 
     //If order does not qualify for this discount
@@ -1500,8 +1588,14 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
     // Determine number of times to apply discount, by default once for every qualifying product
     $discount->times_applied = $discount_products_qty;
     // See if it should be limited based on number of required products in the cart
-    if ($discount->limit_max_times_applied && $discount->required_product != '') {
-      $discount->times_applied = min($discount->times_applied, $order_product_id_quantity_map[$required_product_id]);
+    if ($discount->limit_max_times_applied && !empty($required_product_ids)) {
+      $times = 0;
+      foreach ($required_product_ids as $id) {
+        if (isset($order_product_id_quantity_map[$id])) {
+          $times += $order_product_id_quantity_map[$id];
+        }
+      }
+      $discount->times_applied = min($discount->times_applied, $times);
     }
     // See if we need to limit the number of applications with a hard cap
     if ($discount->max_times_applied != 0) {
@@ -1617,7 +1711,7 @@ function get_discounts_for_order($order, &$errors = NULL, &$warnings = NULL, &$m
         //(but doesn't fix the problem where the products being discounted have already been discounted
         //in full, or the case where the cart consists only of the products included in this discount)
         // Get qualifying products -- ignore "all products" selection
-        $discount_product_ids = get_product_ids_for_discount_object($discount, TRUE);
+        $discount_product_ids = get_product_ids_for_discount_object($discount, DISCOUNT_FILTER_GROUPING_APPLICATION, TRUE);
 
         // Do we have any products
         if (count($discount_product_ids) > 0) {
@@ -1792,6 +1886,12 @@ function get_codeless_discounts_for_product_and_quantity($product, $quantity = N
   $result    = db_query("SELECT DISTINCT type FROM {node} WHERE nid=%d", $product->nid);
   while ($row = db_fetch_array($result)) $classes[] = "'". db_escape_string($row["type"]) ."'";
 
+  //Get uids for product
+  $authors   = array();
+  $authors[] = "'". db_escape_string(ALL_AUTHORS) ."'";
+  $result    = db_query("SELECT DISTINCT uid FROM {node} WHERE nid=%d", $product->nid);
+  while ($row = db_fetch_array($result)) $authors[] = "'". db_escape_string($row["uid"]) ."'";
+
   //Create roles clause
   global $user;
   $auth_rid = ($user->uid != 0) ? DRUPAL_AUTHENTICATED_RID : DRUPAL_ANONYMOUS_RID;
@@ -1816,31 +1916,40 @@ function get_codeless_discounts_for_product_and_quantity($product, $quantity = N
     FILTER_TYPE_CLASS, join(",", $classes)
   );
 
+  $authors_clause = sprintf("d.filter_type<>%d OR dau.author_id IN(%s)",
+    FILTER_TYPE_AUTHORS, join(",", $authors)
+  );
+
   $sort_order_string = (is_ascending_sort) ? "ASC" : "DESC";
 
+  $grouping = DISCOUNT_FILTER_GROUPING_APPLICATION;
+
   $query = sprintf("SELECT d.* FROM {uc_discounts} d
-    LEFT JOIN {uc_discounts_products} dp ON d.discount_id=dp.discount_id
-    LEFT JOIN {uc_discounts_terms} dt ON d.discount_id=dt.discount_id
-    LEFT JOIN {uc_discounts_skus} ds ON d.discount_id=ds.discount_id
-    LEFT JOIN {uc_discounts_classes} dcl ON d.discount_id=dcl.discount_id
-    WHERE d.requires_code=0
-    AND (d.has_role_filter=0%s)
+    LEFT JOIN {uc_discounts_products} dp ON d.discount_id = dp.discount_id AND dp.grouping = $grouping
+    LEFT JOIN {uc_discounts_terms} dt ON d.discount_id = dt.discount_id AND dt.grouping = $grouping
+    LEFT JOIN {uc_discounts_skus} ds ON d.discount_id = ds.discount_id AND ds.grouping = $grouping
+    LEFT JOIN {uc_discounts_classes} dcl ON d.discount_id = dcl.discount_id AND dcl.grouping = $grouping
+    LEFT JOIN {uc_discounts_authors} dau ON d.discount_id = dau.discount_id AND dau.grouping = $grouping
+    WHERE d.requires_code = 0
+    AND (d.has_role_filter = 0%s)
     AND (%s)
     AND (%s)
     AND (%s)
     AND (%s)
-    AND (d.has_activation=0 OR d.activates_on<%d)
-    AND (d.has_expiration=0 OR d.expiration>%d)
-    AND (d.is_active=%d)
+    AND (%s)
+    AND (d.has_activation = 0 OR d.activates_on < %d)
+    AND (d.has_expiration = 0 OR d.expiration > %d)
+    AND (d.is_active = %d)
     ORDER BY d.%s %s",
-    $roles_clause, $product_ids_clause, $term_ids_clause, $skus_clause, $classes_clause,
+    $roles_clause, $product_ids_clause, $term_ids_clause, $skus_clause, $classes_clause, $authors_clause,
     time(), time(), IS_ACTIVE, $sort_column, $sort_order_string
   );
-  uc_discounts_log("query=". $query);
   $result = db_query($query);
 
   $discounts = array();
-  while ($discount = db_fetch_object($result)) $discounts[] = $discount;
+  while ($discount = db_fetch_object($result)) {
+    $discounts[] = $discount;
+  }
   return $discounts;
 }
 
@@ -1849,7 +1958,6 @@ function get_codeless_discounts_for_product_and_quantity($product, $quantity = N
  */
 function uc_discounts_uses_delete_for_discount($discount_id) {
   $query = "DELETE FROM {uc_discounts_uses} WHERE discount_id=%d";
-  uc_discounts_log("query=". $query);
   db_query($query, $discount_id);
 }
 
@@ -1858,7 +1966,6 @@ function uc_discounts_uses_delete_for_discount($discount_id) {
  */
 function uc_discounts_uses_delete_for_order($order_id) {
   $query = "DELETE FROM {uc_discounts_uses} WHERE order_id=%d";
-  uc_discounts_log("query=". $query);
   db_query($query, $order_id);
 }
 
@@ -1892,12 +1999,95 @@ function uc_discounts_uses_save_for_order($order) {
 /**
  * Returns order codes for order.
  */
-function uc_discounts_order_codes_get($order_id) {
-  //Get order's codes from database
-  $row = db_fetch_array(db_query(
-      "SELECT codes FROM {uc_discounts_order_codes} WHERE order_id=%d", $order_id
-    ));
-  return (!empty($row)) ? $row["codes"] : NULL;
+function uc_discounts_get_codes_for_order($order_id) {
+  return uc_discounts_codes_to_array(db_result(db_query('SELECT codes FROM {uc_discounts_order_codes} WHERE order_id = %d', $order_id)));
+}
+
+/**
+ * Applies the discounts to an order by creating the necessary line items.
+ * @param  $order The order object with any codes set in the uc_discounts_code property
+ * @param $compare_to_existing Compare new discounts to existing order discounts and fail if they have changed?
+ * @param $save_uses Save the discounts to the uses table?  If not done here it will need to be done when the order is successfully created.
+ * @return array An array with the keys: 'success' => @bool, 'message' => @str
+ */
+function uc_discounts_apply($order, $save_uses = TRUE, $compare_to_existing = TRUE) {
+  // Store existing discount amounts
+  $existing_discount_amounts = array();
+  foreach (get_existing_discount_line_items($order) as $line_item) {
+    $existing_discount_amounts[] = uc_currency_format($line_item["amount"]);
+  }
+
+  // Regenerate discount amounts
+  $errors    = array();
+  $warnings  = array();
+  $messages  = array();
+  $discounts = get_discounts_for_order($order, $errors, $warnings, $messages);
+
+  foreach ($warnings as $warning) {
+    drupal_set_message($warning, 'error');
+  }
+
+  // If there were errors, print and return FALSE
+  if (!empty($errors)) {
+    uc_order_log_changes($order->order_id, $errors);
+    foreach ($errors as $error) {
+      drupal_set_message($error, 'error');
+    }
+
+    return array('success' => FALSE, 'message' => t('Discounts have changed.  Please review your cart and continue checkout.'));
+  }
+
+  // Add discount line items to order
+  add_discount_line_items_to_order($order, $discounts);
+
+  $new_discount_amounts = array();
+  foreach ($order->uc_discounts_line_items as $line_item) {
+    $new_discount_amounts[] = uc_currency_format($line_item["amount"]);
+  }
+
+  if ($compare_to_existing) {
+    $discount_intersection = array_intersect($existing_discount_amounts, $new_discount_amounts);
+    if (count($discount_intersection) != count($existing_discount_amounts)) {
+      // Save new discount line items
+      $order->uc_discounts_line_items_need_updating = TRUE;
+      uc_discounts_order('save', $order, NULL);
+
+      return array('success' => FALSE, 'message' => t('Discounts have changed.  Please review your cart and continue checkout.'));
+    }
+  }
+  else {
+    $order->uc_discounts_line_items_need_updating = TRUE;
+    uc_discounts_order('save', $order, NULL);
+  }
+
+  if ($save_uses) {
+    uc_discounts_uses_save_for_order($order);
+  }
+
+  uc_order_log_changes($order->order_id, $messages);
+  return array('success' => TRUE, 'message' => t('Discount code(s) applied to order.'));
+}
+
+/**
+ * Returns existing discounts line items for order.
+ */
+function get_existing_discount_line_items($order) {
+  if (is_array($order->line_items)) {
+    $existing_line_items = $order->line_items;
+  }
+  else {
+    $existing_line_items = uc_order_load_line_items($order, TRUE);
+  }
+
+  $line_items = array();
+  foreach ($existing_line_items as $line_item) {
+    //If line item type is LINE_ITEM_KEY_NAME, add it to array
+    if ($line_item["type"] == LINE_ITEM_KEY_NAME) {
+      $line_items[] = $line_item;
+    }
+  }
+
+  return $line_items;
 }
 
 /**
@@ -1905,7 +2095,6 @@ function uc_discounts_order_codes_get($order_id) {
  */
 function uc_discounts_order_codes_delete($order_id) {
   $query = "DELETE FROM {uc_discounts_order_codes} WHERE order_id=%d";
-  uc_discounts_log("query=". $query);
   db_query($query, $order_id);
 }
 
@@ -1917,17 +2106,9 @@ function uc_discounts_order_codes_delete($order_id) {
 /**
  * Returns a string list of codes into an array of codes
  */
-function get_codes($codes_string) {
+function uc_discounts_codes_to_array($codes_string) {
   $codes = array();
-
-  if (empty($codes_string)) {
-
-    return $codes;
-
-  }
-
   $raw_codes = explode("\n", $codes_string);
-
   foreach ($raw_codes as $raw_code) {
     $code = trim($raw_code);
     if (!empty($code)) {
@@ -1942,11 +2123,8 @@ function get_codes($codes_string) {
  * Create a codes string from passed codes array.
  * Note: returns "" if passed array is null
  */
-function create_codes_string($codes) {
-  if (empty($codes)) {
-    return "";
-  }
-  return join("\n", $codes);
+function uc_discounts_codes_to_str($codes) {
+  return implode("\n", (array) $codes);
 }
 
 /**
@@ -2007,10 +2185,6 @@ function discount_amount_formatted($discount) {
 
 function uc_discounts_add_to_existing_map_number_value(&$a, $key, $value) {
   $a[$key] = (array_key_exists($key, $a)) ? $a[$key] + $value : $value;
-}
-
-function uc_discounts_log($s) {
-  //  error_log($s);
 }
 
 function uc_discounts_views_api() {

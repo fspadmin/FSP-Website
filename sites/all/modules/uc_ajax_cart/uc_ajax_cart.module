@@ -381,3 +381,29 @@ function uc_ajax_cart_form_alter(&$form, $form_state , $form_id) {
     }
   }
 }
+
+
+
+/**
+ * Implemetnation of hook_theme_registry_alter.
+ *
+ * Alters theme registry to use our empty shopping cart theme functions.
+ */
+function uc_ajax_cart_theme_registry_alter(&$theme_registry) {
+  if (!empty($theme_registry['uc_empty_cart'])) {
+    $theme_registry['uc_empty_cart']['function'] = 'uc_ajax_uc_empty_cart';
+  }
+}
+
+
+/**
+ * Return the text displayed for an empty shopping cart.
+ *
+ * It's the same from Ubercart but with cart-form-pane id added, so Aajx Cart block can locate cart form placeholder.
+ * #1238594 buf fix.
+ *
+ * @ingroup themeable
+ */
+function  uc_ajax_uc_empty_cart() {
+  return '<p id="cart-form-pane">'. t('There are no products in your shopping cart.') .'</p>';
+}

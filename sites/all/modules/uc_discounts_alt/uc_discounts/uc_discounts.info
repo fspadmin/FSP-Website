@@ -1,5 +1,6 @@
 name = Discounts
 description = Defines Ubercart discount based on user-defined codes.
+dependencies[] = taxonomy
 dependencies[] = date_popup
 dependencies[] = uc_store
 dependencies[] = uc_product
@@ -14,9 +15,9 @@ project = "uc_discounts_alt"
 datestamp = "1278836081"
 
 
-; Information added by drupal.org packaging script on 2011-05-06
-version = "6.x-2.2"
+; Information added by drupal.org packaging script on 2011-09-27
+version = "6.x-2.4"
 core = "6.x"
 project = "uc_discounts_alt"
-datestamp = "1304706417"
+datestamp = "1317139907"
 

@@ -1,12 +1,11 @@
 <?php
-// $Id: uc_paypal.install,v 1.6.2.7 2010/03/19 21:27:17 tr Exp $
 
 /**
  * @file
  * Installation file for PayPal, primarily for the logging of IPNs.
 
 /**
- * Implementation of hook_requirements().
+ * Implements hook_requirements().
  */
 function uc_paypal_requirements($phase) {
   $t = get_t();
@@ -29,7 +28,7 @@ function uc_paypal_requirements($phase) {
 }
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_paypal_schema() {
   $schema = array();
@@ -103,7 +102,7 @@ function uc_paypal_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_paypal_install() {
   drupal_install_schema('uc_paypal');
@@ -113,46 +112,18 @@ function uc_paypal_install() {
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_paypal_uninstall() {
   drupal_uninstall_schema('uc_paypal');
   db_query("DELETE FROM {variable} WHERE name LIKE 'uc_paypal_%%'");
 }
 
-function uc_paypal_update_1() {
-  // Clean out the old order status table and redefine its structure.
-  if ($_SESSION['statuses'] !== TRUE) {
-    $ret[] = update_sql("ALTER TABLE {uc_order_statuses} CHANGE order_status_id order_status_id VARCHAR(32) CHARACTER SET utf8 NOT NULL default ''");
-    $ret[] = update_sql("ALTER TABLE {uc_order_statuses} CHANGE title title VARCHAR(48) CHARACTER SET utf8 NOT NULL default ''");
-    $ret[] = update_sql("ALTER TABLE {uc_order_statuses} CHANGE notify state VARCHAR(32) CHARACTER SET utf8 NOT NULL default ''");
-    $ret[] = update_sql("ALTER TABLE {uc_order_statuses} ADD weight MEDIUMINT(9) NOT NULL");
-    $ret[] = update_sql("ALTER TABLE {uc_order_statuses} ADD locked TINYINT NOT NULL DEFAULT '0'");
-    $ret[] = update_sql("DELETE FROM {uc_order_statuses} WHERE order_status_id LIKE '_'");
-    $_SESSION['statuses'] = TRUE;
-  }
-
-  $t = get_t();
-  $ret[] = update_sql("INSERT INTO {uc_order_statuses} (order_status_id, title, state, weight, locked) VALUES ('paypal_pending', '". $t('PayPal pending') ."', 'payment_received', 7, 1);");
-
-  return $ret;
-}
-
-function uc_paypal_update_2() {
-  // Change the variable used to define the default transaction type.
-  if (variable_get('uc_paypal_wpp_payment_action', 'Sale') == 'Sale') {
-    variable_set('uc_pg_paypal_wpp_cc_txn_type', UC_CREDIT_AUTH_CAPTURE);
-  }
-  else {
-    variable_set('uc_pg_paypal_wpp_cc_txn_type', UC_CREDIT_AUTH_ONLY);
-  }
-  variable_del('uc_paypal_wpp_payment_action');
-
-  // Fix a bug in a variable name.
-  variable_set('uc_paypal_wps_submit_method', variable_get('uc_paypal_wbs_submit_method', 'single'));
-  variable_del('uc_paypal_wbs_submit_method');
-
-  return array();
+/**
+ * Implements hook_update_last_removed().
+ */
+function uc_paypal_update_last_removed() {
+  return 2;
 }
 
 function uc_paypal_update_6000() {

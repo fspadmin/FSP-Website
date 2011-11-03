@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_ups.install,v 1.5.2.8 2010/03/19 21:27:17 tr Exp $
 
 /**
  * @file
@@ -7,26 +6,26 @@
  */
 
 /**
- * Implementation of hook_requirements().
+ * Implements hook_requirements().
  */
 function uc_ups_requirements($phase) {
   $t = get_t();
 
-  $has_simplexml = class_exists('SimpleXMLElement');
+  $has_simplexml = extension_loaded('SimpleXML');
   $requirements['uc_ups_simplexml'] = array(
     'title' => $t('SimpleXML'),
     'value' => $has_simplexml ? $t('Enabled') : $t('Not found'),
   );
   if (!$has_simplexml) {
     $requirements['uc_ups_simplexml']['severity'] = REQUIREMENT_ERROR;
-    $requirements['uc_ups_simplexml']['description'] = $t('UPS requires the PHP <a href="!simplexml_url">SimpleXML</a> library.', array('!simplexml_url' => 'http://php.net/manual/en/simplexml.setup.php'));
+    $requirements['uc_ups_simplexml']['description'] = $t('UPS requires the PHP <a href="!simplexml_url">SimpleXML</a> library.', array('!simplexml_url' => 'http://www.php.net/simplexml'));
   }
 
   return $requirements;
 }
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_ups_schema() {
   $schema = array();
@@ -63,14 +62,14 @@ function uc_ups_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_ups_install() {
   drupal_install_schema('uc_ups');
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_ups_uninstall() {
   drupal_uninstall_schema('uc_ups');
@@ -82,6 +81,7 @@ function uc_ups_uninstall() {
   variable_del('uc_ups_connection_address');
   variable_del('uc_ups_services');
   variable_del('uc_ups_pickup_type');
+  variable_del('uc_ups_pkg_type');
   variable_del('uc_ups_classification');
   variable_del('uc_ups_negotiated_rates');
   variable_del('uc_ups_markup');

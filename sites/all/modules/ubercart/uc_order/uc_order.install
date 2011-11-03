@@ -1,13 +1,12 @@
 <?php
-// $Id: uc_order.install,v 1.9.2.20 2010/07/16 15:45:09 islandusurper Exp $
 
 /**
  * @file
- * Install hooks for uc_order.module.
+ * Install, update and uninstall functions for the uc_order module.
  */
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_order_schema() {
   $schema = array();
@@ -232,6 +231,13 @@ function uc_order_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
+      'currency' => array(
+        'description' => 'The ISO currency code for the order.',
+        'type' => 'char',
+        'length' => 3,
+        'not null' => TRUE,
+        'default' => '',
+      ),
     ),
     'indexes' => array(
       'uid' => array('uid'),
@@ -360,7 +366,7 @@ function uc_order_schema() {
       'title' => array(
         'description' => 'The label of the line item.',
         'type' => 'varchar',
-        'length' => 128,
+        'length' => 255,
         'not null' => TRUE,
         'default' => '',
       ),
@@ -457,7 +463,7 @@ function uc_order_schema() {
       'title' => array(
         'description' => 'The product title, from {node}.title.',
         'type' => 'varchar',
-        'length' => 128,
+        'length' => 255,
         'not null' => TRUE,
         'default' => '',
       ),
@@ -513,6 +519,8 @@ function uc_order_schema() {
     ),
     'indexes' => array(
       'order_id' => array('order_id'),
+      'qty' => array('qty'),
+      'nid' => array('nid'),
     ),
     'primary key' => array('order_product_id'),
   );
@@ -564,7 +572,7 @@ function uc_order_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_order_install() {
   drupal_install_schema('uc_order');
@@ -578,7 +586,7 @@ function uc_order_install() {
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_order_uninstall() {
   drupal_uninstall_schema('uc_order');
@@ -588,172 +596,15 @@ function uc_order_uninstall() {
   variable_del('uc_order_number_displayed');
   variable_del('uc_order_logging');
   variable_del('uc_order_capitalize_addresses');
-  variable_del('uc_ubrowser_product_select');
   variable_del('uc_cust_view_order_invoices');
   variable_del('uc_cust_order_invoice_template');
 }
 
-function uc_order_update_1() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_orders} CHANGE delivery_zip delivery_postal_code VARCHAR(10) CHARACTER SET utf8 NOT NULL");
-      $ret[] = update_sql("ALTER TABLE {uc_orders} CHANGE billing_zip billing_postal_code VARCHAR(10) CHARACTER SET utf8 NOT NULL");
-      break;
-    case 'pgsql':
-      db_change_column($ret, 'uc_orders', 'delivery_zip', 'delivery_postal_code', 'varchar(10) CHARACTER SET utf8', array('not null' => TRUE, 'default' => "''"));
-      db_change_column($ret, 'uc_orders', 'billing_zip', 'billing_postal_code', 'varchar(10) CHARACTER SET utf8', array('not null' => TRUE, 'default' => "''"));
-      break;
-  }
-  $result = db_query("SELECT order_id FROM {uc_orders} ORDER BY order_id DESC LIMIT 1");
-  if ($data = db_fetch_object($result)) {
-    $result = db_query("INSERT INTO {sequences} (name, id) VALUES ('{uc_orders}_order_id', %d)", $data->order_id);
-    $ret[] = array('success' => $result !== FALSE, 'query' => "INSERT INTO {sequences} (name, id) VALUES ('{uc_orders}_order_id'. ". $data->order_id .")");
-  }
-  return $ret;
-}
-
-function uc_order_update_2() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_order_products} CHANGE weight weight FLOAT NOT NULL DEFAULT 0.0");
-      break;
-    case 'pgsql':
-      db_change_column($ret, 'uc_order_products', 'weight', 'weight', 'float', array('not null' => TRUE, 'default' => 0.0));
-      break;
-  }
-  return $ret;
-}
-
-function uc_order_update_3() {
-  $ret = array();
-  // Update orders and comments to hold string values for order statuses.
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_orders} CHANGE order_status order_status VARCHAR(32) NOT NULL");
-      $ret[] = update_sql("ALTER TABLE {uc_order_comments} CHANGE order_status order_status VARCHAR(32) NOT NULL");
-    break;
-    case 'pgsql':
-      db_change_column($ret, 'uc_orders', 'order_status', 'order_status', 'varchar(32)', array('not null' => TRUE, 'default' => "''"));
-      db_change_column($ret, 'uc_order_comments', 'order_status', 'order_status', 'varchar(32)', array('not null' => TRUE, 'default' => "''"));
-    break;
-  }
-  $ret[] = update_sql("UPDATE {uc_orders} SET order_status = 'in_checkout' WHERE order_status = '0'");
-  $ret[] = update_sql("UPDATE {uc_orders} SET order_status = 'pending' WHERE order_status = '1'");
-  $ret[] = update_sql("UPDATE {uc_orders} SET order_status = 'processing' WHERE order_status = '2' OR order_status = '3'");
-  $ret[] = update_sql("UPDATE {uc_orders} SET order_status = 'completed' WHERE order_status = '4'");
-
-  $ret[] = update_sql("UPDATE {uc_order_comments} SET order_status = 'in_checkout' WHERE order_status = '0'");
-  $ret[] = update_sql("UPDATE {uc_order_comments} SET order_status = 'pending' WHERE order_status = '1'");
-  $ret[] = update_sql("UPDATE {uc_order_comments} SET order_status = 'processing' WHERE order_status = '2' OR order_status = '3'");
-  $ret[] = update_sql("UPDATE {uc_order_comments} SET order_status = 'completed' WHERE order_status = '4'");
-
-  // Clean out the old order status table and redefine its structure.
-  if ($_SESSION['statuses'] !== TRUE) {
-    switch ($GLOBALS['db_type']) {
-      case 'mysql':
-      case 'mysqli':
-        $ret[] = update_sql("ALTER TABLE {uc_order_statuses} CHANGE order_status_id order_status_id VARCHAR(32) CHARACTER SET utf8 NOT NULL default ''");
-        $ret[] = update_sql("ALTER TABLE {uc_order_statuses} CHANGE title title VARCHAR(48) CHARACTER SET utf8 NOT NULL default ''");
-        $ret[] = update_sql("ALTER TABLE {uc_order_statuses} CHANGE notify state VARCHAR(32) CHARACTER SET utf8 NOT NULL default ''");
-        $ret[] = update_sql("ALTER TABLE {uc_order_statuses} ADD weight MEDIUMINT(9) NOT NULL");
-        $ret[] = update_sql("ALTER TABLE {uc_order_statuses} ADD locked TINYINT NOT NULL DEFAULT '0'");
-      break;
-      case 'pgsql':
-        db_change_column($ret, 'uc_order_statuses', 'order_status_id', 'order_status_id', 'varchar(32) CHARACTER SET utf8', array('not null' => TRUE, 'default' => "''"));
-        db_change_column($ret, 'uc_order_statuses', 'title', 'title', 'varchar(48) CHARACTER SET utf8', array('not null' => TRUE, 'default' => "''"));
-        db_change_column($ret, 'uc_order_statuses', 'notify', 'state', 'varchar(32) CHARACTER SET utf8', array('not null' => TRUE, 'default' => "''"));
-        db_add_column($ret, 'uc_order_statuses', 'weight', 'integer', array('not null' => TRUE, 'default' => 0));
-        db_add_column($ret, 'uc_order_statuses', 'locked', 'smallint', array('not null' => TRUE, 'default' => 0));
-      break;
-    }
-    $ret[] = update_sql("DELETE FROM {uc_order_statuses} WHERE order_status_id LIKE '_'");
-    $_SESSION['statuses'] = TRUE;
-  }
-
-  // Fill the table with the new default order statuses.
-  $t = get_t();
-  $ret[] = update_sql("INSERT INTO {uc_order_statuses} (order_status_id, title, state, weight, locked) VALUES "
-                     ."('canceled', '". $t('Canceled') ."', 'canceled', -20, 1), "
-                     ."('in_checkout', '". $t('In checkout') ."', 'in_checkout', -10, 1), "
-                     ."('pending', '". $t('Pending') ."', 'post_checkout', 0, 1), "
-                     ."('processing', '". $t('Processing') ."', 'post_checkout', 5, 1), "
-                     ."('completed', '". $t('Completed') ."', 'completed', 20, 1);");
-
-  return $ret;
-}
-
-function uc_order_update_4() {
-  $ret = array();
-  // Because I forgot to change the CREATE statement...
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_order_comments} CHANGE order_status order_status VARCHAR(32) NOT NULL");
-    break;
-    case 'pgsql':
-      db_change_column($ret, 'uc_order_comments', 'order_status', 'order_status', 'varchar(32)', array('not null' => TRUE, 'default' => "''"));
-    break;
-  }
-
-  return $ret;
-}
-
-function uc_order_update_5() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_orders} ADD data text");
-    break;
-    case 'pgsql':
-      db_add_column($ret, 'uc_orders', 'data', 'text', array());
-    break;
-  }
-
-  return $ret;
-}
-
-function uc_order_update_6() {
-  $ret = array();
-  $max_opid = db_result(db_query("SELECT MAX(order_product_id) AS max_opid FROM {uc_order_products}"));
-  if ($max_opid) {
-    $ret[] = update_sql("INSERT INTO {sequences} (name, id) VALUES ('{uc_order_products}_order_product_id', $max_opid)");
-  }
-  return $ret;
-}
-
-function uc_order_update_7() {
-  $ret = array();
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_order_products} CHANGE model model VARCHAR(255) CHARACTER SET utf8 NOT NULL");
-    break;
-    case 'pgsql':
-      db_change_column($ret, 'uc_order_products', 'model', 'model', 'varchar(255)', array('not null' => TRUE, 'default' => "''"));
-    break;
-  }
-
-  return $ret;
-}
-
-function uc_order_update_8() {
-
-  $ret = array();
-
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_orders} ADD host VARCHAR(16) NOT NULL DEFAULT ''");
-    break;
-    case 'pgsql':
-      db_add_column($ret, 'uc_orders', 'host', 'VARCHAR(16)', array('not null' => TRUE, 'default' => "''"));
-    break;
-  }
-
-  return $ret;
+/**
+ * Implements hook_update_last_removed().
+ */
+function uc_order_update_last_removed() {
+  return 8;
 }
 
 function uc_order_update_6000() {
@@ -1152,6 +1003,70 @@ function uc_order_update_6015() {
   if (!empty($templates)) {
     $ret[] = array('success' => FALSE, 'query' => 'Old Ubercart .itpl.php invoice templates were found! These must be manually upgraded to use the Drupal theme layer. See the <a href="http://www.ubercart.org/docs/developer/17385/changing_invoice_templates_ubercart_23_and_later">template upgrade guide on Ubercart.org</a> for details.');
   }
+
+  return $ret;
+}
+
+/**
+ * Remove unused setting.
+ */
+function uc_order_update_6016() {
+  variable_del('uc_ubrowser_product_select');
+  return array();
+}
+
+/**
+ * Change size of {uc_order_products}.title and {uc_order_line_items}.title
+ * to match size of {node}.title.
+ */
+function uc_order_update_6017() {
+  $ret = array();
+
+  db_change_field($ret, 'uc_order_products', 'title', 'title', array(
+    'description' => 'The product title, from {node}.title.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+
+  db_change_field($ret, 'uc_order_line_items', 'title', 'title', array(
+    'description' => 'The label of the line item.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+
+  return $ret;
+}
+
+/**
+ * Add currency code field.
+ */
+function uc_order_update_6018() {
+  $ret = array();
+
+  db_add_field($ret, 'uc_orders', 'currency', array(
+    'type' => 'char',
+    'length' => 3,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+
+  db_query("UPDATE {uc_orders} SET currency = '%s'", variable_get('uc_currency_code', 'USD'));
+
+  return $ret;
+}
+
+/**
+ * Add indexes so product and customer reports are usable with large datasets.
+ */
+function uc_order_update_6019() {
+  $ret = array();
+
+  db_add_index($ret, 'uc_order_products', 'qty', array('qty'));
+  db_add_index($ret, 'uc_order_products', 'nid', array('nid'));
 
   return $ret;
 }

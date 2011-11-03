@@ -1,5 +1,7 @@
-/* $Id: uc_attribute.css,v 1.4.4.5 2010/03/27 18:18:26 tr Exp $ */
-
+/**
+ * @file
+ * Styles for uc_attribute module.
+ */
 .options {
   display: inline;
 }
@@ -13,6 +15,7 @@ table.product_attributes tr.draggable .form-item {
   width: 26%;
 }
 
-.combinations td:first-child, .combinations td:first-child + td {
+.combinations td:first-child,
+.combinations td:first-child + td {
   width: 12%;
 }

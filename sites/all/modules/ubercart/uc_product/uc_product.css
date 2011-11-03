@@ -1,68 +1,65 @@
-/* $Id: uc_product.css,v 1.9.2.5 2009/04/22 17:35:40 islandusurper Exp $ */
-
+/**
+ * @file
+ * Styles for uc_product module.
+ */
 .product-image {
-  float: right;
   clear: right;
-  text-align: center;
-  padding-top: 4px;
-  padding-left: 4px;
+  float: right;
   margin-left: 4px;
+  padding-left: 4px;
+  padding-top: 4px;
+  text-align: center;
 }
 
 .uc-price-display {
-  float: right;
   clear: right;
-  width: 100px;
-  text-align: center;
+  float: right;
   font-size: 1.3em;
   font-weight: bold;
   padding-bottom: 4px;
   padding-left: 4px;
+  text-align: center;
+  width: 100px;
 }
 
 .display-price {
-  float: right;
   clear: right;
-  width: 100px;
-  text-align: center;
+  float: right;
   font-size: 1.3em;
   font-weight: bold;
   padding-bottom: 4px;
   padding-left: 4px;
+  text-align: center;
 }
 
 .model {
   display: inline;
-  margin-right: 2em;
   font-weight: bold;
-}
-
-h3.title {
-  margin-top: 1em;
+  margin-right: 2em;
 }
 
 .node-form .product-field table {
-  width: auto;
   margin: 0;
+  width: auto;
 }
 
 .node-form .product-field td {
   padding: 3px 6px 0 0;
 }
 
-.node-form tbody {
+.node-form .product-field tbody {
   border: none;
   margin: 0;
 }
 
 .node-form .product-field table .form-item {
-  margin-top: 0;
   margin-bottom: 0;
+  margin-top: 0;
 }
 
 .node-form .product-field .form-text {
-  width: auto;
   display: inline;
+  width: auto;
 }
 
 #products-selector table {
@@ -90,7 +87,7 @@ table.product-list {
   padding-right: 1em;
 }
 
-.add-feature div, .add-feature label {
+.add-feature div,
+.add-feature label {
   display: inline;
 }
-

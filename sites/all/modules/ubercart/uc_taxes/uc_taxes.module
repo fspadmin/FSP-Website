@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_taxes.module,v 1.12.2.20 2010/01/27 22:23:32 islandusurper Exp $
 
 /**
  * @file
@@ -15,7 +14,7 @@ require_once('uc_taxes.ca.inc');
  ******************************************************************************/
 
 /**
- * Implementation of hook_help().
+ * Implements hook_help().
  */
 function uc_taxes_help($path, $arg) {
   $output = '';
@@ -29,14 +28,14 @@ function uc_taxes_help($path, $arg) {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_perm().
  */
 function uc_taxes_perm() {
   return array('configure taxes');
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function uc_taxes_menu() {
   $items = array();
@@ -96,7 +95,7 @@ function uc_taxes_menu() {
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implements hook_form_alter().
  */
 function uc_taxes_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'uc_cart_checkout_form') {
@@ -127,7 +126,7 @@ function uc_taxes_form_alter(&$form, $form_state, $form_id) {
  ******************************************************************************/
 
 /**
- * Implementation of hook_line_item().
+ * Implements hook_line_item().
  */
 function uc_taxes_line_item() {
   $items[] = array(
@@ -153,16 +152,16 @@ function uc_taxes_line_item() {
 }
 
 /**
- * Implementation of hook_order().
+ * Implements hook_order().
  *
- * Update and save tax line items to the order.
+ * Updates and saves tax line items to the order.
  */
 function uc_taxes_order($op, $arg1, $arg2) {
   switch ($op) {
     case 'save':
       $changes = array();
-      $line_items = uc_line_item_tax('load', $arg1);
-      //$arg1->line_items = uc_order_load_line_items($arg1, TRUE);
+      $callback = _line_item_data('tax', 'callback');
+      $line_items = $callback('load', $arg1);
       $context = array(
         'revision' => 'formatted',
         'type' => 'line_item',
@@ -217,7 +216,7 @@ function uc_taxes_order($op, $arg1, $arg2) {
  ******************************************************************************/
 
 /**
- * Handle the tax line item.
+ * Handles the tax line item.
  */
 function uc_line_item_tax($op, $order) {
   switch ($op) {
@@ -238,10 +237,13 @@ function uc_line_item_tax($op, $order) {
 }
 
 /**
- * Handle the line item subtotal before taxes.
+ * Handles the line item subtotal before taxes.
  */
 function uc_line_item_tax_subtotal($op, $order) {
   $amount = 0;
+  $has_taxes = FALSE;
+  $different = FALSE;
+
   if (is_array($order->products)) {
     foreach ($order->products as $item) {
       $amount += $item->price * $item->qty;
@@ -261,7 +263,7 @@ function uc_line_item_tax_subtotal($op, $order) {
       }
     }
   }
-  if (is_array($order->taxes)) {
+  if (isset($order->taxes) && is_array($order->taxes)) {
     $has_taxes = TRUE;
   }
   if ($different && $has_taxes) {
@@ -290,10 +292,11 @@ function uc_line_item_tax_subtotal($op, $order) {
  ******************************************************************************/
 
 /**
- * Save a tax rate to the database.
+ * Saves a tax rate to the database.
  *
  * @param $rate
  *   The tax rate object to be saved.
+ *
  * @return
  *   The saved tax rate object including the rate ID for new rates.
  */
@@ -311,13 +314,14 @@ function uc_taxes_rate_save($rate) {
 }
 
 /**
- * Load a tax rate or all tax rates from the database.
+ * Loads a tax rate or all tax rates from the database.
  *
  * @param $rate_id
  *   The ID of the specific rate to load or NULL to return all available rates.
+ *
  * @return
  *   An object representing the requested tax rate or an array of all tax rates
- *     keyed by rate ID.
+ *   keyed by rate ID.
  */
 function uc_taxes_rate_load($rate_id = NULL) {
   static $rates = array();
@@ -348,7 +352,7 @@ function uc_taxes_rate_load($rate_id = NULL) {
 }
 
 /**
- * Delete a tax rate from the database.
+ * Deletes a tax rate from the database.
  *
  * @param $rate_id
  *   The ID of the tax rate to delete.
@@ -362,10 +366,11 @@ function uc_taxes_rate_delete($rate_id) {
 }
 
 /**
- * Calculate the taxes for an order based on enabled tax modules.
+ * Calculates the taxes for an order based on enabled tax modules.
  *
  * @param $order
  *   The full order object for the order want to calculate taxes for.
+ *
  * @return
  *   An array of taxes for the order.
  */
@@ -377,7 +382,7 @@ function uc_taxes_calculate($order) {
 }
 
 /**
- * Calculate the amount and types of taxes that apply to an order.
+ * Calculates the amount and types of taxes that apply to an order.
  */
 function uc_taxes_calculate_tax($order) {
   global $user;
@@ -433,7 +438,8 @@ function uc_taxes_calculate_tax($order) {
   );
 
   $predicates = ca_load_trigger_predicates('calculate_taxes');
-  foreach (uc_taxes_rate_load() as $tax) {
+  foreach (uc_taxes_rate_load() as $tax_rate) {
+    $tax = clone ($tax_rate);
     if ($use_same_rates) {
       foreach ((array)$order->line_items as $old_line) {
         if ($old_line['type'] == 'tax' && $old_line['data']['tax_id'] == $tax->id) {
@@ -458,7 +464,7 @@ function uc_taxes_calculate_tax($order) {
 /**
  * AJAX callback for order preview.
  *
- * Calculate tax amounts for an order in the payment checkout pane.
+ * Calculates tax amounts for an order in the payment checkout pane.
  */
 function uc_taxes_javascript() {
   $order = $_POST['order'];
@@ -482,7 +488,7 @@ function uc_taxes_javascript() {
 }
 
 /**
- * Calculate tax for a single product.
+ * Calculates tax for a single product.
  */
 function uc_taxes_apply_item_tax($item, $tax) {
   $node = node_load($item->nid);
@@ -497,17 +503,31 @@ function uc_taxes_apply_item_tax($item, $tax) {
   // Tax products if they are of a taxed type and if it is shippable if
   // the tax only applies to shippable products.
   if (in_array($node->type, $tax->taxed_product_types) && ($tax->shippable == 0 || $node->shippable == 1)) {
-    return $item->price * $item->qty;
+    $context = array(
+      'revision' => 'altered',
+      'type' => 'cart_item',
+      'subject' => array(
+        'cart_item' => $item,
+        'node' => $item->nid ? $node : FALSE,
+      ),
+    );
+    $price_info = array(
+      'price' => $item->price,
+      'qty' => $item->qty,
+    );
+
+    return uc_price($price_info, $context);
   }
 }
 
 /**
- * Apply taxes to an order.
+ * Applies taxes to an order.
  *
  * @param $order
  *   The order object being considered.
  * @param $tax
  *   The tax rule calculating the amount.
+ *
  * @return
  *   The line item array representing the amount of tax.
  */

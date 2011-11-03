@@ -295,10 +295,11 @@ function twitter_account_form_validate($form, &$form_state) {
   module_load_include('lib.php', 'twitter');
   module_load_include('inc', 'twitter');
 
+  $values = $form_state['values'];
   $verify = FALSE;
 
-  $pass = $form_state['values']['password'];
-  $name = $form_state['values']['screen_name'];
+  $pass = isset($values['password'])?$values['password']:NULL;
+  $name = $values['screen_name'];
 
   if (!empty($pass)) {
     $verify = TRUE;

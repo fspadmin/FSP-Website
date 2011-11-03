@@ -1,5 +1,4 @@
 <?php
-// $Id: france_250_1.cif,v 1.5.2.4 2010/04/14 05:18:19 tr Exp $
 
 function france_install() {
   db_query("INSERT INTO {uc_countries} (country_id, country_name, country_iso_code_2, country_iso_code_3, version) VALUES ('250', 'France', 'FR', 'FRA', 1)");
@@ -25,8 +24,8 @@ function france_install() {
     array(250, 'FR-17', 'Charente-Maritime'),
     array(250, 'FR-18', 'Cher'),
     array(250, 'FR-19', 'Corrèze'),
-    array(250, 'FR-21', 'Côte-d\'Or'),
-    array(250, 'FR-22', 'Côtes-d\'Armor'),
+    array(250, 'FR-21', "Côte-d'Or"),
+    array(250, 'FR-22', "Côtes-d'Armor"),
     array(250, 'FR-23', 'Creuse'),
     array(250, 'FR-24', 'Dordogne'),
     array(250, 'FR-25', 'Doubs'),
@@ -101,7 +100,7 @@ function france_install() {
     array(250, 'FR-92', 'Hauts-de-Seine'),
     array(250, 'FR-93', 'Seine-Saint-Denis'),
     array(250, 'FR-94', 'Val-de-Marne'),
-    array(250, 'FR-95', 'Val-d\'Oise'),
+    array(250, 'FR-95', "Val-d'Oise"),
     array(250, 'FR-NC', 'New Caledonia'),
     array(250, 'FR-PF', 'French Polynesia'),
     array(250, 'FR-PM', 'Saint-Pierre and Miquelon'),

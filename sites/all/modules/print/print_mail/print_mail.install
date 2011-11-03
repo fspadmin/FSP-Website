@@ -1,5 +1,4 @@
 <?php
-// $Id: print_mail.install,v 1.1.2.18 2010/08/17 23:10:43 jcnventura Exp $
 
 /**
  * @file
@@ -39,11 +38,13 @@ function print_mail_uninstall() {
   variable_del('print_mail_teaser_choice');
   variable_del('print_mail_link_text');
   variable_del('print_mail_link_use_alias');
+  variable_del('print_mail_text_title');
   variable_del('print_mail_text_confirmation');
   variable_del('print_mail_text_message');
   variable_del('print_mail_text_subject');
   variable_del('print_mail_text_content');
   variable_del('print_mail_job_queue');
+  variable_del('print_mail_display_sys_urllist');
   $settings = db_query("SELECT name FROM {variable} WHERE name LIKE 'print\_mail\_display\_%'");
   while ($variable = db_fetch_object($settings)) {
     variable_del($variable->name);

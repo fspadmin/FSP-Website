@@ -1,5 +1,4 @@
 <?php
-// $Id: israel_376_1.cif,v 1.2.2.7 2010/04/14 05:18:19 tr Exp $
 
 /**
  * First implement hook_install() using the name of the country as the base of

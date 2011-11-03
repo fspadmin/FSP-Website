@@ -1,13 +1,12 @@
 <?php
-// $Id: uc_roles.install,v 1.2.2.15 2010/07/12 01:28:44 tr Exp $
 
 /**
  * @file
- * uc_roles module install file.
+ * Install, update and uninstall functions for the uc_roles module.
  */
 
 /**
- * Implemenation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_roles_schema() {
   $schema['uc_roles_products'] = array(
@@ -157,19 +156,26 @@ function uc_roles_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_roles_install() {
   drupal_install_schema('uc_roles');
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_roles_uninstall() {
   drupal_uninstall_schema('uc_roles');
   db_query("DELETE FROM {uc_product_features} WHERE fid = 'role'");
   db_query("DELETE FROM {variable} WHERE name LIKE 'uc_roles_%%'");
+}
+
+/**
+ * Implements hook_update_last_removed().
+ */
+function uc_roles_update_last_update_removed() {
+  return 4;
 }
 
 function uc_roles_update_6000() {

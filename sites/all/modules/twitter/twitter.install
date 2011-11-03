@@ -710,6 +710,16 @@ function twitter_update_6301() {
    return $ret;
 }
 
+/**
+ * Update new default_state variable to preserve existing settings.
+ */
+function twitter_update_6302() {
+  $default_seting = variable_get('twitter_default_state', NULL);
+  if ($default_setting === NULL) {
+    variable_set('twitter_post_default_state', 'create');
+  }
+}
+
 function twitter_uninstall() {
   // Remove tables.
   drupal_uninstall_schema('twitter');

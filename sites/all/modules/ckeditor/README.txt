@@ -12,7 +12,7 @@ CONTENTS OF THIS FILE
  * Installing Additional Plugins
  * Integrating with the CKEditor Module (for Plugin Developers)
  * Uploading Images and Files
- * How to Install CKFinder
+ * Installing CKFinder
  * Setting up Filters
  * Upgrading Instructions
  * Help & Contribution
@@ -21,17 +21,20 @@ CONTENTS OF THIS FILE
 Overview
 --------
 This module allows Drupal to replace textarea fields with CKEditor.
-CKEditor, a WYSIWYG HTML rich text editor, brings many of the powerful features
-of well-known desktop word processors like Microsoft Word to the Web. CKEditor
-is a lightweight solution that does not require any kind of installation on the
-client computer.
+CKEditor is an online rich text editor that can be embedded inside web pages.
+It is a WYSIWYG (What You See Is What You Get) editor which means that the
+text edited in it looks as similar as possible to the results end users will
+see after the document gets published. It brings to the Web popular editing
+features found in desktop word processors such as Microsoft Word and
+OpenOffice.org Writer. CKEditor is truly lightweight and does not require any
+kind of installation on the client computer.
 
 Required Components
 -------------------
 To use CKEditor in Drupal, you will need to download CKEditor from the official
 download site: http://ckeditor.com/download
 
-More Information and Licence
+More Information and License
 ----------------------------
 CKEditor - The text editor for the Internet
 Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
@@ -59,12 +62,12 @@ Note: these instructions assume that you install CKEditor in the
    2. Download standalone CKEditor from http://ckeditor.com/download. Unzip the
       contents of the "ckeditor" directory from the installation package to the
       "sites/all/modules/ckeditor/ckeditor" or "sites/all/libraries/ckeditor" directory.
-      Note: you can skip uploading "_samples" and "_source" folders.
+      Note: you can skip uploading the "_samples" and "_source" folders.
    3. Enable the module as usual from Drupal administration pages.
    4. Grant permissions for using CKEditor in the
       "Administer > User Management > Permissions" section.
       Note: In order to enable the file browser, refer to the
-            "How to Enable the File Browser" section.
+            "Installing CKFinder" section.
    5. Adjust CKEditor profiles in the "Administer > Site configuration > CKEditor" section.
       Profiles determine which options are available to users based on system-wide roles.
       In each profile you can choose which textareas will be replaced by CKEditor,
@@ -80,7 +83,7 @@ Note: these instructions assume that you install CKEditor in the
       <cite> <embed> <object> <param> <strike> <caption> <tbody>
       To make copying the list easier, below all tags were placed in one line:
       <a> <p> <span> <div> <h1> <h2> <h3> <h4> <h5> <h6> <img> <map> <area> <hr> <br> <br /> <ul> <ol> <li> <dl> <dt> <dd> <table> <tr> <td> <em> <b> <u> <i> <strong> <del> <ins> <sub> <sup> <quote> <blockquote> <pre> <address> <code> <cite> <embed> <object> <param> <strike> <caption> <tbody>
-      If you are going to use CKEditor with Filtered HTML input format,
+      If you are going to use CKEditor with the Filtered HTML input format,
       please refer to the "Setting up Filters" section.
    7. To have better control over line breaks, you may disable the Line break converter
       in the chosen filter (recommended).
@@ -103,7 +106,9 @@ The "/modules/ckeditor/ckeditor/" or "/libraries/ckeditor" directory should cont
 ckeditor.js, config.js, contents.css
 and directories: "skins", "themes", "lang", "images".
 
-Alternatively the "sites/all/libraries/ckeditor" directory can be used. The CKEditor module will automatically recognize the proper path to the editor. The "libraries" directory is the default path when drush is used to download the editor JavaScript.
+Alternatively the "sites/all/libraries/ckeditor" directory can be used.
+The CKEditor module will automatically recognize the proper path to the editor.
+The "libraries" directory is the default path when drush is used to download the editor JavaScript.
 
 The correct directory structure is as follows:
 modules               <dir>
@@ -126,26 +131,30 @@ If you are still experiencing problems with your CKEditor installation, scroll d
 
 Managing Plugins
 ----------------
-If you want to manage CKEditor plugins for a profile, go to the "Administer > Site configuration > CKEditor" section. This section lets you choose plugins relevant for each CKEditor profile from a list. In order to activate a plugin, select the checkbox next to its name.
-If a plugin contains toolbar buttons, they will be listed in parentheses next to the plugin description in the following format: (buttons: Button1, Button2). If this is the case, the button should be added to the CKEditor toolbar by using the method described below:
+If you want to manage CKEditor plugins for a profile, go to the "Administer > Site configuration > CKEditor" section.
+This section lets you choose plugins relevant for each CKEditor profile from a list.
+In order to activate a plugin, select the checkbox next to its name.
+If a plugin contains toolbar buttons, they will be listed in parentheses next to the plugin description in the following format: (buttons: Button1, Button2).
+If this is the case, the button should be added to the CKEditor toolbar by using the method described below:
 - Open the /drupal/modules/ckeditor/ckeditor.config.js file.
 - Suppose the toolbar is defined in the following way:
       ['Link','Unlink','Anchor']
   You now need to add the button name (for example 'Button1') to the toolbar definition in the following way:
       ['Link','Unlink','Anchor','Button1']
   Do not forget to place the button name in single quotes!
-- Please note that some plugins require installing aditional modules to work correctly.
+- Please note that some plugins require installing additional modules to work correctly.
 
 Installing Additional Plugins
 -----------------------------
-The installation process is based on placing the plugin folder in the "plugins" directory of the CKEditor module (usually sites/all/modules/ckeditor). The plugin folder should contain at least the plugins.js file that is responsible for the plugin logic.
+The installation process is based on placing the plugin folder in the "plugins" directory of the CKEditor module (usually sites/all/modules/ckeditor).
+The plugin folder should contain at least the plugins.js file that is responsible for the plugin logic.
 The plugin description will be displayed in the Administration Panel if it is added to the plugins.js file by using the following special comment:
 /**
  * @file Plugin description
  */
 Hint: The Administration Panel automatically detects the toolbar buttons available in the plugin and adds them to the description.
 
-A plugin can be enabled by using the same method as described above - see the Managing Plugins section.
+A plugin can be enabled by using the same method as described above - see the "Managing Plugins" section.
 
 Integrating with the CKEditor Module (for Plugin Developers)
 ------------------------------------------------------------
@@ -161,28 +170,37 @@ function MODULENAME_ckeditor_plugin() {
             'desc' => t('Description of plugin'),
             // The full path to the CKEditor plugin directory, trailing slash included.
             'path' => drupal_get_path('module', 'my_module') . '/plugin_dir/',
+            // Plugin buttons definition [optional]
+            'buttons' => array(
+                array('label' => 'Button label', 'icon' => '/path/to/icon/image'),
+                array('label' => 'Button label', 'icon' => '/path/to/icon/image'),
+                ...
+            )
         )
     );
 }
 Please note that MODULENAME in the code above is the name of the module.
 
-After the hook is used the plugin will automatically appear on the plugin list for each CKEditor profile where you will be able to enable it as described in the Managing Plugins section.
+After the hook is used the plugin will automatically appear on the plugin list for each CKEditor profile where you will be able to enable it as described in the "Managing Plugins" section.
 
 Uploading images and files
 --------------------------
-There are three ways of uploading files: By using commercial file browser like CKFinder (http://ckfinder.com),
-by using modules like IMCE, WebFM, Image Browser or by using the core upload module.
+There are three ways of uploading files:
+- by using commercial file browser like CKFinder (http://ckfinder.com), an advanced Ajax file manager;
+- by using modules like IMCE, WebFM, Image Browser;
+- by using the core upload module.
 
-To select preferred file browser, under "Administer > Site configuration > CKEditor", adjust
-CKEditor profiles. In each profile you can choose which file browser will be used (in "File browser settings" section).
+To select a preferred file browser, go to the "Administer > Site configuration > CKEditor" section and adjust
+CKEditor profiles. In the "File browser settings" section you can choose which file browser will be used for each profile.
 Note: to choose IMCE, WebFM or Image Browser you should install an appropriate Drupal module first.
 
-How to install CKFinder
-------------------------
-CKFinder is an AJAX based file manager created by CKEditor developers: http://ckfinder.com/.
+Installing CKFinder
+-------------------
+CKFinder is an Ajax-based file manager created by CKEditor developers: http://ckfinder.com/.
 
    1. Download CKFinder for PHP: http://ckfinder.com/download
-   2. Unpack CKFinder to the directory with the CKEditor module (into sites/all/modules/ckeditor/ckfinder)
+   2. Unpack CKFinder to the directory containing the CKEditor module and place it in the
+      "sites/all/modules/ckeditor/ckfinder" folder.
       The correct directory structure is as follows:
 
       modules               <dir>
@@ -201,13 +219,13 @@ CKFinder is an AJAX based file manager created by CKEditor developers: http://ck
                ckeditor.js
                ...
 
-   3. Grant "allow CKFinder file uploads" permission in "Administer > User Management > Permissions"
-      Note: if you don't see such permission then it means that CKEditor didn't find CKFinder
-      and you have probably uploaded CKFinder into wrong directory.
-   4. Open CKFinder configuration file (sites/all/modules/ckeditor/ckfinder/config.php) and do the following:
+   3. Grant the "allow CKFinder file uploads" permission in "Administer > User Management > Permissions"
+      Note: if you do not see this permission, it means that CKEditor did not find CKFinder
+      and you have probably uploaded CKFinder into a wrong directory.
+   4. Open the CKFinder configuration file (sites/all/modules/ckeditor/ckfinder/config.php) and do the following:
 
       I) remove the CheckAuthentication() function:
-        (don't worry, this function is defined in filemanager.config.php, see below)
+        (do not worry, this function is defined in filemanager.config.php, see below)
 
         function CheckAuthentication()       <- remove it
         {                                    <- remove it
@@ -216,7 +234,7 @@ CKFinder is an AJAX based file manager created by CKEditor developers: http://ck
            return false;                     <- remove it
         }                                    <- remove it
 
-      II) add:
+      II) Add:
 
         require_once '../../../../includes/filemanager.config.php';
 
@@ -228,10 +246,10 @@ CKFinder is an AJAX based file manager created by CKEditor developers: http://ck
       (in selected CKEditor profile scroll down to "File browser settings" section).
       In the "File browser settings" section you may also change destination folders for files uploaded with CKFinder.
 
-   6. Locate file named settings.php inside your drupal directory
-      (usually sites/default/settings.php) and set $cookie_domain variable to the
-      appropiate domain (remember to uncomment that line). If you don't do this,
-      CKFinder may show an information that the connector is disabled.
+   6. Locate a file named settings.php inside your Drupal directory
+      (usually sites/default/settings.php) and set the $cookie_domain variable to the
+      an appropiate domain (remember to uncomment that line). If you do not do this,
+      CKFinder may display a message stating that the connector is disabled.
       As of Drupal 6.17 also the $base_url variable must be set.
 
 Setting up Filters
@@ -242,11 +260,11 @@ To take full advantage of using CKEditor you can extend the list of allowed tags
 HTML filter that is enabled in the Filtered HTML input format.
 If you do not do this, you may notice that a page created in CKEditor looks different after saving.
 
-Unfortunately, even if you extend the list of allowed tags, one problem remains:
+Unfortunately, even if you extend the list of allowed tags, one problem still remains:
 Filtered HTML not only strips disallowed tags, but also strips inline style definitions.
 It basically means that you are unable to apply a different font color, size, family, align images etc.
 using CKEditor out of the box. You can solve this problem by creating another input format
-that will work in a similar way as Filtered HTML (will only allow specific tags),
+that will work in a similar way as Filtered HTML (will only allow specified tags),
 but in a much better way - i.e. it will not strip inline styles that CKEditor is using when
 formatting text or images after the page is saved.
 To create such an input format, you will need an HTML filter. The list below presents three
@@ -267,12 +285,12 @@ Upgrading Instructions (Migration from FCKeditor)
 -------------------------------------------------
    During the installation, CKEditor will check for the existence of the FCKeditor module and
    copy all FCKeditor settings, profiles etc. (to save your time, just disable the FCKeditor module
-   during CKEditor installation. If you uninstall the FCKeditor module before installing CKEditor,
+   during the CKEditor installation. If you uninstall the FCKeditor module before installing CKEditor,
    all FCKeditor settings will be deleted from the database and CKEditor will not copy them).
    After installing CKEditor you may uninstall the FCKeditor module.
 
-   If both modules are enabled (CKEditor and FCKeditor) you may get JavaScript errors, when both editors
-   will try to attach to the same textarea. Make sure that this problem does not occur if you are having problems after  upgrading.
+   If both modules are enabled (CKEditor and FCKeditor) you may get JavaScript errors when both editors
+   will try to attach to the same textarea. Make sure that this situation does not occur if you are having problems after upgrading.
 
    Apart from the information above, installing CKEditor is just like installing a new module,
    so be sure to follow the installation instruction.
@@ -303,8 +321,8 @@ Instructions specific for module upgrades are tagged with [M]. Steps that must b
 
 Help & Contribution
 -------------------
-If you are looking for more information, have any trouble in configuration or if
-you found an issue, please visit the official project page:
+If you are looking for more information, have any trouble with the configuration of the module
+or if you found an issue, please visit the official project page:
   http://drupal.org/project/ckeditor
 
 Having problems? Take a look at the list of common problems when installing CKEditor:
@@ -325,5 +343,5 @@ Credits
      http://ckeditor.com/
 
  - CKEditor - The text editor for the Internet
-     Copyright (c) 2003-2011, CKSource - Frederico Knabben
+     Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
      http://cksource.com/

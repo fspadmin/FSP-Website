@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_credit.pages.inc,v 1.1.2.3 2010/07/12 01:57:43 tr Exp $
 
 /**
  * @file

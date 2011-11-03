@@ -1,10 +1,9 @@
 <?php
-// $Id: uc_payment.ca.inc,v 1.1.2.9 2009/08/17 21:27:55 islandusurper Exp $
 
 /**
  * @file
- * This file contains the Conditional Actions hooks and functions necessary to make the
- * order related entity, conditions, events, and actions work.
+ * This file contains the Conditional Actions hooks and functions necessary to
+ * make the order related entity, conditions, events, and actions work.
  */
 
 
@@ -13,7 +12,7 @@
  ******************************************************************************/
 
 /**
- * Implementation of hook_ca_predicate().
+ * Implements hook_ca_predicate().
  */
 function uc_payment_ca_predicate() {
   $predicates = array();
@@ -41,14 +40,28 @@ function uc_payment_ca_predicate() {
           ),
         ),
         array(
-          '#name' => 'uc_order_status_condition',
-          '#title' => t('If the order status is not already Payment Received.'),
-          '#argument_map' => array(
-            'order' => 'order',
-          ),
-          '#settings' => array(
-            'negate' => TRUE,
-            'order_status' => 'payment_received',
+          '#operator' => 'OR',
+          '#conditions' => array(
+            array(
+              '#name' => 'uc_order_state_condition',
+              '#title' => t('If the order state is in checkout.'),
+              '#argument_map' => array(
+                'order' => 'order',
+              ),
+              '#settings' => array(
+                'order_state' => 'in_checkout',
+              ),
+            ),
+            array(
+              '#name' => 'uc_order_state_condition',
+              '#title' => t('If the order state is post checkout.'),
+              '#argument_map' => array(
+                'order' => 'order',
+              ),
+              '#settings' => array(
+                'order_state' => 'post_checkout',
+              ),
+            ),
           ),
         ),
       ),
@@ -67,11 +80,11 @@ function uc_payment_ca_predicate() {
     ),
   );
 
-  // Set the order status to "Completed" when checkout is complete, none
-  // of the products are shippable, and the balance is less than or equal to 0.
+  // Set the order status to "Completed" when payment has been received
+  // and none of the products are shippable.
   $predicates['uc_checkout_complete_paid'] = array(
-    '#title' => t('Update order status upon checkout completion with full payment'),
-    '#trigger' => 'uc_checkout_complete',
+    '#title' => t('Complete non-shippable order after payment received'),
+    '#trigger' => 'uc_order_status_update',
     '#class' => 'payment',
     '#status' => 1,
     '#weight' => 1,
@@ -79,21 +92,20 @@ function uc_payment_ca_predicate() {
       '#operator' => 'AND',
       '#conditions' => array(
         array(
-          '#name' => 'uc_payment_condition_order_balance',
-          '#title' => t('If the balance is less than or equal to $0.00.'),
+          '#name' => 'uc_order_status_condition',
+          '#title' => t('If the order status is Payment received.'),
           '#argument_map' => array(
-            'order' => 'order',
+            'order' => 'updated_order',
           ),
           '#settings' => array(
-            'negate' => FALSE,
-            'balance_comparison' => 'less_equal',
+            'order_status' => 'payment_received',
           ),
         ),
         array(
           '#name' => 'uc_order_condition_is_shippable',
           '#title' => t('If the order is not shippable.'),
           '#argument_map' => array(
-            'order' => 'order',
+            'order' => 'updated_order',
           ),
           '#settings' => array(
             'negate' => TRUE,
@@ -106,12 +118,12 @@ function uc_payment_ca_predicate() {
         '#name' => 'uc_order_update_status',
         '#title' => t('Update the order status to Completed.'),
         '#argument_map' => array(
-          'order' => 'order',
+          'order' => 'updated_order',
         ),
         '#settings' => array(
           'order_status' => 'completed',
         ),
-      )
+      ),
     ),
   );
 
@@ -119,7 +131,7 @@ function uc_payment_ca_predicate() {
 }
 
 /**
- * Implementation of hook_ca_trigger().
+ * Implements hook_ca_trigger().
  */
 function uc_payment_ca_trigger() {
   $triggers['uc_payment_entered'] = array(
@@ -141,7 +153,7 @@ function uc_payment_ca_trigger() {
 }
 
 /**
- * Implementation of hook_ca_condition().
+ * Implements hook_ca_condition().
  */
 function uc_payment_ca_condition() {
   $conditions['uc_payment_condition_order_balance'] = array(
@@ -165,7 +177,9 @@ function uc_payment_ca_condition() {
  * Condition Callbacks and Forms                                              *
  ******************************************************************************/
 
-// Check the current order balance.
+/**
+ * Check the current order balance.
+ */
 function uc_payment_condition_order_balance($order, $settings) {
   $balance = uc_payment_balance($order);
 
@@ -204,7 +218,9 @@ function uc_payment_condition_order_balance_form($form_state, $settings = array(
   return $form;
 }
 
-// Check the order payment method.
+/**
+ * Check the order payment method.
+ */
 function uc_order_condition_payment_method($order, $settings) {
   return $order->payment_method == $settings['payment_method'];
 }

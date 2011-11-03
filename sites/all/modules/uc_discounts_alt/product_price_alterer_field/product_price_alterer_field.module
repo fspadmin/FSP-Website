@@ -135,34 +135,27 @@ function add_product_price_altering_javascript() {
   if (empty($product_price_alterer_field_javascript_added)) {
     $product_price_alterer_field_javascript_added = TRUE;
     //Alter price using javascript
-    drupal_add_js("$(document).ready(function()
-      {
-        $('.views-field-discounted-price').each(function()
-          {
-            var self = $(this);
-            var content = self.find('.field-content:first');
-            if ( (content.size() > 0) && ($.trim( content.html() ).length == 0) )
-              return true;
-            else if ($.trim( self.html() ).length == 0)
-              return true;
+    drupal_add_js("
+    $(document).ready(function() {
+      $('.views-field-discounted-price').each(function() {
+        var self = $(this);
+        var content = self.find('.field-content:first');
+        if ((content.size() > 0) && ($.trim(content.html()).length == 0)) {
+          return true;
+        }
+        else if ($.trim(self.html()).length == 0) {
+          return true;
+        }
 
-            self.parent().find('.views-field-sell-price:not(th)')
-              .addClass('original-sell-price');
-          });
-        $('.uc-price-sell:not(.original-sell-price)').each(function()
-          {
-            var self = $(this);
-            self.addClass('original-sell-price')
-              .after(  $( '.field-type-discounted-price:first', self.parent() )  );
-          });
-        //Legacy
-        $('.sell-price:not(.original-sell-price)').each(function()
-          {
-            var self = $(this);
-            self.addClass('original-sell-price')
-              .after(  $( '.field-type-discounted-price:first', self.parent() )  );
-          });
-      });", 'inline');
+        self.parent().find('.views-field-sell-price:not(th)').addClass('original-sell-price');
+      });
+      $('.uc-price-sell:not(.original-sell-price), .sell-price:not(.original-sell-price)').each(function() {
+        var self = $(this);
+        if (self.parents('.node').find('.field-type-discounted-price').length > 0) {
+          self.addClass('original-sell-price');
+        }
+      });
+    });", 'inline');
   }
 }
 

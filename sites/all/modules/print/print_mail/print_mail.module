@@ -1,5 +1,4 @@
 <?php
-// $Id: print_mail.module,v 1.1.2.54 2010/08/21 23:11:03 jcnventura Exp $
 
 /**
  * @file
@@ -24,7 +23,7 @@ define('PRINT_MAIL_LINK_USE_ALIAS_DEFAULT', 0);
 define('PRINT_MAIL_BOOK_LINK_DEFAULT', 1);
 define('PRINT_MAIL_HOURLY_THRESHOLD', 3);
 define('PRINT_MAIL_TEASER_DEFAULT_DEFAULT', 1);
-define('PRINT_MAIL_TEASER_CHOICE_DEFAULT', 1);
+define('PRINT_MAIL_TEASER_CHOICE_DEFAULT', 0);
 define('PRINT_MAIL_SEND_OPTION_DEFAULT', 'sendpage');
 define('PRINT_MAIL_JOB_QUEUE_DEFAULT', 0);
 
@@ -57,7 +56,7 @@ function print_mail_menu() {
   $items = array();
 
   $items[PRINTMAIL_PATH] = array(
-    'title' => 'Send page by e-mail',
+    'title' => variable_get('print_mail_text_title', 'Send page by e-mail'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('print_mail_form'),
     'access callback' => '_print_mail_access',
@@ -292,18 +291,27 @@ function print_mail_job_queue_functions() {
 function _print_mail_access($permission) {
   $page_access = TRUE;
   $parts = explode('/', $_GET['q']);
-  if (count($parts) > 1) {
-    unset($parts[0]);
-    $path = implode('/', $parts);
-    if (is_numeric($parts[1])) {
-      $path = 'node/'. $path;
-    }
-    else {
-      $path = drupal_get_normal_path($path);
-    }
-    // If the destination page is not accessible, don't show the form
-    if (!($router_item = menu_get_item($path)) || (!$router_item['access'])) {
-      $page_access = FALSE;
+  if ($parts[0] == PRINTMAIL_PATH) {
+    if (count($parts) > 1) {
+      unset($parts[0]);
+      $path = implode('/', $parts);
+      if (ctype_digit($parts[1])) {
+        if (drupal_lookup_path('source', $path)) {
+          // This is a numeric alias
+          $path = drupal_get_normal_path($path);
+        }
+        else {
+          // normal nid
+          $path = 'node/' . $path;
+        }
+      }
+      else {
+        $path = drupal_get_normal_path($path);
+      }
+      // If the destination page is not accessible, don't show the form
+      if (!($router_item = menu_get_item($path)) || (!$router_item['access'])) {
+        $page_access = FALSE;
+      }
     }
   }
 
@@ -454,7 +462,7 @@ function print_mail_link_allowed($args) {
   }
   if (!empty($args['path'])) {
     $nid = preg_replace('!^node/!', '', drupal_get_normal_path($args['path']));
-    if (is_numeric($nid)) {
+    if (ctype_digit($nid)) {
       $args['node'] = node_load($nid);
     }
   }
@@ -475,8 +483,12 @@ function print_mail_link_allowed($args) {
     }
     elseif (isset($args['type']) && ($args['type'] == 'comment') && isset($node_type)) {
       // Link is for a comment, return the configured setting
-      $res = db_fetch_object(db_query("SELECT comments FROM {print_mail_node_conf} WHERE nid = %d", $node->nid));
-      $print_display_comment = $res ? intval($res->comments) : variable_get('print_mail_display_comment_'. $node_type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
+      // Cache this statically to avoid duplicate queries for every comment.
+      static $res = array();
+      if (!isset($res[$node->nid])) {
+        $res[$node->nid] = db_fetch_object(db_query("SELECT comments FROM {print_mail_node_conf} WHERE nid = %d", $node->nid));
+      }
+      $print_display_comment = $res ? intval($res[$node->nid]->comments) : variable_get('print_mail_display_comment_'. $node_type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
       if ($print_display_comment) {
         return PRINT_ALLOW_NORMAL_LINK;
       }

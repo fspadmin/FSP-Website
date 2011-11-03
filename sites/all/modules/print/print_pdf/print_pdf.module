@@ -1,5 +1,4 @@
 <?php
-// $Id: print_pdf.module,v 1.1.2.61 2010/08/21 23:11:03 jcnventura Exp $
 
 /**
  * @file
@@ -28,9 +27,11 @@ define('PRINT_PDF_PDF_TOOL_DEFAULT', 0);
 define('PRINT_PDF_CONTENT_DISPOSITION_DEFAULT', 2);
 define('PRINT_PDF_PAPER_SIZE_DEFAULT', 'A4');
 define('PRINT_PDF_PAGE_ORIENTATION_DEFAULT', 'portrait');
+define('PRINT_PDF_IMAGES_VIA_FILE_DEFAULT', 0);
 define('PRINT_PDF_AUTOCONFIG_DEFAULT', 1);
 define('PRINT_PDF_FONT_FAMILY_DEFAULT', 'dejavusans');
 define('PRINT_PDF_FONT_SIZE_DEFAULT', 10);
+define('PRINT_PDF_FONT_SUBSETTING_DEFAULT', 0);
 define('PRINT_PDF_FILENAME_DEFAULT', '[site-name] - [title] - [mod-yyyy]-[mod-mm]-[mod-dd]');
 define('PRINT_PDF_DOMPDF_UNICODE_DEFAULT', 0);
 define('PRINT_PDF_WKHTMLTOPDF_OPTIONS', "--footer-font-size 7 --footer-right '[page]'");
@@ -189,6 +190,30 @@ function print_pdf_requirements($phase) {
               'description' => $t('You must change the %fontdir permissions to be writable, as dompdf requires write-access to that directory.', array('%fontdir' => $directory)),
               'severity' => REQUIREMENT_ERROR,
             );
+          }
+        }
+        elseif (basename($print_pdf_pdf_tool) == 'tcpdf.php') {
+          $version = _print_pdf_tcpdf_version();
+
+          if (version_compare($version, '5.9.012', '<')) {
+            $requirements['print_pdf_tool'] = array(
+              'title' => $t('TCPDF library'),
+              'value' => $t('Unsupported version'),
+              'description' => $t('The currently selected version of TCPDF (@version) is not supported. Please update to a <a href="@url">newer version</a>.', array('@version' => $version, '@url' => url('http://www.tcpdf.org'))),
+              'severity' => REQUIREMENT_ERROR,
+            );
+          }
+
+          foreach (array('cache', 'images') as $dir) {
+            $directory = dirname($print_pdf_pdf_tool) .'/'. $dir;
+            if (!is_dir($directory) || !is_writable($directory)) {
+              $requirements['print_pdf_tool_'. $dir] = array(
+                'title' => $t('TCPDF directory'),
+                'value' => $t('Non-writable permissions'),
+                'description' => $t('You must change the %fontdir permissions to be writable, as dompdf requires write-access to that directory.', array('%fontdir' => $directory)),
+                'severity' => REQUIREMENT_ERROR,
+              );
+            }
           }
         }
         elseif (substr(basename($print_pdf_pdf_tool, '.exe'), 0, 11) == 'wkhtmltopdf') {
@@ -507,7 +532,7 @@ function print_pdf_link_allowed($args) {
   }
   if (!empty($args['path'])) {
     $nid = preg_replace('!^node/!', '', drupal_get_normal_path($args['path']));
-    if (is_numeric($nid)) {
+    if (ctype_digit($nid)) {
       $args['node'] = node_load($nid);
     }
   }
@@ -528,8 +553,12 @@ function print_pdf_link_allowed($args) {
     }
     elseif (isset($args['type']) && ($args['type'] == 'comment') && isset($node_type)) {
       // Link is for a comment, return the configured setting
-      $res = db_fetch_object(db_query("SELECT comments FROM {print_pdf_node_conf} WHERE nid = %d", $node->nid));
-      $print_display_comment = $res ? intval($res->comments) : variable_get('print_pdf_display_comment_'. $node_type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
+      // Cache this statically to avoid duplicate queries for every comment.
+      static $res = array();
+      if (!isset($res[$node->nid])) {
+        $res[$node->nid] = db_fetch_object(db_query("SELECT comments FROM {print_pdf_node_conf} WHERE nid = %d", $node->nid));
+      }
+      $print_display_comment = $res ? intval($res[$node->nid]->comments) : variable_get('print_pdf_display_comment_'. $node_type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
       if ($print_display_comment) {
         return PRINT_ALLOW_NORMAL_LINK;
       }
@@ -568,6 +597,31 @@ function print_pdf_link_allowed($args) {
   return FALSE;
 }
 
+/**
+ * Find out the version of the TCPDF library
+ */
+function _print_pdf_tcpdf_version() {
+  $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', PRINT_PDF_PDF_TOOL_DEFAULT);
+  if (variable_get('print_pdf_autoconfig', PRINT_PDF_AUTOCONFIG_DEFAULT)) {
+    // prevent TCPDF default configs
+    define('K_TCPDF_EXTERNAL_CONFIG', TRUE);
+  }
+  require_once($print_pdf_pdf_tool);
+
+  // Hide warnings, as some TCPDF constants may still be undefined
+  @$pdf = new TCPDF();
+
+  if (method_exists($pdf, 'getTCPDFVersion')) {
+    return $pdf->getTCPDFVersion();
+  }
+  else {
+    return 'unknown';
+  }
+}
+
+/**
+ * Find out the version of the wkhtmltopdf library
+ */
 function _print_pdf_wkhtmltopdf_version() {
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', PRINT_PDF_PDF_TOOL_DEFAULT);
   $descriptor = array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
@@ -575,7 +629,8 @@ function _print_pdf_wkhtmltopdf_version() {
   $cmd = realpath($print_pdf_pdf_tool) .' --version';
   $process = proc_open($cmd, $descriptor, $pipes, NULL, NULL);
   if (is_resource($process)) {
-    $out = preg_match('!.*?(\d+\.\d+\.\d+).*$!m', stream_get_contents($pipes[1]), $matches);
+    $content = stream_get_contents($pipes[1]);
+    $out = preg_match('!.*?(\d+\.\d+\.\d+).*$!m', $content, $matches);
     fclose($pipes[0]);
     fclose($pipes[1]);
     fclose($pipes[2]);

@@ -26,6 +26,7 @@ function _webform_defaults_file() {
       'title_display' => 0,
       'description' => '',
       'attributes' => array(),
+      'private' => FALSE,
     ),
   );
 }
@@ -37,12 +38,15 @@ function _webform_theme_file() {
   return array(
     'webform_edit_file' => array(
       'arguments' => array('form' => NULL),
+      'file' => 'components/file.inc',
     ),
     'webform_render_file' => array(
       'arguments' => array('element' => NULL),
+      'file' => 'components/file.inc',
     ),
     'webform_display_file' => array(
       'arguments' => array('element' => NULL),
+      'file' => 'components/file.inc',
     ),
   );
 }
@@ -454,7 +458,8 @@ function _webform_validate_file($element, &$form_state) {
     $extensions[] = 'jpeg';
   }
 
-  $dot = strrpos($_FILES['files']['name'][$form_key], '.');
+  $strrpos = function_exists('mb_strrpos') ? 'mb_strrpos' : 'strrpos';
+  $dot = $strrpos($_FILES['files']['name'][$form_key], '.');
   $extension = drupal_strtolower(drupal_substr($_FILES['files']['name'][$form_key], $dot+1));
   $file_error = FALSE;
   if (!empty($extensions) && !in_array($extension, $extensions)) {

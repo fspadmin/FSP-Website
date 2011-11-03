@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_product_handler_field_weight.inc,v 1.1.2.5 2010/07/30 15:07:22 islandusurper Exp $
 
 /**
  * @file

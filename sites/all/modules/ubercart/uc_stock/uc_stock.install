@@ -1,13 +1,12 @@
 <?php
-// $Id: uc_stock.install,v 1.6.2.9 2010/03/19 21:27:18 tr Exp $
 
 /**
  * @file
- * The installation file
+ * Install, update and uninstall functions for the uc_stock module.
  */
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_stock_schema() {
   $schema = array();
@@ -62,14 +61,14 @@ function uc_stock_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_stock_install() {
   drupal_install_schema('uc_stock');
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_stock_uninstall() {
   drupal_uninstall_schema('uc_stock');

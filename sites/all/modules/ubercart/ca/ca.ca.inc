@@ -1,5 +1,4 @@
 <?php
-// $Id: ca.ca.inc,v 1.1.2.11 2010/07/15 17:18:06 islandusurper Exp $
 
 /**
  * @file
@@ -11,7 +10,7 @@
  ******************************************************************************/
 
 /**
- * Implementation of hook_ca_entity().
+ * Implements hook_ca_entity().
  *
  * Demonstrates defining a data object that may be passed in to ca_pull_trigger
  * and mapped to a predicate's arguments.
@@ -40,7 +39,7 @@ function ca_ca_entity() {
 }
 
 /**
- * Implementation of hook_ca_condition().
+ * Implements hook_ca_condition().
  */
 function ca_ca_condition() {
   $conditions = array();
@@ -87,7 +86,7 @@ function ca_ca_condition() {
 }
 
 /**
- * Implementation of hook_ca_action().
+ * Implements hook_ca_action().
  *
  * Demonstrates defining an action for predicates to use; primarily specifies a
  * callback function to perform the action and an array that specifies arguments
@@ -389,7 +388,7 @@ function ca_condition_custom_php_form($form_state, $settings = array(), $argumen
   $form['php'] = array(
     '#type' => 'textarea',
     '#title' => t('Custom PHP'),
-    '#description' => t('Enter the custom PHP to be evaluated when this condition is executed.  Should not include &lt;?php ?> delimiters.'),
+    '#description' => t('Enter the custom PHP to be evaluated when this condition is executed. Should not include &lt;?php ?> delimiters.'),
     '#default_value' => isset($settings['php']) ? $settings['php'] : '',
   );
 

@@ -1,4 +1,3 @@
-// $Id: uc_store.js,v 1.9.2.2 2009/07/21 14:37:21 islandusurper Exp $
 
 /**
  * @file

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_stock.views.inc,v 1.1.2.2 2010/07/12 22:53:54 tr Exp $
 
 /**
  * @file
@@ -7,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_views_data().
+ * Implements hook_views_data().
  */
 function uc_stock_views_data() {
   $data['uc_product_stock']['table']['group'] = t('Stock');
@@ -93,7 +92,7 @@ function uc_stock_views_data() {
 }
 
 /**
- * Implementation of hook_views_handlers().
+ * Implements hook_views_handlers().
  */
 function uc_stock_views_handlers() {
   return array(

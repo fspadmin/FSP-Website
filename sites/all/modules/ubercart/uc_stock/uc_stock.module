@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_stock.module,v 1.12.2.24 2010/07/12 01:28:19 tr Exp $
 
 /**
  * @file
@@ -21,7 +20,7 @@ require_once('uc_stock.ca.inc');
  ******************************************************************************/
 
 /**
- * Implementation of hook_help().
+ * Implements hook_help().
  */
 function uc_stock_help($path, $arg) {
   switch ($path) {
@@ -34,7 +33,7 @@ function uc_stock_help($path, $arg) {
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function uc_stock_menu() {
   $items = array();
@@ -48,14 +47,16 @@ function uc_stock_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'uc_stock.admin.inc',
   );
-  $items['admin/store/reports/stock'] = array(
-    'title' => 'Stock reports',
-    'description' => 'View reports for product stock.',
-    'page callback' => 'uc_stock_report',
-    'access arguments' => array('view reports'),
-    'type' => MENU_NORMAL_ITEM,
-    'file' => 'uc_stock.admin.inc',
-  );
+  if (module_exists('uc_reports')) {
+    $items['admin/store/reports/stock'] = array(
+      'title' => 'Stock reports',
+      'description' => 'View reports for product stock.',
+      'page callback' => 'uc_stock_report',
+      'access arguments' => array('view reports'),
+      'type' => MENU_NORMAL_ITEM,
+      'file' => 'uc_stock.admin.inc',
+    );
+  }
   $items['node/%node/edit/stock'] = array(
     'title' => 'Stock',
     'page callback' => 'drupal_get_form',
@@ -81,14 +82,14 @@ function uc_stock_product_access($node) {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_perm().
  */
 function uc_stock_perm() {
   return array('administer product stock');
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function uc_stock_theme() {
   return array(
@@ -100,7 +101,7 @@ function uc_stock_theme() {
 }
 
 /**
- * Implementation of hook_init().
+ * Implements hook_init().
  */
 function uc_stock_init() {
   global $conf;
@@ -109,7 +110,7 @@ function uc_stock_init() {
 }
 
 /**
- * Implementation of hook_mail().
+ * Implements hook_mail().
  */
 function uc_stock_mail($key, &$message, $params) {
   switch ($key) {
@@ -125,9 +126,11 @@ function uc_stock_mail($key, &$message, $params) {
  ******************************************************************************/
 
 /**
- * Implementation of hook_token_list().
+ * Implements hook_token_list().
  */
 function uc_stock_token_list($type = 'all') {
+  $tokens = array();
+
   if ($type == 'stock' || $type == 'ubercart' || $type == 'all') {
     $tokens['stock']['stock-level'] = t('The current stock level');
     $tokens['stock']['stock-model'] = t('The model or SKU of the stock level');
@@ -138,9 +141,11 @@ function uc_stock_token_list($type = 'all') {
 }
 
 /**
- * Implementation of hook_token_values().
+ * Implements hook_token_values().
  */
 function uc_stock_token_values($type, $object = NULL) {
+  $values = array();
+
   switch ($type) {
     case 'stock':
       $values['stock-level'] = $object->stock;
@@ -153,7 +158,7 @@ function uc_stock_token_values($type, $object = NULL) {
 }
 
 /**
- * Implementation of hook_uc_message().
+ * Implements hook_uc_message().
  */
 function uc_stock_uc_message() {
   $messages['uc_stock_threshold_notification_subject'] = t('[store-name]: Stock threshold limit reached');
@@ -166,7 +171,7 @@ function uc_stock_uc_message() {
  ******************************************************************************/
 
 /**
- * Adjust the product stock level by a set amount.
+ * Adjusts the product stock level by a set amount.
  *
  * @param $sku
  *   The product SKU of the stock level to adjust.
@@ -188,7 +193,7 @@ function uc_stock_adjust($sku, $qty, $check_active = TRUE) {
 }
 
 /**
- * Set the product stock level.
+ * Sets the product stock level.
  *
  * @param $sku
  *   The product SKU of the stock level to set.
@@ -200,11 +205,12 @@ function uc_stock_set($sku, $qty) {
 }
 
 /**
- * Get the stock level of a particular product SKU.
+ * Gets the stock level of a particular product SKU.
  *
  * @param $sku
  *   The Ubercart product SKU of the stock level to return.
- * @return:
+ *
+ * @return
  *   The SKU's stock level, or FALSE if not active.
  */
 function uc_stock_level($sku) {
@@ -218,11 +224,12 @@ function uc_stock_level($sku) {
 }
 
 /**
- * Check if a sku has an active stock record.
+ * Checks if a SKU has an active stock record.
  *
  * @param $sku
  *   The Ubercart product SKU to check
- * @return (bool)
+ *
+ * @return
  *   Whether or not the sku has an active stock record.
  */
 function uc_stock_is_active($sku) {
@@ -238,14 +245,15 @@ function uc_stock_is_active($sku) {
  *   The product object that is associated with the SKU.
  * @param $stock
  *   The stock level object that contains the stock level and SKU.
+ *
  * @return
  *   The result of drupal_mail().
  */
 function _uc_stock_send_mail($order, $stock) {
-  $token_filters = array('global' => NULL, 'order' => $order, 'stock' => $stock);
-  $account = user_load(array('uid' => $order));
+  $account = uc_order_user_load($order);
+  $token_filters = array('global' => NULL, 'order' => $order, 'user' => $account, 'stock' => $stock);
 
-  $to = variable_get('uc_stock_threshold_notification_recipients', variable_get('uc_store_email', ini_get('sendmail_from')));
+  $to = variable_get('uc_stock_threshold_notification_recipients', uc_store_email());
   $to = explode(',', $to);
 
   $from = uc_store_email_from();
@@ -267,7 +275,7 @@ function _uc_stock_send_mail($order, $stock) {
 }
 
 /**
- * Implementation of hook_views_api().
+ * Implements hook_views_api().
  */
 function uc_stock_views_api() {
   return array(
@@ -286,7 +294,7 @@ function uc_stock_decrement_product_stock($product, $key, $order) {
 }
 
 /**
- * Adjust a product's stock.
+ * Adjusts a product's stock.
  *
  * @param $product
  *   The product whose stock is being adjusted.

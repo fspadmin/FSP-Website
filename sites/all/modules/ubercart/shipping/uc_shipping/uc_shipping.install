@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_shipping.install,v 1.4.2.12 2010/07/12 01:57:35 tr Exp $
 
 /**
  * @file
@@ -7,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function uc_shipping_schema() {
   $schema = array();
@@ -213,6 +212,12 @@ function uc_shipping_schema() {
         'not null' => TRUE,
         'default' => 0.0,
       ),
+      'changed' => array(
+        'description' => 'The Unix timestamp indicating the last time the shipment was modified.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
     ),
     'primary key' => array('sid'),
   );
@@ -330,37 +335,25 @@ function uc_shipping_schema() {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function uc_shipping_install() {
   drupal_install_schema('uc_shipping');
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function uc_shipping_uninstall() {
   drupal_uninstall_schema('uc_shipping');
 }
 
-function uc_shipping_update_1() {
-  $ret = array();
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $ret[] = update_sql("ALTER TABLE {uc_packages} CHANGE units length_units varchar(255) NULL");
-    break;
-    case 'pgsql':
-      db_change_column($ret, 'uc_packages', 'units', 'length_units', 'varchar(255)', array('not null' => FALSE));
-    break;
-  }
-  return $ret;
+/**
+ * Implements hook_update_last_removed().
+ */
+function uc_shipping_update_last_removed() {
+  return 2;
 }
-
-//function uc_shipping_update_2() {
-  // Abortive attempt at rearranging package_ids and order_product_ids.
-  // Leaving this here as a reminder to start the next update at "3".
-//}
 
 function uc_shipping_update_6000() {
   $ret = array();
@@ -444,6 +437,22 @@ function uc_shipping_update_6005() {
 
   db_change_field($ret, 'uc_shipments', 'cost', 'cost', array('type' => 'numeric', 'precision' => 16, 'scale' => 5, 'not null' => TRUE, 'default' => 0));
   db_change_field($ret, 'uc_packages', 'value', 'value', array('type' => 'numeric', 'precision' => 16, 'scale' => 5, 'not null' => FALSE));
+
+  return $ret;
+}
+
+/**
+ * Add 'changed' column to uc_shipments
+ */
+function uc_shipping_update_6006() {
+  $ret = array();
+
+  db_add_field($ret, 'uc_shipments', 'changed', array(
+    'description' => 'The Unix timestamp indicating the last time the shipment was modified.',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
 
   return $ret;
 }

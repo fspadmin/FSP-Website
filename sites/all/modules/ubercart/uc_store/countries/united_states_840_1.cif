@@ -1,5 +1,4 @@
 <?php
-// $Id: united_states_840_1.cif,v 1.5.2.3 2010/02/21 03:43:00 tr Exp $
 
 function united_states_install() {
   // VALUES = Country ID, Country Name, 2-digit Code, 3-digit Code, File Version

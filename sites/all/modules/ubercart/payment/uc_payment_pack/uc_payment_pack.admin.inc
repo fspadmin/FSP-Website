@@ -1,14 +1,17 @@
 <?php
-// $Id: uc_payment_pack.admin.inc,v 1.1.2.8 2010/07/12 01:57:44 tr Exp $
 
 /**
  * @file
  * Payment pack administration menu items.
- *
  */
 
 /**
- * Receive a check for an order and put in a clear date.
+ * Receives a check for an order and put in a clear date.
+ *
+ * @see uc_payment_pack_receive_check_form_validate()
+ * @see uc_payment_pack_receive_check_form_submit()
+ * @see theme_uc_payment_pack_receive_check_form()
+ * @ingroup forms
  */
 function uc_payment_pack_receive_check_form($form_state, $order) {
   $balance = uc_payment_balance($order);
@@ -66,6 +69,13 @@ function uc_payment_pack_receive_check_form($form_state, $order) {
   return $form;
 }
 
+/**
+ * Themes the receive check form.
+ *
+ * @see uc_payment_pack_receive_check_form()
+ * @see uc_payment_pack_receive_check_form_submit()
+ * @ingroup themeable
+ */
 function theme_uc_payment_pack_receive_check_form($form) {
   drupal_add_js(drupal_get_path('module', 'uc_payment') .'/uc_payment.js');
 
@@ -77,12 +87,24 @@ function theme_uc_payment_pack_receive_check_form($form) {
   return $output;
 }
 
+/**
+ * Form validation for uc_payment_pack_receive_check_form().
+ *
+ * @see uc_payment_pack_receive_check_form()
+ * @see uc_payment_pack_receive_check_form_submit()
+ */
 function uc_payment_pack_receive_check_form_validate($form, &$form_state) {
   if (!$form_state['values']['check_exists'] && !is_numeric($form_state['values']['amount'])) {
     form_set_error('amount', t('The amount must be a number.'));
   }
 }
 
+/**
+ * Submit handler for uc_payment_pack_receive_check_form().
+ *
+ * @see uc_payment_pack_receive_check_form()
+ * @see uc_payment_pack_receive_check_form_validate()
+ */
 function uc_payment_pack_receive_check_form_submit($form, &$form_state) {
   global $user;
 
@@ -92,7 +114,7 @@ function uc_payment_pack_receive_check_form_submit($form, &$form_state) {
     $form_state['values']['order_id'], mktime(12, 0, 0, $form_state['values']['clear_month'],
     $form_state['values']['clear_day'], $form_state['values']['clear_year']));
 
-  drupal_set_message(t('Check received, expected clear date of @date.', array('@date' => $form_state['values']['clear_month'] .'/'. $form_state['values']['clear_day'] .'/'. $form_state['values']['clear_year'])));
+  drupal_set_message(t('Check received, expected clear date of @date.', array('@date' => uc_date_format($form_state['values']['clear_month'], $form_state['values']['clear_day'], $form_state['values']['clear_year']))));
 
   $form_state['redirect'] = 'admin/store/orders/'. $form_state['values']['order_id'];
 }

@@ -1,4 +1,3 @@
-$Id: README.txt,v 1.1 2008/12/08 20:58:37 kirie Exp $
 
 -- SUMMARY --
 

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_order-customer.tpl.php,v 1.1.2.1 2010/07/16 15:45:09 islandusurper Exp $
 
 /**
  * @file
@@ -40,7 +39,7 @@
             <?php if ($thank_you_message) { ?>
             <p><b><?php echo t('Thanks for your order, !order_first_name!', array('!order_first_name' => $order_first_name)); ?></b></p>
 
-            <?php if (isset($_SESSION['new_user'])) { ?>
+            <?php if (isset($order->data['new_user'])) { ?>
             <p><b><?php echo t('An account has been created for you with the following details:'); ?></b></p>
             <p><b><?php echo t('Username:'); ?></b> <?php echo $new_username; ?><br />
             <b><?php echo t('Password:'); ?></b> <?php echo $new_password; ?></p>
@@ -239,7 +238,7 @@
                               } ?>
                               <br />
                               <?php echo t('SKU: ') . $product->model; ?><br />
-                              <?php if (is_array($product->data['attributes']) && count($product->data['attributes']) > 0) {?>
+                              <?php if (isset($product->data['attributes']) && is_array($product->data['attributes']) && count($product->data['attributes']) > 0) {?>
                               <?php foreach ($product->data['attributes'] as $attribute => $option) {
                                 echo '<li>'. t('@attribute: @options', array('@attribute' => $attribute, '@options' => implode(', ', (array)$option))) .'</li>';
                               } ?>

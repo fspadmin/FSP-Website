@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_cybersource.soap.inc,v 1.1.4.4 2010/07/12 01:57:43 tr Exp $
 
 /**
  * @file

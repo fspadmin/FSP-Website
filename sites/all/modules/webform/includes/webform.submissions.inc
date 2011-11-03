@@ -266,13 +266,15 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
             }
           }
         }
-        $message['attachments'] = $attachments;
+
+        // Enable drupal_mail_alter() to alter attachments.
+        $mail_params['attachments'] = $attachments;
 
         // Prepare (but don't send) the e-mail normally.
         $message = drupal_mail('webform', 'submission', $address, $language, $mail_params, $email['from'], FALSE);
 
         // Send the e-mail via MIME mail.
-        $message = mimemail($message['from'], $message['to'], $message['subject'], $message['body'], !$email['html'], $message['headers'], $email['html'] ? NULL : $message['body'], $message['attachments'], 'webform');
+        $message = mimemail($message['from'], $message['to'], $message['subject'], $message['body'], !$email['html'], $message['headers'], $email['html'] ? NULL : $message['body'], $message['params']['attachments'], 'webform');
         // Support boolean (older) or array-based return values from MIME Mail.
         if ((is_array($message) && $message['result']) || (!is_array($message) && $message)) {
           $send_count++;
@@ -374,16 +376,16 @@ function webform_submission_page($node, $submission, $format) {
 
   // Determine the mode in which we're displaying this submission.
   $mode = ($format != 'form') ? 'display' : 'form';
-  if (preg_match("!^q=print/!", $_SERVER['QUERY_STRING'])) {
+  if (strpos($_SERVER['REQUEST_URI'], 'print/') !== FALSE) {
     $mode = 'print';
   }
-  if (preg_match("!^q=printpdf/!", $_SERVER['QUERY_STRING'])) {
+  if (strpos($_SERVER['REQUEST_URI'], 'printpdf/') !== FALSE) {
     $mode = 'pdf';
   }
 
   // Add navigation for administrators.
   if (webform_results_access($node)) {
-    $navigation = in_array($mode, array('display', 'form')) ? theme('webform_submission_navigation', $node, $submission, $mode) : NULL;
+    $navigation = theme('webform_submission_navigation', $node, $submission, $mode);
     $information = theme('webform_submission_information', $node, $submission, $mode);
   }
   else {
@@ -399,7 +401,7 @@ function webform_submission_page($node, $submission, $format) {
     webform_disable_page_cache();
   }
 
-  return theme('webform_submission_page', $node, $submission, $output, $navigation, $information, $actions);
+  return theme('webform_submission_page', $node, $submission, $output, $navigation, $information, $actions, $mode);
 }
 
 /**
@@ -539,10 +541,13 @@ function webform_submission_render($node, $submission, $email, $format) {
 
   _webform_components_tree_build($components, $component_tree, 0, $page_count);
 
-  // Recursively add components to the form.
-  foreach ($component_tree['children'] as $cid => $component) {
-    if (_webform_client_form_rule_check($node, $component, $component['page_num'], NULL, $submission)) {
-      _webform_client_form_add_component($node, $component, NULL, $renderable, $renderable, NULL, $submission, $format);
+  // Make sure at least one field is available
+  if (isset($component_tree['children'])) {
+    // Recursively add components to the form.
+    foreach ($component_tree['children'] as $cid => $component) {
+      if (_webform_client_form_rule_check($node, $component, $component['page_num'], NULL, $submission)) {
+        _webform_client_form_add_component($node, $component, NULL, $renderable, $renderable, NULL, $submission, $format);
+      }
     }
   }
 
@@ -578,7 +583,12 @@ function webform_get_submissions($filters = array(), $header = NULL, $pager_coun
 
   // No need to find SIDs if it was given to us.
   if (isset($filters['sid'])) {
-    $sids = array($filters['sid']);
+    if(is_array($filters['sid'])){
+      $sids = $filters['sid'];
+    }
+    else{
+      $sids = array($filters['sid']);
+    }
   }
   // Build the list of SIDs that need to be retrieved.
   else {

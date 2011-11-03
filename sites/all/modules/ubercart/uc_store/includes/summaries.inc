@@ -1,5 +1,4 @@
 <?php
-// $Id: summaries.inc,v 1.1.2.12 2010/07/12 22:51:30 tr Exp $
 
 /**
  * @file
@@ -24,7 +23,7 @@ function summarize_form($form) {
     // Set the callback for the summary to the default if not specified.
     if (!isset($form[$key]['#summary callback'])) {
       // Default filter forms to have no summary.
-      if (in_array('filter_form_validate', (array) $form[$key]['#element_validate'])) {
+      if (isset($form[$key]['#element_validate']) && in_array('filter_form_validate', (array) $form[$key]['#element_validate'])) {
         $form[$key]['#summary callback'] = 'summarize_null';
       }
       else {
@@ -79,7 +78,7 @@ function summarize_element($form, $title = FALSE) {
       return $form['#summary'];
     }
   }
-  else {
+  elseif (isset($form['#type'])) {
     // Otherwise, use a sensible default based on the field type.
     switch ($form['#type']) {
       case 'fieldset':
@@ -112,7 +111,7 @@ function summarize_element($form, $title = FALSE) {
         return $form['#title'] .': '. $form['#options'][$form['#default_value']];
 
       case 'checkbox':
-        if ($form['#default_value']) {
+        if ($form['#default_value'] && isset($form['#title'])) {
           return $form['#title'];
         }
         else {

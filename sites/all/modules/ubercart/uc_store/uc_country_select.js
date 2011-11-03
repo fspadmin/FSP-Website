@@ -1,4 +1,3 @@
-// $Id: uc_country_select.js,v 1.6.2.3 2009/08/17 21:27:54 islandusurper Exp $
 
 /**
  * @file
@@ -26,7 +25,7 @@ function uc_update_zone_select(country_select, default_zone) {
 
   $('#' + zone_select).parent().siblings('.zone-throbber').attr('style', 'background-image: url(' + Drupal.settings.basePath + 'misc/throbber.gif); background-repeat: no-repeat; background-position: 100% -20px;').html('&nbsp;&nbsp;&nbsp;&nbsp;');
 
-  $.post(Drupal.settings.basePath + '?q=uc_js_util/zone_select', options,
+  $.post(Drupal.settings.ucURL.zoneSelect, options,
          function (contents) {
            if (contents.match('value="-1"') != null) {
              $('#' + zone_select).attr('disabled', 'disabled');

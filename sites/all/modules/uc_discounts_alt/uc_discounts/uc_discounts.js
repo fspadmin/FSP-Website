@@ -36,7 +36,7 @@ function uc_discountsProcessCodes(context, e) {
 
   $.ajax({
     type: "POST",
-    url: Drupal.settings.basePath + "?q=cart/checkout/uc_discounts/calculate",
+    url: Drupal.settings.uc_discounts.url,
     data: parameterMap,
     complete : function(xmlHttpRequest, textStatus) {
       //Hide loading container

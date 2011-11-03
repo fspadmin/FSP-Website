@@ -182,7 +182,7 @@ class Twitter {
    */
   public function call($path, $params = array(), $method = 'GET', $use_auth = FALSE) {
     $url = $this->create_url($path);
-    
+
     try {
       if ($use_auth) {
         $response = $this->auth_request($url, $params, $method);
@@ -192,6 +192,8 @@ class Twitter {
       }
     }
     catch (TwitterException $e) {
+      watchdog('twitter', '!message', array('!message' => $e->__toString()), WATCHDOG_ERROR);
+      drupal_set_message('Twitter returned an error: ' . $e->getMessage(), 'error');
       return FALSE;
     }
 
@@ -235,7 +237,7 @@ class Twitter {
     }
 
     $response = drupal_http_request($url, $headers, $method, $data);
-    if (!$response->error) {
+    if (!property_exists($response, 'error')) {
       return $response->data;
     }
     else {
@@ -256,7 +258,7 @@ class Twitter {
     switch ($format) {
       case 'json':
         $response_decoded = json_decode($response, TRUE);
-        if ($response_decoded['id_str']) {
+        if (isset($response_decoded['id_str'])) {
           // if we're getting a single object back as JSON
           $response_decoded['id'] = $response_decoded['id_str'];
         } else {
@@ -458,8 +460,6 @@ class TwitterUser {
 
   public $status;
 
-  protected $password;
-
   protected $oauth_token;
 
   protected $oauth_token_secret;
@@ -489,19 +489,18 @@ class TwitterUser {
     if ($values['created_at'] && $created_time = strtotime($values['created_at'])) {
       $this->created_time = $created_time;
     }
-    $this->utc_offset = $values['utc_offset'];
+    $this->utc_offset = $values['utc_offset']?$values['utc_offset']:0;
 
-    if ($values['status']) {
+    if (isset($values['status'])) {
       $this->status = new TwitterStatus($values['status']);
     }
   }
 
   public function get_auth() {
-    return array('password' => $this->password, 'oauth_token' => $this->oauth_token, 'oauth_token_secret' => $this->oauth_token_secret);
+    return array('oauth_token' => $this->oauth_token, 'oauth_token_secret' => $this->oauth_token_secret);
   }
 
   public function set_auth($values) {
-    $this->password = $values['password'];
     $this->oauth_token = $values['oauth_token'];
     $this->oauth_token_secret = $values['oauth_token_secret'];
   }

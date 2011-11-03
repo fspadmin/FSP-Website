@@ -1,4 +1,3 @@
-// $Id: uc_payment.js,v 1.5.2.8 2010/07/12 01:57:44 tr Exp $
 
 /**
  * Calculate the number of bytes of a Unicode string.
@@ -232,7 +231,7 @@ function get_payment_details(path) {
     data = { 'payment-details-data' : $('#edit-payment-details-data').val() };
   }
   else {
-    data = {};
+    data = { 'payment-details-data' : '' };
   }
   // Make the post to get the details for the chosen payment method.
   $.post(path, data,

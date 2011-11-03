@@ -1,12 +1,7 @@
-/* $Id: uc_product_kit.css,v 1.1.2.1 2009/01/02 20:18:43 islandusurper Exp $ */
-
-/* .kit-component-cart-desc ul {
-  display: inline;
-} */
-/* .kit-component-cart-desc ul:before {
-  content: "--";
-} */
-
+/**
+ * @file
+ * Styles for uc_product_kit module.
+ */
 #block-cart-contents .kit-component-cart-desc ul.product-description {
   padding-left: 0;
 }
@@ -16,10 +11,10 @@
 }
 
 .kit-component-cart-desc .item-list li {
-  display: inline;
   background: transparent none;
-  font-style: italic;
+  display: inline;
   font-size: 1em;
+  font-style: italic;
   padding-left: 0;
 }
 .kit-component-cart-desc li:after {

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_google_checkout.module,v 1.1.2.16 2010/01/27 22:23:32 islandusurper Exp $
 
 /**
  * @file
@@ -10,6 +9,9 @@
  * Drupal hooks                                                               *
  ******************************************************************************/
 
+/**
+ * Implements hook_help().
+ */
 function uc_google_checkout_help($page, $args) {
   $output = '';
   switch ($page) {
@@ -20,12 +22,15 @@ function uc_google_checkout_help($page, $args) {
       else {
         $checkout_url = 'http://sandbox.google.com/checkout';
       }
-      $output .= t('In the <a href="!checkout_url/sell">Google Checkout Merchant Center</a>, enter %url as the callback URL for this site. This will allow Ubercart to communicate with Google Checkout.', array('!checkout_url' => $checkout_url, '%url' => url('google_checkout', array('absolute' => TRUE))));
+      $output .= t('In the <a href="!checkout_url/sell">Google Checkout Merchant Center</a>, enter %url as the callback URL for this site. Also be sure that "Callback contents" is set to "Notification Serial Number" and that the API Version is 2.5.', array('!checkout_url' => $checkout_url, '%url' => url('google_checkout', array('absolute' => TRUE))));
     break;
   }
   return $output;
 }
 
+/**
+ * Implements hook_menu().
+ */
 function uc_google_checkout_menu() {
   $items = array();
 
@@ -62,7 +67,13 @@ function uc_google_checkout_menu() {
   );
   $items['google_checkout'] = array(
     'page callback' => 'uc_google_checkout_callback',
-    'access callback' => 'uc_google_checkout_callback_access',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_google_checkout.pages.inc',
+  );
+  $items['google_checkout/calculations'] = array(
+    'page callback' => 'uc_google_checkout_merchant_calculation',
+    'access callback' => TRUE,
     'type' => MENU_CALLBACK,
     'file' => 'uc_google_checkout.pages.inc',
   );
@@ -80,14 +91,16 @@ function uc_google_checkout_menu() {
   return $items;
 }
 
-function uc_google_checkout_callback_access() {
-  return TRUE;
-}
-
+/**
+ * Menu title callback function.
+ */
 function uc_google_checkout_terminal_title($order) {
   return t('Google Checkout terminal: Order @order_id', array('@order_id' => $order->order_id));
 }
 
+/**
+ * Implements hook_init().
+ */
 function uc_google_checkout_init() {
   // When an order comes in from Google Checkout, we need to unset some
   // $_SESSION data. Since this isn't done under the customer's user, we
@@ -95,14 +108,23 @@ function uc_google_checkout_init() {
   global $user;
   $users = variable_get('uc_google_checkout_order_users', array());
   if (isset($users[$user->uid])) {
-    unset($_SESSION['cart_order'], $_SESSION['do_complete'], $_SESSION['new_user'], $users[$user->uid]);
+    unset($_SESSION['cart_order'], $_SESSION['do_complete'], $users[$user->uid]);
     variable_set('uc_google_checkout_order_users', $users);
   }
 
   global $conf;
   $conf['i18n_variables'][] = 'uc_google_checkout_order_cancel_reason';
+
+  $id = variable_get('googleanalytics_account', '');
+  if (module_exists('googleanalytics') && !empty($id) && _googleanalytics_visibility_pages() && _googleanalytics_visibility_user($user)) {
+    $scope = variable_get('googleanalytics_js_scope', 'footer');
+    drupal_add_js('document.write(unescape("%3Cscript src=\"http://checkout.google.com/files/digital/ga_post.js\" type=\"text/javascript\"%3E%3C/script%3E"));', 'inline', $scope);
+  }
 }
 
+/**
+ * Implements hook_theme().
+ */
 function uc_google_checkout_theme() {
   return array(
     'uc_google_checkout_shipping_settings' => array(
@@ -116,17 +138,22 @@ function uc_google_checkout_theme() {
   );
 }
 
+/**
+ * Implements hook_form_alter().
+ */
 function uc_google_checkout_form_alter(&$form, $form_state, $form_id) {
   if (uc_product_is_product_form($form)) {
     $node = $form['#node'];
     if (is_object($node) && $form_id == $node->type .'_node_form' && uc_product_is_product($node->type)) {
       $policy_url = 'https://checkout.google.com/support/sell/bin/answer.py?answer=75724';
-      $form['google_checkout'] = array('#type' => 'fieldset',
+      $form['google_checkout'] = array(
+        '#type' => 'fieldset',
         '#title' => t('Google Checkout settings'),
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
       );
-      $form['google_checkout']['gc_salable'] = array('#type' => 'checkbox',
+      $form['google_checkout']['gc_salable'] = array(
+        '#type' => 'checkbox',
         '#title' => t('Conforms to Google Checkout content policies.'),
         '#default_value' => isset($node->gc_salable) ? $node->gc_salable : TRUE,
         '#description' => t('To be a Google Checkout approved merchant, your items must conform to the Google Checkout content policies found <a href="!url">here</a>.', array('!url' => $policy_url)),
@@ -151,7 +178,7 @@ function uc_google_checkout_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Implementation of hook_nodeapi().
+ * Implements hook_nodeapi().
  */
 function uc_google_checkout_nodeapi(&$node, $op) {
   if (uc_product_is_product($node->type)) {
@@ -187,6 +214,9 @@ function uc_google_checkout_nodeapi(&$node, $op) {
  * Hook Functions (Ubercart)                                                  *
  ******************************************************************************/
 
+/**
+ * Implements hook_cart_pane().
+ */
 function uc_google_checkout_cart_pane() {
   $panes[] = array(
     'id' => 'uc_google_checkout',
@@ -198,6 +228,10 @@ function uc_google_checkout_cart_pane() {
   return $panes;
 }
 
+
+/**
+ * Implements hook_order_pane().
+ */
 function uc_google_checkout_order_pane() {
   $panes[] = array(
     'id' => 'email_allowed',
@@ -212,6 +246,9 @@ function uc_google_checkout_order_pane() {
   return $panes;
 }
 
+/**
+ * Implements hook_line_item().
+ */
 function uc_google_checkout_line_item() {
   $items[] = array(
     'id' => 'gc_coupon',
@@ -231,6 +268,9 @@ function uc_google_checkout_line_item() {
   return $items;
 }
 
+/**
+ * Implements hook_order().
+ */
 function uc_google_checkout_order($op, &$arg1, $arg2) {
   switch ($op) {
     case 'load':
@@ -261,7 +301,7 @@ function uc_google_checkout_order($op, &$arg1, $arg2) {
 }
 
 /**
- * Implementation of hook_payment_method().
+ * Implements hook_payment_method().
  */
 function uc_google_checkout_payment_method() {
   $methods[] = array(
@@ -277,6 +317,9 @@ function uc_google_checkout_payment_method() {
   return $methods;
 }
 
+/**
+ * Implements hook_payment_gateway().
+ */
 function uc_google_checkout_payment_gateway() {
   $gateways[] = array(
     'id' => 'google_checkout',
@@ -287,6 +330,9 @@ function uc_google_checkout_payment_gateway() {
   return $gateways;
 }
 
+/**
+ * Implements hook_shipment().
+ */
 function uc_google_checkout_shipment($op, $shipment) {
   switch ($op) {
     case 'save':
@@ -349,8 +395,9 @@ function uc_google_checkout_shipment($op, $shipment) {
         $request .= '</item-ids>';
         $request .= '<send-email>false</send-email>';
         $request .= '</reset-items-shipping-information>';
+
+        $response = uc_google_checkout_send_request('request', $request);
       }
-      $response = uc_google_checkout_send_request('request', $request);
     break;
   }
 }
@@ -359,6 +406,12 @@ function uc_google_checkout_shipment($op, $shipment) {
  * Callback Functions, Forms, and Tables                                      *
  ******************************************************************************/
 
+/**
+ * Form builder for uc_google_checkout_cart_form().
+ *
+ * @see uc_google_checkout_cart_form_submit()
+ * @ingroup forms
+ */
 function uc_google_checkout_cart_form() {
   if (variable_get('uc_google_checkout_mode', 'checkout') == 'checkout') {
     $merchant_id = variable_get('uc_google_checkout_merchant_id', '');
@@ -379,6 +432,12 @@ function uc_google_checkout_cart_form() {
       '#type' => 'submit',
       '#value' => 'submit',
     );
+  }
+
+  global $user;
+  $id = variable_get('googleanalytics_account', '');
+  if (module_exists('googleanalytics') && !empty($id) && _googleanalytics_visibility_pages() && _googleanalytics_visibility_user($user)) {
+    $form['#attributes'] = array('onsubmit' => 'setUrchinInputCode(pageTracker);');
   }
 
   $disable = FALSE;
@@ -409,12 +468,22 @@ function uc_google_checkout_cart_form() {
     '#value' => ($disable ? '<img ' : '<input name="submit" type="image" ') .'alt="'. t('Google Checkout') .'" title="'. t('Fast checkout through Google.') .'" src="'. $checkout_url .'/buttons/checkout.gif?merchant_id='. $merchant_id .'&w='. $width .'&h='. $height .'&style='. variable_get('uc_google_checkout_button_color', 'trans') .'&variant='. ($disable ? 'disabled' : 'text') .'&loc=en_US" height="'. $height .'" width="'. $width .'" />',
   );
   $form['submit_help'] = array(
-    '#value' => '<br /><a href="javascript:void(window.open(\' http://checkout.google.com/seller/what_is_google_checkout.html\',\'whatischeckout\',\'scrollbars=0,resizable=1,directories=0,height=250,width=400\'));" OnMouseOver="return window.status = \''. t('What is Google Checkout?') .'\';" OnMouseOut="return window.status = \'\';">'. t('What is Google Checkout?') .'</a>',
+    '#value' => '<br /><a href="javascript:void(window.open(\' http://checkout.google.com/seller/what_is_google_checkout.html\',\'whatischeckout\',\'scrollbars=0,resizable=1,directories=0,height=250,width=400\'));" OnMouseOver="return window.status = \''. addslashes(t('What is Google Checkout?')) .'\';" OnMouseOut="return window.status = \'\';">'. addslashes(t('What is Google Checkout?')) .'</a>',
+  );
+
+  $form['analyticsdata'] = array(
+    '#type' => 'hidden',
+    '#default_value' => '',
   );
 
   return $form;
 }
 
+/**
+ * Form submission handler for uc_google_checkout_cart_form().
+ *
+ * @see uc_google_checkout_cart_form()
+ */
 function uc_google_checkout_cart_form_submit($form, &$form_state) {
   global $user;
   $items = uc_cart_get_contents();
@@ -441,9 +510,10 @@ function uc_google_checkout_cart_form_submit($form, &$form_state) {
   uc_order_update_status($order->order_id, 'in_google_checkout');
   $order->order_status = 'in_google_checkout';
 
+  $order->analytics_data = $form_state['values']['analyticsdata'];
   $request = uc_google_checkout_cart_request($order);
   if ($response = uc_google_checkout_send_request('merchantCheckout', $request)) {
-    $redirect = (string)$response->{'redirect-url'};
+    $redirect = (string) $response->{'redirect-url'};
     drupal_goto($redirect);
   }
 }
@@ -489,67 +559,33 @@ function uc_google_checkout_cart_request($order) {
     $output .= '<merchant-checkout-flow-support>';
 
     if (uc_order_is_shippable($order)) {
-      $companies = uc_google_checkout_shipping_companies();
-      $services = uc_google_checkout_shipping_services();
-      $shipping_options = '';
-      foreach ($services as $key => $title) {
-        $settings = variable_get('uc_google_checkout_shipping_'. $key, array());
-        if ($settings['enable']) {
-          $shipping_options .= '<carrier-calculated-shipping-option>';
-          $shipping_options .= '<price currency="'. variable_get('uc_currency_code', 'USD') .'">'. $settings['default'] .'</price>';
-          $temp = explode('_', $key, 2);
-          $shipping_options .= '<shipping-company>'. $companies[$temp[0]] .'</shipping-company>';
-          $shipping_options .= '<carrier-pickup>'. $settings['pickup'] .'</carrier-pickup>';
-          $shipping_options .= '<shipping-type>'. $services[$key] .'</shipping-type>';
-          if ($settings['fixed_charge']) {
-            $context = array(
-              'revision' => 'formatted-original',
-              'type' => 'amount',
-            );
-            $options = array(
-              'sign' => FALSE,
-              'thou' => FALSE,
-              'dec' => '.',
-            );
-            $shipping_options .= '<additional-fixed-charge currency="'. variable_get('uc_currency_code', 'USD') .'">'. uc_price($settings['fixed_charge'], $context, $options) .'</additional-fixed-charge>';
+      $output .= '<shipping-methods>';
+
+      $order->delivery_city = variable_get('uc_google_checkout_delivery_city', '');
+      $order->delivery_zone = variable_get('uc_google_checkout_delivery_zone', 0);
+      $order->delivery_country = variable_get('uc_google_checkout_delivery_country', 0);
+      $order->delivery_postal_code = variable_get('uc_google_checkout_delivery_postal_code', '');
+
+      $methods = module_invoke_all('shipping_method');
+      module_load_include('inc', 'uc_quote', 'uc_quote.pages');
+      $quote_data = _uc_quote_assemble_quotes($order);
+      foreach ($quote_data as $method_id => $options) {
+        foreach ($options as $accsrl => $data) {
+          if (isset($data['rate'])) {
+            $output .= '<merchant-calculated-shipping name="'. check_plain($methods[$method_id]['quote']['accessorials'][$accsrl]) .'">';
+            $output .= '<price currency="'. variable_get('uc_currency_code', 'USD') .'">'. $data['rate'] .'</price>';
+            $output .= '</merchant-calculated-shipping>';
           }
-          if ($settings['percent_adjustment']) {
-            $shipping_options .= '<additional-variable-charge-percent>'. (float)$settings['percent_adjustment'] .'</additional-variable-charge-percent>';
-          }
-          $shipping_options .= '</carrier-calculated-shipping-option>';
         }
       }
-      if ($shipping_options) {
-        $output .= '<shipping-methods>';
-        $output .= '<carrier-calculated-shipping>';
-        $output .= '<carrier-calculated-shipping-options>';
-        $output .= $shipping_options;
-        $output .= '</carrier-calculated-shipping-options>';
 
-        $address = variable_get('uc_quote_store_default_address', new stdClass());
-        if (empty($address)) {
-          $address->city = variable_get('uc_store_city', NULL);
-          $address->zone = uc_get_zone_code(variable_get('uc_store_zone', NULL));
-          $address->postal_code = variable_get('uc_store_postal_code', NULL);
-          $address->country = uc_store_default_country();
-        }
-        $country = uc_get_country_data(array('country_id' => $address->country));
-        $address->country_code = $country[0]['country_iso_code_2'];
-        $output .= '<shipping-packages>';
-        $output .= '<shipping-package>';
-        $output .= '<ship-from id="here">';
-        $output .= '<city>'. $address->city .'</city>';
-        $output .= '<region>'. $address->zone .'</region>';
-        $output .= '<country-code>'. $address->country_code .'</country-code>';
-        $output .= '<postal-code>'. $address->postal_code .'</postal-code>';
-        $output .= '</ship-from>';
-        $output .= '</shipping-package>';
-        $output .= '</shipping-packages>';
-
-        $output .= '</carrier-calculated-shipping>';
-        $output .= '</shipping-methods>';
-      }
+      $output .= '</shipping-methods>';
+      $output .= '<merchant-calculations>';
+      $output .= '<merchant-calculations-url>'. url('google_checkout/calculations', array('absolute' => TRUE)) .'</merchant-calculations-url>';
+      $output .= '</merchant-calculations>';
     }
+
+    $output .= '<analytics-data>'. $order->analytics_data .'</analytics-data>';
 
     $tax_table = '';
     $result = db_query("SELECT zone, rate, tax_shipping FROM {uc_gc_taxes}");
@@ -624,12 +660,12 @@ function uc_google_checkout_send_request($api, $request) {
   // Google's XML parser doesn't like named entities apparently.
   str_replace(array('&amp;', '&lt;', '&gt;'), array('&#x26;', '&#x3c;', '&#x3e;'), $request);
   $response_obj = drupal_http_request($checkout_url .'/api/checkout/v2/'. $api .'/Merchant/'. $merchant_id, uc_google_checkout_headers(), 'POST', $request);
-  if ($response_obj->error) {
+  if (isset($response_obj->error)) {
     watchdog('google', '@error', array('@error' => $response_obj->error), WATCHDOG_ERROR);
   }
   $response = new SimpleXMLElement($response_obj->data);
   if ($response->getName() == 'error') {
-    $error = (string)$response->{'error-message'};
+    $error = (string) $response->{'error-message'};
     drupal_set_message($error, 'error');
     watchdog('google', '@error', array('@error' => $error), WATCHDOG_ERROR);
     return NULL;
@@ -643,10 +679,9 @@ function uc_google_checkout_send_request($api, $request) {
    * Copied from http://drupal.org/node/70915.
    */
   $messages = drupal_set_message();
-  $errors = $messages['error'];
-  $total = count($errors);
-  for ($i = 0; $i <= $total; $i++) {
-    if (strpos($errors[$i], 'SSL: fatal protocol error in')) {
+  $errors = isset($messages['error']) ? $messages['error'] : array();
+  foreach ($errors as $i => $error) {
+    if (strpos($error, 'SSL: fatal protocol error in')) {
       unset($_SESSION['messages']['error'][$i]);
     }
   }
@@ -659,11 +694,11 @@ function uc_google_checkout_send_request($api, $request) {
   return $response;
 }
 
-function uc_google_checkout_pane_email_allowed($op, $arg1) {
+function uc_google_checkout_pane_email_allowed($op, $order) {
   switch ($op) {
     case 'customer':
     case 'view':
-      if ($arg1->data['email_allowed']) {
+      if (isset($order->data['email_allowed']) && $order->data['email_allowed']) {
         $output = t('Customer will accept marketing emails.');
       }
       else {
@@ -675,7 +710,7 @@ function uc_google_checkout_pane_email_allowed($op, $arg1) {
 
 /**
  * Add setting callbacks to the payment settings section
- *  The fulfillment sections need coded still. JS.
+ * The fulfillment sections need coded still. JS.
  */
 function uc_payment_method_google_checkout($op, &$arg1) {
   switch ($op) {
@@ -695,32 +730,32 @@ function uc_payment_method_google_checkout($op, &$arg1) {
 
 function uc_google_checkout_new_order($new_order) {
   $order_id = $new_order->{'shopping-cart'}->{'merchant-private-data'}->{'order-id'};
-  $cart_id = $new_order->{'shopping-cart'}->{'merchant-private-data'}->{'cart-id'};
+  $cart_id = (string) $new_order->{'shopping-cart'}->{'merchant-private-data'}->{'cart-id'};
 
   $order = uc_order_load($order_id);
   if ($order) {
     $shipping_address = $new_order->{'buyer-shipping-address'};
-    $order->delivery_company = $shipping_address->{'company-name'};
-    $order->delivery_first_name = $shipping_address->{'structured-name'}->{'first-name'};
-    $order->delivery_last_name = $shipping_address->{'structured-name'}->{'last-name'};
-    $order->delivery_phone = $shipping_address->phone;
-    $order->delivery_street1 = $shipping_address->address1;
-    $order->delivery_street2 = $shipping_address->address2;
-    $order->delivery_city = $shipping_address->city;
+    $order->delivery_company = (string) $shipping_address->{'company-name'};
+    $order->delivery_first_name = (string) $shipping_address->{'structured-name'}->{'first-name'};
+    $order->delivery_last_name = (string) $shipping_address->{'structured-name'}->{'last-name'};
+    $order->delivery_phone = (string) $shipping_address->phone;
+    $order->delivery_street1 = (string) $shipping_address->address1;
+    $order->delivery_street2 = (string) $shipping_address->address2;
+    $order->delivery_city = (string) $shipping_address->city;
     $zone_id = db_result(db_query("SELECT zone_id FROM {uc_zones} WHERE zone_code = '%s'", $shipping_address->region));
     $order->delivery_zone = $zone_id;
     $countries = uc_get_country_data(array('country_iso_code_2' => $shipping_address->{'country-code'}));
     $order->delivery_country = $countries[0]['country_id'];
-    $order->delivery_postal_code = $shipping_address->{'postal-code'};
+    $order->delivery_postal_code = (string) $shipping_address->{'postal-code'};
 
     $billing_address = $new_order->{'buyer-billing-address'};
-    $order->billing_company = $billing_address->{'company-name'};
-    $order->billing_first_name = $billing_address->{'structured-name'}->{'first-name'};
-    $order->billing_last_name = $billing_address->{'structured-name'}->{'last-name'};
-    $order->billing_phone = $billing_address->phone;
-    $order->billing_street1 = $billing_address->address1;
-    $order->billing_street2 = $billing_address->address2;
-    $order->billing_city = $billing_address->city;
+    $order->billing_company = (string) $billing_address->{'company-name'};
+    $order->billing_first_name = (string) $billing_address->{'structured-name'}->{'first-name'};
+    $order->billing_last_name = (string) $billing_address->{'structured-name'}->{'last-name'};
+    $order->billing_phone = (string) $billing_address->phone;
+    $order->billing_street1 = (string) $billing_address->address1;
+    $order->billing_street2 = (string) $billing_address->address2;
+    $order->billing_city = (string) $billing_address->city;
     if ($billing_address['region'] != $shipping_address->region) {
       $zone_id = db_result(db_query("SELECT zone_id FROM {uc_zones} WHERE zone_code = '%s'", $billing_address->region));
     }
@@ -729,10 +764,10 @@ function uc_google_checkout_new_order($new_order) {
       $countries = uc_get_country_data(array('country_iso_code_2' => $billing_address->{'country-code'}));
     }
     $order->billing_country = $countries[0]['country_id'];
-    $order->billing_postal_code = $billing_address->{'postal-code'};
+    $order->billing_postal_code = (string) $billing_address->{'postal-code'};
 
     if (!$order->primary_email) {
-      $order->primary_email = $billing_address->email;
+      $order->primary_email = (string) $billing_address->email;
     }
 
     if ($new_order->{'buyer-marketing-preferences'}->{'email-allowed'} == 'true') {
@@ -752,21 +787,22 @@ function uc_google_checkout_new_order($new_order) {
 
     $comments = array();
 
-    uc_order_line_item_add($order_id, 'tax', t('Total tax'), $new_order->{'order-adjustment'}->{'total-tax'});
+    // Ubercart should already be set up to calculate taxes itself.
+    //uc_order_line_item_add($order_id, 'tax', t('Total tax'), $new_order->{'order-adjustment'}->{'total-tax'});
     if (isset($new_order->{'order-adjustment'}->shipping)) {
       $shipping_line = $new_order->{'order-adjustment'}->shipping[0];
-      uc_order_line_item_add($order_id, 'shipping', check_plain($shipping_line->{'shipping-name'}), $shipping_line->{'shipping-cost'});
+      uc_order_line_item_add($order_id, 'shipping', check_plain((string) $shipping_line->{'shipping-name'}), (string) $shipping_line->{'shipping-cost'});
     }
     if (isset($new_order->{'order-adjustment'}->{'merchant-codes'})) {
       foreach ($new_order->{'order-adjustment'}->{'merchant-codes'}->children() as $adjustment) {
         $type = $adjustment->getName();
         if ($type == 'coupon-adjustment') {
-          uc_order_line_item_add($order_id, 'gc_coupon', check_plain($adjustment->code), -$adjustment->{'applied-amount'});
-          $comments[] = check_plain($adjustment->message);
+          uc_order_line_item_add($order_id, 'gc_coupon', check_plain((string) $adjustment->code), -((string) $adjustment->{'applied-amount'}));
+          $comments[] = check_plain((string) $adjustment->message);
         }
         elseif ($type == 'gift-certificate-adjustment') {
-          uc_order_line_item_add($order_id, 'gc_gift_certificate', check_plain($adjustment->code), -($adjustment->{'applied-amount'}));
-          $comments[] = check_plain($adjustment->message);
+          uc_order_line_item_add($order_id, 'gc_gift_certificate', check_plain((string) $adjustment->code), -((string) $adjustment->{'applied-amount'}));
+          $comments[] = check_plain((string) $adjustment->message);
         }
       }
     }
@@ -778,7 +814,13 @@ function uc_google_checkout_new_order($new_order) {
     // API's cart) so we must empty the customer's manually.
     uc_cart_empty($cart_id);
     // Add a comment to let sales team know this came in through the site.
-    uc_order_comment_save($order->order_id, 0, t('Order created through Google Checkout (#@gco_order).', array('@gco_order' => $new_order->{'google-order-number'})), 'admin');
+    if (variable_get('uc_google_checkout_mode', 'checkout') == 'checkout') {
+      $checkout_url = 'https://checkout.google.com';
+    }
+    else {
+      $checkout_url = 'https://sandbox.google.com/checkout';
+    }
+    uc_order_comment_save($order->order_id, 0, t('Order created through Google Checkout (#@gco_order).', array('@gco_order' => l($new_order->{'google-order-number'}, $checkout_url .'/sell/multiOrder', array('query' => array('order' => (string) $new_order->{'google-order-number'}), 'external' => TRUE)))), 'admin');
 
     // uc_cart_complete_sale() also unsets some $_SESSION variables. These
     // are tied to the user-id, so we record that for when they log in later.
@@ -796,10 +838,10 @@ function uc_google_checkout_new_order($new_order) {
 
     db_query("INSERT INTO {uc_gc_orders} (order_id, gc_order_number, gc_total) VALUES (%d, '%s', %f)", $order_id, $new_order->{'google-order-number'}, $new_order->{'order-total'});
 
-    uc_google_checkout_notification_acknowledgement($new_order['serial-number']);
+    return TRUE;
   }
   else {
-    uc_google_checkout_notification_error();
+    return FALSE;
   }
 }
 
@@ -852,21 +894,25 @@ function uc_google_checkout_accept_risk($risk) {
     $assessment .= '<br />';
     $assessment .= t('Partial CC number: %s', array('%s' => $risk_info->{'partial-cc-number'}));
     $assessment .= '<br />';
-    $assessment .= format_plural($risk_info->{'buyer-account-age'}, 'Google Checkout member for @count month.', 'Google Checkout member for @count months.');
+    $assessment .= format_plural($risk_info->{'buyer-account-age'}, 'Google Checkout member for @count day.', 'Google Checkout member for @count days.');
     $assessment .= '<br />';
     $assessment .= t('Eligible for protection: <strong>@bool</strong>', array('@bool' => drupal_strtoupper($risk_info->{'eligible-for-protection'})));
     uc_order_comment_save($order_id, 0, $assessment, 'admin', 'chargeable');
-    uc_google_checkout_notification_acknowledgement($risk['serial-number']);
+
+    return TRUE;
+  }
+  else {
+    return FALSE;
   }
 }
 
 function uc_google_checkout_order_state_change($change) {
   $order_id = uc_google_checkout_get_order($change->{'google-order-number'});
   if ($order_id) {
-    $new_financial = (string)$change->{'new-financial-order-state'};
-    $new_fulfillment = (string)$change->{'new-fulfillment-order-state'};
-    $prev_financial = (string)$change->{'previous-financial-order-state'};
-    $prev_fulfillment = (string)$change->{'previous-fulfillment-order-state'};
+    $new_financial = (string) $change->{'new-financial-order-state'};
+    $new_fulfillment = (string) $change->{'new-fulfillment-order-state'};
+    $prev_financial = (string) $change->{'previous-financial-order-state'};
+    $prev_fulfillment = (string) $change->{'previous-fulfillment-order-state'};
     db_query("UPDATE {uc_gc_orders} SET financial_state = '%s', fulfillment_state = '%s' WHERE order_id = %d AND financial_state = '%s' AND fulfillment_state = '%s'", array($new_financial, $new_fulfillment, $order_id, $prev_financial, $prev_fulfillment));
     if ($new_financial != $prev_financial) {
       $_SESSION['google_updates'] = TRUE;
@@ -912,10 +958,32 @@ function uc_google_checkout_order_state_change($change) {
       }
       unset($_SESSION['google_updates']);
     }
-    uc_google_checkout_notification_acknowledgement($change['serial-number']);
+
+    return TRUE;
   }
   else {
-    uc_google_checkout_notification_error();
+    return FALSE;
+  }
+}
+
+function uc_google_checkout_authorize_amount($auth) {
+  global $user;
+
+  $order_id = uc_google_checkout_get_order($auth->{'google-order-number'});
+  if ($order_id) {
+    $_SESSION['google_updates'] = TRUE;
+
+    uc_order_update_status($order_id, 'chargeable');
+
+    unset($_SESSION['google_updates']);
+
+    $o_comment = t('<b>Authorization:</b> @amount', array('@amount' => uc_currency_format((string) $auth->{'authorization-amount'})));
+    uc_order_comment_save($order_id, $user->uid, $o_comment);
+
+    return TRUE;
+  }
+  else {
+    return FALSE;
   }
 }
 
@@ -925,12 +993,14 @@ function uc_google_checkout_charge($order_id, $amount) {
 
   $output .= '<?xml version="1.0" encoding="UTF-8"?>';
   $output .= "\n";
-  $output .= '<charge-order xmlns="http://checkout.google.com/schema/2" google-order-number="'. $google_order_number .'">';
+  $output .= '<charge-and-ship-order xmlns="http://checkout.google.com/schema/2" google-order-number="'. $google_order_number .'">';
   $output .= '<amount currency="'. variable_get('uc_currency_code', 'USD') .'">'. $amount .'</amount>';
-  $output .= '</charge-order>';
+  $output .= '</charge-and-ship-order>';
 
   if ($response = uc_google_checkout_send_request('request', $output)) {
-    drupal_set_message(t('Charge request sent to Google Checkout. The charge confirmation should appear on this page momentarily.'));
+    if (!uc_google_checkout_charge_order($response)) {
+      drupal_set_message(t('Charge request sent to Google Checkout. The charge confirmation should appear on this page momentarily.'));
+    }
   }
   return 'admin/store/orders/'. $order_id;
 }
@@ -938,17 +1008,19 @@ function uc_google_checkout_charge($order_id, $amount) {
 function uc_google_checkout_charge_order($charge) {
   $order_id = uc_google_checkout_get_order($charge->{'google-order-number'});
   if ($order_id) {
-    uc_payment_enter($order_id, 'google_checkout', $charge->{'latest-charge-amount'}, 0,
+    $amount = (string) $charge->{'latest-charge-amount'};
+    uc_payment_enter($order_id, 'google_checkout', $amount, 0,
                      '', t('Payment received by Google Checkout'));
     $context = array(
       'revision' => 'formatted-original',
       'type' => 'amount',
     );
-    uc_order_comment_save($order_id, 0, t('Payment of %amount received by Google Checkout.', array('%amount' => uc_price($charge->{'latest-charge-amount'}, $context))), 'admin', 'chargeable');
-    uc_google_checkout_notification_acknowledgement($charge['serial-number']);
+    uc_order_comment_save($order_id, 0, t('Payment of %amount received by Google Checkout.', array('%amount' => uc_price($amount, $context))), 'admin', 'chargeable');
+
+    return TRUE;
   }
   else {
-    uc_google_checkout_notification_error();
+    return FALSE;
   }
 }
 
@@ -965,7 +1037,9 @@ function uc_google_checkout_refund($order_id, $amount, $reason, $comment = '') {
   $output .= '</refund-order>';
 
   if ($response = uc_google_checkout_send_request('request', $output)) {
-    drupal_set_message(t('Refund request sent to Google Checkout. The refund confirmation should appear on this page momentarily.'));
+    if (!uc_google_checkout_refund_order($response)) {
+      drupal_set_message(t('Refund request sent to Google Checkout. The refund confirmation should appear on this page momentarily.'));
+    }
   }
   return 'admin/store/orders/'. $order_id;
 }
@@ -973,24 +1047,24 @@ function uc_google_checkout_refund($order_id, $amount, $reason, $comment = '') {
 function uc_google_checkout_refund_order($refund) {
   $order_id = uc_google_checkout_get_order($refund->{'google-order-number'});
   if ($order_id) {
-    uc_payment_enter($order_id, 'google_checkout', -$refund->{'latest-refund-amount'},
+    uc_payment_enter($order_id, 'google_checkout', -((string) $refund->{'latest-refund-amount'}),
                      0, '', t('Refund received by Google Checkout'));
     $context = array(
       'revision' => 'formatted-original',
       'type' => 'amount',
     );
-    uc_order_comment_save($order_id, 0, t('Refund of %amount received by Google Checkout.', array('%amount' => uc_price($refund->{'latest-refund-amount'}, $context))),
-                          'admin', 'processing');
-    uc_google_checkout_notification_acknowledgement($refund['serial-number']);
+    uc_order_comment_save($order_id, 0, t('Refund of %amount received by Google Checkout.', array('%amount' => uc_price((string) $refund->{'latest-refund-amount'}, $context))), 'admin', 'processing');
+
+    return TRUE;
   }
   else {
-    uc_google_checkout_notification_error();
+    return FALSE;
   }
 }
 
 function uc_google_checkout_notify_update($form, &$form_state) {
   $order = uc_order_load($form_state['values']['order_id']);
-  if ($order !== FALSE && isset($form_state['values']['order_comment']) && drupal_strlen($form_state['values']['order_comment'])) {
+  if ($order !== FALSE && isset($order->google_order_number) && isset($form_state['values']['order_comment']) && drupal_strlen($form_state['values']['order_comment'])) {
     $request = uc_google_checkout_buyer_message_request($form_state['values']['order_id'], $form_state['values']['order_comment']);
     $response = uc_google_checkout_send_request('request', $request);
   }
@@ -1098,4 +1172,37 @@ function uc_google_checkout_shipping_companies() {
  */
 function _uc_google_checkout_currency_codes() {
   return drupal_map_assoc(array('AUD', 'CAD', 'EUR', 'GBP', 'HKD', 'JPY', 'USD'));
+}
+
+function uc_google_checkout_avs_code($code = NULL) {
+  $codes = array(
+    'Y' => t('Full AVS match (address and postal code)'),
+    'P' => t('Partial AVS match (postal code only)'),
+    'A' => t('Partial AVS match (address only)'),
+    'N' => t('No AVS match'),
+    'U' => t('AVS not supported by issuer'),
+  );
+
+  if ($code) {
+    return isset($codes[$code]) ? $codes[$code] : '';
+  }
+  else {
+    return $codes;
+  }
+}
+
+function uc_google_checkout_cvn_code($code = NULL) {
+  $codes = array(
+    'M' => t('CVN match'),
+    'N' => t('No CVN match'),
+    'U' => t('CVN not available'),
+    'E' => t('CVN error'),
+  );
+
+  if ($code) {
+    return isset($codes[$code]) ? $codes[$code] : '';
+  }
+  else {
+    return $codes;
+  }
 }

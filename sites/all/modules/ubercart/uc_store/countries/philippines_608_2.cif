@@ -1,5 +1,4 @@
 <?php
-// $Id: philippines_608_2.cif,v 1.3.4.4 2010/04/14 05:18:19 tr Exp $
 
 function philippines_install() {
   // Make the entry in the country table.

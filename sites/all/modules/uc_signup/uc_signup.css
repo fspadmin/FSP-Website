@@ -10,8 +10,8 @@
   padding: 0px 0px 21px 20px;
 }
 
-.uc_signup_next {
-  margin-left: 25px;
+.uc_signup_next.form-submit {
+  margin-left: 30px;
 }
 
 span.uc_signup_closed_message {

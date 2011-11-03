@@ -1,7 +1,8 @@
-/* table.checkout-shipping {
-  width: 50%;
-}
+/**
+ * @file
+ * Styles for shipping quote cart and checkout panes.
  */
+
 .form-item .description {
   /* Fix the inheritance from table rows. */
   white-space: normal;
@@ -12,9 +13,9 @@
 }
 
 .quote-button {
+  color: rgb(0, 0, 125);
   cursor: pointer;
   font-weight: bold;
-  color: rgb(0, 0, 125);
 }
 
 .quote-error {

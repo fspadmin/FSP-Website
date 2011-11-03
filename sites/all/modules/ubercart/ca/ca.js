@@ -1,4 +1,3 @@
-// $Id: ca.js,v 1.1.2.3 2009/07/21 14:37:19 islandusurper Exp $
 
 /**
  * @file

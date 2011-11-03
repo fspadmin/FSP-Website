@@ -1,5 +1,4 @@
 <?php
-// $Id: corner.tpl.php,v 1.3.2.1 2009/05/12 09:39:14 kirie Exp $
 
 /**
  * @file

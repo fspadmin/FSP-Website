@@ -1,5 +1,4 @@
 <?php
-// $Id: corner.module,v 1.5.2.2 2009/06/08 09:23:07 kirie Exp $
 
 /**
  * @file
@@ -28,7 +27,7 @@ function corner_help($path, $arg) {
  */
 function corner_theme() {
   return array(
-    'corner_corner' => array(
+    'corner' => array(
       'template' => 'corner',
       'arguments' => array('html' => NULL, 'corner' => NULL),
     ),
@@ -212,7 +211,7 @@ function corner_footer($main = 0) {
       $html = theme('corner_image', $corner);
 
       // Theme the corner to make it easy to override.
-      $output .= theme('corner_corner', $html, $corner);
+      $output .= theme('corner', $html, $corner);
     }
   }
   return $output;
@@ -274,7 +273,7 @@ function theme_corner_image($corner) {
     if (!empty($corner->image_link_target)) $attributes .= 'target="'. $corner->image_link_target .'"';
 
     $image_args = array('usemap' => '#cornermap-'. $corner->cid);
-    $html .= '<map id="cornermap'. $corner->cid .'" name="cornermap-'. $corner->cid .'">'."\n";
+    $html .= '<map id="cornermap-'. $corner->cid .'" name="cornermap-'. $corner->cid .'">'."\n";
     $html .= '<area shape="'. $corner->image_map_shape .'" coords="'. $corner->image_map_coords .'" href="'. $corner->image_uri .'" '. $attributes .' />'."\n";
     $html .= '</map>'."\n";
   }
@@ -291,7 +290,7 @@ function theme_corner_image($corner) {
     if (!empty($corner->image_title)) $attributes['title'] = $corner->image_title;
     if (!empty($corner->image_link_rel)) $attributes['rel'] = $corner->image_link_rel;
     if (!empty($corner->image_link_target)) $attributes['target'] = $corner->image_link_target;
-    
+
     $html .= l($image, $corner->image_uri, array('html' => TRUE, 'attributes' => $attributes));
   }
   return $html;

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_order.line_item.inc,v 1.1.2.10 2010/07/12 01:31:08 tr Exp $
 
 /**
  * @file
@@ -12,7 +11,7 @@
  */
 
 /**
- * Handle the subtotal line item.
+ * Handles the subtotal line item.
  */
 function uc_line_item_subtotal($op, $arg1) {
   switch ($op) {
@@ -69,7 +68,7 @@ function uc_line_item_subtotal($op, $arg1) {
 }
 
 /**
- * Handle the total line item.
+ * Handles the total line item.
  */
 function uc_line_item_total($op, $arg1) {
   switch ($op) {
@@ -84,7 +83,7 @@ function uc_line_item_total($op, $arg1) {
 }
 
 /**
- * Calculate the total value of line items of types that should be calculated.
+ * Calculates the total value of line items of types that should be calculated.
  */
 function uc_line_items_calculate($order) {
   $total = 0;
@@ -97,7 +96,7 @@ function uc_line_items_calculate($order) {
     ),
   );
 
-  if (is_array($order->line_items)) {
+  if (isset($order->line_items) && is_array($order->line_items)) {
     foreach ($order->line_items as $item) {
       $context['subject']['line_item'] = $item;
       if (_line_item_data($item['type'], 'calculated') == TRUE) {
@@ -110,7 +109,7 @@ function uc_line_items_calculate($order) {
 }
 
 /**
- * Update a line item.
+ * Updates a line item.
  */
 function uc_order_update_line_item($id, $title, $amount, $data = NULL) {
   db_query("UPDATE {uc_order_line_items} SET title = '%s', amount = %f "
@@ -124,8 +123,8 @@ function uc_order_update_line_item($id, $title, $amount, $data = NULL) {
 }
 
 /**
- * Delete a line item, or pass $order as TRUE and $id as an order_id to delete
- * every line item attached to an order.
+ * Deletes a line item, or passes $order as TRUE and $id as an order_id to
+ * delete every line item attached to an order.
  */
 function uc_order_delete_line_item($id, $order = FALSE) {
   if ($order === FALSE) {
@@ -138,7 +137,7 @@ function uc_order_delete_line_item($id, $order = FALSE) {
 }
 
 /**
- * Add a line item to an order.
+ * Adds a line item to an order.
  */
 function uc_order_line_item_add($order_id, $type, $title, $amount, $weight = NULL, $data = NULL) {
   if (is_null($weight)) {
@@ -151,7 +150,7 @@ function uc_order_line_item_add($order_id, $type, $title, $amount, $weight = NUL
 }
 
 /**
- * Build a list of line items defined in the enabled modules.
+ * Builds a list of line items defined in the enabled modules.
  */
 function _line_item_list($action = NULL) {
   static $items;
@@ -174,7 +173,7 @@ function _line_item_list($action = NULL) {
 }
 
 /**
- * Return data from a line item by ID and the array key.
+ * Returns data from a line item by ID and the array key.
  */
 function _line_item_data($item_id, $key) {
   $items = _line_item_list();

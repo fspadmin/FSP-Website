@@ -136,7 +136,7 @@ function uc_ajax_cart_settings_overview() {
       '#type' => 'textfield',
       '#title' => t('CSS class'),
       '#default_value' => variable_get('uc_ajax_cart_ajaxify_class', ''),
-      '#description' => t('Specify the CSS class for applying ajaxified add to cart button to products. Add this class to the add to cart submit button element or any of its parents. Do not inlcude de preceding dot.'),
+      '#description' => t('Specify the CSS class for applying ajaxified add to cart button to products. Add this class to the add to cart submit button element or any of its parents. Do not inlcude the preceding dot.'),
     ),
   );
 

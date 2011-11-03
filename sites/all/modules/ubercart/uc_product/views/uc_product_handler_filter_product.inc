@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_product_handler_filter_product.inc,v 1.1.2.3 2009/01/02 20:18:40 islandusurper Exp $
 
 /**
  * @file

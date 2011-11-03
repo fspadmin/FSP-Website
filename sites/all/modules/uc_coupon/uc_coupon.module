@@ -334,7 +334,7 @@ function uc_coupon_count_usage($cid, $uid = NULL) {
   global $user;
 
   $usage = array('codes' => array());
-  $result = db_query("SELECT uco.code, COUNT(*) uses FROM {uc_coupons_orders} AS uco
+  $result = db_query("SELECT uco.code, COUNT(*) AS uses FROM {uc_coupons_orders} AS uco
     LEFT JOIN {uc_orders} AS uo ON uco.oid = uo.order_id
     LEFT JOIN {uc_order_statuses} AS uos ON uo.order_status = uos.order_status_id
     WHERE uos.weight > 0 AND uco.cid = %d GROUP BY uco.code", $cid);
@@ -483,13 +483,22 @@ function uc_coupon_validate($code, $order = NULL, $account = NULL) {
   $coupon->title = token_replace_multiple($format, array('coupon' => $coupon));
 
   // Calculate the discount.
+  // We do this before invoking the validate hook so that modules can use this information.
   if ($order) {
     $order->data['coupon'] = $code;
     $items = uc_coupon_calculate_discounts($coupon, $order);
-
     $coupon->amount = 0;
-    foreach ($items as $item) {
-      $coupon->amount += $item->discount;
+    
+    // If an array of items was returned, then sum the discounts for each applicable item.
+    if (is_array($items)) {
+      foreach ($items as $item) {
+        $coupon->amount += $item->discount;
+      }
+    }
+    // Otherwise, there were no applicable items, and the reason was returned.
+    else { 
+      $coupon->valid = FALSE;
+      $coupon->message = $items;
     }
     $coupon->amount = round($coupon->amount, variable_get('uc_currency_prec', 2));
   }
@@ -532,11 +541,6 @@ function uc_coupon_validate($code, $order = NULL, $account = NULL) {
  *   Otherwise, a string describing the reason for failure.
  */
 function uc_coupon_uc_coupon_validate(&$coupon, $order, $account) {
-  // Check for applicable products.
-  if ($order && $coupon->amount == 0 && $coupon->value != 0) {
-    return t('You do not have applicable products in your cart.');
-  }
-
   // Check maximum usage per code.
   if ($coupon->max_uses > 0 && $coupon->usage['codes'][$coupon->code] >= $coupon->max_uses) {
     return t('This coupon has reached the maximum redemption limit.');
@@ -547,28 +551,6 @@ function uc_coupon_uc_coupon_validate(&$coupon, $order, $account) {
     return t('This coupon has reached the maximum redemption limit.');
   }
   
-  // Check minimum order total.
-  if ($order && $coupon->minimum_order > 0) {
-    $total = 0;
-    $context = array(
-      'revision' => 'altered',
-      'type' => 'cart_item',
-      'subject' => array(
-        'order' => $order,
-      ),
-    );
-
-    foreach ($order->products as $item) {
-      $context['subject']['cart_item'] = $item;
-      $context['subject']['node'] = node_load($item->nid);
-      $total += uc_price($item->price, $context) * $item->qty;
-    }
-
-    if ($coupon->minimum_order > $total) {
-      return t('You have not reached the minimum order total for this coupon.');
-    }
-  }
-
   // Check user ID.
   if ($account && isset($coupon->data['users'])) {
     if (in_array("$account->uid", $coupon->data['users'], TRUE) xor !isset($coupon->data['negate_users'])) {
@@ -603,6 +585,14 @@ function uc_coupon_uc_coupon_validate(&$coupon, $order, $account) {
 
 /**
  * Find items that a coupon will apply to and calculate the discounts.
+ * 
+ * @param $coupon
+ * 		The coupon object to be applied.
+ * @param $order
+ * 		The order to which it should be applied.
+ * @return mixed
+ * 		An array of discounted items, each with a 'discount' field containing the total discount applied to that
+ * 		item; or, if there are no applicable discounts, a string indicating the reason why.
  */
 function uc_coupon_calculate_discounts($coupon, $order) {
   $context = array(
@@ -617,7 +607,9 @@ function uc_coupon_calculate_discounts($coupon, $order) {
 
   // Discover if any items match the restrictions, and which items the discount should be calculated against.
   $matched = 0;
+  $matched_price = 0;
   $total_qty = 0;
+  $total_price = 0;
   $items = array();
   foreach ($order->products as $item) {
     if ($item->module == 'uc_coupon') {
@@ -638,8 +630,11 @@ function uc_coupon_calculate_discounts($coupon, $order) {
       // Other coupons only apply to matching products.
       $include = FALSE;
       $terms = isset($node->taxonomy) ? array_keys($node->taxonomy) : array();
-
-      if (isset($coupon->data['products']) && (isset($coupon->data['negate_products']) xor in_array($item->nid, $coupon->data['products']))) {
+      if (isset($coupon->data['products']) && isset($item->data['kit_id'])) {
+        // Items that are part of product kits must be included or excluded all together, so we pre-empt other restrictions.
+        $include = (isset($coupon->data['negate_products']) xor in_array($item->data['kit_id'], $coupon->data['products']));
+      }
+      else if (isset($coupon->data['products']) && (isset($coupon->data['negate_products']) xor in_array($item->nid, $coupon->data['products']))) {
         $include = TRUE;
       }
       else if (isset($coupon->data['products']) && isset($coupon->data['negate_products']) && in_array($item->nid, $coupon->data['products'])) {
@@ -662,8 +657,10 @@ function uc_coupon_calculate_discounts($coupon, $order) {
     // A matching product was found.
     if ($include) {
       $matched += $qty;
+      $matched_price += $item->altered_price * $qty;
     }
     $total_qty += $qty;
+    $total_price += $item->altered_price * $qty;
 
     // Coupons that apply to the order subtotal affect all products.
     if ($include || $coupon->data['apply_to'] == 'subtotal') {
@@ -673,13 +670,25 @@ function uc_coupon_calculate_discounts($coupon, $order) {
 
   // If no matches were found, there are no discounts to calculate.
   if ($matched==0) {
-    return array();
+    return t('You do not have any applicable products in your cart.');
   }
   
+  // Ensure that the minimum order quantity restriction is met, if specified.
   if (($coupon->data['minimum_qty_restrict'] ? $matched : $total_qty) < $coupon->data['minimum_qty']) {
-    return array();
+    return t('You do not have enough applicable products in your cart.');
+  }
+  
+  if (($coupon->data['minimum_qty_restrict'] ? $matched_price : $total_price) < $coupon->minimum_order) {
+    return $coupon->data['minimum_qty_restrict'] ?
+      t('You have not reached the minimum total of applicable products for this coupon.') :
+      t('You have not reached the minimum order total for this coupon.');
   }
 
+  // Ensure that all products match, if specified.
+  if (isset($coupon->data['require_match_all']) && $matched < $total_qty) {
+    return t('You have non-applicable products in your cart');
+  }
+  
   // Slice off applicable products if a limit was set.
   switch ($coupon->data['apply_to']) {
     case 'cheapest':
@@ -701,8 +710,8 @@ function uc_coupon_calculate_discounts($coupon, $order) {
   foreach ($items as &$item) {
     switch ($coupon->type) {
       case 'price':
-        if ($coupon->data['apply_to'] == 'subtotal') {
-          // Apply single discount to the entire cart proportionally across the items.
+        if ($coupon->data['apply_to'] == 'subtotal' || $coupon->data['apply_to'] == 'products_total') {
+          // Apply single discount proportionally across all qualifying items.
           $item->discount = $total == 0 ? 0 : min($coupon->value * $item->price / $total, $item->price);
         }
         else {
@@ -843,6 +852,17 @@ function uc_coupon_order($op, &$arg1, $arg2) {
 }
 
 /**
+ * Implements hook_order_product_alter().
+ * 
+ * Ensure that dummy cart-item coupons don't get saved with an order.
+ */
+function uc_coupon_order_product_alter(&$product, $order) {
+  if (isset($product->module) && $product->module == 'uc_coupon') {
+    $product->skip_save = TRUE;
+  }
+}
+
+/**
  * Implementation of hook_form_FORM_ID_alter().
  * 
  * Clear the session coupon when the order edit form is built.
@@ -898,7 +918,7 @@ function uc_checkout_pane_coupon($op, &$arg1, $arg2) {
       }
 
       if ($code) {
-        $coupon = uc_coupon_validate($code, $arg1);
+        $coupon = uc_coupon_validate($code, empty($arg1->products) ? NULL : $arg1);
         if ($coupon->valid) {
           if (variable_get('uc_coupon_show_in_cart', TRUE)) {
             // Modify stored subtotal to ignore coupon cart item.
@@ -1122,10 +1142,12 @@ function uc_coupon_tax_adjustment($price, $order, $tax) {
   $coupon = uc_coupon_find($code);
   $items = uc_coupon_calculate_discounts($coupon, $order);
   $amount = 0;
-  foreach ($items as $item) {
-    $node = node_load($item->nid);
-    if (in_array($node->type, $tax->taxed_product_types) && ($tax->shippable == 0 || $node->shippable == 1)) {
-      $amount += $item->discount * $tax->rate * ($price > 0 ? 1 : -1);
+  if (is_array($items)) {
+    foreach ($items as $item) {
+      $node = node_load($item->nid);
+      if (in_array($node->type, $tax->taxed_product_types) && ($tax->shippable == 0 || $node->shippable == 1)) {
+        $amount += $item->discount * $tax->rate * ($price > 0 ? 1 : -1);
+      }
     }
   }
 

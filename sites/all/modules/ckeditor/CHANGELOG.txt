@@ -1,9 +1,72 @@
 -----------------------------
+ 2011-10-28
+ New stable release: 6.x-1.7
+-----------------------------
+
+New features:
+[#1308426] by duozersk: Add plugin to count symbols and words inside CKEditor
+[#1297774] by dczepierga: Add Drag & Drop toolbar configuration
+[#1294394] by dczepierga: Add multi toolbar configuration, and different settings for each profile
+
+Bug fixes:
+[#1278062] by dczepierga: Allow security filters to run their 'prepare' code before 'process'
+[#1319668] by michal_cksource: Correct language list in the CKEditor profile configuration
+[#963208] by michal_cksource: Fix for CKEditor implementation of hook_file_download globally undermines private file download system
+[#1314262] by michal_cksource: Fix for invalid link in CKEditor profile
+[#1311926] by dczepierga: Add jquery_ui support to the Drag & Drop toolbar configuration
+[#1310390] by dczepierga: Fix for undefined CKEDITOR_FORCE_SIMPLE_TOOLBAR_NAME name
+[#1310298] by dczepierga: Fix Notice: Undefined index: default in ckeditor_admin_profile_form() - when editing CKEditor profile
+[#1296804] by michal_cksource: Add patch for Tabledrag compatibility
+[#1300140] by michal_cksource: Correct messages and add language fixes
+[#1298302] by dczepierga: Fix to call to undefined function ckeditor_load_toolbar_options()
+[#1297570] by dczepierga: Add sorting to the profiles list
+[#1297090] by AlexisWilke: Fix E_NOTICE when calling $conf['ckeditor_load_method'] in module file
+[#1286192] by dczepierga: Fix for CKEditor support to Imagefield module textareas
+[#1288664] by dczepierga: Fix for CKEditor is not working in Views header and footer text areas 
+[#1289218] by dczepierga: Disable Linktocontent and IMCE module selection if these modules are not installed
+[#1269544] by dczepierga: Call to undefined function ckeditor_plugins_path() when try to update module 
+
+-----------------------------
+ 2011-08-30
+ New stable release: 6.x-1.6
+-----------------------------
+--2011-08-25
+- [#1248532] by dczepierga: Replace static paths to plugins in the database with dynamic paths
+
+--2011-08-16
+- [#1063458] by tobykilroy: 'CKEDITOR' is not defined - problem with ckeditor.styles.js
+
+--2011-08-11
+- [#1224726] by dczepierga: Use either underscores or hyphens for excluding/including, not both
+
+--2011-08-10
+- [#1243616] by dczepierga: "Custom JavaScript configuration" field description is wrong
+
+--2011-08-02
+- [#1234274] by GDI: Drupal Pagebreak button not showing
+- [#1211554] by dczepierga: Bug with CKFinder path when CKEditor is in the libraries directory
+
+--2011-07-14
+- [#1216458] by dczepierga: Rewrite the loading of CKEditor libraries files
+
+--2011-07-12
+- [#1216096] by dczepierga: Bug in custom JavaScript configuration - semicolon problem
+
+--2011-07-08
+- [#1191634] by ptoly: CKEditor: Using LESS file instead of CSS for custom editor stylesheet
+
+--2011-06-30
+- [#1204786] by dczepierga: Bug in custom JavaScript configuration - editor not showing in some cases
+
+--2011-06-28
+- [#1202508] by dczepierga: Fix warning: array_key_exists(): The first argument should be either a string or an integer in ckeditor.module
+
+-----------------------------
  2011-06-28
  New stable release: 6.x-1.5
 -----------------------------
 --2011-06-27
-- [#1177132] by tangent: Add Scayt spelling language to match node language
+- [#1177132] by tangent: Add SCAYT spelling language to match node language
 
 --2011-06-20
 - [#1192676] by dczepierga: Fix is_dir() function error and broken pagebreak button

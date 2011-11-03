@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_flatrate.module,v 1.5.2.13 2010/01/27 22:23:32 islandusurper Exp $
 
 /**
  * @file
@@ -11,7 +10,7 @@
  ******************************************************************************/
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function uc_flatrate_menu() {
   $items = array();
@@ -44,7 +43,7 @@ function uc_flatrate_menu() {
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implements hook_form_alter().
  *
  * Add a form element for the shipping rate of a product.
  */
@@ -64,7 +63,7 @@ function uc_flatrate_form_alter(&$form, $form_state, $form_id) {
         $form['shipping']['flatrate'] = array(
           '#type' => 'fieldset',
           '#title' => t('Flat shipping rates'),
-          '#description' => t('Override the default shipping rate per product for each flat rate shipping method here. Enter -1 to revert to the default value.'),
+          '#description' => t("Overrides the default shipping rate per product for each flat rate shipping method. Leave field empty to use the method's default value."),
           '#tree' => TRUE,
           '#collapsible' => TRUE,
           '#collapsed' => FALSE,
@@ -74,7 +73,7 @@ function uc_flatrate_form_alter(&$form, $form_state, $form_id) {
       $form['shipping']['flatrate'][$method->mid] = array(
         '#type' => 'textfield',
         '#title' => $method->title,
-        '#default_value' => $form['#node']->flatrate[$method->mid],
+        '#default_value' => isset($form['#node']->flatrate[$method->mid]) ? $form['#node']->flatrate[$method->mid] : '',
         '#description' => t('Default rate: %price', array('%price' => uc_price($method->product_rate, $context))),
         '#size' => 16,
         '#field_prefix' => $sign_flag ? '' : $currency_sign,
@@ -86,19 +85,19 @@ function uc_flatrate_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Implementation of hook_nodeapi().
+ * Implements hook_nodeapi().
  */
 function uc_flatrate_nodeapi(&$node, $op) {
   if (uc_product_is_product($node->type)) {
     switch ($op) {
       case 'insert':
       case 'update':
-        if (is_array($node->flatrate)) {
+        if (isset($node->flatrate) && is_array($node->flatrate)) {
           if (!$node->revision) {
             db_query("DELETE FROM {uc_flatrate_products} WHERE vid = %d", $node->vid);
           }
           foreach ($node->flatrate as $mid => $rate) {
-            if ($rate !== '') {
+            if (is_numeric($rate) && $rate >= 0) {
               db_query("INSERT INTO {uc_flatrate_products} (vid, nid, mid, rate) VALUES (%d, %d, %d, %f)",
                 $node->vid, $node->nid, $mid, $rate);
             }
@@ -128,7 +127,7 @@ function uc_flatrate_nodeapi(&$node, $op) {
  ******************************************************************************/
 
 /**
- * Implementation of hook_ca_predicate().
+ * Implements hook_ca_predicate().
  *
  * Connect the quote action with the quote event.
  */
@@ -160,7 +159,7 @@ function uc_flatrate_ca_predicate() {
 }
 
 /**
- * Implementation of Ubercart's hook_shipping_method().
+ * Implements Ubercart's hook_shipping_method().
  */
 function uc_flatrate_shipping_method() {
   $methods = array();
@@ -214,7 +213,7 @@ function uc_flatrate_quote($products, $details, $method) {
 
   if ($method = db_fetch_object(db_query("SELECT * FROM {uc_flatrate_methods} WHERE mid = %d", $mid))) {
     // Start at the base rate.
-    $rate = $method->base_rate;
+    $rate = uc_price($method->base_rate, $context);
 
     foreach ($products as $product) {
       if (empty($product->flatrate) || is_null($product->flatrate[$mid])) {
@@ -235,10 +234,9 @@ function uc_flatrate_quote($products, $details, $method) {
       }
     }
 
-    $altered = uc_price($rate, $context);
     $context['revision'] = 'formatted';
     $formatted = uc_price($rate, $context);
-    $quotes[] = array('rate' => $altered, 'format' => $formatted, 'option_label' => check_plain($method->label));
+    $quotes[] = array('rate' => $rate, 'format' => $formatted, 'option_label' => check_plain($method->label));
   }
 
   return $quotes;

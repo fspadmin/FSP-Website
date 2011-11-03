@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_weightquote.module,v 1.5.2.13 2010/01/27 22:23:32 islandusurper Exp $
 
 /**
  * @file
@@ -11,7 +10,7 @@
  ******************************************************************************/
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function uc_weightquote_menu() {
   $items = array();
@@ -44,7 +43,7 @@ function uc_weightquote_menu() {
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implements hook_form_alter().
  *
  * Add a form element for the shipping rate of a product.
  */
@@ -66,7 +65,7 @@ function uc_weightquote_form_alter(&$form, $form_state, $form_id) {
         $form['shipping']['weightquote'] = array(
           '#type' => 'fieldset',
           '#title' => t('Shipping rates by weight'),
-          '#description' => t('Override the default shipping rate per product for each weight quote shipping method here. Enter -1 to revert to the default value.'),
+          '#description' => t("Overrides the default shipping rate per product for each flat rate shipping method. Leave field empty to use the method's default value."),
           '#tree' => TRUE,
           '#collapsible' => TRUE,
           '#collapsed' => FALSE,
@@ -76,7 +75,7 @@ function uc_weightquote_form_alter(&$form, $form_state, $form_id) {
       $form['shipping']['weightquote'][$method->mid] = array(
         '#type' => 'textfield',
         '#title' => $method->title,
-        '#default_value' => $form['#node']->weightquote[$method->mid],
+        '#default_value' => isset($form['#node']->weightquote[$method->mid]) ? $form['#node']->weightquote[$method->mid] : '',
         '#description' => t('Default rate: %price/%unit', array('%price' => uc_price($method->product_rate, $context), '%unit' => variable_get('uc_weight_unit', 'lb'))),
         '#size' => 16,
         '#field_prefix' => $sign_flag ? '' : $currency_sign,
@@ -88,19 +87,19 @@ function uc_weightquote_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Implementation of hook_nodeapi().
+ * Implements hook_nodeapi().
  */
 function uc_weightquote_nodeapi(&$node, $op) {
   if (uc_product_is_product($node->type)) {
     switch ($op) {
       case 'insert':
       case 'update':
-        if (is_array($node->weightquote)) {
+        if (isset($node->weightquote) && is_array($node->weightquote)) {
           if (!$node->revision) {
             db_query("DELETE FROM {uc_weightquote_products} WHERE vid = %d", $node->vid);
           }
           foreach ($node->weightquote as $mid => $rate) {
-            if ($rate !== '') {
+            if (is_numeric($rate) && $rate >= 0) {
               db_query("INSERT INTO {uc_weightquote_products} (vid, nid, mid, rate) VALUES (%d, %d, %d, %f)",
                 $node->vid, $node->nid, $mid, $rate);
             }
@@ -130,7 +129,7 @@ function uc_weightquote_nodeapi(&$node, $op) {
  ******************************************************************************/
 
 /**
- * Implementation of hook_ca_predicate().
+ * Implements hook_ca_predicate().
  *
  * Connect the quote action with the quote event.
  */
@@ -162,7 +161,7 @@ function uc_weightquote_ca_predicate() {
 }
 
 /**
- * Implementation of hook_shipping_method().
+ * Implements hook_shipping_method().
  */
 function uc_weightquote_shipping_method() {
   $methods = array();
@@ -215,7 +214,7 @@ function uc_weightquote_quote($products, $details, $method) {
   if ($method = db_fetch_object(db_query("SELECT * FROM {uc_weightquote_methods} WHERE mid = %d", $mid))) {
     $context['extras']['weightquote_method'] = $method;
     // Start at the base rate.
-    $rate = $method->base_rate;
+    $rate = uc_price($method->base_rate, $context);
 
     foreach ($products as $product) {
       $context['subject']['order_product'] = $product;
@@ -239,10 +238,9 @@ function uc_weightquote_quote($products, $details, $method) {
     }
 
     unset($context['subject']['order_product']);
-    $altered = uc_price($rate, $context);
     $context['revision'] = 'formatted';
     $formatted = uc_price($rate, $context);
-    $quotes[] = array('rate' => $altered, 'format' => $formatted, 'option_label' => check_plain($method->label));
+    $quotes[] = array('rate' => $rate, 'format' => $formatted, 'option_label' => check_plain($method->label));
   }
 
   return $quotes;

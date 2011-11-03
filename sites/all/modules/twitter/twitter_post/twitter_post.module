@@ -27,12 +27,52 @@ function twitter_post_menu() {
  * Implementation of hook_form_alter().
  */
 function twitter_post_form_alter(&$form, $form_state, $form_id) {
+  $allowed_types = variable_get('twitter_post_types', array('story' => 'story', 'blog' => 'blog'));
+
+  // Add per-content type settings to node type forms
+  if ($form_id == 'node_type_form') {
+    $type = $form['#node_type']->type;
+    if (empty($allowed_types[$type])) {
+      return;
+    }
+    $form['twitter'] = array(
+      '#type' => 'fieldset',
+      '#description' => t('Users with proper permissions will be given the option to post announcements to their Twitter accounts when they create new content. Editing the following fields will override the !twitter_admin.', array('!twitter_admin' => l('site defaults', 'admin/settings/twitter'))),
+      '#title' => 'Twitter settings',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      );
+
+    $form['twitter']['twitter_post_default_state'] = array(
+      '#type' => 'radios',
+      '#title' => t('Default post announcements'),
+      '#maxlength' => 140,
+      '#options' => array(
+        'default' => t('Use site default'),
+        FALSE => t('Disabled by default'),
+        'all' => t('Enabled by default'),
+        'create' => t('Enabled by default on create only'),
+        'update' => t('Enabled by default on update only'),
+        ),
+      '#default_value' => variable_get('twitter_post_default_state_' . $type, 'default'),
+    );
+
+    $form['twitter']['twitter_post_default_format'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Default format string'),
+      '#maxlength' => 140,
+      '#description' => t('The given text will be posted to twitter.com. You can use !url, !url-alias, !shorturl, !title and !author-name as placeholders. Leave blank to use the site default.'),
+      '#default_value' => variable_get('twitter_post_default_format_' . $type, ''),
+    );
+
+    twitter_include_token_fields($form);
+  }
+
   // Alter any node forms.
   if (isset($form['#node']) && $form['#node']->type .'_node_form' == $form_id) {
     // If we haven't enabled Twitter posting on this node type, nothing to do
     // here.
     $type = $form['#node']->type;
-    $allowed_types = variable_get('twitter_post_types', array('story' => 'story', 'blog' => 'blog'));
     if (empty($allowed_types[$type])) {
       return;
     }
@@ -46,33 +86,66 @@ function twitter_post_form_alter(&$form, $form_state, $form_id) {
     $form['twitter'] = array(
       '#type' => 'fieldset',
       '#title' => t('Post to twitter.com'),
+      '#group' => 'additional_settings',
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
       '#tree' => TRUE,
     );
+
+
+    $type_default = variable_get('twitter_post_default_state_' . $type, 'default');
+    $type_default = $type_default != 'default' ? $type_default
+      : variable_get('twitter_post_default_state', FALSE);
+    switch ($type_default) {
+      case 'all':
+        $post_default = TRUE;
+        break;
+      case 'create':
+        $post_default = empty($form['nid']['#value']);
+        break;
+      case 'update':
+        $post_default = !empty($form['nid']['#value']);
+        break;
+      case FALSE:
+      default:
+        $post_default = FALSE;
+        break;
+    }
+
     $form['twitter']['post'] = array(
       '#type' => 'checkbox',
       '#title' => t('Announce this post on Twitter'),
-      '#default_value' => (empty($form['nid']['#value'])),
+      '#default_value' => $post_default,
       '#id' => 'twitter-toggle',
     );
     $form['twitter'] += $twitter_form;
-    $form['twitter']['status']['#default_value'] = variable_get('twitter_post_default_format', 'New post: !title !tinyurl');
-    $form['twitter']['status']['#description'] = t('The given text will be posted to twitter.com. You can use !url, !url-alias, !tinyurl, !title and !user as replacement text.  If the token module is enabled, you may also choose from the tokens listed in the replacement patterns section.');
-    if (module_exists('token')) {
-      $form['twitter']['token_help'] = array(
-        '#title' => t('Replacement patterns'),
-        '#type' => 'fieldset',
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-        '#description' => t('Prefer raw-text replacements for text to avoid problems with HTML entities!'),
-      );
 
-      $form['twitter']['token_help']['help'] = array(
-        '#value' => theme('token_help', 'node'),
-      );
-    }
+    $default_format = variable_get('twitter_post_default_format_' . $type, FALSE);
+    $default_format = !empty($default_format) ? $default_format 
+      : variable_get('twitter_post_default_format', 'New post: !title !tinyurl');
+
+    $form['twitter']['status']['#default_value'] = $default_format;
+    $form['twitter']['status']['#description'] = t('The given text will be posted to twitter.com. You can use !url, !url-alias, !tinyurl, !title and !user as replacement text.  If the token module is enabled, you may also choose from the tokens listed in the replacement patterns section.');
+
+    twitter_include_token_fields($form);
   }
+}
+
+/**
+ * Implementation of hook_content_extra_fields().
+ */
+function twitter_post_content_extra_fields($type) {
+  $allowed_types = variable_get('twitter_types', array('story' => 'story', 'blog' => 'blog'));
+
+  if (empty($allowed_types[$type])) {
+    return;
+  }
+  $extras['twitter'] = array(
+    'label' => t('Twitter'),
+    'description' => t('Form to send new content to twitter'),
+    'weight' => 100,
+  );
+  return $extras;
 }
 
 /**
@@ -169,5 +242,27 @@ function twitter_post_form($account = NULL) {
       );
     }
     return $form;
+  }
+}
+
+/**
+ * Add token help fields to the passed form.
+ *
+ * @param $form
+ *   A Drupal Forms API form.
+ */
+function twitter_include_token_fields(&$form){
+  if (module_exists('token')) {
+    $form['twitter']['token_help'] = array(
+      '#title' => t('Replacement patterns'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#description' => t('Prefer raw-text replacements for text to avoid problems with HTML entities!'),
+    );
+
+    $form['twitter']['token_help']['help'] = array(
+      '#value' => theme('token_help', 'node'),
+    );
   }
 }

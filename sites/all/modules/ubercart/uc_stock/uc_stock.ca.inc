@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_stock.ca.inc,v 1.1.2.10 2010/04/13 03:44:24 tr Exp $
 
 /**
  * @file
@@ -12,7 +11,7 @@
  ******************************************************************************/
 
 /**
- * Implementation of hook_ca_predicate().
+ * Implements hook_ca_predicate().
  */
 function uc_stock_ca_predicate() {
   $predicates['uc_stock_decrement_on_order'] = array(
@@ -35,7 +34,7 @@ function uc_stock_ca_predicate() {
 }
 
 /**
- * Implementation of hook_action().
+ * Implements hook_action().
  */
 function uc_stock_ca_action() {
   $actions['uc_stock_action_decrement_stock'] = array(
@@ -55,7 +54,7 @@ function uc_stock_ca_action() {
  ******************************************************************************/
 
 /**
- * Decrease the stock of ordered products.
+ * Decreases the stock of ordered products.
  */
 function uc_stock_action_decrement_stock($order, $settings) {
   if (is_array($order->products)) {

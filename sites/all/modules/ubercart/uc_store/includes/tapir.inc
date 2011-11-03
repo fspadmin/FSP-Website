@@ -1,5 +1,4 @@
 <?php
-// $Id: tapir.inc,v 1.1.2.11 2010/07/12 22:51:30 tr Exp $
 
 /**
  * @file
@@ -47,8 +46,10 @@ function tapir_get_table($table_id) {
 function tapir_gather_rows($element) {
   foreach (element_children($element) as $row) {
     foreach (array_keys($element['#columns']) as $col_id) {
-      $element['#rows'][$row][$col_id] = $element[$row][$col_id];
-      unset($element[$row][$col_id]);
+      if (isset($element[$row][$col_id])) {
+        $element['#rows'][$row][$col_id] = $element[$row][$col_id];
+        unset($element[$row][$col_id]);
+      }
     }
     $element['#rows'][$row]['#attributes'] = isset($element[$row]['#attributes']) ? $element[$row]['#attributes'] : array();
   }
@@ -121,7 +122,9 @@ function theme_tapir_table($element) {
     }
 
     // Merge the row data into a single row array along with the attributes.
-    $row = array_merge(array('data' => $row), (array)$data['#attributes']);
+    if (isset($data['#attributes'])) {
+      $row = array_merge(array('data' => $row), (array)$data['#attributes']);
+    }
 
     // Add the current row to the table rows array.
     $rows[] = $row;

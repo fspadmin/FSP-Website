@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_product_handler_field_price.inc,v 1.1.2.8 2010/07/30 15:07:22 islandusurper Exp $
 
 /**
  * @file
@@ -75,7 +74,15 @@ class uc_product_handler_field_price extends views_handler_field_numeric {
     }
 
     if ($this->options['format'] == 'uc_price') {
+      if (is_null($values->{$this->field_alias})) {
+        return '';
+      }
+
       $product = node_load($values->{$this->aliases['nid']});
+      if ($product->{$this->real_field} == 0 && $this->options['empty_zero']) {
+        return '';
+      }
+
       $context = array(
         'revision' => $this->options['revision'],
         'type' => 'product',

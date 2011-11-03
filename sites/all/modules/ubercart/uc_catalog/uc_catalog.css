@@ -1,5 +1,7 @@
-/* $Id: uc_catalog.css,v 1.6.2.5 2009/07/08 12:56:48 islandusurper Exp $ */
-
+/**
+ * @file
+ * Styles for uc_catalog module.
+ */
 .catalog .trail {
   font-weight: bold;
 }
@@ -16,15 +18,16 @@ table.category {
   clear: right;
   width: 100%;
 }
-table.category *, table.category * tr {
-  border: none;
+table.category *,
+table.category * tr {
   background-color: transparent;
+  border: none;
 }
 td.category {
   /* border: 1px solid #555; */
-  width: 33%;
   text-align: center;
   vertical-align: top;
+  width: 33%;
 }
 td.category.width-1 {
   width: 100%;
@@ -54,32 +57,34 @@ td.category span {
   line-height: 1.3em;
 }
 table.category-products form {
-  margin-top: 1em;
   margin-bottom: 1em;
+  margin-top: 1em;
 }
 
-/* --- grid view elements ---- */
+/**
+ * Grid view elements.
+ */
 .category-grid-products {
   text-align: center;
   width: 100%;
 }
 .category-grid-products table {
+  border-left: 1px solid #CCC;
+  border-top: 1px solid #CCC;
   text-align: center;
   width: 100%;
-  border-top: 1px solid #ccc;
-  border-left: 1px solid #ccc;
 }
 .category-grid-products td {
-  text-align: center;
+  background-color: #FFF;
+  border-bottom: 1px solid #CCC;
+  border-right: 1px solid #CCC;
   padding: 20px;
-  border-right: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
-  background-color: #fff;
+  text-align: center;
 }
 .category-grid-products .catalog-grid-image {
   display: block;
-  text-align: center;
   padding: 5px;
+  text-align: center;
 }
 .category-grid-products .catalog-grid-title {
   display: block;
@@ -93,24 +98,3 @@ table.category-products form {
   display: block;
   text-align: center;
 }
-
-/* --- some blocks elements ---- */
-/* p.special, p.best-sellers {
-  border-bottom: 1px dotted #369;
-  margin-bottom: 1em;
-  padding-bottom: 1em;
-  font-size: 130%;
-  font-style: italic;
-  color: #369;
-}
-div.no-products {
-  width: 100%;
-  font-size: 130%;
-  font-style: italic;
-  font-weight: bold;
-  text-align: center;
-  color: #a00;
-  padding-top: 4em;
-  padding-bottom: 4em;
-  border: 1px dotted #a00;
-} */

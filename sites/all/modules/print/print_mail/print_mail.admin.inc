@@ -1,5 +1,4 @@
 <?php
-// $Id: print_mail.admin.inc,v 1.1.2.17 2010/08/12 08:43:50 jcnventura Exp $
 
 /**
  * @file
@@ -172,6 +171,13 @@ function print_mail_settings() {
     );
   }
 
+  $form['settings']['print_mail_display_sys_urllist'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Printer-friendly URLs list in system pages'),
+    '#default_value' => variable_get('print_mail_display_sys_urllist', PRINT_TYPE_SYS_URLLIST_DEFAULT),
+    '#description' => t('Enabling this option will display a list of printer-friendly destination URLs at the bottom of the page.'),
+  );
+
   return system_settings_form($form);
 }
 
@@ -195,6 +201,12 @@ function print_mail_strings_settings() {
     '#description' => t('Text used in the link to the send by-email form.'),
   );
 
+  $form['print_mail_text']['print_mail_text_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Form page title'),
+    '#default_value' => variable_get('print_mail_text_title', t('Send page by e-mail')),
+    '#description' => t("Text used as the page title of the mail submission form. Requires a menu rebuild to apply."),
+  );
   $form['print_mail_text']['print_mail_text_subject'] = array(
     '#type' => 'textfield',
     '#title' => t('Message Subject'),
@@ -202,13 +214,13 @@ function print_mail_strings_settings() {
     '#description' => t("e-mail subject line. The sender's name will appear in place of !user in the subject. The web site name will be inserted in place of !site. The page title replaces !title."),
   );
   $form['print_mail_text']['print_mail_text_message'] = array(
-    '#type' => 'textfield',
+    '#type' => 'textarea',
     '#title' => t('Message Preamble'),
     '#default_value' => variable_get('print_mail_text_message', t('Message from sender')),
     '#description' => t('e-mail message preamble. The sender will be able to add their own message after this.'),
   );
   $form['print_mail_text']['print_mail_text_content'] = array(
-    '#type' => 'textfield',
+    '#type' => 'textarea',
     '#title' => t('Message Content'),
     '#default_value' => variable_get('print_mail_text_content', ''),
     '#description' => t('Set the default contents of the message.'),

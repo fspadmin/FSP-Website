@@ -18,6 +18,18 @@ function uc_coupon_settings_form() {
     '#description' => t('You may use [coupon-name] and [coupon-code] tokens.'),
     '#default_value' => variable_get('uc_coupon_line_item_format', t('Coupon: [coupon-code]')),
   );
+  
+  $options = array();
+  for ($i = -10; $i <= 10; $i++) {
+    $options[$i] = $i;
+  }
+  $form['uc_li_coupon_weight'] = array(
+    '#type' => 'select',
+    '#title' => t('Line item weight'),
+    '#description' => t('Controls the placement of the coupon line item in the order summary. Heavier items appear lower in the list.'),
+    '#options' => $options,
+    '#default_value' => variable_get('uc_li_coupon_weight', 0),
+  ); 
 
   $form['uc_coupon_default_usage'] = array(
     '#type' => 'radios',
@@ -35,6 +47,26 @@ function uc_coupon_settings_form() {
     '#description' => t('If set, coupon codes can be applied by including them in any URL. Leave blank to disable this feature.<br />Example: if set to "coupon", visiting !base_url?coupon=CODE will apply the CODE coupon.', array('!base_url' => $base_url)),
     '#default_value' => variable_get('uc_coupon_querystring', ''),
     '#size' => 15,
+  );
+  
+  $form['uc_coupon_expiry'] = array(
+    '#title' => t('Coupon activation/expiration time'),
+    '#type' => 'item',
+    '#description' => t('Date restricted coupons will activate and expire at this hour on the date specified for the 
+    	individual coupon. Note that changing this setting will not effect coupons which have already been created.  To
+    	update the activation/expiration times of existing coupons, edit and save them.'),
+  );
+  
+  $form['uc_coupon_expiry']['uc_coupon_expiry_hour'] = array(
+    '#type' => 'select',
+    '#options' => drupal_map_assoc(range(0, 23, 1), '_uc_coupon_format_hour'),
+    '#default_value' => variable_get('uc_coupon_expiry_hour', 0),
+  );
+  
+  $form['uc_coupon_expiry']['uc_coupon_expiry_timezone'] = array(
+    '#type' => 'radios',
+    '#options' => array( 0 => 'UTC', 1 => 'Local'),
+    '#default_value' => variable_get('uc_coupon_expiry_timezone', 0),
   );
 
   return system_settings_form($form);
@@ -68,9 +100,9 @@ function uc_coupon_display($view_type = 'active') {
       check_plain($coupon->name),
       check_plain($coupon->code) . ($coupon->bulk ? '* '. t('(bulk)') : ''),
       uc_coupon_format_discount($coupon),
-      format_date($coupon->created, 'custom', variable_get('uc_date_format_default', 'm/d/Y'), 0),
-      $coupon->valid_from ? format_date($coupon->valid_from, 'custom', variable_get('uc_date_format_default', 'm/d/Y'), 0) : '-',
-      $coupon->valid_until ? format_date($coupon->valid_until, 'custom', variable_get('uc_date_format_default', 'm/d/Y'), 0) : '-',
+      _uc_coupon_format_date($coupon->created, variable_get('uc_date_format_default', 'm/d/Y')),
+      $coupon->valid_from ? _uc_coupon_format_date($coupon->valid_from, variable_get('uc_date_format_default', 'm/d/Y H:iT')) : '-',
+      $coupon->valid_until ? _uc_coupon_format_date($coupon->valid_until, variable_get('uc_date_format_default', 'm/d/Y H:iT')) : '-',
     );
   }
 
@@ -112,13 +144,13 @@ function uc_coupon_view($coupon) {
     $status = t('Active');
   }
   else if (time() < $coupon->valid_from) {
-    $status = t('Not valid until @date', array('@date' => format_date($coupon->valid_from, 'custom', variable_get('uc_date_format_default', 'm/d/Y'), 0)));
+    $status = t('Not valid until @date', array('@date' => _uc_coupon_format_date($coupon->valid_from, variable_get('uc_date_format_default', 'm/d/Y H:iT'))));
   }
   else if (time() > $coupon->valid_until) {
-    $status = t('Expired on @date', array('@date' => format_date($coupon->valid_until, 'custom', variable_get('uc_date_format_default', 'm/d/Y'), 0)));
+    $status = t('Expired on @date', array('@date' => _uc_coupon_format_date($coupon->valid_until, variable_get('uc_date_format_default', 'm/d/Y H:iT'))));
   }
   else {
-    $status = t('Active until @date', array('@date' => format_date($coupon->valid_until, 'custom', variable_get('uc_date_format_default', 'm/d/Y'), 0)));
+    $status = t('Active until @date', array('@date' => _uc_coupon_format_date($coupon->valid_until, variable_get('uc_date_format_default', 'm/d/Y H:iT'))));
   }
   $rows[] = array(t('Status'), $status);
 
@@ -149,6 +181,9 @@ function uc_coupon_view($coupon) {
   switch ($coupon->data['apply_to']) {
     case 'subtotal':
       $applies = t('Order subtotal');
+      break;
+    case 'products_total':
+      $applies = t('Total of matching products');
       break;
     case 'products':
       $applies = t('Matching products');
@@ -436,6 +471,7 @@ function uc_coupon_add_form(&$form_state, $coupon = NULL) {
     '#title' => t('Apply discount to'),
     '#options' => array(
       'subtotal' => t('Order subtotal'),
+      'products_total' => t('Total of matching product(s)'),
       'products' => t('All matching product(s)'),
       'cheapest' => t('The cheapest matching product(s)'),
       'expensive' => t('The most expensive matching product(s)'),
@@ -449,30 +485,43 @@ function uc_coupon_add_form(&$form_state, $coupon = NULL) {
     '#default_value' => isset($value->data['apply_count']) ? $value->data['apply_count'] : '',
     '#size' => 5,
   );
+  $form['require_match_all'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Require all products to match'),
+    '#default_value' => isset($value->data['require_match_all']) ? TRUE : FALSE,
+    '#description' => t('If checked, the coupon will be rejected if an order contains any non-applicable products as configured below.'),
+  );
 
   $form['use_validity'] = array(
     '#type' => 'checkbox',
     '#title' => t('Restrict coupon by date.'),
     '#default_value' => $use_validity,
   );
+  $zone = variable_get('uc_coupon_expiry_timezone', 0) ? '(local time)' : '(UTC)';
+  $hour = _uc_coupon_format_hour(variable_get('uc_coupon_expiry_hour', 0));
+  $link = l('store-wide coupon settings page', 'admin/store/settings/coupon', array('query' => array('destination' => $_GET['q'])));
   $form['valid_from'] = array(
     '#type' => 'date',
     '#title' => t('Start date'),
     '#default_value' => array(
-      'year' => format_date($value->valid_from, 'custom', 'Y', 0),
-      'month' => format_date($value->valid_from, 'custom', 'n', 0),
-      'day' => format_date($value->valid_from, 'custom', 'j', 0),
+      'year' => _uc_coupon_format_date($value->valid_from, 'Y'),
+      'month' => _uc_coupon_format_date($value->valid_from, 'n'),
+      'day' => _uc_coupon_format_date($value->valid_from, 'j'),
     ),
+    '#description' => t('Coupon will activate at @hour @zone on the specified date. The activation time/zone may be changed on the !link', 
+        array('@hour' => $hour, '@zone' => $zone, '!link' => $link)),
     '#after_build' => array('_uc_coupon_date_range'),
   );
   $form['valid_until'] = array(
     '#type' => 'date',
     '#title' => t('Expiry date'),
     '#default_value' => array(
-      'year' => format_date($value->valid_until, 'custom', 'Y', 0),
-      'month' => format_date($value->valid_until, 'custom', 'n', 0),
-      'day' => format_date($value->valid_until, 'custom', 'j', 0),
+      'year' => _uc_coupon_format_date($value->valid_until, 'Y'),
+      'month' => _uc_coupon_format_date($value->valid_until, 'n'),
+      'day' => _uc_coupon_format_date($value->valid_until, 'j'),
     ),
+    '#description' => t('Coupon will expire at @hour @zone on the specified date. The expiration time/zone may be changed on the !link.', 
+        array('@hour' => $hour, '@zone' => $zone, '!link' => $link)),
     '#after_build' => array('_uc_coupon_date_range'),
   );
 
@@ -517,9 +566,8 @@ function uc_coupon_add_form(&$form_state, $coupon = NULL) {
     '#type' => 'checkbox',
     '#title' => t('Only count applicable products'),
     '#default_value' => isset($value->data['minimum_qty_restrict']) ? TRUE : FALSE,
-    '#description' => t('If checked, only applicable products as configured below will count towards the minimum quantity.'),
+    '#description' => t('If checked, only applicable products as configured below will count towards the minimum quantity or total.'),
   );
-  
   
   $form['product_types'] = array(
     '#type' => 'fieldset',
@@ -554,7 +602,7 @@ function uc_coupon_add_form(&$form_state, $coupon = NULL) {
       '#type' => 'textfield',
       '#default_value' => $title .' [nid:'. $nid .']',
       '#autocomplete_path' => 'admin/store/coupons/autocomplete/node',
-      '#maxlength' => 255,
+      '#maxlength' => 300,
     );
   }
 
@@ -590,6 +638,7 @@ function uc_coupon_add_form(&$form_state, $coupon = NULL) {
       '#type' => 'textfield',
       '#default_value' => $name .' [tid:'. $tid .']',
       '#autocomplete_path' => 'admin/store/coupons/autocomplete/term',
+      '#maxlength' => 300, // leave room for the [tid=%] suffix
     );
   }
 
@@ -664,6 +713,7 @@ function uc_coupon_add_form(&$form_state, $coupon = NULL) {
       $form[$field][] = array(
         '#type' => 'textfield',
         '#autocomplete_path' => $path ? $path : NULL,
+        '#maxlength' => ($field=='products' || $field=='terms') ? 300 : 128,
       );
     }
   }
@@ -693,8 +743,11 @@ function uc_coupon_add_form(&$form_state, $coupon = NULL) {
     '#value' => t('Save coupon'),
     '#weight' => 10,
   );
-
   return $form;
+}
+
+function _uc_coupon_format_hour($hour) {
+  return sprintf("%02d:00", $hour);
 }
 
 function _uc_coupon_date_range($form_element) {
@@ -789,8 +842,9 @@ function uc_coupon_add_form_validate($form, &$form_state) {
     form_set_error('discount', t('Invalid discount.'));
   }
 
-  if (substr($form_state['values']['discount'], 0, 1) == '=' && $form_state['values']['apply_to'] == 'subtotal') {
-    form_set_error('apply_to', t('Set prices cannot be applied to the order subtotal.'));
+  if (substr($form_state['values']['discount'], 0, 1) == '=' && 
+    ($form_state['values']['apply_to'] == 'subtotal' || $form_state['values']['apply_to'] == 'products_total')) {
+    form_set_error('apply_to', t('Set prices cannot be applied to the order subtotal or matching products total.'));
   }
 
   if ($form_state['values']['apply_to'] == 'cheapest' || $form_state['values']['apply_to'] == 'expensive') {
@@ -816,8 +870,8 @@ function uc_coupon_add_form_validate($form, &$form_state) {
   }
 
   if ($form_state['values']['use_validity']) {
-    $valid_from = gmmktime(0, 0, 0, $form_state['values']['valid_from']['month'], $form_state['values']['valid_from']['day'], $form_state['values']['valid_from']['year']);
-    $valid_until = gmmktime(0, 0, 0, $form_state['values']['valid_until']['month'], $form_state['values']['valid_until']['day'], $form_state['values']['valid_until']['year']);
+    $valid_from = _uc_coupon_mktime($form_state['values']['valid_from']['month'], $form_state['values']['valid_from']['day'], $form_state['values']['valid_from']['year']);
+    $valid_until = _uc_coupon_mktime($form_state['values']['valid_until']['month'], $form_state['values']['valid_until']['day'], $form_state['values']['valid_until']['year']);
     if ($valid_from > $valid_until) {
       form_set_error('valid_from', t('The coupon start date must be before the expiration date.'));
     }
@@ -846,8 +900,8 @@ function uc_coupon_add_form_submit($form, &$form_state) {
   $coupon->data['bulk_number'] = $form_state['values']['bulk_generate'] ? $form_state['values']['bulk_number'] : 0;
   $coupon->data['bulk_length'] = $form_state['values']['bulk_length'];
   if ($form_state['values']['use_validity']) {
-    $coupon->valid_from = gmmktime(0, 0, 0, $form_state['values']['valid_from']['month'], $form_state['values']['valid_from']['day'], $form_state['values']['valid_from']['year']);
-    $coupon->valid_until = gmmktime(0, 0, 0, $form_state['values']['valid_until']['month'], $form_state['values']['valid_until']['day'], $form_state['values']['valid_until']['year']);
+    $coupon->valid_from = _uc_coupon_mktime($form_state['values']['valid_from']['month'], $form_state['values']['valid_from']['day'], $form_state['values']['valid_from']['year']);
+    $coupon->valid_until = _uc_coupon_mktime($form_state['values']['valid_until']['month'], $form_state['values']['valid_until']['day'], $form_state['values']['valid_until']['year']);
   }
   else {
     $coupon->valid_from = $coupon->valid_until = 0;
@@ -864,6 +918,7 @@ function uc_coupon_add_form_submit($form, &$form_state) {
   $coupon->minimum_order = $form_state['values']['minimum_order'] ? $form_state['values']['minimum_order'] : 0;
   $coupon->data['minimum_qty'] = $form_state['values']['minimum_qty'];
   $coupon->data['minimum_qty_restrict'] = $form_state['values']['minimum_qty_restrict'];
+  $coupon->data['require_match_all'] = $form_state['values']['require_match_all'];
   $coupon->max_uses = $form_state['values']['max_uses'] ? $form_state['values']['max_uses'] : 0;
   $coupon->data['max_uses_per_user'] = $form_state['values']['max_uses_per_user'];
   $coupon->data['apply_to'] = $form_state['values']['apply_to'];
@@ -901,7 +956,6 @@ function uc_coupon_add_form_submit($form, &$form_state) {
   unset($form_state['storage']['field_count']);
 
   uc_coupon_save($coupon, $form_state['values']);
-
   drupal_set_message(t('Coupon %name has been saved.', array('%name' => $coupon->name)));
   $form_state['redirect'] = 'admin/store/coupons'. ($coupon->status ? '' : '/inactive');
 }
@@ -997,4 +1051,18 @@ function theme_uc_coupon_code($coupon) {
   }
 
   return '<span class="' . $class . '">' . $code . '</span>';
+}
+
+function _uc_coupon_format_date($date, $format) {
+  $func = variable_get('uc_coupon_expiry_timezone', 0) ? 'date' : 'gmdate';
+	return $func($format, $date);
+}
+
+function _uc_coupon_mktime($month, $day, $year) {
+  $func = variable_get('uc_coupon_expiry_timezone', 0) ? 'mktime' : 'gmmktime';
+  $hour = variable_get('uc_coupon_expiry_hour', 0);
+  $time = $func($hour, 0, 0, $month, $day, $year);
+  //dpm($time . ' ' . date('m/d/y h:i:s T', $time), 'using ' . $func . '(' . $hour . ')');
+  return $func($hour, 0, 0, $month, $day, $year);
+ 
 }

@@ -1,5 +1,4 @@
 <?php
-// $Id: united_arab_emirates_784_1.cif,v 1.2.2.7 2010/04/14 05:18:19 tr Exp $
 
 function united_arab_emirates_install() {
 

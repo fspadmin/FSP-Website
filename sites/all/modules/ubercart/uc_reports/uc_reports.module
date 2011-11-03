@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_reports.module,v 1.11.2.15 2010/07/12 01:30:44 tr Exp $
 
 /**
  * @file
@@ -21,7 +20,7 @@ define('UC_REPORTS_MAX_RECORDS', PHP_INT_MAX);
  ******************************************************************************/
 
 /**
- * Implementation of hook_help().
+ * Implements hook_help().
  */
 function uc_reports_help($path, $arg) {
   $output =  '';
@@ -88,7 +87,7 @@ function uc_reports_help($path, $arg) {
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function uc_reports_menu() {
   global $user;
@@ -105,7 +104,7 @@ function uc_reports_menu() {
   );
   $items['admin/store/reports/customers'] = array(
     'title' => 'Customer reports',
-    'description' => 'View reports for store customers',
+    'description' => 'View reports for store customers.',
     'page callback' => 'uc_reports_customers',
     'access arguments' => array('view reports'),
     'type' => MENU_NORMAL_ITEM,
@@ -113,7 +112,7 @@ function uc_reports_menu() {
   );
   $items['admin/store/reports/products'] = array(
     'title' => 'Product reports',
-    'description' => 'View reports for store products',
+    'description' => 'View reports for store products.',
     'page callback' => 'uc_reports_products',
     'access arguments' => array('view reports'),
     'type' => MENU_NORMAL_ITEM,
@@ -137,7 +136,7 @@ function uc_reports_menu() {
   );
   $items['admin/store/reports/sales'] = array(
     'title' => 'Sales reports',
-    'description' => 'View reports for store sales',
+    'description' => 'View reports for store sales.',
     'page callback' => 'uc_reports_sales_summary',
     'access arguments' => array('view reports'),
     'type' => MENU_NORMAL_ITEM,
@@ -179,7 +178,7 @@ function uc_reports_menu() {
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function uc_reports_theme() {
   return array(
@@ -190,7 +189,7 @@ function uc_reports_theme() {
 }
 
 /**
- * Implementation of hook_init().
+ * Implements hook_init().
  */
 function uc_reports_init() {
   if (arg(0) == 'admin' && arg(1) == 'store' && arg(2) == 'reports') {
@@ -199,7 +198,7 @@ function uc_reports_init() {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_perm().
  */
 function uc_reports_perm() {
   return array('view reports');
@@ -210,17 +209,20 @@ function uc_reports_perm() {
  ******************************************************************************/
 
 /**
- * Store a CSV file for a report in Drupal's cache to be retrieved later
+ * Stores a CSV file for a report in Drupal's cache to be retrieved later.
+ *
  * @param $report_id
  *   A unique string that identifies the report of the CSV file
  * @param $rows
  *   The rows (table header included) that make CSV file
- * @return:
- * An array containing the values need to build URL that return the CSV file of
- * the report and the CSV data itself
+ *
+ * @return
+ *   An array containing the values need to build URL that return the CSV file
+ *   of the report and the CSV data itself
  */
 function uc_reports_store_csv($report_id, $rows) {
   global $user;
+  $csv_output = '';
   $user_id = (empty($user->uid)) ? session_id() : $user->uid;
   foreach ($rows as $row) {
     foreach ($row as $index => $column) {
@@ -233,7 +235,7 @@ function uc_reports_store_csv($report_id, $rows) {
 }
 
 /**
- * Retrieve a cached CSV report & send its data
+ * Retrieves a cached CSV report & send its data.
  *
  * @param $report_id
  *   A unique string that identifies the specific report CSV to retrieve
@@ -248,17 +250,16 @@ function _uc_reports_get_csv($report_id, $user_id) {
   $csv_data = cache_get('uc_reports_'. $report_id .'_'. $user_id, 'cache');
 
   if (!$csv_data || $user_id != $user_check) {
-    drupal_set_message(t("The CSV data could not be retreived. It's possible the data might have expired. Refresh the report page and try to retrieve the CSV file again."), 'error');
+    drupal_set_message(t("The CSV data could not be retrieved. It's possible the data might have expired. Refresh the report page and try to retrieve the CSV file again."), 'error');
     drupal_not_found();
     exit();
   }
   else {
     ob_end_clean();
     $http_headers = array(
-      'Pragma: no-cache',
+      'Pragma: private',
       'Expires: 0',
-      'Cache-Control: no-cache, must-revalidate',
-      'Cache-Control: private',
+      'Cache-Control: private, must-revalidate',
       'Content-Transfer-Encoding: binary',
       'Content-Length:'. strlen($csv_data->data),
       'Content-Disposition: attachment; filename="'. $report_id .'.csv"',
@@ -276,13 +277,14 @@ function _uc_reports_get_csv($report_id, $user_id) {
 
 /**
  * Given a timestamp and time period function returns sales that occurred in
- * that time period
+ * that time period.
  *
  * @param $time
  *   A UNIX time stamp representing the time in which to get sales data
  * @param $period
  *   The amount of time over which to count sales (e.g. [1] day, month, year)
- * @return:
+ *
+ * @return
  *   An associative array containing information about sales:
  *   - "date" => A string representing the day counting was started
  *   - "income" => The total revenue that occurred during the time period
@@ -294,14 +296,14 @@ function _uc_reports_get_sales($time, $period = 'day') {
 
   // Get the current date markers.
   $date = array(
-    'day' => format_date($time, 'custom', 'j', 0),
-    'month' => format_date($time, 'custom', 'n', 0),
-    'year' => format_date($time, 'custom', 'Y', 0),
+    'day' => format_date($time, 'custom', 'j', $timezone),
+    'month' => format_date($time, 'custom', 'n', $timezone),
+    'year' => format_date($time, 'custom', 'Y', $timezone),
   );
 
   // Add one to the granularity chosen, and use it to calc the new time.
   $date[$period] += 1;
-  $new_time = gmmktime(0, 0, 0, $date['month'], $date['day'], $date['year']);
+  $new_time = gmmktime(0, 0, 0, $date['month'], $date['day'], $date['year']) - $timezone;
 
   // Set up the default SQL for getting orders with the proper status
   // within this period.
@@ -326,7 +328,7 @@ function _uc_reports_get_sales($time, $period = 'day') {
 }
 
 /**
- * Return a SQL friendly array of order statuses for orders used in reports.
+ * Returns a SQL friendly array of order statuses for orders used in reports.
  */
 function _uc_reports_order_statuses() {
   $statuses = variable_get('uc_reports_reported_statuses', array('completed'));
@@ -335,14 +337,14 @@ function _uc_reports_order_statuses() {
 }
 
 /**
- * Return the sitewide timezone offset for use in reports.
+ * Returns the sitewide timezone offset for use in reports.
  */
 function _uc_reports_timezone_offset() {
   return variable_get('date_default_timezone', 0);
 }
 
 /**
- * Return a list of timespans for subreports over that report's time span.
+ * Returns a list of timespans for subreports over that report's time span.
  *
  * To be used with a given time span for a report and specified interval for
  * subreports.
@@ -353,7 +355,8 @@ function _uc_reports_timezone_offset() {
  *   A UNIX time stamp representing the time to end the report.
  * @param $granularity
  *   Text representing the amount of time for the subreport (e.g. 'day', 'week')
- * @return:
+ *
+ * @return
  *   An array of keyed arrays with the following values:
  *   - "start": The starting point of the sub report
  *   - "end": The ending point of the sub report
@@ -372,36 +375,20 @@ function _uc_reports_subreport_intervals($report_start, $report_end, $interval) 
 }
 
 /**
- * Given a timestamp and a length of time, return the offset timestamp
+ * Given a timestamp and a length of time, returns the offset timestamp.
  *
  * @param $time
- *   A UNIX timestamp
+ *   A UNIX timestamp.
  * @param $interval
- *   The text representing the amount of time (e.g. 'day', 'week')
- * @return:
- *   The offset UNIX timestamp
+ *   The text representing the amount of time (e.g. 'day', 'week').
+ *
+ * @return
+ *   The offset UNIX timestamp.
  */
 function _uc_reports_end_interval($time, $interval = 'month') {
   if (empty($time)) {
     $time = time();
   }
 
-  $temp = strtotime('+1 '. $interval, $time) - 1;
-
-  switch ($interval) {
-    case 'day':
-      $temp = gmmktime(0, 0, -1, gmdate('n', $time), gmdate('j', $time) + 1, gmdate('Y', $time));
-      break;
-    case 'week':
-      $temp = gmmktime(0, 0, -1, gmdate('n', $time), gmdate('j', $time) + 7, gmdate('Y', $time));
-      break;
-    case 'month':
-      $temp = gmmktime(23, 59, 59, gmdate('n', $time) + 1, 0, gmdate('Y', $time));
-      break;
-    case 'year':
-      $temp = gmmktime(23, 59, 59, gmdate('n', $time), 0, gmdate('Y', $time) + 1);
-      break;
-  }
-
-  return $temp;
+  return strtotime('+1 '. $interval, $time) - 1;
 }
