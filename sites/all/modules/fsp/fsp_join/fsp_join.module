@@ -1,0 +1,96 @@
+<?php
+
+/**
+ *  Implementation of hook_menu()
+ **/
+function fsp_join_menu() {
+  $items['fsp_join_wizard'] = array(
+      'title' => 'Joining the FSP',
+      'page callback' => 'fsp_join_wizard',
+      'access arguments' => array('access content'),
+  );
+  return $items;
+}
+
+function fsp_join_wizard() {
+  $step = arg(1);
+  $fpath = drupal_get_path('module', 'fsp_join');
+  ctools_include('wizard');
+  ctools_include('object-cache');
+  drupal_add_css($fpath . '/css/fsp_join.css');
+
+  $form_info = array(
+      'id' => 'fsp-join-wizard',
+      'path' => "fsp_join_wizard/%step",
+      'show trail' => TRUE,
+      'show back' => TRUE,
+      'show cancel' => FALSE,
+      'show return' => FALSE,
+      'next callback' =>  'fsp_join_wizard_next',
+      'finish callback' => 'fsp_join_wizard_finish',
+      'cancel callback' => 'fsp_join_wizard_cancel',
+      'order' => array(
+        'start' => t('User and email'),
+        'privacy' => t('Privacy and info'),
+        'pledge' => t('Pledge'),
+        'address' => t('Address'),
+        ),
+      'forms' => array(
+        'start'   =>  array(
+          'form id' => 'fsp_join_step_start',
+          'include' => $fpath . '/forms/start.form.inc',
+          'title'   => 'Create account',
+          ),
+        'privacy' =>  array(
+          'form id' => 'fsp_join_step_privacy',
+          'include' => $fpath . '/forms/privacy.form.inc',
+          'title'   => 'Newsletter & Privacy',
+          ),
+        'pledge'  =>  array(
+          'form id' => 'fsp_join_step_pledge',
+          'include' => $fpath . '/forms/pledge.form.inc',
+          'title'   => 'Sign the Pledge',
+          ),
+        'address' =>  array(
+          'form id' => 'fsp_join_step_address',
+          'include' => $fpath . '/forms/address.form.inc',
+          'title'   => 'Contact Info',
+          ),
+        ),
+      );
+
+  $form_state = array( 'cache name' => NULL, );
+
+  // no matter the step, load the values from the callback page
+  $data = fsp_join_get_page_cache(NULL);
+
+  if (!$data) {
+    // set form to first step
+    $step = current(array_keys($form_info['order']));
+    $data = new stdClass();
+    ctools_object_cache_set('fsp_join_data', $form_state['cache name'], $data);
+  }
+
+  $form_state['data_obj'] = $data;
+
+
+  //drupal_set_message( '<pre>'.print_r($data, true).'</pre>');
+
+  $output = ctools_wizard_multistep_form($form_info, $step, $form_state);
+  return $output;
+}
+
+// ctools multistep callbacks
+
+function fsp_join_wizard_next(&$form_state) { 
+  $data = $form_state['data_obj'];
+  $cache = ctools_object_cache_set('fsp_join_data', $form_state['cache name'], $data);
+}
+
+function fsp_join_wizard_cancel(&$form_state) { }
+function fsp_join_wizard_finish(&$form_state) { }
+
+function fsp_join_get_page_cache($name) {
+  $cache = ctools_object_cache_get('fsp_join_data', $name);
+  return $cache;
+}

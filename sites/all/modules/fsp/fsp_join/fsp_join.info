@@ -1,0 +1,6 @@
+; $Id$
+name = fsp_join
+description = CTools multistep form wizard for user signup
+package = FSP
+dependencies[] = ctools
+core = "6.x"
