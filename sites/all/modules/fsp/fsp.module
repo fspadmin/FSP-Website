@@ -1432,8 +1432,9 @@ function fsp_form_alter(&$form, $form_state, $form_id){
 	}
 }
 
-function fsp_form_rolodex_node_form_alter(&$form, $form_state, $form_id){
+function fsp_form_rolodex_node_form_alter(&$form, $form_state = array(), $form_id = null){
   // drupal_set_message(print "<pre>".print_r($form,true)."</pre>");
+  if (! isset($form['nid']) ) return;
   if (!$form['nid']['#value']) { 
     drupal_set_title(t('Now, we need some contact info...'));
     $form['buttons']['submit']['#value'] = t('Next (almost finished)');
@@ -1443,6 +1444,7 @@ function fsp_form_rolodex_node_form_alter(&$form, $form_state, $form_id){
 
 function fsp_form_participant_node_form_alter(&$form, $form_state, $form_id){
   //drupal_set_message(print "<pre>".print_r($form,true)."</pre>");
+  if (! isset($form['nid']) ) return;
   if (!$form['nid']['#value']) {
     drupal_set_title(t('Become an FSP Participant...'));
     // Change the default buttons
