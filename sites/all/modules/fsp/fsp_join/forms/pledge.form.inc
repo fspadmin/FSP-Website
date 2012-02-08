@@ -2,24 +2,32 @@
 
 function fsp_join_step_pledge(&$form, &$form_state) {
   $data = $form_state['data_obj'];
+  drupal_add_js( ' $(document).ready(function() {'.
+      'if (!$("#edit-pledge-0:selected").length) { $("#details").hide("slow") }'.
+      '$("#edit-pledge-0").click( function () { $("#details").show("slow") });'.
+      '$("#edit-pledge-1").click( function () { $("#details").hide("slow") });'.
+      '});', 'inline'
+      );
   $form['soi'] = array (
       '#type' => 'fieldset',
       '#title' => t('Statement of Intent'),
       '#tree' => FALSE,
       '#description' => t('Here is where you can either pledge to move, or to register as a friend of the project.'),
+      '#attributes' => array('class' => 'pledge-fieldset'),
       );
   $form['soi']['pledge'] = array(
       '#type' => 'radios',
       '#title' => '',
       '#default_value' => $data->pledge,
       '#required' => TRUE,
+      '#attributes' => array('class' => 'pledge-choices'),
       '#options' => array(
         'I hereby state my solemn intent to move to the State of New Hampshire. Once there, I will exert the fullest practical effort toward the creation of a society in which the maximum role of civil government is the protection of life, liberty, and property.',
         'I just want to register as a friend of the Free State Project.',
         ),
       );
-
   $form['when'] = array (
+      '#prefix' => '<div id="details">',
       '#type' => 'fieldset',
       '#title' => t('When I plan to move?'),
       '#tree' => FALSE,
@@ -35,9 +43,10 @@ function fsp_join_step_pledge(&$form, &$form_state) {
         t('I pledge to move in five years or less.'),
         ),
       '#default_value' => $data->threshold,
-      '#required' => TRUE,
+      '#required' => FALSE,
       );
   $form['triggers'] = array (
+      '#suffix' => '</div><!-- id details -->',
       '#type' => 'fieldset',
       '#title' => t('Future events that will send me packing for NH.'),
       '#tree' => FALSE,
