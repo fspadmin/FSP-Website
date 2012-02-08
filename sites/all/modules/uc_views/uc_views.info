@@ -1,0 +1,15 @@
+; $Id: uc_views.info,v 1.2.2.1.2.2 2010/11/18 21:03:58 longwave Exp $
+name = Ubercart Views
+description = Makes Ubercart order, product and cart data available to Views and provides some standard views as templates for your own views.
+dependencies[] = uc_product
+dependencies[] = uc_order
+dependencies[] = views
+package = "Ubercart - views"
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-12-23
+version = "6.x-3.1"
+core = "6.x"
+project = "uc_views"
+datestamp = "1293106023"
+

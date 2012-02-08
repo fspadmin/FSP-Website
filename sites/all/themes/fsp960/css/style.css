@@ -311,3 +311,10 @@ body.not-front a.da2a_button {
 	top: 4em;
 	right: 20px;
 }
+
+body.page-libertyforum #da2a_1 {
+	position: absolute; top: 0px; right: 15px;
+}
+body.page-libertyforum #functionsright {
+	position: absolute; top: 84px; right: 15px;
+}

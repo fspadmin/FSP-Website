@@ -1,0 +1,14 @@
+; $Id: uc_views_bulk_operations.info,v 1.1.2.2.2.1 2010/11/18 21:03:58 longwave Exp $
+name = Ubercart Views Bulk Operations
+description = Print, delete or change the status of multiple orders, or add multiple nodes to the cart at once.
+dependencies[] = uc_views
+dependencies[] = views_bulk_operations
+package = "Ubercart - views"
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-12-23
+version = "6.x-3.1"
+core = "6.x"
+project = "uc_views"
+datestamp = "1293106023"
+
