@@ -51,3 +51,18 @@ function fsp_join_step_start_submit(&$form, &$form_state) {
     $form_state['data_obj']->$value = $submitted[$value];
   }
 }
+
+function fsp_join_step_start_validate(&$form, &$form_state) {
+  $submitted = $form_state['values'];
+
+  if ($message = user_validate_mail($submitted['mail']))
+    form_set_error('mail', $message);
+
+  $nowhitespace_values = array('firstname', 'lastname');
+  foreach($nowhitespace_values as  $value) {
+    if (FALSE !== strpos($submitted[$value], ' ')) {
+      form_set_error($value, "{$form['set'][$value]['#title']} must not contain spaces.");
+    }
+  }
+  // drupal_set_message('<pre>'.print_r($form_state['values'], true).'</pre>');
+}
