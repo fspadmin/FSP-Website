@@ -32,8 +32,8 @@ function fsp_join_wizard() {
       'order' => array(
         'start' => t('User and email'),
         'privacy' => t('Privacy and info'),
-        'pledge' => t('Pledge'),
         'address' => t('Address'),
+        'pledge' => t('Pledge'),
         ),
       'forms' => array(
         'start'   =>  array(
@@ -46,15 +46,15 @@ function fsp_join_wizard() {
           'include' => $fpath . '/forms/privacy.form.inc',
           'title'   => 'Newsletter & Privacy',
           ),
-        'pledge'  =>  array(
-          'form id' => 'fsp_join_step_pledge',
-          'include' => $fpath . '/forms/pledge.form.inc',
-          'title'   => 'Sign the Pledge',
-          ),
         'address' =>  array(
           'form id' => 'fsp_join_step_address',
           'include' => $fpath . '/forms/address.form.inc',
           'title'   => 'Contact Info',
+          ),
+        'pledge'  =>  array(
+          'form id' => 'fsp_join_step_pledge',
+          'include' => $fpath . '/forms/pledge.form.inc',
+          'title'   => 'Sign the Pledge',
           ),
         ),
       );
@@ -103,11 +103,12 @@ function fsp_join_wizard_finish(&$form_state) {
   // Save user as pending, get uid
   $user_array = array( 'name'=>$data->name, 'pass'=>$data->pass, 'mail'=>$data->mail, );
   unset($form_state['values']['response']);
-  $account = user_save('', $user_array);
+  $account = user_save(NULL, $user_array);
   if (!$account) {
     drupal_set_message(t("Error saving user account."), 'error');
     drupal_goto('fsp_join_wizard/address');
   }
+  $account = user_authenticate($user_array);
 
   // Create empty node
   $object = new stdClass();
@@ -166,13 +167,15 @@ function fsp_join_wizard_finish(&$form_state) {
     $participant->field_fsp_realid = $data->realid;
     $participant->field_fsp_healthcare = $data->healthcare;
   }
-
   try {
     node_save($participant);
   } catch (Exception $e) {
     dsm($e->getMessage());
   }
-  // Send activation email
+
+  // clear object data
+  ctools_include('object-cache');
+  ctools_object_cache_clear('fsp_join_data', NULL);
 
   if (0 == $data->pledge) {
     drupal_goto('community/welcome');
