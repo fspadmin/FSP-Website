@@ -3,7 +3,13 @@
 function fsp_join_step_pledge(&$form, &$form_state) {
   $data = $form_state['data_obj'];
   drupal_add_js( ' $(document).ready(function() {'.
-      'if (!$("#edit-pledge-0:selected").length) { $("#details").hide("slow") }'.
+      // Show or hide #details based saved state
+      'if ($("#edit-pledge-0:checked").length) {'.
+      '  $("#details").show("slow");'.
+      '} else { '.
+      '  $("#details").hide("slow");'.
+      '}'.
+      // Add click behavior
       '$("#edit-pledge-0").click( function () { $("#details").show("slow") });'.
       '$("#edit-pledge-1").click( function () { $("#details").hide("slow") });'.
       '});', 'inline'
@@ -70,8 +76,23 @@ function fsp_join_step_pledge(&$form, &$form_state) {
 
 function fsp_join_step_pledge_submit(&$form, &$form_state) {
   $submitted = $form_state['values'];
-  $save_values = array('pledge', 'x_movers', 'x_value', );
+  $save_values = array('pledge', 'threshold', 'firearms', 'realid');
   foreach($save_values as $value) {
     $form_state['data_obj']->$value = $submitted[$value];
   }
+}
+
+function fsp_join_step_pledge_validate(&$form, &$form_state) {
+  $submitted = $form_state['values'];
+  if (0 == $submitted['pledge']) { // Signer!
+    if ('' === $submitted['threshold']) {
+      form_set_error('pledge','You must pick a threshold.');
+    }
+  } elseif (1 == $submitted['pledge']) {
+    // form_set_error('pledge','You picked friend.');
+  } else { // Must choose one or the other
+    form_set_error('pledge','Please select one option.');
+  }
+  // drupal_set_message('<pre>'.print_r($form_state['values'], true).'</pre>');
+  // drupal_set_message('<pre>'.print_r($submitted, true).'</pre>');
 }
