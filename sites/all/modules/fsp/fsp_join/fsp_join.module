@@ -88,7 +88,98 @@ function fsp_join_wizard_next(&$form_state) {
 }
 
 function fsp_join_wizard_cancel(&$form_state) { }
-function fsp_join_wizard_finish(&$form_state) { }
+
+function fsp_join_wizard_finish(&$form_state) {
+  module_load_include('inc', 'user', 'user.pages');
+  $data = $form_state['data_obj'];
+  $data->pass = user_password();
+  $proposed_name = sprintf('%s %s', $data->firstname, $data->lastname);
+  $count = db_result(db_query("SELECT count(name) FROM {users} WHERE name = '%s';", $proposed_name));
+  if ($count != 0) {
+    $proposed_name = sprintf("%s %s", $proposed_name, ++$count);
+  }
+  $data->name = $proposed_name;
+
+  // Save user as pending, get uid
+  $user_array = array( 'name'=>$data->name, 'pass'=>$data->pass, 'mail'=>$data->mail, );
+  unset($form_state['values']['response']);
+  $account = user_save('', $user_array);
+  if (!$account) {
+    drupal_set_message(t("Error saving user account."), 'error');
+    drupal_goto('fsp_join_wizard/address');
+  }
+
+  // Create empty node
+  $object = new stdClass();
+  $object->title = $data->name;
+  $object->uid = $account->uid;
+  $object->created = time();
+  $object->changed = $object->created;
+  $object->status = 1;
+  $object->promote = 0;
+  $object->format = 1;
+
+  // Save rolodex
+  $rolodex = clone $object;
+  $rolodex->type = 'rolodex';
+  $rolodex->field_fsp_first_name[0]['value'] = $data->firstname;
+  $rolodex->field_fsp_last_name[0]['value'] = $data->lastname;
+  $rolodex->field_fsp_home_phone[0]['value'] = $data->phone;
+  $rolodex->field_fsp_address_1[0]['value'] = $data->address1;
+  $rolodex->field_fsp_address_2[0]['value'] = $data->address2;
+  $rolodex->field_fsp_city[0]['value'] = $data->city;
+  $rolodex->field_fsp_state[0]['value'] = $data->state;
+  $rolodex->field_fsp_country[0]['value'] = $data->country;
+  $rolodex->field_fsp_postal_code[0]['value'] = $data->postal_code;
+  $rolodex->field_fsp_referral[0]['value'] = $data->referral;
+  try {
+    node_save($rolodex);
+  } catch (Exception $e) {
+    dsm($e->getMessage());
+  }
+
+  // Save participant
+  $participant = clone $object;
+  $participant->type = 'participant';
+  if (1 == $data->pledge) {
+    // Just a friend of the project.
+  } else {
+    // New participant!
+    $participant->field_fsp_soi[0]['value'] = 1;
+    switch ($data->threshold) {
+      case '0':
+        $participant->field_fsp_movers_check[0]['value'] = 1;
+        $participant->field_fsp_movers_year[0]['value'] = "1970";
+        $participant->field_fsp_movers[0]['value'] = 20000;
+        break;
+      case '1':
+        $participant->field_fsp_movers_check[0]['value'] = 1;
+        $participant->field_fsp_movers_year[0]['value'] = "1970";
+        $participant->field_fsp_movers[0]['value'] = 15000;
+        break;
+      case '2':
+        $participant->field_fsp_year_check[0]['value'] = 1;
+        $participant->field_fsp_year[0]['value'] = date("%Y") + 5;
+        break;
+    }
+    $participant->field_fsp_firearms = $data->firearms;
+    $participant->field_fsp_realid = $data->realid;
+    $participant->field_fsp_healthcare = $data->healthcare;
+  }
+
+  try {
+    node_save($participant);
+  } catch (Exception $e) {
+    dsm($e->getMessage());
+  }
+  // Send activation email
+
+  if (0 == $data->pledge) {
+    drupal_goto('community/welcome');
+  } else {
+    drupal_goto('friend');
+  }
+}
 
 function fsp_join_get_page_cache($name) {
   $cache = ctools_object_cache_get('fsp_join_data', $name);
