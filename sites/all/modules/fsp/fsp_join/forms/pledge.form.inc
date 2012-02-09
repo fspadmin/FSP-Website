@@ -32,6 +32,22 @@ function fsp_join_step_pledge(&$form, &$form_state) {
         'I just want to register as a friend of the Free State Project.',
         ),
       );
+  $form['motivation'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Referrals'),
+      '#tree' => FALSE,
+      '#description' => t('At an average of $100 per participant in advertising,'
+                         .' we would like to know how you found the FSP.'),
+      '#attributes' => array('class' => 'referral-fieldset'),
+  );
+  $form['motivation']['referral'] = array(
+      '#type' => 'textfield',
+      '#title' => 'How did you find the FSP?',
+      '#default_value' => $data->referral,
+      '#required' => TRUE,
+      '#attributes' => array('class' => 'referral'),
+      '#description' => 'Examples: Ron Paul, Free Talk Live, Reason Magazine, wikipedia, slashdot, facebook.',
+  );
   $form['when'] = array (
       '#prefix' => '<div id="details">',
       '#type' => 'fieldset',
@@ -44,8 +60,8 @@ function fsp_join_step_pledge(&$form, &$form_state) {
   $form['when']['threshold'] = array(
       '#type' => 'radios',
       '#options' => array(
-        t('I pledge to move when 20,000 other participants pledge to do so.'),
-        t('I pledge to move when 15,000 other participants pledge to do so.'),
+        t('I pledge to move within five years of 20,000 other participants pledging to move.'),
+        t('I pledge to move within five years of 15,000 other participants pledging to move.'),
         t('I pledge to move in five years or less.'),
         ),
       '#default_value' => $data->threshold,
@@ -76,7 +92,7 @@ function fsp_join_step_pledge(&$form, &$form_state) {
 
 function fsp_join_step_pledge_submit(&$form, &$form_state) {
   $submitted = $form_state['values'];
-  $save_values = array('pledge', 'threshold', 'firearms', 'realid');
+  $save_values = array('pledge', 'referral', 'threshold', 'firearms', 'realid');
   foreach($save_values as $value) {
     $form_state['data_obj']->$value = $submitted[$value];
   }
