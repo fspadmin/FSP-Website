@@ -291,3 +291,11 @@ function fsp_update_6013() {
   return $ret;
 }
 
+/**
+ * Remove all module paths to 0ut_to_pasture
+ **/
+function fsp_update_6014() {
+  $ret = array();
+  $ret[] = update_sql("DELETE FROM {system} WHERE filename LIKE '%0ut_to_pasture%'");
+  return $ret;
+}
