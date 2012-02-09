@@ -115,7 +115,7 @@ function fsp_join_wizard_finish(&$form_state) {
   $data->name = $proposed_name;
 
   $roles[13] = 'pending';
-  if (1 == $data->pledge) {
+  if (0 == $data->pledge) {
       $roles[32] = 'friend';
   } else {
       $roles[30] = 'participant';
@@ -133,7 +133,7 @@ function fsp_join_wizard_finish(&$form_state) {
   $account = user_save(NULL, $user_array);
   if (!$account || $account->uid < 28585) {
     dsm(array('user_array'=>$user_array, 'account'=>$account));
-    drupal_goto('fsp_join_wizard/pledge');
+    drupal_goto('fsp_join_wizard/confirm');
   }
 
   // Save rolodex
@@ -157,7 +157,6 @@ function fsp_join_wizard_finish(&$form_state) {
   $rolodex->field_fsp_referral[0]['value'] = $data->referral;
   try {
     node_save($rolodex);
-    dpm( $rolodex );
   } catch (Exception $e) {
     dsm($e->getMessage());
   }
@@ -171,7 +170,7 @@ function fsp_join_wizard_finish(&$form_state) {
   $participant->changed = $participant->created;
   $participant->status = 1;
   $participant->promote = 0;
-  if (1 == $data->pledge) {
+  if (0 == $data->pledge) {
     // Just a friend of the project.
   } else {
     // New participant!
@@ -198,7 +197,6 @@ function fsp_join_wizard_finish(&$form_state) {
   }
   try {
     node_save($participant);
-    dpm( $participant );
   } catch (Exception $e) {
     dsm($e->getMessage());
   }
@@ -208,9 +206,9 @@ function fsp_join_wizard_finish(&$form_state) {
   ctools_object_cache_clear('fsp_join_data', $form_state['cache name']);
 
   if (0 == $data->pledge) {
-    drupal_goto('community/welcome');
-  } else {
     drupal_goto('friend');
+  } else {
+    drupal_goto('community/welcome');
   }
 }
 

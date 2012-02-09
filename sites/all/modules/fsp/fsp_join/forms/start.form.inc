@@ -1,7 +1,7 @@
 <?php
 
 function fsp_join_step_start(&$form, &$form_state) {
-  $data = &$form_state['data_obj'];
+  $data = $form_state['data_obj'];
   $form['set'] = array(
       '#type' => 'fieldset',
       '#title' => t('Create your account'), 
@@ -33,15 +33,6 @@ function fsp_join_step_start(&$form, &$form_state) {
       '#description' => t('The e-mail address is not made public and will only be used if you wish to receive a new password or wish to receive certain news or notifications by e-mail.'),
       '#required' => TRUE,
       );
-  /*
-  $form['set']['pass'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Password'),
-      '#size' => 25,
-      '#default_value' => $data->pass,
-      // '#description' => t(''),
-      );
-  */
 }
 
 function fsp_join_step_start_submit(&$form, &$form_state) {
@@ -64,5 +55,4 @@ function fsp_join_step_start_validate(&$form, &$form_state) {
       form_set_error($value, "{$form['set'][$value]['#title']} must not contain spaces.");
     }
   }
-  // drupal_set_message('<pre>'.print_r($form_state['values'], true).'</pre>');
 }

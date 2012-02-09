@@ -23,17 +23,10 @@ function fsp_join_step_privacy(&$form, &$form_state) {
       '#default_value' => $data->newsletter,
       '#description' => t('<p>A monthly newsletter chronicling the project and liberty events happening in NH.  You can always choose not to read it.</p>'),
       );
+}
 
-  /*
-  if (!variable_get('user_email_verification', TRUE) || $admin) {
-    $form['pass'] = array(
-        '#type' => 'password_confirm',
-        '#description' => t('Provide a password for the new account in both fields.'),
-        '#required' => TRUE,
-        '#size' => 25,
-        );
-  }
-  */
+function fsp_join_step_privacy_validate(&$form, &$form_state) {
+  // Nothing to do here
 }
 
 function fsp_join_step_privacy_submit(&$form, &$form_state) {

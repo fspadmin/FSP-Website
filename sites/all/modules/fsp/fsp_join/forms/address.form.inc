@@ -2,14 +2,6 @@
 
 function fsp_join_step_address(&$form, &$form_state) {
   $data = $form_state['data_obj'];
-  $form['phone'] = array(
-      '#type' => 'textfield',
-      '#title' => 'Prefered Phone Number',
-      '#default_value' => $data->phone,
-      '#required' => FALSE,
-      '#maxlength' => 80,
-      '#description' => 'Optional phone number in case we can\'t contact you by phone or email.',
-      );
   $form['address1'] = array(
       '#type' => 'textfield',
       '#title' => 'Street Address',
@@ -52,6 +44,18 @@ function fsp_join_step_address(&$form, &$form_state) {
       '#required' => TRUE,
       '#maxlength' => 80,
       );
+  $form['phone'] = array(
+      '#type' => 'textfield',
+      '#title' => 'Prefered Phone Number',
+      '#default_value' => $data->phone,
+      '#required' => FALSE,
+      '#maxlength' => 80,
+      '#description' => 'Optional phone number in case we can\'t contact you by phone or email.',
+      );
+}
+
+function fsp_join_step_address_validate(&$form, &$form_state) {
+  // Nothing to do here
 }
 
 function fsp_join_step_address_submit(&$form, &$form_state) {
