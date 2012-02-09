@@ -1,4 +1,12 @@
 <?php
+/**
+ * Implementation of hoot_init()
+ **/
+function fsp_join_init() {
+  if (drupal_match_path($_GET['q'], 'fsp_join_wizard/*')) {
+    $GLOBALS['conf']['cache'] = FALSE;   
+  }
+}
 
 /**
  *  Implementation of hook_menu()
@@ -34,6 +42,7 @@ function fsp_join_wizard() {
         'privacy' => t('Privacy and info'),
         'address' => t('Address'),
         'pledge' => t('Pledge'),
+        'confirm' => t('Confirmation'),
         ),
       'forms' => array(
         'start'   =>  array(
@@ -55,6 +64,11 @@ function fsp_join_wizard() {
           'form id' => 'fsp_join_step_pledge',
           'include' => $fpath . '/forms/pledge.form.inc',
           'title'   => 'Sign the Pledge',
+          ),
+        'confirm'  =>  array(
+          'form id' => 'fsp_join_step_confirm',
+          'include' => $fpath . '/forms/confirm.form.inc',
+          'title'   => 'Confirmation',
           ),
         ),
       );
@@ -94,35 +108,43 @@ function fsp_join_wizard_finish(&$form_state) {
   $data = $form_state['data_obj'];
   $data->pass = user_password();
   $proposed_name = sprintf('%s %s', $data->firstname, $data->lastname);
-  $count = db_result(db_query("SELECT count(name) FROM {users} WHERE name = '%s';", $proposed_name));
-  if ($count != 0) {
-    $proposed_name = sprintf("%s %s", $proposed_name, ++$count);
+  $count = db_result(db_query("SELECT count(name) FROM {users} WHERE name like '%s%%';", $proposed_name));
+  if ($count > 0) {
+    $proposed_name = sprintf("%s %s", $proposed_name, $count + 1);
   }
   $data->name = $proposed_name;
 
-  // Save user as pending, get uid
-  $user_array = array( 'name'=>$data->name, 'pass'=>$data->pass, 'mail'=>$data->mail, );
-  unset($form_state['values']['response']);
-  $account = user_save(NULL, $user_array);
-  if (!$account) {
-    drupal_set_message(t("Error saving user account."), 'error');
-    drupal_goto('fsp_join_wizard/address');
+  $roles[13] = 'pending';
+  if (1 == $data->pledge) {
+      $roles[32] = 'friend';
+  } else {
+      $roles[30] = 'participant';
   }
-  $account = user_authenticate($user_array);
 
-  // Create empty node
-  $object = new stdClass();
-  $object->title = $data->name;
-  $object->uid = $account->uid;
-  $object->created = time();
-  $object->changed = $object->created;
-  $object->status = 1;
-  $object->promote = 0;
-  $object->format = 1;
+  // Save user as pending, get uid
+  $user_array = array(
+    'name'=>$data->name,
+    'pass'=>$data->pass,
+    'mail'=>$data->mail,
+    'status'=>1,
+    'roles'=>$roles,
+  );
+
+  $account = user_save(NULL, $user_array);
+  if (!$account || $account->uid < 28585) {
+    dsm(array('user_array'=>$user_array, 'account'=>$account));
+    drupal_goto('fsp_join_wizard/pledge');
+  }
 
   // Save rolodex
-  $rolodex = clone $object;
+  $rolodex = new stdClass();
   $rolodex->type = 'rolodex';
+  $rolodex->title = $data->name;
+  $rolodex->uid = $account->uid;
+  $rolodex->created = time();
+  $rolodex->changed = $rolodex->created;
+  $rolodex->status = 1;
+  $rolodex->promote = 0;
   $rolodex->field_fsp_first_name[0]['value'] = $data->firstname;
   $rolodex->field_fsp_last_name[0]['value'] = $data->lastname;
   $rolodex->field_fsp_home_phone[0]['value'] = $data->phone;
@@ -135,13 +157,20 @@ function fsp_join_wizard_finish(&$form_state) {
   $rolodex->field_fsp_referral[0]['value'] = $data->referral;
   try {
     node_save($rolodex);
+    dpm( $rolodex );
   } catch (Exception $e) {
     dsm($e->getMessage());
   }
 
   // Save participant
-  $participant = clone $object;
+  $participant = new stdClass();
   $participant->type = 'participant';
+  $participant->title = $data->name;
+  $participant->uid = $account->uid;
+  $participant->created = time();
+  $participant->changed = $participant->created;
+  $participant->status = 1;
+  $participant->promote = 0;
   if (1 == $data->pledge) {
     // Just a friend of the project.
   } else {
@@ -169,13 +198,14 @@ function fsp_join_wizard_finish(&$form_state) {
   }
   try {
     node_save($participant);
+    dpm( $participant );
   } catch (Exception $e) {
     dsm($e->getMessage());
   }
 
   // clear object data
   ctools_include('object-cache');
-  ctools_object_cache_clear('fsp_join_data', NULL);
+  ctools_object_cache_clear('fsp_join_data', $form_state['cache name']);
 
   if (0 == $data->pledge) {
     drupal_goto('community/welcome');
