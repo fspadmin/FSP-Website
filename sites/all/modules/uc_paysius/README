@@ -1,0 +1,19 @@
+Installation instructions:
+
+1. Upload the contents of this directory to the following location in your store:
+
+    mystore/sites/all/modules/ubercart/payment/uc_paysius/
+
+2. Log into the modules management area of your store (usually mystore.com/admin/build/modules).
+3. Check "Paysius" and save.
+4. Navigate to the Payment Settings area. (usually mystore.com/admin/store/settings/payment/edit/methods)
+5. Navigate to http://paysius.com/user/me/edit/application (free signup required), and create an application. The application name and description can be anything, but the callback URL should be as follows:
+
+    mystore.com/cart/paysius/callback/
+
+6. Under Paysius Settings, enter your Paysius Application Key and Secret. (should be displayed after clicking "Create Application")
+7. Navigate to the Checkout Settings - Messages area of your store (mystore.com/admin/store/settings/checkout/edit/messages).
+8. Add "[order-comments]" (no quotes) to the end of "Checkout Completion Message Header". This will display the Bitcoin payment address and total for the customer, upon checkout.
+
+Enjoy!
+

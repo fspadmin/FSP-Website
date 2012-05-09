@@ -1,0 +1,131 @@
+<?php
+/**
+ * @file
+ * Paysius payment method.
+ *
+ * @author Ira Miller
+ */
+
+require_once(drupal_get_path('module', 'uc_paysius')."/lib/paysius_SCI_functions.php");
+
+/**
+ * Set up the Bitcoin payment method settings form.
+ */
+function uc_paysius_settings_form() {
+  $form = array();
+
+  $form['paysius_key'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Key',
+    '#default_value' => variable_get('paysius_key', ''),
+    '#description' => 'Enter your Paysius API Key. This can be found here: https://paysius.com/user/me/edit/application',
+  );
+  $form['paysius_secret'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Secret',
+    '#default_value' => variable_get('paysius_secret', ''),
+    '#description' => 'Enter your Paysius API Secret. This can be found here: https://paysius.com/user/me/edit/application',
+  );
+
+  return system_settings_form($form);
+}
+
+
+/*******************************************************************************
+ * Hook Functions (Ubercart)
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_payment_method().
+ */
+function uc_paysius_payment_method() {
+  $methods[] = array(
+    'id' => 'paysius',
+    'name' => t('Bitcoin'),
+    'title' => t('Bitcoin'),
+    'desc' => t('Pay with Bitcoin.'),
+    'callback' => 'uc_payment_method_paysius',
+    'weight' => 1,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE
+  );
+  return $methods;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_paysius_menu() {
+  // Callback functions for Express Checkout.
+  $items['cart/paysius/callback'] = array(
+    'title' => 'Paysius callback',
+    'page callback' => 'uc_paysius_callback',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_paysius.pages.inc',
+  );
+
+  return $items;
+}
+
+/*******************************************************************************
+ * Callback Functions, Forms, and Tables
+ ******************************************************************************/
+
+function uc_payment_method_paysius($op, &$arg1) {
+  switch($op) {
+    case 'cart-details':
+      return "Pay with Bitcoin";
+    case 'customer-view':
+    case 'cart-review':
+      return $review;
+    case 'order-view':
+    case 'cart-view':
+    case 'cart-process':
+    case 'order-save':
+      break;
+    case 'settings':
+      return uc_paysius_settings_form();
+    case 'order-submit':
+      $key = variable_get('paysius_key', '');
+      $secret = variable_get('paysius_secret', '');
+      $curcode = variable_get('uc_currency_code', 'USD');
+
+      $response = setDetails($arg1->order_total, $curcode,
+                               "", "", $key, $secret);
+
+      if(get_class($response) == "payError") {
+        watchdog('uc_paysius', '!error', array('!error' => $response), WATCHDOG_ERROR);
+        drupal_set_message("Error checking out: ".$response->code." (".$response->message.")");
+        drupal_goto("/cart/checkout");
+      } elseif(property_exists($response, "uuid")) {
+        $uuid = $response->uuid;
+      } else {
+        watchdog('uc_paysius', '!error', array('!error' => $response), WATCHDOG_ERROR);
+        drupal_set_message("Error checking out: ".$response->code." (".$response->message.")");
+        drupal_goto("/cart/checkout");
+      }
+
+      $response = getOrderAddress($uuid, $key, $secret);
+
+      if(get_class($response) == "payError") {
+        watchdog('uc_paysius', '!error', array('!error' => $response), WATCHDOG_ERROR);
+        drupal_set_message("Error checking out: ".$response->code." (".$response->message.")");
+        drupal_goto("/cart/checkout");
+      } elseif(!property_exists($response, "address")) {
+        watchdog('uc_paysius', '!error', array('!error' => $response), WATCHDOG_ERROR);
+        drupal_set_message("Error checking out: ".$response->code." (".$response->message.")");
+        drupal_goto("/cart/checkout");
+      } else {
+        $btcTotal = $response->btc;
+        $address = $response->address;
+      }
+      db_query("INSERT INTO uc_payment_paysius VALUES(".$arg1->order_id.", '".$address."', ".$btcTotal*1e8.", '".$uuid."')");
+
+      $comments = "To finalize your order, please send ".
+                  $btcTotal." btc to the following Bitcoin address: ".
+                  $address.".  Once the payment is received, your order will be complete.  Paysius Order ID is: ".$uuid;
+      uc_order_comment_save($arg1->order_id, 0, $comments, 'order');
+  }
+}
+?>
