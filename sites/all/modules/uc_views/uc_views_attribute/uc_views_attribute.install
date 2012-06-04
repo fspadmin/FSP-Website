@@ -1,0 +1,14 @@
+<?php
+// $Id: uc_views_attribute.install,v 1.1.2.2 2009/12/21 23:09:52 hanoii Exp $
+
+/**
+ * Implentation of the hook_install().
+ */
+ function uc_views_attribute_install() {
+ }
+
+/**
+ * Implentation of the hook_uninstall().
+ */
+ function uc_views_attribute_uninstall() {
+ }

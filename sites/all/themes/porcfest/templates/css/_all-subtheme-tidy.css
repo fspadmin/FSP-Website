@@ -1,0 +1,66 @@
+/* $Id: _all-subtheme-tidy.css,v 1.1.2.14 2009/06/12 12:41:06 jmburnz Exp $ */
+
+/**
+ * @file _all-subtheme-tidy.css
+ * Genesis SUBTHEME modular stylesheets aggregated into one file
+ * and compressed using CSS Tidy. http://csstidy.sourceforge.net
+ *
+ * Includes tidied and compressed versions of the 
+ * following stylesheets:
+ *
+ * blocks.css
+ * comments.css
+ * nodes.css
+ * page.css
+ * style.css
+ *
+ * USAGE
+ * 1) Unset the mini stylesheets in genesis_SUBTHEME.info by commenting them out.
+ * 2) Enable _all-subtheme.css by uncommenting it in genesis_SUBTHEME.info
+ *
+ * The file is useful for working around IE7's 30 max stylesheets issue
+ * when you cannot turn on CSS aggregation in Performance settings.
+ */
+.block{clear:both;margin:0 0 1.5em;}
+ul.menu,ul.menu ul,ul.menu ul ul,ul.menu ul ul ul{margin:0 0 0 .75em;padding:0;}
+ul.menu li{padding:.35em 0 0;}
+.block .item-list ul{margin:0;}
+.comment{margin:0 0 1em;}
+.comment .indented{margin-left:2em;}
+.comment-title .new{color:#FF8000;}
+.comment-title a:link,.comment-title a:visited,.comment-title a:active{text-decoration:none;}
+.comment-title a:hover{text-decoration:underline;}
+.comment-links ul.links{display:block;padding:0 1em 0 0;text-align:right;}
+.node{margin:0 0 1.5em;}
+.node-title a:link,.node-title a:visited,.node-title a:active{text-decoration:none;}
+.node-title a:hover{text-decoration:underline;}
+.node ul.links li{padding:0 1em 0 0;}
+#container{width:980px;}
+body > #container{max-width:980px;min-width:760px;width:100%;}
+#header-blocks{float:left;margin-left:2em;}
+#skip-nav{text-align:right;}
+#branding{float:left;}
+#branding h1{font-size:1em;}
+.logo-site-name span{display:block;}
+#site-name{font-size:2em;font-weight:bold;line-height:1.5;}
+#search-box{float:right;}
+#search-theme-form{margin:1.5em 0;}
+#nav{margin:.75em 0;}
+#nav .primary-links{background:#DDD;font-weight:bold;margin:0;padding:0;}
+#nav .primary-links li{display:inline;line-height:2;list-style:none;margin:0 1em;padding:0;}
+#nav .primary-links li a{text-decoration:none;white-space:nowrap;}
+#nav .secondary-links{background:#EEE;font-weight:bold;margin:0;padding:0;}
+#nav .secondary-links li{display:inline;line-height:2;list-style:none;margin:0 1em;padding:0;}
+#nav .secondary-links li a{text-decoration:none;white-space:nowrap;}
+#breadcrumb{padding:0 0 .75em;}
+#mission{font-weight:bold;margin:0 0 1.5em;}
+.item-list ul.pager li{margin:0;}
+#foot-wrapper{margin:.375em 0;}
+.feed-icon img{padding:0 .5em;}
+body{font-family:Verdana, Geneva, "DejaVu Sans", sans-serif;}
+a{margin:0;padding:0;}
+a:active,a:focus{border:0;color:#C00000;}
+a img{border:none;}
+.invisible{height:0;overflow:hidden;}
+.offscreen{height:1px;left:-999em;overflow:hidden;position:absolute;top:auto;width:1px;}
+.remove{display:none;}

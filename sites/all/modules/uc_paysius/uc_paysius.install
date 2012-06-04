@@ -1,0 +1,65 @@
+<?php
+/**
+ * @file
+ *
+ * Provide functions to install and uninstall the Paysius
+ * module in the database
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function uc_paysius_schema() {
+  $schema['uc_payment_paysius'] = array(
+    'fields' => array(
+      'order_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'address' => array(
+        'description' => 'Address',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'btctotal' => array(
+        'description' => 'The Bitcoin total expected for this order',
+        'type' => 'int',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uuid' => array(
+        'description' => 'The unique Paysius order id',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('order_id'),
+    'indexes' => array(
+      'order_id' => array('order_id'), ),
+    );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function uc_paysius_install() {
+  drupal_install_schema('uc_paysius');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function uc_paysius_uninstall() {
+  drupal_uninstall_schema('uc_paysius');
+  db_query("DELETE FROM variable WHERE name LIKE 'uc_paysius_%%'");
+}
+?>

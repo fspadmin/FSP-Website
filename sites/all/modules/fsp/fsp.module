@@ -186,9 +186,10 @@ function _fsp_newuser_email(&$edit, &$account) {
     ),
     $from
   );
-  watchdog("fsp", "Authentication alert sent for " . $account->name . " to " .
-           $conf["fsp_register_email_to"], 
-           $severity = WATCHDOG_NOTICE);
+  watchdog("fsp",
+	  "Authentication alert sent for " . $account->name . " to " .  $conf["fsp_register_email_to"], 
+	  array(),
+	  $severity = WATCHDOG_NOTICE);
 }
 
 /**
@@ -197,6 +198,7 @@ function _fsp_newuser_email(&$edit, &$account) {
 function _fsp_update_moved($edit, $user) {
   fsp_get_stats("moved_to_nh");
   watchdog("fsp", "Already in NH counter recalculated", 
+	   array(),
            $severity = WATCHDOG_NOTICE);
 }
 
@@ -265,6 +267,7 @@ function _fsp_greet_email($edit, $account) {
                               $conf["fsp_greeter_email_to"], 
                               $subject, $body, $headers);
         watchdog("fsp", "Greeter email sent for $account->name, $state", 
+                 array(),
                  $severity = WATCHDOG_NOTICE);
         return $result;
       } 
@@ -383,11 +386,13 @@ function _fsp_stats_recalc($recalc_type = NULL) {
  */
 function _fsp_stats_recalc_hourly(&$stats) {
   watchdog("fsp", "Hourly stats recalculation started at " . strftime("%T"), 
+           array(),
            $severity = WATCHDOG_NOTICE);
   $stats["participants"] = _fsp_stats_participants();
   $stats["last_week"]    = _fsp_stats_last_week();
   $stats["last_hourly"]  = getdate();
   watchdog("fsp", "Hourly stats recalculation completed at " . strftime("%T"), 
+	array(),
            $severity = WATCHDOG_NOTICE);
 }
 
@@ -396,6 +401,7 @@ function _fsp_stats_recalc_hourly(&$stats) {
  */
 function _fsp_stats_recalc_daily(&$stats) {
   watchdog("fsp", "Daily stats recalculation started at " . strftime("%T"), 
+	array(),
            $severity = WATCHDOG_NOTICE);
 
   $stats["last_daily"]          = getdate();
@@ -419,6 +425,7 @@ function _fsp_stats_recalc_daily(&$stats) {
   $midnight_count = _fsp_stats_participants($since_midnight = TRUE);
 	$count_delta = $stats['participants'] - $midnight_count;
   watchdog("fsp", "DEBUG: ".$stats['participants'] . " - $midnight_count  = " . $count_delta,
+	array(),
            $severity = WATCHDOG_DEBUG);
 
   $midnight_movers = _fsp_stats_moved_to_nh($since_midnight = TRUE);
@@ -431,6 +438,7 @@ function _fsp_stats_recalc_daily(&$stats) {
 		_fsp_send_tweet( $msg );
 	}
   watchdog("fsp", "Daily stats recalculation completed at " . strftime("%T"), 
+	array(),
            $severity = WATCHDOG_NOTICE);
 }
 /** 
@@ -843,6 +851,7 @@ function _fsp_fill_member_report() {
   $fp = fopen($csv_file,'w');
   if (!$fp) {
     watchdog('fsp', "Unable to open '$csv_file' for writing member report", 
+	array(),
              $severity = WATCHDOG_ERROR);
     return;
   }
@@ -933,6 +942,7 @@ function _fsp_fill_member_report() {
   }
   fclose($fp);   
   watchdog("fsp", "Generated member report in '$csv_file'", 
+	array(),
            $severity = WATCHDOG_NOTICE);
 }
 
@@ -1062,6 +1072,7 @@ function _fsp_stats_plot() {
                       $totalflag, 
                       $font_name);
   watchdog("fsp", "Statistics plots generated in " . FSP_PLOT_PATH, 
+	array(),
            $severity = WATCHDOG_NOTICE);
 }
 
@@ -1167,6 +1178,7 @@ function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalf
   $gnuplot_fh = fopen($gnuplotfile,"w");
   if (!gnuplot_fh) {
     watchdog("fsp", "Unable to open '$gnuplotfile' for writing!", 
+	array(),
              $severity = WATCHDOG_ERROR);
     return;
   }
@@ -1239,6 +1251,7 @@ function _fsp_accumulate_people($data, $totalfile, $start_date, $end_date)
   $total_fh = fopen($totalfile,"w");
   if (!total_fh) {
     watchdog("fsp", "Unable to open '$totalfile' for writing!", 
+	array(),
              $severity = WATCHDOG_ERROR);
     return;
   }
@@ -1424,17 +1437,19 @@ function _fsp_get_mysql_query($type, $start_date)
   return array($mylist, count($mylist));
 }
 
+/**
+  * TODO: Rewrite to fsp_form_user_register_alter(x,x)
+  **/
 function fsp_form_alter(&$form, $form_state, $form_id){
   switch ($form_id) {
-		case 'user_register':
-				unset($form['Badges']);
-				break;
-	}
+    case 'user_register':
+      unset($form['Badges']);
+      break;
+  }
 }
 
-function fsp_form_rolodex_node_form_alter(&$form, $form_state = array(), $form_id = null){
+function fsp_form_rolodex_node_form_alter(&$form, $form_state){
   // drupal_set_message(print "<pre>".print_r($form,true)."</pre>");
-  if (! isset($form['nid']) ) return;
   if (!$form['nid']['#value']) { 
     drupal_set_title(t('Now, we need some contact info...'));
     $form['buttons']['submit']['#value'] = t('Next (almost finished)');
@@ -1442,9 +1457,8 @@ function fsp_form_rolodex_node_form_alter(&$form, $form_state = array(), $form_i
   }
 }
 
-function fsp_form_participant_node_form_alter(&$form, $form_state, $form_id){
+function fsp_form_participant_node_form_alter(&$form, $form_state){
   //drupal_set_message(print "<pre>".print_r($form,true)."</pre>");
-  if (! isset($form['nid']) ) return;
   if (!$form['nid']['#value']) {
     drupal_set_title(t('Become an FSP Participant...'));
     // Change the default buttons
@@ -1719,7 +1733,7 @@ function _fsp_DISABLED_liberty_forum_report() {
   $csv_file = $conf["fsp_member_report_path"] . "/LF2010_reg.csv";
   $fp = fopen($csv_file,'w');
   if (!$fp) {
-    watchdog("fsp", "Unable to open '$csv_file' for writing member report", $severity = WATCHDOG_ERROR);
+    watchdog("fsp", "Unable to open '$csv_file' for writing member report", array(), $severity = WATCHDOG_ERROR);
     return;
   }
 
@@ -1743,12 +1757,12 @@ function _fsp_send_tweet( $msg ){
 	// insert code here to actually send tweet
 	module_load_include('inc','twitter');
 	if( ! function_exists('twitter_set_status') ) {
-		watchdog('fsp', 'Unable to find twitter_set_status' , $severity = WATCHDOG_ERROR);
+		watchdog('fsp', 'Unable to find twitter_set_status' , array(), $severity = WATCHDOG_ERROR);
 	} elseif( "" != $msg ) {
 		$res=twitter_set_status(FSP_TWITTER_COUNTER_NAME, FSP_TWITTER_COUNTER_PASS, $msg);
 		watchdog('fsp', sprintf('Tweeting: %s',$msg), $severity = WATCHDOG_NOTICE);
 	} else {
-		watchdog('fsp', 'Attempt to tweet an empty message' , $severity = WATCHDOG_ERROR);
+		watchdog('fsp', 'Attempt to tweet an empty message' , array(), $severity = WATCHDOG_ERROR);
 	}
 }
 

@@ -1,4 +1,9 @@
-Release #603 11/1/2011, by lcalitz
+Release #631 11/3/2011, by lcalitz
+- Contrib module updates
+- Patch to rules/rules_admin module to fix error
+- Patch to supercron module to fix errors thrown by drush
+
+Release #630 11/1/2011, by lcalitz
 - Views export fsp_registration to code (dgarthwaite)
 
 Release #629 10/05/2011, by dgarthwaite

@@ -99,14 +99,6 @@
  */
 $background_data = porcfest_get_random_photo();
 ?>
-<?php if($logged_in){ ?>
-  <script type="text/javascript">
-    function gotonav() {
-      window.location = "#nav";
-    }
-    window.onload = gotonav;
-  </script>
-<?php } ?>
 <body id="genesis-1c" <?php print $section_class; ?>>
   <div id="background-photo" <?php print $background_data[1]; ?>>
     <div id="wrapper">
