@@ -299,3 +299,96 @@ function fsp_update_6014() {
   $ret[] = update_sql("DELETE FROM {system} WHERE filename LIKE '%0ut_to_pasture%'");
   return $ret;
 }
+
+/** node_revisions log column is supposed to be NOT NULL **/
+function fsp_update_6015() {
+  return array( update_sql("ALTER TABLE {node_revisions} MODIFY log LONGTEXT NOT NULL"));
+}
+
+/** node_type column name is supposed to be DEFAULT '' **/
+function fsp_update_6016() {
+  return array( update_sql("ALTER TABLE {node_type} MODIFY name VARCHAR(255) NOT NULL DEFAULT ''"));
+}
+
+/** poll_votes column nid is supposed to be DEFAULT '' **/
+function fsp_update_6017() {
+  return array(update_sql("ALTER TABLE {poll_votes} MODIFY nid int(10) unsigned NOT NULL;"));
+}
+
+/** profile_fields table has several wrong defaults **/
+function fsp_update_6018() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {profile_fields} MODIFY title varchar(255)");
+  $ret[] = update_sql("ALTER TABLE {profile_fields} MODIFY category varchar(255)");
+  $ret[] = update_sql("ALTER TABLE {profile_fields} MODIFY page varchar(255)");
+  $ret[] = update_sql("ALTER TABLE {profile_fields} MODIFY type varchar(128)");
+  return $ret;
+}
+
+/** search module tables have several wrong defaults **/
+function fsp_update_6019() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {search_dataset} MODIFY type varchar(16)");
+  $ret[] = update_sql("ALTER TABLE {search_index}   MODIFY type varchar(16)");
+  return $ret;
+}
+
+/** profile_values table has incorrect primary key **/
+function fsp_update_6020() {
+  return array(update_sql("ALTER TABLE {profile_values} DROP PRIMARY KEY, ADD PRIMARY KEY(`uid`,`fid`)"));
+}
+
+/** statistic accesslog table has incorrect defaults **/
+function fsp_update_6021() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {accesslog} MODIFY title varchar(255)");
+  $ret[] = update_sql("ALTER TABLE {accesslog} MODIFY path varchar(255)");
+  $ret[] = update_sql("ALTER TABLE {accesslog} MODIFY hostname varchar(128)");
+  return $ret;
+}
+
+/** system table doesn't match schema **/
+function fsp_update_6022() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {actions_aid} MODIFY aid int unsigned NOT NULL AUTO_INCREMENT");
+  $ret[] = update_sql("ALTER TABLE {sessions} MODIFY uid int unsigned NOT NULL");
+  $ret[] = update_sql("ALTER TABLE {system} MODIFY weight int(10) NOT NULL DEFAULT '0'");
+  return $ret;
+}
+
+/** users table missing index on access column, wrong defaults on timezone **/
+function fsp_update_6023() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {users} MODIFY timezone varchar(8)");
+  $ret[] = update_sql("ALTER TABLE {users} ADD KEY access (access)");
+  return $ret;
+}
+
+/** users table has legacy contact_nid column **/
+function fsp_update_6024() {
+  return array(update_sql("ALTER TABLE {users} DROP COLUMN contact_nid"));
+}
+
+/** content_node_field table has sizing mismatch **/
+function fsp_update_6025() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {content_node_field} MODIFY required   tinyint NOT NULL DEFAULT 0");
+  $ret[] = update_sql("ALTER TABLE {content_node_field} MODIFY multiple   tinyint NOT NULL DEFAULT 0");
+  $ret[] = update_sql("ALTER TABLE {content_node_field} MODIFY db_storage tinyint NOT NULL DEFAULT 1");
+  return $ret;
+}
+
+/** content_type_participant table has wrong value for fsp_movers_value **/
+function fsp_update_6026() {
+  return array(update_sql("ALTER TABLE {content_type_participant} MODIFY fsp_movers_value varchar(15)"));
+}
+
+/** fix some long,verbose data in field_fsp_movers_value for one user **/
+function fsp_update_6027() {
+  return array(update_sql("UPDATE content_type_participant SET field_fsp_movers_value = '20000' WHERE vid = 78618"));
+}
+
+/** field_fsp_movers_value column legth tightening **/
+function fsp_update_6028() {
+  return array(update_sql("ALTER TABLE content_type_participant MODIFY field_fsp_movers_value varchar(32)"));
+}
