@@ -1,3 +1,8 @@
+Release #634 7/1/2012, by lcalitz
+- Social media fixes
+- Synchronized with in-place production hotfixes
+- Base release for in-place git releases & hotfixes
+
 Release #631 11/3/2011, by lcalitz
 - Contrib module updates
 - Patch to rules/rules_admin module to fix error
