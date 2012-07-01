@@ -1,3 +1,6 @@
+Release #635 7/1/2012, by lcalitz
+- Core & contrib updates
+
 Release #634 7/1/2012, by lcalitz
 - Social media fixes
 - Synchronized with in-place production hotfixes
