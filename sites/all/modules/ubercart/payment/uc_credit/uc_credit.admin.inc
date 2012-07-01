@@ -3,7 +3,6 @@
 /**
  * @file
  * Credit administration menu items.
- *
  */
 
 /**
@@ -35,6 +34,9 @@ function uc_credit_terminal($order) {
 
 /**
  * Displays the credit card terminal form for administrators.
+ *
+ * @see uc_credit_terminal_form_validate()
+ * @see uc_credit_terminal_form_submit()
  */
 function uc_credit_terminal_form($form_state, $order, $lock_amount = FALSE) {
   // Get the transaction types available to our default gateway.
@@ -222,6 +224,9 @@ function uc_credit_terminal_form($form_state, $order, $lock_amount = FALSE) {
 
 /**
  * Validation handler for credit terminal form.
+ *
+ * @see uc_credit_terminal_form()
+ * @see uc_credit_terminal_form_submit()
  */
 function uc_credit_terminal_form_validate($form, &$form_state) {
   switch ($form_state['values']['op']) {
@@ -241,6 +246,9 @@ function uc_credit_terminal_form_validate($form, &$form_state) {
 
 /**
  * Submit handler for credit terminal form.
+ *
+ * @see uc_credit_terminal_form()
+ * @see uc_credit_terminal_form_validate()
  */
 function uc_credit_terminal_form_submit($form, &$form_state) {
   // Load the order.
@@ -308,7 +316,7 @@ function uc_credit_terminal_form_submit($form, &$form_state) {
   $result = uc_payment_process('credit', $form_state['values']['order_id'], $form_state['values']['amount'], $data, TRUE, NULL, FALSE);
 
   if ($result) {
-    $crypt = new uc_encryption_class;
+    $crypt = new uc_encryption_class();
 
     // Load up the existing data array.
     $data = db_result(db_query("SELECT data FROM {uc_orders} WHERE order_id = %d", $form_state['values']['order_id']));
@@ -326,7 +334,7 @@ function uc_credit_terminal_form_submit($form, &$form_state) {
     }
 
     // Stuff the serialized and encrypted CC details into the array.
-    $data['cc_data'] = $crypt->encrypt(uc_credit_encryption_key(), serialize($cc_data));
+    $data['cc_data'] = $crypt->encrypt(uc_credit_encryption_key(), base64_encode(serialize($cc_data)));
     uc_store_encryption_errors($crypt, 'uc_credit');
 
     // Save it again.

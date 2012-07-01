@@ -1,25 +1,25 @@
-/*
-// $Id: sheetnode.css,v 1.2.2.1.2.9 2010/08/25 19:24:00 kratib Exp $
-*/
 
 .sheetview {
   padding-top: 10px;
   margin-bottom: 30px;
 }
 
-.sheetview table, .sheetview td, .sheetview th {
+.sheetview table, 
+.sheetview table tr, 
+.sheetview table tr td, 
+.sheetview table tr th {
   padding: 0;
   margin: 0;
   line-height: normal;
   border-width: 0;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
   border-collapse: separate;
   width: auto;
   background: transparent;
   vertical-align: top;
-}
-
-.sheetview tr:hover {
-  background: transparent;
 }
 
 .sheetview img {
@@ -51,4 +51,7 @@
   padding: 0;
   background: inherit;
 }
+
+/* Fix fieldset relative offset problem: http://drupal.org/node/735674 */
+html.js fieldset.collapsible { position: static; }
 

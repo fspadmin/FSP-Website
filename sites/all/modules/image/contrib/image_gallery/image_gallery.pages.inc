@@ -1,5 +1,4 @@
 <?php
-// $Id: image_gallery.pages.inc,v 1.1.2.2 2010/12/22 00:09:59 joachim Exp $
 
 /**
  * @file

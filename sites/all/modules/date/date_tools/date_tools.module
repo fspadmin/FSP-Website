@@ -1,5 +1,4 @@
 <?php
-// $Id: date_tools.module,v 1.1.2.18 2010/03/09 17:15:33 karens Exp $
 
 /**
  * Implementation of hook_help().
@@ -11,13 +10,13 @@ function date_tools_help($section, $arg) {
 
     case 'admin/content/date/tools/change':
       return '<p>'. t('Change a date field from one type to another. Very experimental, use at your own risk!') .'</p>';
-            
+
     case 'admin/content/date/tools/date_wizard':
       $disabled_modules = date_tools_wizard_disabled_modules(array('popup', 'repeat', 'linked'));
       if (!empty($disabled_modules)) {
         drupal_set_message(t('The following modules are required for the wizard to work:') .'<ul><li>'. implode('</li><li>', $disabled_modules) .'</li></ul>', 'error');
       }
-      $output =        
+      $output =
       t('Fill out the following form to auto-create a date content type, with a datetime field and matching pre-configured calendar. A calendar and upcoming events block will be created, an ical feed will be added to the calendar, and the mini calendar, calendar legend, and upcoming events blocks will be added to the sidebar of the default theme. Nodes created from this new content type will include a link to the calendar, and the calendar will have a link to the \'add new date\' form. If the Signup module is enabled, Signups will also be enabled for this field. You can also add new date fields to an existing content type by entering the existing content type name instead of creating a new one.') .
       '</p><p>'.
       t('Only a limited set of options are displayed here to make this easy to set up. Once the date has been created you will be able to make other changes to the date settings and add other fields to your new content type on the Manage fields screen, and make changes to the calendar on the Views edit page.') .
@@ -118,8 +117,8 @@ function date_tools_page() {
       if (array_key_exists($type_name, $node_types)) {
         $type = $node_types[$type_name];
         $calendars[] = array(
-          l($type->name, 'admin/content/node-type/'. $type_name .'/fields'), 
-          l($key, 'admin/build/views/edit/'. $key), 
+          l($type->name, 'admin/content/node-type/'. $type_name .'/fields'),
+          l($key, 'admin/build/views/edit/'. $key),
           t('The calendar %view is a default calendar created for the content type %type_name.', array('%view' => $key, '%type_name' => $type->name)),
           l(t('remove !view', array('!view' => $key)), 'date/tools/remove/' . $key),
         );
@@ -135,7 +134,7 @@ function date_tools_page() {
       $content .= theme('table', $headers, $calendars);
     }
   }
-  
+
   return $content;
 }
 
@@ -164,7 +163,7 @@ function date_tools_remove_form(&$form_state, $view_name) {
 function date_tools_remove_form_submit($form, &$form_state) {
   $form_values = $form_state['values'];
   $view_name = $form_values['view_name'];
-  
+
   if ($view_name && $form_values['confirm']) {
     calendar_remove($view_name);
     drupal_set_message(t('Removed calendar %calendar.', array(
@@ -172,5 +171,3 @@ function date_tools_remove_form_submit($form, &$form_state) {
   }
   $form_state['redirect'] = 'admin/content/date/tools';
 }
-
-

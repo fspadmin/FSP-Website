@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_field_cart_user.inc,v 1.1 2009/03/25 11:12:37 madsph Exp $
 
 /**
  * Field handler to provide simple renderer that allows linking to a user from a cart id.

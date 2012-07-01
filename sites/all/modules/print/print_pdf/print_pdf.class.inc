@@ -12,12 +12,12 @@
 class PrintTCPDF extends TCPDF {
   public $footer;
 
-  //Page footer data
+  // Page footer data
   public function SetFooterData($arg = '') {
     $this->footer = $arg;
   }
 
-  //Page footer
+  // Page footer
   public function Footer() {
     theme('print_pdf_tcpdf_footer2', $this);
   }

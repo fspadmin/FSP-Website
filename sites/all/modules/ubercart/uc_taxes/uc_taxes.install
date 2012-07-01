@@ -106,7 +106,7 @@ function uc_taxes_update_6001() {
 
   $schema = array(
     'rate' => array(
-      'description' => t('The rate of taxation.'),
+      'description' => 'The rate of taxation.',
       'type' => 'float',
       'not null' => TRUE,
       'default' => 0.0,

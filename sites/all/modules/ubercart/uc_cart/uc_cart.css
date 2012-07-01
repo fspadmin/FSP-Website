@@ -4,7 +4,7 @@
  */
 
 .solid-border {
-  border: solid 1px #BBB;
+  border: solid 1px #bbb;
   padding: 5px;
 }
 
@@ -34,7 +34,7 @@
 }
 
 .order-review-table .pane-title-row {
-  background-color: #DDD;
+  background-color: #ddd;
   border: solid 1px #999;
   font-weight: bold;
   padding: .5em 1em;
@@ -45,6 +45,7 @@
   font-weight: bold;
   padding-left: 3em;
   text-align: right;
+  white-space: right;
 }
 
 .order-review-table .data-col {
@@ -60,7 +61,7 @@
 }
 
 .order-review-table .review-button-row {
-  background-color: #DDD;
+  background-color: #ddd;
   border: solid 1px #999;
   text-align: right;
 }
@@ -103,7 +104,7 @@
  * CSS rules for the cart form at /cart.
  */
 #cart-form-products {
-  border: solid 1px #BBB;
+  border: solid 1px #bbb;
   margin-top: .5em;
 }
 
@@ -117,7 +118,7 @@
 }
 
 #cart-form-buttons {
-  border: solid 1px #BBB;
+  border: solid 1px #bbb;
   margin: .5em 0em;
   text-align: right;
 }
@@ -151,30 +152,9 @@
 /**
  * CSS rules for the cart review table.
  */
-.cart-review {
-  border: solid 1px #BBB;
-}
-
-.cart-review td {
-  padding: .4em;
-}
-
-.cart-review thead tr {
-  border: 0em;
-  font-weight: bold;
-}
-
-.cart-review tbody {
-  border-top: 0em;
-}
-
-.cart-review tbody tr {
-  border: 0em;
-  vertical-align: top;
-}
-
 td.qty {
   text-align: center;
+  white-space: nowrap;
 }
 
 td.price {
@@ -235,7 +215,7 @@ td.subtotal {
  * CSS rules for the bottom of the checkout form at /cart/checkout.
  */
 #checkout-form-bottom {
-  border: solid 1px #BBB;
+  border: solid 1px #bbb;
   text-align: right;
 }
 

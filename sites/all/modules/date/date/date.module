@@ -1,5 +1,4 @@
 <?php
-// $Id: date.module,v 1.61.2.4.2.74 2010/11/29 18:22:00 karens Exp $
 
 /**
  * @file
@@ -14,6 +13,7 @@ function date_init() {
   if (module_exists('token')) {
     require_once('./'. drupal_get_path('module', 'date') .'/date_token.inc');
   }
+
 }
 
 /**
@@ -27,14 +27,14 @@ function date_menu() {
   }
   $items['node/%node/repeats'] = array(
     'title' => 'Repeats',
-    'page callback' => 'date_repeat_page', 
-    'page arguments' => array(1), 
-    'access callback' => 'date_repeat_node', 
+    'page callback' => 'date_repeat_page',
+    'page arguments' => array(1),
+    'access callback' => 'date_repeat_node',
     'access arguments' => array(1),
-    'type' => MENU_LOCAL_TASK, 
+    'type' => MENU_LOCAL_TASK,
   );
 
-  return $items;  
+  return $items;
 }
 
 function date_perm() {
@@ -106,7 +106,7 @@ function date_content_is_empty($item, $field) {
   if (empty($item['value'])) {
     return TRUE;
   }
-  elseif($field['todate'] == 'required' && empty($item['value2'])) {
+  elseif ($field['todate'] == 'required' && empty($item['value2'])) {
     return TRUE;
   }
   return FALSE;
@@ -269,7 +269,7 @@ function date_theme() {
       'arguments' => array('element' => NULL)),
     'date_all_day' => array(
       'arguments' => array(
-        'which' => NULL, 'date1' => NULL, 'date2' => NULL, 
+        'which' => NULL, 'date1' => NULL, 'date2' => NULL,
         'format' => NULL, 'node' => NULL, 'view' => NULL)),
     'date_all_day_label' => array(
       'arguments' => array()),
@@ -282,19 +282,19 @@ function date_theme() {
     'date' => array(
       'arguments' => array('element' => NULL)),
     'date_formatter_default' => $base + array(
-      'arguments' => array('element' => NULL), 
+      'arguments' => array('element' => NULL),
       'function' => 'theme_date_display_combination'),
     'date_formatter_format_interval' => $base + array(
-      'arguments' => array('element' => NULL), 
+      'arguments' => array('element' => NULL),
       'function' => 'theme_date_format_interval'),
     'date_formatter_format_calendar_day' => $base + array(
-      'arguments' => array('element' => NULL), 
+      'arguments' => array('element' => NULL),
       'function' => 'theme_date_format_calendar_day'),
     'date_repeat_display' => $base + array(
-      'arguments' => array('field' => NULL, 
+      'arguments' => array('field' => NULL,
       'item' => NULL, 'node' => NULL, 'dates' => NULL),
       'function' => 'theme_date_repeat_display',
-      ),  
+      ),
   );
 
   // Table isn't available first time date_theme() is called in update.php.
@@ -303,7 +303,7 @@ function date_theme() {
     if (!empty($format_types)) {
       foreach ($format_types as $type => $type_info) {
         $themes['date_formatter_' . $type] = $base + array(
-          'arguments' => array('element' => NULL), 
+          'arguments' => array('element' => NULL),
           'function' => 'theme_date_display_combination',
         );
       }
@@ -323,12 +323,12 @@ function date_theme() {
  *
  * @return array that holds the From and To date objects
  *  Each date object looks like:
- *       date [value] => array (
- *         [db] => array (  // the value stored in the database
+ *       date [value] => array(
+ *         [db] => array(  // the value stored in the database
  *           [object] => the datetime object
  *           [datetime] => 2007-02-15 20:00:00
  *         )
- *         [local] => array (  // the local representation of that value
+ *         [local] => array(  // the local representation of that value
  *           [object] => the datetime object
  *           [datetime] => 2007-02-15 14:00:00
  *           [timezone] => US/Central
@@ -373,7 +373,7 @@ function date_formatter_process($element) {
       $dates[$processed]['local']['datetime'] = date_format($date, DATE_FORMAT_DATETIME);
       $dates[$processed]['local']['timezone'] = $timezone;
       $dates[$processed]['local']['offset'] = date_offset_get($date);
-      
+
       //format the date, special casing the 'interval' format which doesn't need to be processed
       $dates[$processed]['formatted'] = '';
       if (is_object($date)) {
@@ -382,7 +382,7 @@ function date_formatter_process($element) {
         }
         elseif ($format == 'format_calendar_day') {
            $dates[$processed]['calendar_day'] = date_format_calendar_day($date);
-        } 
+        }
         elseif ($format == 'U') {
           $dates[$processed]['formatted'] = date_format_date($date, 'custom', $format);
           $dates[$processed]['formatted_date'] = date_format_date($date, 'custom', $format);
@@ -394,7 +394,7 @@ function date_formatter_process($element) {
           $dates[$processed]['formatted_date'] = date_format_date($date, 'custom', date_limit_format($format, array('year', 'month', 'day')));
           $dates[$processed]['formatted_time'] = date_format_date($date, 'custom', date_limit_format($format, array('hour', 'minute', 'second')));
           $dates[$processed]['formatted_timezone'] = date_format_date($date, 'custom', date_limit_format($format, array('timezone')));
-        }  
+        }
       }
     }
   }
@@ -403,17 +403,17 @@ function date_formatter_process($element) {
   }
   $date1 = $dates['value']['local']['object'];
   $date2 = $dates['value2']['local']['object'];
-  
+
   $all_day = '';
   $all_day2 = '';
   if ($format != 'format_interval') {
     $all_day1 = theme('date_all_day', $field, 'date1', $date1, $date2, $format, $node);
     $all_day2 = theme('date_all_day', $field, 'date2', $date1, $date2, $format, $node);
   }
-  if ((!empty($all_day1) && $all_day1 != $dates['value']['formatted']) 
+  if ((!empty($all_day1) && $all_day1 != $dates['value']['formatted'])
   || (!empty($all_day2) && $all_day2 != $dates['value2']['formatted'])) {
     $dates['value']['formatted_time'] = theme('date_all_day_label');
-    $dates['value2']['formatted_time'] = theme('date_all_day_label'); 
+    $dates['value2']['formatted_time'] = theme('date_all_day_label');
     $dates['value']['formatted'] = $all_day1;
     $dates['value2']['formatted'] = $all_day2;
   }
@@ -483,29 +483,25 @@ function date_field($op, &$node, $field, &$items, $teaser, $page) {
     case 'load':
       return $additions;
       break;
-
     case 'validate':
       require_once('./'. drupal_get_path('module', 'date') .'/date_elements.inc');
       return _date_field_validate($op, $node, $field, $items, $teaser, $page);
       break;
-
     case 'presave':
     case 'insert':
     case 'update':
-      require_once('./'. drupal_get_path('module', 'date') .'/date_elements.inc');     
+      require_once('./'. drupal_get_path('module', 'date') .'/date_elements.inc');
       $items = $additions[$field['field_name']];
       if ($additions[$field['field_name']]) {
         $node->$field['field_name'] = $additions;
       }
       return _date_field_update($op, $node, $field, $items, $teaser, $page);
       break;
-
     case 'sanitize':
-      foreach ($items as $delta => $item) {
+      //foreach ($items as $delta => $item) {
         //$dates = date_formatter_process($field, $item, $node, $formatter);
         //$node->$field['field_name'][$delta]['dates'] = $dates;
-      }
-      break;
+      //}
   }
 }
 
@@ -575,7 +571,7 @@ function date_formatter_format($formatter, $field_name) {
       $format = variable_get('date_format_'. $formatter, $default);
       break;
   }
- 
+
   if (empty($format)) {
     $format = $default;
   }
@@ -599,26 +595,27 @@ function date_views_api() {
  * Helper function to adapt node date fields to formatter settings.
  */
 function date_prepare_node($node, $field, $type_name, $context, $options) {
-  
-  // If there are options to limit multiple values, 
-  // alter the node values to match. 
+
+  // If there are options to limit multiple values,
+  // alter the node values to match.
   $field_name = $field['field_name'];
-  
+
   $max_count = $options['multiple']['multiple_number'];
-    
+
   // If no results should be shown, empty the values and return.
   if (is_numeric($max_count) && $max_count == 0) {
     $node->{$field_name} = array();
     return $node;
   }
-  
+
   // Otherwise removed values that should not be displayed.
   if (!empty($options['multiple']['multiple_from']) || !empty($options['multiple']['multiple_to']) || !empty($max_count)) {
     $format = date_type_format($field['type']);
     include_once(drupal_get_path('module', 'date_api') .'/date_api_sql.inc');
     $date_handler = new date_sql_handler($field);
-    $arg0 = !empty($options['multiple']['multiple_from']) ? $date_handler->arg_replace($options['multiple']['multiple_from']) : variable_get('date_min_year', 100) .'-01-01T00:00:00';
-    $arg1 = !empty($options['multiple']['multiple_to']) ? $date_handler->arg_replace($options['multiple']['multiple_to']) : variable_get('date_max_year', 4000) .'-12-31T23:59:59';
+    $arg0 = !empty($options['multiple']['multiple_from']) ? date_format(date_create($options['multiple']['multiple_from'], date_default_timezone()), DATE_FORMAT_DATETIME) : variable_get('date_min_year', 100) .'-01-01T00:00:00';
+    $arg1 = !empty($options['multiple']['multiple_to']) ? date_format(date_create($options['multiple']['multiple_to'], date_default_timezone()), DATE_FORMAT_DATETIME) : variable_get('date_max_year', 4000) .'-12-31T23:59:59';
+
     if (!empty($arg0) && !empty($arg1)) {
       $arg = $arg0 .'--'. $arg1;
     }
@@ -639,7 +636,7 @@ function date_prepare_node($node, $field, $type_name, $context, $options) {
           break;
         }
         elseif ((!empty($max_count) && is_numeric($max_count) && $count >= $max_count) ||
-        (!empty($value['value'])  && $value['value'] < $start) || 
+        (!empty($value['value'])  && $value['value'] < $start) ||
         (!empty($value['value2']) && $value['value2'] > $end)) {
           unset($node->{$field_name}[$delta]);
         }
@@ -658,22 +655,25 @@ function date_prepare_node($node, $field, $type_name, $context, $options) {
 function date_handler_fields($view) {
   $field_names = array();
   if (empty($view->date_info->date_fields)) {
+    if (empty($view->date_info)) {
+      $view->date_info = new stdClass;
+    }
     $view->date_info->date_fields = array();
   }
   foreach ($view->field as $field) {
     if ($field->definition['handler'] == 'date_handler_field_multiple') {
       $name = $field->field;
       $group = $field->options['multiple'];
-      if (substr($name, -7) == '_value2') {
-        $field_name = substr($name, 0, strlen($name) - 7);
+      if (drupal_substr($name, -7) == '_value2') {
+        $field_name = drupal_substr($name, 0, strlen($name) - 7);
       }
-      elseif (substr($name, -6) == '_value') {
-        $field_name = substr($name, 0, strlen($name) - 6);
+      elseif (drupal_substr($name, -6) == '_value') {
+        $field_name = drupal_substr($name, 0, strlen($name) - 6);
       }
       else {
         $field_name = '';
         $group = array();
-        continue; 
+        continue;
       }
       foreach ($view->date_info->date_fields as $date_field) {
         if (strstr($date_field, '.'. $field_name)) {
@@ -688,27 +688,26 @@ function date_handler_fields($view) {
   return $field_names;
 }
 
-
-/**                                                                            
- * Generate a DateAPI SQL handler for the given CCK date field.   
- * 
+/**
+ * Generate a DateAPI SQL handler for the given CCK date field.
+ *
  * The handler will be set up to make the correct timezone adjustments
- * for the field settings. 
- * 
+ * for the field settings.
+ *
  * @param $field
  *  - a $field array.
  * @param $compare_tz
- *  - the timezone used for comparison values in the SQL.             
+ *  - the timezone used for comparison values in the SQL.
  */
  function date_field_get_sql_handler($field, $compare_tz = NULL) {
    module_load_include('inc', 'date_api', 'date_api_sql');
-   
+
    $db_info = content_database_info($field);
-   
-   // Create a DateAPI SQL handler class for this field type.                    
+
+   // Create a DateAPI SQL handler class for this field type.
    $handler = new date_sql_handler();
    $handler->construct($field['type']);
-   
+
    // If this date field stores a timezone in the DB, tell the handler about it.
    if ($field['tz_handling'] == 'date') {
      $handler->db_timezone_field = $db_info['columns']['timezone']['column'];
@@ -716,15 +715,15 @@ function date_handler_fields($view) {
    else {
      $handler->db_timezone = date_get_timezone_db($field['tz_handling']);
    }
-   
+
    if (empty($compare_tz)) {
      $compare_tz = date_get_timezone($field['tz_handling']);
    }
    $handler->local_timezone = $compare_tz;
 
-  // Now that the handler is properly initialized, force the DB 
+  // Now that the handler is properly initialized, force the DB
   // to use UTC so no timezone conversions get added to things like
-  // NOW() or FROM_UNIXTIME().  
+  // NOW() or FROM_UNIXTIME().
   $handler->set_db_timezone();
 
   return $handler;
@@ -809,7 +808,7 @@ function date_content_display_form(&$form, &$form_state) {
     }
   }
   foreach ($form as $field_name => $element) {
-    if (substr($field_name, 0, 6) == 'field_') {
+    if (drupal_substr($field_name, 0, 6) == 'field_') {
       if (array_key_exists($field_name, $date_fields)) {
         $field = $date_fields[$field_name];
         foreach ($element as $context => $value) {
@@ -829,13 +828,13 @@ function date_content_display_form(&$form, &$form_state) {
 }
 
 /**
- * Store the formatter settings 
+ * Store the formatter settings
  * and reset the form back to the value CCK expects.
  */
 function date_formatter_settings_validate(&$form, &$form_state) {
   $field = $form['extra']['field']['#value'];
   $field_name = $field['field_name'];
-  
+
   $type_name = $form['extra']['type_name']['#value'];
   $context = $form['extra']['context']['#value'];
   $form_values = $form_state['values'][$field_name][$context]['format']['extra'];
@@ -845,7 +844,7 @@ function date_formatter_settings_validate(&$form, &$form_state) {
   variable_set($value .'_multiple_from', $form_values['multiple']['multiple_from']);
   variable_set($value .'_multiple_to', $form_values['multiple']['multiple_to']);
   variable_set($value .'_fromto', $form_values['fromto']['fromto']);
-  
+
   form_set_value($form, $form_state['values'][$field_name][$context]['format']['base'], $form_state);
 }
 
@@ -856,7 +855,7 @@ function date_formatter_get_settings($field_name, $type_name, $context) {
   $options['multiple']['multiple_number'] = variable_get($value .'_multiple_number', '');
   $options['multiple']['multiple_from'] = variable_get($value .'_multiple_from', '');
   $options['multiple']['multiple_to'] = variable_get($value .'_multiple_to', '');
-  $options['fromto']['fromto'] = variable_get($value .'_fromto', 'both');  
+  $options['fromto']['fromto'] = variable_get($value .'_fromto', 'both');
   return $options;
 }
 
@@ -873,7 +872,7 @@ function date_field_all_day($field, $date1, $date2 = NULL) {
     return FALSE;
   }
   elseif (!date_has_time($field['granularity'])) {
-    return FALSE;
+    return TRUE;
   }
   if (empty($date2)) {
     $date2 = $date1;
@@ -886,3 +885,4 @@ function date_field_all_day($field, $date1, $date2 = NULL) {
   return date_is_all_day($date1, $date2, $granularity, $increment);
 
 }
+

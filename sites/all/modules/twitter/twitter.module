@@ -1,4 +1,11 @@
 <?php
+/**
+ * @file
+ *
+ * Establishes an interface to communicate with Twitter
+ */
+
+module_load_include('lib.php', 'twitter');
 
 /**
  * Implementation of hook_meu()
@@ -76,7 +83,7 @@ function twitter_user($op, &$edit, &$account, $category = NULL) {
       return array(
         array(
           'name' => 'twitter',
-          'title' => 'Twitter accounts',
+          'title' => t('Twitter accounts'),
           'weight' => 3,
         ),
       );
@@ -99,7 +106,8 @@ function twitter_shorten_url($url) {
     return shorten_url($url);
   }
   else {
-    $response = drupal_http_request("http://tinyurl.com/api-create.php?url=" . $url);
+    $conf = TwitterConf::instance();
+    $response = drupal_http_request("http://" . $conf->get('tiny_url') . "/api-create.php?url=" . $url);
     if ($response->code == 200) {
       return $response->data;
     }
@@ -166,7 +174,8 @@ function twitter_filter($op, $delta = 0, $format = -1, $text = '') {
         case 0:
           return twitter_link_filter($text);
         case 1:
-          return twitter_link_filter($text, '#', 'http://search.twitter.com/search?q=%23');
+          $conf = TwitterConf::instance();
+          return twitter_link_filter($text, '#', 'http://' . $conf->get('search') . '/search?q=%23');
         default:
           return $text;
       }
@@ -194,7 +203,11 @@ function twitter_filter_tips($delta, $format, $long = FALSE) {
  * This helper function converts Twitter-style @usernames and #hashtags into 
  * actual links.
  */
-function twitter_link_filter($text, $prefix = '@', $destination = 'http://twitter.com/') {
+function twitter_link_filter($text, $prefix = '@', $destination = '') {
+  if ($destination == '') {
+    $conf = TwitterConf::instance();
+    $destination = 'http://' . $conf->get('host') . '/';
+  }
   $matches = array(
     '/\>' . $prefix . '([a-z0-9_]+)/i',
     '/^' . $prefix . '([a-z0-9_]+)/i',
@@ -231,7 +244,7 @@ function twitter_twitter_accounts($account) {
   $twitter_accounts = array();
   
   $sql = "SELECT twitter_uid FROM {twitter_account} WHERE uid = %d";
-  if (user_access('use global twitter account')) {
+  if (user_access('use global twitter account', $account)) {
     $sql.= " OR is_global=1";
   }
   $results = db_query($sql, $account->uid);
@@ -244,7 +257,7 @@ function twitter_twitter_accounts($account) {
 }
 
 function _twitter_use_oauth() {
-  if (!module_exists('oauth')) {
+  if (!module_exists('oauth_common')) {
     return FALSE;
   }
   

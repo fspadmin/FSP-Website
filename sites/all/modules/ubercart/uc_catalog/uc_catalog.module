@@ -537,7 +537,7 @@ function _uc_catalog_pathauto_alias($category, $op) {
   module_load_include('inc', 'pathauto');
   $count = 0;
 
-  if ($category->vid == variable_get('uc_catalog_vid', 0)){
+  if ($category->vid == variable_get('uc_catalog_vid', 0)) {
     $placeholders = pathauto_get_placeholders('taxonomy', $category);
 
     $src = uc_catalog_path($category);
@@ -851,7 +851,7 @@ function uc_catalog_set_breadcrumb($tid) {
 }
 
 /**
- * Emulates Drupal's menu system, but based soley on the structure of
+ * Emulates Drupal's menu system, but based solely on the structure of
  * "Product Catalog".
  *
  * @param $branch
@@ -1018,7 +1018,7 @@ function uc_catalog_add_node_type($type) {
     return;
   }
 
-  if (!db_result(db_query("SELECT vid FROM {vocabulary_node_types} WHERE vid = %d and type = '%s'", $vid, $type))){
+  if (!db_result(db_query("SELECT vid FROM {vocabulary_node_types} WHERE vid = %d and type = '%s'", $vid, $type))) {
     db_query("INSERT INTO {vocabulary_node_types} (vid, type) VALUES (%d, '%s')", $vid, $type);
   }
 }

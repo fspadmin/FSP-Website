@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_attribute_handler_field_combination.inc,v 1.1.2.1 2009/09/22 07:32:01 madsph Exp $
 
 /**
  * @file

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_bulk_operations.module,v 1.1.2.1.2.8 2010/11/18 16:08:27 longwave Exp $
 
 /**
  * Implementation of hook_views_api().

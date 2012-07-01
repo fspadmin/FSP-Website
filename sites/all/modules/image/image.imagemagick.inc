@@ -1,5 +1,4 @@
 <?php
-// $Id: image.imagemagick.inc,v 1.24.2.1 2010/08/03 17:43:00 sun Exp $
 
 /**
  * Return information about the imagemagick toolkit.

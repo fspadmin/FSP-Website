@@ -231,6 +231,9 @@ function uc_weightquote_update_6001() {
   return $ret;
 }
 
+/**
+ * Change currency fields to numeric(16, 5).
+ */
 function uc_weightquote_update_6002() {
   $ret = array();
 

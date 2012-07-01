@@ -180,7 +180,8 @@ function load_customer_search_results() {
     {
       first_name: $('#customer-select #edit-first-name').val(),
       last_name: $('#customer-select #edit-last-name').val(),
-      email: $('#customer-select #edit-email').val()
+      email: $('#customer-select #edit-email').val(),
+      username: $('#customer-select #edit-username').val()
     },
     function (contents) {
       $('#customer-select').empty().append(contents);

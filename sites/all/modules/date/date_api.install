@@ -1,5 +1,4 @@
 <?php
-// $Id: date_api.install,v 1.16.2.1.2.25 2010/08/13 10:50:52 karens Exp $
 
 function date_api_set_variables() {
   // Set absolute minimum and maximum year for dates on this site.
@@ -7,7 +6,7 @@ function date_api_set_variables() {
   // a year less than 0 would result in negative ISO and DATETIME dates,
   // like -1250-01-01T00:00:00, which probably won't make sense or work
   // correctly anywhere.
-  // 
+  //
   // The odd construct of using variable_get() instead of variable_set()
   // is so we don't accidentally write over an existing value. If
   // no value is set, variable_get() will set it.
@@ -17,7 +16,7 @@ function date_api_set_variables() {
 
   // Set an API version in a way that other modules can test for compatibility.
   variable_set('date_api_version', '5.2');
- 
+
   if (version_compare(PHP_VERSION, '5.2', '<') && !module_exists('date_php4')) {
     module_enable(array('date_php4'));
   }
@@ -32,7 +31,7 @@ function date_api_set_variables() {
   // Otherwise, many functions would use 'UTC' incorrectly and
   // produce unreliable and odd results. This way functions can test for a
   // value and not use this if it is empty.
-  // 
+  //
   // The odd construct of using variable_get() instead of variable_set()
   // is so we don't accidentally write over an existing value. If
   // no value is set, variable_get() will set it to NULL.
@@ -161,8 +160,8 @@ function date_api_install() {
 
   $ret = array();
   db_add_field($ret, "users", "timezone_name", array('type' => 'varchar', 'length' => 50, 'not null' => TRUE, 'default' => ''));
-  
-  // Make sure MYSQL does not stupidly do case-insensitive 
+
+  // Make sure MYSQL does not stupidly do case-insensitive
   // searches and indexes on our formats.
   // @see http://pure.rednoize.com/2006/11/26/mysql-collation-matters-when-using-unique-indexes/
   // @see http://jjinux.blogspot.com/2009/03/mysql-case-sensitivity-hell.html
@@ -185,7 +184,7 @@ function date_api_enable() {
   // When module is enabled, build the list of date formats and types.  This
   // includes those provided by this module and other contrib modules.  As the
   // date_format tables are created but the schema hasn't been updated, force
-  // a refresh so we can use the schema API. 
+  // a refresh so we can use the schema API.
   drupal_get_schema('', TRUE);
   // Ensure schema has been installed - order of things gets out of sync because
   // date_api_set_variables() in date_api_install() enables the 'date_timezone'
@@ -219,7 +218,7 @@ function date_api_uninstall() {
 
   if (db_table_exists('views_display')) {
     $displays = array(
-      'date_nav', 
+      'date_nav',
     );
     db_query("DELETE FROM {views_display} WHERE display_plugin IN ('". implode("','", $displays) ."')");
     db_query("DELETE FROM {cache_views}");
@@ -274,7 +273,7 @@ function date_api_update_6000() {
     $ret = array();
     drupal_set_message(t('date module cannot be updated until after Views has been updated. Please return to <a href="@update-php">update.php</a> and run the remaining updates.', array('@update-php' => base_path() .'update.php?op=selection')), 'warning', FALSE);
     $ret['#abort'] = array('success' => FALSE, 'query' => t('date.module has updates, but cannot be updated until views.module is updated first.'));
-    
+
     return $ret;
   }
   date_api_set_variables();
@@ -292,7 +291,7 @@ function date_api_update_6001() {
     $ret = array();
     drupal_set_message(t('date module cannot be updated until after Views has been updated. Please return to <a href="@update-php">update.php</a> and run the remaining updates.', array('@update-php' => base_path() .'update.php?op=selection')), 'warning', FALSE);
     $ret['#abort'] = array('success' => FALSE, 'query' => t('date.module has updates, but cannot be updated until views.module is updated first.'));
-    
+
     return $ret;
   }
   if (db_table_exists('cache_content')) {
@@ -303,7 +302,7 @@ function date_api_update_6001() {
   }
   if (db_table_exists('views_object_cache')) {
     db_query('DELETE FROM {views_object_cache}');
-  }    
+  }
   db_query("DELETE FROM {cache} where cid LIKE 'theme_registry%'");
   return $ret;
 }
@@ -318,7 +317,7 @@ function date_api_update_6002() {
     $ret = array();
     drupal_set_message(t('date module cannot be updated until after Views has been updated. Please return to <a href="@update-php">update.php</a> and run the remaining updates.', array('@update-php' => base_path() .'update.php?op=selection')), 'warning', FALSE);
     $ret['#abort'] = array('success' => FALSE, 'query' => t('date.module has updates, but cannot be updated until views.module is updated first.'));
-    
+
     return $ret;
   }
 
@@ -393,7 +392,6 @@ function date_api_update_6002() {
     'primary key' => array('type', 'language'),
   );
 
-
   db_create_table($ret, 'date_format_types', $schema['date_format_types']);
   db_create_table($ret, 'date_format', $schema['date_format']);
   db_create_table($ret, 'date_format_locale', $schema['date_format_locale']);
@@ -417,7 +415,7 @@ function date_api_update_6003() {
  * The "date_format" table is missing on boxes having MySQL 5.0.67 installed.
  * There seems to be a bug in MySQL that prevents the creation of tables with
  * a name "date_format" and indexes with the name "format".
- * 
+ *
  * We rename the table and index as a workaround.
  */
 function date_api_update_6004() {
@@ -466,18 +464,18 @@ function date_api_update_6004() {
     db_drop_unique_key($ret, 'date_format', 'format');
     if (db_table_exists('date_formats')) {
       db_drop_table($ret, 'date_format');
-    } 
+    }
     else {
       db_rename_table($ret, 'date_format', 'date_formats');
       db_add_unique_key($ret, 'date_formats', 'formats', array('format', 'type'));
-    }    
+    }
   }
 
-  return $ret;  
+  return $ret;
 }
 
 /**
- * Make sure MYSQL does not stupidly do case-insensitive 
+ * Make sure MYSQL does not stupidly do case-insensitive
  * searches and indexes on our formats.
  * @see http://pure.rednoize.com/2006/11/26/mysql-collation-matters-when-using-unique-indexes/
  * @see http://jjinux.blogspot.com/2009/03/mysql-case-sensitivity-hell.html
@@ -495,7 +493,6 @@ function date_api_update_6005() {
   return $ret;
 }
 
-
 /**
  * Rename the date_format_dfid_seq to date_formats_dfid_seq, as this was missed in 6004
  * and causes inserts via the UI to fail on PostgreSQL.
@@ -504,7 +501,7 @@ function date_api_update_6006() {
   global $db_type;
   $ret = array();
   if ($db_type == 'pgsql' && db_table_exists('date_format_dfid_seq')) {
-    $sql = "ALTER SEQUENCE {date_format}_dfid_seq RENAME TO {date_formats}_dfid_seq";
+    $sql = "ALTER TABLE {date_format}_dfid_seq RENAME TO {date_formats}_dfid_seq";
     $ret[] = update_sql($sql);
   }
   return $ret;

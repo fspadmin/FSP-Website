@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views.module,v 1.1.4.1.2.2 2010/11/18 20:49:52 longwave Exp $
 
 /**
  * Implementation of hook_views_api().
@@ -44,4 +43,18 @@ function uc_views_date_api_fields($field) {
     case 'uc_cart_products.changed':
       return $values;
   }
+}
+
+/**
+ * Implementataion of hook_draggableviews_handlers().
+ */
+function uc_views_draggableviews_handlers() {
+  return array(
+    'ubercart' => array(
+      'file' => 'draggableviews_handler_ubercart.inc',
+      'title' => t('Ubercart'),
+      'description' => 'Ubercart product list position.',
+      'handler' => 'draggableviews_handler_ubercart',
+    ),
+  );
 }

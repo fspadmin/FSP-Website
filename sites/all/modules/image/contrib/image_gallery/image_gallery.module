@@ -1,5 +1,4 @@
 <?php
-// $Id: image_gallery.module,v 1.46.2.1 2010/08/03 17:43:00 sun Exp $
 
 define('IMAGE_GALLERY_SORT_CREATE_DESC', 0);
 define('IMAGE_GALLERY_SORT_CREATE_ASC', 1);

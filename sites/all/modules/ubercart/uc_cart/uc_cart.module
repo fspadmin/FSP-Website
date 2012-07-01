@@ -478,6 +478,7 @@ function uc_cart_block_settings_form() {
   $form['uc_cart_block_empty_hide'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide block if cart is empty.'),
+    '#description' => t('This does not apply to anonymous users if page caching is enabled, as the same cached page will be served to all anonymous users whether or not they have items in their cart.'),
     '#default_value' => variable_get('uc_cart_block_empty_hide', FALSE),
   );
   $form['uc_cart_block_image'] = array(
@@ -848,35 +849,18 @@ function uc_cart_login_update($uid) {
     return;
   }
 
-  // Get the current contents of the cart.
-  $items = uc_cart_get_contents($uid);
+  // If there are items in the anonymous cart, consolidate them.
+  if ($items = uc_cart_get_contents($_SESSION['uc_cart_id'])) {
+    // Remove the anonymous cart items.
+    db_query("DELETE FROM {uc_cart_products} WHERE cart_id = '%s'", $_SESSION['uc_cart_id']);
 
-  // Update the cart so the ID is switched from the session to user ID.
-  db_query("UPDATE {uc_cart_products} SET cart_id = %d WHERE cart_id = '%s'", $uid, $_SESSION['uc_cart_id']);
-
-  // If there were items before the update, we need to re-add them all to
-  // take care of item consolidation.
-  if (count($items) > 0) {
-    // Store again what items these are.
-    $items = uc_cart_get_contents($uid, 'rebuild');
-
-    // Remove from the table all the items in the cart.
-    // Should be a function call instead of a single query. -RS
-    db_query("DELETE FROM {uc_cart_products} WHERE cart_id = '%s'", $uid);
-
-    // Reset the cart item cache.
-    uc_cart_get_contents($uid, 'rebuild');
-
-    // Loop through what the items should be and re-add them to the cart.
+    // Merge the anonymous items into the user cart.
     foreach ($items as $key => $item) {
       uc_cart_add_item($item->nid, $item->qty, $item->data, $uid, FALSE, FALSE, FALSE);
     }
 
     // Unset the anonymous cart ID, it's no longer needed
     unset($_SESSION['uc_cart_id']);
-
-    // Rebuild the cart item cache.
-    uc_cart_get_contents($uid, 'rebuild');
   }
 }
 
@@ -897,6 +881,8 @@ function theme_uc_empty_cart() {
  * be changed by the customer.
  *
  * @see uc_cart_view_form_submit()
+ * @see uc_cart_view_form_continue_shopping()
+ * @see uc_cart_view_form_checkout()
  * @see theme_uc_cart_view_form()
  * @see theme_uc_cart_view_price()
  * @see uc_cart_view_table()
@@ -970,6 +956,7 @@ function uc_cart_view_form($form_state, $items = NULL) {
       $form['continue_shopping'] = array(
         '#type' => 'submit',
         '#value' => $cs_text,
+        '#submit' => array('uc_cart_view_form_submit', 'uc_cart_view_form_continue_shopping'),
       );
     }
   }
@@ -977,12 +964,14 @@ function uc_cart_view_form($form_state, $items = NULL) {
   // Add the control buttons for updating and proceeding to checkout.
   $form['update'] = array(
     '#type' => 'submit',
+    '#name' => 'update-cart',
     '#value' => t('Update cart'),
   );
   if (variable_get('uc_checkout_enabled', TRUE)) {
     $form['checkout'] = array(
       '#type' => 'submit',
       '#value' => t('Checkout'),
+      '#submit' => array('uc_cart_view_form_submit', 'uc_cart_view_form_checkout'),
     );
   }
 
@@ -1010,25 +999,27 @@ function uc_cart_view_form_submit($form, &$form_state) {
   // Update the items in the shopping cart based on the form values.
   uc_cart_update_item_object((object)$form_state['values']);
 
-  // Specify the appropriate redirect based on the button used to submit.
-  $cs_text = variable_get('uc_continue_shopping_text', '') ? variable_get('uc_continue_shopping_text', '') : t('Continue shopping');
-  switch ($form_state['clicked_button']['#value']) {
-    // Continue shopping button.
-    case $cs_text:
-      $form_state['redirect'] = uc_cart_continue_shopping_url();
-      break;
-
-    // Update cart button.
-    case t('Update cart'):
-      // No redirect.  Just display a message and preserve the last URL.
-      drupal_set_message(t('Your cart has been updated.'));
-      break;
-
-    // Checkout button.
-    case t('Checkout'):
-      $form_state['redirect'] = variable_get('uc_checkout_enabled', TRUE) ? 'cart/checkout' : 'cart';
-      break;
+  if ($form_state['clicked_button']['#name'] == 'update-cart') {
+    drupal_set_message(t('Your cart has been updated.'));
   }
+}
+
+/**
+ * Continue shopping redirect for uc_cart_view_form().
+ *
+ * @see uc_cart_view_form()
+ */
+function uc_cart_view_form_continue_shopping($form, &$form_state) {
+  $form_state['redirect'] = uc_cart_continue_shopping_url();
+}
+
+/**
+ * Checkout redirect for uc_cart_view_form().
+ *
+ * @see uc_cart_view_form()
+ */
+function uc_cart_view_form_checkout($form, &$form_state) {
+  $form_state['redirect'] = 'cart/checkout';
 }
 
 /**
@@ -1229,15 +1220,18 @@ function uc_cart_complete_sale($order, $login = FALSE) {
   }
 
   $variables['!new_username'] = isset($order->data['new_user']['name']) ? $order->data['new_user']['name'] : '';
-  $variables['!new_password'] = isset($order->data['new_user']['pass']) ? $order->data['new_user']['pass'] : '';
+  $variables['!new_password'] = isset($order->password) ? $order->password : t('Your password');
   $messages = array(
     'uc_msg_order_submit' => uc_get_message('completion_message'),
-    'uc_msg_order_' . $type => strtr(uc_get_message('completion_' . $type), $variables),
+    'uc_msg_order_' . $type => uc_get_message('completion_' . $type),
     'uc_msg_continue_shopping' => uc_get_message('continue_shopping'),
   );
   foreach ($messages as $id => &$message) {
     $message = variable_get($id, $message);
     $message = token_replace_multiple($message, array('global' => NULL, 'order' => $order));
+    if ($id == 'uc_msg_order_' . $type) {
+      $message = strtr($message, $variables);
+    }
     $message = check_markup($message, variable_get($id . '_format', FILTER_FORMAT_DEFAULT), FALSE);
   }
   $output = implode('', $messages);
@@ -1270,9 +1264,8 @@ function uc_cart_complete_sale_account($order) {
     return;
   }
 
-  // Create a new user.
-  $fields = isset($order->data['new_user']) ? $order->data['new_user'] : array();
-  $fields += array(
+  // Set up a new user.
+  $fields = array(
     'name' => uc_store_email_to_username($order->primary_email),
     'mail' => $order->primary_email,
     'init' => $order->primary_email,
@@ -1280,20 +1273,32 @@ function uc_cart_complete_sale_account($order) {
     'roles' => array(),
     'status' => variable_get('uc_new_customer_status_active', TRUE) ? 1 : 0,
   );
+
+  // Override the username, if specified.
+  if (isset($order->data['new_user']['name'])) {
+    $fields['name'] = $order->data['new_user']['name'];
+  }
+
+  // Create the account.
   $account = user_save('', $fields);
+
+  // Override the password, if specified.
+  if (isset($order->data['new_user']['hash'])) {
+    db_query("UPDATE {users} SET pass = '%s' WHERE uid = %d", $order->data['new_user']['hash'], $account->uid);
+    $account->password = t('Your password');
+  }
+  else {
+    $account->password = $fields['pass'];
+    $order->password = $fields['pass'];
+  }
 
   // Send the customer their account details if enabled.
   if (variable_get('uc_new_customer_email', TRUE)) {
-    // Manually set the password so it appears in the e-mail.
-    $account->password = $fields['pass'];
     drupal_mail('user', 'register_no_approval_required', $order->primary_email, uc_store_mail_recipient_language($order->primary_email), array('account' => $account), uc_store_email_from());
   }
 
   $order->uid = $account->uid;
-  $order->data['new_user'] = array(
-    'name' => $fields['name'],
-    'pass' => $fields['pass'],
-  );
+  $order->data['new_user']['name'] = $fields['name'];
   $order->data['complete_sale'] =  'new_user';
 }
 
@@ -1510,9 +1515,9 @@ function uc_cart_add_item($nid, $qty = 1, $data = NULL, $cid = NULL, $msg = TRUE
             if (isset($_GET['destination'])) {
               drupal_goto();
             }
+            $_SESSION['uc_cart_last_url'] = uc_referer_uri();
             $redirect = variable_get('uc_add_item_redirect', 'cart');
             if ($redirect != '<none>') {
-              $_SESSION['uc_cart_last_url'] = uc_referer_uri();
               return $redirect;
             }
             else {
@@ -1556,9 +1561,9 @@ function uc_cart_add_item($nid, $qty = 1, $data = NULL, $cid = NULL, $msg = TRUE
       drupal_goto();
     }
 
+    $_SESSION['uc_cart_last_url'] = uc_referer_uri();
     $redirect = variable_get('uc_add_item_redirect', 'cart');
     if ($redirect != '<none>') {
-      $_SESSION['uc_cart_last_url'] = uc_referer_uri();
       return $redirect;
     }
     else {
@@ -1730,7 +1735,7 @@ function uc_cart_filter_checkout_panes($panes, $remove = NULL) {
   if (is_array($remove)) {
     for ($i = 0, $j = count($panes); $i < $j; $i++) {
       foreach ($remove as $key => $value) {
-        if ($panes[$i][$key] == $value) {
+        if (isset($panes[$i][$key]) && $panes[$i][$key] == $value) {
           unset($panes[$i]);
         }
       }

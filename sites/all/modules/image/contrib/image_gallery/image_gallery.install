@@ -1,5 +1,4 @@
 <?php
-// $Id: image_gallery.install,v 1.20.2.1 2010/08/03 17:43:00 sun Exp $
 
 /**
  * Implementation of hook_install().

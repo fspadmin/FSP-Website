@@ -1,5 +1,4 @@
 <?php
-// $Id: sheetnode_phpexcel.import.inc,v 1.1.2.3 2011/01/02 06:55:05 kratib Exp $
 
 function _sheetnode_phpexcel_import_form(&$form_state, $format) {
   $form['#attributes'] = array('enctype' => "multipart/form-data");
@@ -54,72 +53,110 @@ function _sheetnode_phpexcel_import_form_validate($form, &$form_state) {
 }
 
 function _sheetnode_phpexcel_import_form_submit($form, &$form_state) {
-  require_once(variable_get('sheetnode_phpexcel_library_path', '') . '/Classes/PHPExcel.php');
+  $file = file_save_upload('import', array('file_validate_extensions' => array($form['#plugin']['format'])));
+  if ($file) {
+    sheetnode_phpexcel_batch_import(array($file->filepath), NULL, '_sheetnode_phpexcel_import_callback');
+  }
+}
+
+function _sheetnode_phpexcel_import_callback($node, $params, &$context) {
+  $workbook = $context['sandbox']['workbook'];
+  if ($workbook->getSheetCount() > 1 && module_exists('book')) {
+    // Create book if none present.
+    if (empty($context['sandbox']['book'])) {
+      global $user;
+      $book = new StdClass;
+      $book->type = 'book';
+
+      node_object_prepare($book);
+
+      $book->title = $workbook->getProperties()->getTitle();
+      if (empty($book->title)) {
+        $book->title = t('Untitled Workbook');
+      }
+      $book->name = $user->name;
+      $book->book['bid'] = 'new';
+      $book->book['plid'] = $book->book['mlid'] = NULL;
+
+      // Let other modules alter the book or do other work.
+      drupal_alter('sheetnode_import', $book, $params, $context);
+
+      $book = node_submit($book);
+      node_save($book);
+      if ($book->nid) {
+        $context['results'][] = $book->nid;
+        $context['sandbox']['book'] = $book;
+      }
+    }
+
+    // Mark the book as parent to the sheetnode.
+    $book = $context['sandbox']['book'];
+    $node->book['bid'] = $book->nid;
+    $node->book['plid'] = $book->book['mlid'];
+    $node->book['module'] = 'book';
+    $node->book['weight'] = $context['sandbox']['current'] - 1;
+  }
+}
+
+function _sheetnode_phpexcel_batch_import_file($filename, $callback, $params, &$context) {
   module_load_include('inc', 'node', 'node.pages');
   set_time_limit(0);
   global $user;
 
-  // Open sheet file.
-  // TODO: What to do with other properties?
-  $workbook = PHPExcel_IOFactory::load($_FILES['files']['tmp_name']['import']);
-  $title = $workbook->getProperties()->getTitle();
-  if (empty($title)) {
-    $title = pathinfo($_FILES['files']['name']['import'], PATHINFO_FILENAME);
-  }
-  $description = $workbook->getProperties()->getDescription();
-
-  // Create a book if there are more than one sheet.
-  $numsheets = $workbook->getSheetCount();
-  if ($numsheets > 1 && module_exists('book')) {
-    $node = array('type' => 'book');
-    $form_state_book = array();
-    $form_state_book['values']['title'] = $title;
-    $form_state_book['values']['body'] = $description;
-    $form_state_book['values']['name'] = $user->name;
-    $form_state_book['values']['op'] = t('Save');
-    $form_state_book['values']['book']['bid'] = 'new';
-    $form_state_book['values']['book']['plid'] = -1;
-    $form_state_book['values']['book']['weight'] = 0;
-    drupal_execute('book_node_form', $form_state_book, (object)$node);
-    $book = node_load($form_state_book['nid']);
-  }
-
-  // Import all sheets.
-  for ($s = 0; $s < $numsheets; $s++) {
-    $sheet = $workbook->getSheet($s);
-    $node = array('type' => 'sheetnode');
-    $form_state_node = array();
-    $form_state_node['values']['title'] = (empty($book) ? $title .' > ' : '') . $sheet->getTitle();
-    $form_state_node['values']['body'] = empty($book) ? $description : '';
-    $form_state_node['values']['name'] = $user->name;
-    $form_state_node['values']['sheetsave'] = _sheetnode_phpexcel_import_do($workbook, $sheet);
-    $form_state_node['values']['op'] = t('Save');
-    if (!empty($book)) { // insert inside the book
-      $form_state_node['values']['book']['bid'] = $book->nid;
-      $form_state_node['values']['book']['plid'] = $book->book['mlid'];
-      $form_state_node['values']['book']['weight'] = $s;
-    }
-//   /*  UNCOMMENT WHEN DEBUGGING
-    // Allow other modules to modify the new node's creation parameters.
-    // Hook signature: hook_sheetnode_alter(&$form_state_node, $form, $form_state);
-    drupal_alter('sheetnode', $form_state_node, $form, $form_state);
-
-    drupal_execute('sheetnode_node_form', $form_state_node, (object)$node);
-  }
-
-  // If more than one sheet, create a book to hold them
-  if (!empty($book)) {
-    $form_state['redirect'] = 'node/'. $book->nid;
+  if (empty($context['sandbox']['workbook'])) {
+    // Load workbook and get number of worksheets.
+    $context['sandbox']['workbook'] = $workbook = PHPExcel_IOFactory::load($filename);
+    $context['sandbox']['total'] = $workbook->getSheetCount();
+    $context['sandbox']['current'] = 0;
   }
   else {
-    $form_state['redirect'] = 'node/'. $form_state_node['nid'];
-//    */  // UNCOMMENT WHEN DEBUGGING
+    // Create sheetnode out of current sheet.
+    $workbook = $context['sandbox']['workbook'];
+    $sheet = $workbook->getSheet($context['sandbox']['current'] - 1);
+    $node = new StdClass;
+    $node->type = 'sheetnode';
+
+    node_object_prepare($node);
+
+    $node->title = $sheet->getTitle();
+    $node->name = $user->name;
+    $node->sheetnode['value'] = _sheetnode_phpexcel_import_do($workbook, $sheet);
+    $node->sheetnode['template'] = NULL;
+
+    // Let other modules alter the sheetnode or do other work.
+    if (!empty($callback) && function_exists($callback)) {
+      $callback($node, $params, $context);
+    }
+    drupal_alter('sheetnode_import', $node, $params, $context);
+
+    // Save the sheetnode.
+    $node = node_submit($node);
+    node_save($node);
+    if (!empty($node->nid)) {
+      $context['results'][] = $node->nid;
+    }
+  }
+
+  // Update progress information.
+  if ($context['sandbox']['current'] < $context['sandbox']['total']) {
+    $sheet = $workbook->getSheet($context['sandbox']['current']);
+    $context['message'] = t('Now processing sheet %sheet.', array('%sheet' => $sheet->getTitle()));
+    $context['finished'] = $context['sandbox']['current'] / $context['sandbox']['total'];
+    $context['sandbox']['current']++;
+  }
+}
+
+function _sheetnode_phpexcel_batch_import_finished($success, $results, $operations) {
+  $batch =& batch_get();
+  if (empty($batch['redirect']) && !empty($results)) {
+    drupal_goto('node/' . $results[0]);
   }
 }
 
 function _sheetnode_phpexcel_import_do($workbook, $sheet) {
   require_once(drupal_get_path('module', 'sheetnode') . '/socialcalc.inc');
   $sc = array(); // SocialCalc array structure
+  $styles = array(); // Styles cache
 
   // Default values.
   $font = $sheet->getDefaultStyle()->getFont();
@@ -138,7 +175,7 @@ function _sheetnode_phpexcel_import_do($workbook, $sheet) {
   foreach ($rit = $sheet->getRowIterator() as $row) {
     $r = $row->getRowIndex();
     $height = $sheet->getRowDimension($r)->getRowHeight();
-    if ($height != -1 && $height != $sc['attribs']['defaultrowheight']) {
+    if ($height != -1 && $height != @$sc['attribs']['defaultrowheight']) {
       $sc['rowattribs']['height'][$r] = $height;
     }
     if (!$sheet->getRowDimension($r)->getVisible()) {
@@ -152,7 +189,7 @@ function _sheetnode_phpexcel_import_do($workbook, $sheet) {
       $width = $sheet->getColumnDimension($ca)->getWidth();
       if ($width != -1) {
         $width = PHPExcel_Shared_Drawing::cellDimensionToPixels($width, $font);
-        if ($width != $sc['attribs']['defaultcolwidth']) {
+        if ($width != @$sc['attribs']['defaultcolwidth']) {
           $sc['colattribs']['width'][$c] = $width;
         }
       }
@@ -160,11 +197,12 @@ function _sheetnode_phpexcel_import_do($workbook, $sheet) {
         $sc['colattribs']['hide'][$c] = TRUE;
       }
       
-      _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, $sc);
+      _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, $sc, $styles);
     }
   }
 
   // Cell merges
+  // TODO: Not working in Excel 5 import.
   foreach ($sheet->getMergeCells() as $range) {
     list($first, $last) = explode(':', $range);
     if (!isset($sc['cells'][$first])) continue;
@@ -176,16 +214,17 @@ function _sheetnode_phpexcel_import_do($workbook, $sheet) {
 
   // Names
   foreach ($workbook->getNamedRanges() as $range) {
-    // TODO: Handle external references and functions.
-    $sc['names'][$range->getName()] = array(
-      'desc' => '',
-      'definition' => $range->getRange(),
-    );
+    if (is_null($range->getScope()) || $sheet->getHashCode() == $range->getScope()->getHashCode()) {
+      $sc['names'][$range->getName()] = array(
+        'desc' => '',
+        'definition' => 
+          '=' .
+          (!is_null($range->getWorksheet()) && $range->getWorksheet()->getHashCode() != $sheet->getHashCode() ? $range->getWorksheet()->getTitle() . '!' : '') .
+          $range->getRange(),
+      );
+    }
   }
   
-  // Reset caches.
-  _sheetnode_phpexcel_get_cached_styles(TRUE);
-
   $socialcalc = array(
     'sheet' => $sc,
     'edit' => socialcalc_default_edit($sc),
@@ -194,7 +233,7 @@ function _sheetnode_phpexcel_import_do($workbook, $sheet) {
   return socialcalc_save($socialcalc);
 }
 
-function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc) {
+function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc, &$styles) {
   $c = array(); // output cell
   
   // Position
@@ -217,6 +256,7 @@ function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc) {
     if ($text instanceof PHPExcel_RichText) {
       $style = $sheet->getStyle($cell->getCoordinate());
       $defaultfont = $style->getFont();
+      $cellData = '';
       foreach ($text->getRichTextElements() as $element) {
         $font = $element instanceof PHPExcel_RichText_Run ? $element->getFont() : $defaultfont;
         $cellData .= '<span style="' . _sheetnode_phpexcel_assembleCSS(_sheetnode_phpexcel_createCSSStyleFont($font)) . '">';
@@ -256,7 +296,11 @@ function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc) {
     }
     catch (Exception $e) {
       $c['datavalue'] = 0;
-      watchdog('sheetnode_phpexcel', 'Error importing formula "!formula" at cell !coord.', array('!formula' => $c['formula'], '!coord' => $cell->getCoordinate()), 'warning');
+      watchdog('sheetnode_phpexcel', '!title: Error importing formula "!formula" at cell !coord.', array(
+        '!title' => $sheet->getTitle(),
+        '!formula' => $c['formula'], 
+        '!coord' => $cell->getCoordinate()
+      ), WATCHDOG_WARNING);
     }
     $c['valuetype'] = is_numeric($c['datavalue']) ? 'n' : 't';
     break;
@@ -270,12 +314,14 @@ function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc) {
   // Comment
   $comment = $sheet->getComment($cell->getCoordinate());
   if (!empty($comment)) {
-    $c['comment'] = $comment->getText()->getPlainText();
+    $text = $comment->getText()->getPlainText();
+    if (!empty($text)) {
+      $c['comment'] = $comment->getText()->getPlainText();
+    }
   }
 
   // Style
   $style = $sheet->getStyle($cell->getCoordinate());
-  $styles = _sheetnode_phpexcel_get_cached_styles();
   $hash = $style->getHashCode();
   if (empty($styles[$hash])) {
     // Font
@@ -291,9 +337,11 @@ function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc) {
     }
 
     // Background color
-    $bgcolor = _sheetnode_phpexcel_get_color($style->getFill()->getStartColor());
-    if ($bgcolor) {
-      $styles[$hash]['bgcolor'] = _sheetnode_phpexcel_insert_hash($sc, 'color', $bgcolor);
+    if ($style->getFill()->getFillType() != PHPExcel_Style_Fill::FILL_NONE) {
+      $bgcolor = _sheetnode_phpexcel_get_color($style->getFill()->getStartColor());
+      if ($bgcolor) {
+        $styles[$hash]['bgcolor'] = _sheetnode_phpexcel_insert_hash($sc, 'color', $bgcolor);
+      }
     }
 
     // Borders
@@ -331,14 +379,6 @@ function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc) {
   $c += $styles[$hash]; // merge the cached styles into the cell directly.
 
   $sc['cells'][$cell->getCoordinate()] = $c;
-}
-
-function _sheetnode_phpexcel_get_cached_styles($reset = FALSE) {
-  static $styles = array();
-  if ($reset) {
-    $styles = array();
-  }
-  return $styles;
 }
 
 /**
@@ -386,7 +426,7 @@ function _sheetnode_phpexcel_createCSSStyleFont(PHPExcel_Style_Font $pStyle) {
   }
 
   $css['color']   = '#' . $pStyle->getColor()->getRGB();
-  $css['font-family'] = '\'' . $pStyle->getName() . '\'';
+  $css['font-family'] = $pStyle->getName();
   $css['font-size'] = $pStyle->getSize() . 'pt';
 
   // Return
@@ -396,7 +436,7 @@ function _sheetnode_phpexcel_createCSSStyleFont(PHPExcel_Style_Font $pStyle) {
 function _sheetnode_phpexcel_insert_hash(&$sc, $key, $style) {
   $hash = @$sc[$key.'hash'][$style];
   if (is_null($hash)) {
-    $hash = count($sc[$key.'s']) + 1;
+    $hash = count(@$sc[$key.'s']) + 1;
     $sc[$key.'s'][$hash] = $style;
     $sc[$key.'hash'][$style] = $hash;
   }
@@ -461,8 +501,7 @@ function _sheetnode_phpexcel_get_layout($style) {
 function _sheetnode_phpexcel_get_valueformat($numberformat) {
   $valueformat = $numberformat->getFormatCode();
   if (strtolower($valueformat) == 'general') return FALSE;
-  $valueformat = str_replace(';@', '', $valueformat);
-  return strtolower($valueformat);
+  return $valueformat;
 }
 
 function _sheetnode_phpexcel_get_color($color) {

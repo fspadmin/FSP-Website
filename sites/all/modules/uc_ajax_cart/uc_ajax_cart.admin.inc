@@ -58,23 +58,24 @@ function uc_ajax_cart_settings_overview() {
 
     'uc_ajax_cart_closed_default' => array(
       '#type' => 'checkbox',
-      '#default_value' => variable_get('uc_ajax_cart_closed_default', 0) ,
+      '#default_value' => variable_get('uc_ajax_cart_closed_default', 0),
       '#title'   => t('Cart closed by default.'),
       '#description' => t('This option only applies if collapsible cart block is selected.'),
     ),
 
     'uc_ajax_cart_track_closed_state' => array(
       '#type' => 'checkbox',
-      '#default_value' => variable_get('uc_ajax_cart_track_closed_state', 0) ,
+      '#default_value' => variable_get('uc_ajax_cart_track_closed_state', 0),
       '#title'   => t('Keep cart open/closed between page loads and cart operations.'),
       '#description' => t('If checked keeps cart open state between page loads and cart operations such add product or remove product from cart. This option only applies if collapsible cart block is selected.'),
     ),
 
-    'cart_pane_effect' => array(
+    'cart_pane' => array(
       '#type' => 'fieldset',
       '#title' => t('Effect'),
       '#description' => t('You can set a show/hide cart pane effect. This only applies if collapsible cart block is selected.'),
-      '#collapsible' => TRUE ,
+      '#collapsible' => TRUE,
+      '#tree' => TRUE,
       'effect' => array(
         '#type' => 'checkbox',
         '#default_value' => variable_get('uc_ajax_cart_pane_effect', 0),
@@ -82,41 +83,120 @@ function uc_ajax_cart_settings_overview() {
       ),
 
       'duration' => array(
-        '#type' => 'textfield' ,
-        '#size' => 6 ,
-        '#required' => TRUE ,
-        '#title' => t('Effect duration in milliseconds') ,
+        '#type' => 'textfield',
+        '#size' => 6,
+        '#required' => TRUE,
+        '#title' => t('Duration'),
+        '#description' => t('Enter how long the cart pane effect should animate for, in milliseconds.'),
         '#default_value' => variable_get('uc_ajax_cart_pane_effect_duration', UC_AJAX_CART_DEFAULT_PANE_EFFECT_DURATION),
       ),
     ),
   );
 
-
-  $form['settings_messages'] = array(
+  $form['settings_notifications'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Message settings'),
+    '#title' => t('Notification settings'),
     '#description' => t('Select cart operations info message display options.'),
     '#collapsible' => TRUE,
-    'messages' => array(
-      '#type' => 'radios',
-      '#title' => t('Message effect'),
-      '#description' => t('You can switch beetween blockUI and growl like messages.'),
-      '#required' => TRUE,
-      '#options' => array(1 => 'jQuery block UI messages.', 2 => 'Growl like messages.'),
-      '#default_value' => variable_get('ajax_cart_message_effect', UC_AJAX_CART_DEFAULT_EFFECT),
-    ),
-    'timeout' => array(
-      '#type' => 'textfield',
-      '#size' => 6,
-      '#required' => TRUE,
-      '#title' => t('Standard message timeout'),
-      '#default_value' => variable_get('ajax_cart_message_timeout' , UC_AJAX_CART_DEFAULT_TIMEOUT),
-    ),
+    '#tree' => TRUE,
     'uc_ajax_cart_hide_cart_op_msgs' => array(
       '#type' => 'checkbox',
-      '#default_value' => variable_get('uc_ajax_cart_hide_cart_op_msgs', 0),
-      '#title'   => t('Do not display any cart operations info.'),
-      '#description' => t('When a cart operation is done a informative message is displayed. Select this option if you want to hide this messages. WARNING: User may not be aware of cart operations if you hide this messages.'),
+      '#default_value' => !variable_get('uc_ajax_cart_hide_cart_op_msgs', 0),
+      '#title'   => t('Enable notifications for users during a cart operation'),
+      '#description' => t('Disable this option if you want to hide this notification messages (silent mode). Users may not be aware any errors during the cart operations if you disable this.'),
+    ),
+    'effect' => array(
+      '#type' => 'radios',
+      '#title' => t('Notification effect'),
+      '#description' => t('You can switch beetween a modal popup or a notification overlay in the corner of the window.'),
+      '#required' => TRUE,
+      '#options' => array(1 => t('Modal popup message (jQuery BlockUI)'), 2 => 'Notification overlay in top corner (Growl-like)'),
+      '#default_value' => variable_get('ajax_cart_message_effect', UC_AJAX_CART_DEFAULT_EFFECT),
+    ),
+    'duration' => array(
+      '#type' => 'textfield',
+      '#title' => t('Duration'),
+      '#description' => t('Enter how long the notification should remain on the screen, in milliseconds.'),
+      '#size' => 6,
+      '#required' => TRUE,
+      '#default_value' => variable_get('ajax_cart_message_timeout', UC_AJAX_CART_DEFAULT_TIMEOUT),
+    ),
+  );
+  $messages = uc_ajax_cart_get_messages();
+  $form['settings_messages'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Notification Messages'),
+    '#description' => t('Controls the text messages displayed in the notifications. You may safely ignore this section if you have disabled notifications.'),
+    '#collapsible' => FALSE,
+    '#tree' => TRUE,
+    'cart_operation' => array(
+      '#type' => 'textfield',
+      '#title' => t('System message notification title'),
+      '#description' => t('After an operation has completed, a notification with this title appears and displays any of the Drupal system messages (these messages could be something like "The product was added to the cart successfully" or "Option X is required" depending on your site and product configuration). Choose a title that is generic enough to suit both the success or error type system messages.'),
+      '#default_value' => $messages['CART_OPERATION'],
+    ),
+    'add' => array(
+      '#type' => 'fieldset',
+      '#title' => t('Add to cart'),
+      '#description' => t('Settings for the messages displayed in the notification as products are added to the cart.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      'title' => array(
+        '#type' => 'textfield',
+        '#title' => t('Title'),
+        '#description' => t('Title for the notification.'),
+        '#default_value' => $messages['ADD_TITLE'],
+        '#required' => TRUE,
+      ),
+      'messages' => array(
+        '#type' => 'textarea',
+        '#title' => t('Body messages'),
+        '#default_value' => implode("\n", $messages['ADD_MESSAGES']),
+        '#description' => t('Text to be displayed inside the notification.'),
+        '#required' => TRUE,
+      ),
+    ),
+    'remove' => array(
+      '#type' => 'fieldset',
+      '#title' => t('Remove from cart'),
+      '#description' => t('Settings for the messages displayed in the notification as products are removed from the cart.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      'title' => array(
+        '#type' => 'textfield',
+        '#title' => t('Title'),
+        '#description' => t('Title for the notification.'),
+        '#default_value' => $messages['REMOVE_TITLE'],
+        '#required' => TRUE,
+      ),
+      'messages' => array(
+        '#type' => 'textarea',
+        '#title' => t('Body messages'),
+        '#description' => t('Text to be displayed inside the notification.'),
+        '#default_value' => implode("\n", $messages['REMOVE_MESSAGES']),
+        '#required' => TRUE,
+      ),
+    ),
+    'update' => array(
+      '#type' => 'fieldset',
+      '#title' => t('Update cart'),
+      '#description' => t('Settings for the messages displayed in the notification as the entire cart is refreshed (cart page only).'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      'title' => array(
+        '#type' => 'textfield',
+        '#title' => t('Title'),
+        '#description' => t('Title for the notification.'),
+        '#default_value' => $messages['UPDATE_TITLE'],
+        '#required' => TRUE,
+      ),
+      'messages' => array(
+        '#type' => 'textarea',
+        '#title' => t('Body messages'),
+        '#description' => t('Text to be displayed inside the notification.'),
+        '#default_value' => implode("\n", $messages['UPDATE_MESSAGES']),
+        '#required' => TRUE,
+      ),
     ),
   );
 
@@ -146,26 +226,33 @@ function uc_ajax_cart_settings_overview() {
     '#value' => t('Submit')
   );
 
-  return $form ;
+  return $form;
 }
 
 function uc_ajax_cart_settings_overview_validate($form, $form_state) {
-
-  $value = filter_var($form_state['values']['duration'], FILTER_VALIDATE_INT);
-
-  if ($value === FALSE) {
-    form_set_error('duration', t('Effect duration is not a valid number.'));
+  $value = filter_var($form_state['values']['settings_notifications']['duration'], FILTER_VALIDATE_INT);
+  if ($value === FALSE || $value < 0) {
+    form_set_error('settings_notification][duration', t('Effect duration must be a positive integers.'));
   }
-  else {
-    if ($value < 0) {
-      form_set_error('duration', t('Effect duration must be positive.'));
-    }
+  $value = filter_var($form_state['values']['cart_pane']['duration'], FILTER_VALIDATE_INT);
+  if ($value === FALSE || $value < 0) {
+    form_set_error('cart_pane][duration', t('Effect duration must be a positive integers.'));
   }
 }
 
-function uc_ajax_cart_settings_overview_submit( $form , $form_state) {
-  variable_set('ajax_cart_message_timeout', $form_state['values']['timeout']);
-  variable_set('ajax_cart_message_effect', $form_state['values']['messages']);
+function uc_ajax_cart_settings_overview_submit($form, $form_state) {
+  $messages = array(
+    'CART_OPERATION' => $form_state['values']['settings_messages']['cart_operation'],
+    'ADD_TITLE' => $form_state['values']['settings_messages']['add']['title'],
+    'ADD_MESSAGES' => explode("\n", $form_state['values']['settings_messages']['add']['messages']),
+    'REMOVE_TITLE' => $form_state['values']['settings_messages']['remove']['title'],
+    'REMOVE_MESSAGES' => explode("\n", $form_state['values']['settings_messages']['remove']['messages']),
+    'UPDATE_TITLE' => $form_state['values']['settings_messages']['update']['title'],
+    'UPDATE_MESSAGES' => explode("\n", $form_state['values']['settings_messages']['update']['messages']),
+  );
+  variable_set('uc_ajax_cart_messages', $messages);
+  variable_set('ajax_cart_message_timeout', $form_state['values']['settings_notifications']['duration']);
+  variable_set('ajax_cart_message_effect', $form_state['values']['settings_notifications']['effect']);
   variable_set('uc_ajax_cart_cart_view', $form_state['values']['cart_view_on']);
   variable_set('uc_ajax_cart_cart_cached_load', $form_state['values']['uc_ajax_cart_cart_cached_load']);
   variable_set('uc_ajax_cart_registered_users_cart_cached_load', $form_state['values']['uc_ajax_cart_registered_users_cart_cached_load']);
@@ -176,9 +263,9 @@ function uc_ajax_cart_settings_overview_submit( $form , $form_state) {
   variable_set('uc_ajax_cart_closed_default', $form_state['values']['uc_ajax_cart_closed_default']);
   variable_set('uc_ajax_cart_initial_state', $form_state['values']['uc_ajax_cart_initial_state']);
   variable_set('uc_ajax_cart_track_closed_state', $form_state['values']['uc_ajax_cart_track_closed_state']);
-  variable_set('uc_ajax_cart_pane_effect', $form_state['values']['effect']);
-  variable_set('uc_ajax_cart_pane_effect_duration', str_replace('+', '', $form_state['values']['duration']));
-  variable_set('uc_ajax_cart_hide_cart_op_msgs', $form_state['values']['uc_ajax_cart_hide_cart_op_msgs']);
+  variable_set('uc_ajax_cart_pane_effect', $form_state['values']['cart_pane']['effect']);
+  variable_set('uc_ajax_cart_pane_effect_duration', str_replace('+', '', $form_state['values']['cart_pane']['duration']));
+  variable_set('uc_ajax_cart_hide_cart_op_msgs', !$form_state['values']['settings_notifications']['uc_ajax_cart_hide_cart_op_msgs']);
   variable_set('uc_ajax_cart_include_exclude', $form_state['values']['include_exclude']);
   variable_set('uc_ajax_cart_ajaxify_class', $form_state['values']['ajaxify_class']);
 }

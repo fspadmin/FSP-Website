@@ -74,7 +74,7 @@ function uc_2checkout_form_alter(&$form, $form_state, $form_id) {
 function uc_2checkout_payment_method() {
   $path = base_path() . drupal_get_path('module', 'uc_2checkout');
   $title = variable_get('uc_2checkout_method_title', t('Credit card on a secure server:'));
-  $title .= '<br /><img src="'. $path .'/2cocc05.gif" style="position: relative; left: 2.5em;" />';
+  $title .= '<br /><img src="'. $path .'/2co_logo.jpg" style="position: relative; left: 2.2em;" />';
 
   $methods[] = array(
     'id' => '2checkout',

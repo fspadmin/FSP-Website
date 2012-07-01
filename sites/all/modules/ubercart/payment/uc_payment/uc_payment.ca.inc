@@ -182,6 +182,11 @@ function uc_payment_ca_condition() {
  */
 function uc_payment_condition_order_balance($order, $settings) {
   $balance = uc_payment_balance($order);
+  if (!empty($settings['include_authorizations'])) {
+    foreach ((array) $order->data['cc_txns']['authorizations'] as $auth_id => $data) {
+      $balance -= $data['amount'];
+    }
+  }
 
   switch ($settings['balance_comparison']) {
     case 'less':
@@ -213,6 +218,13 @@ function uc_payment_condition_order_balance_form($form_state, $settings = array(
     '#title' => t('Balance comparison type'),
     '#options' => $options,
     '#default_value' => isset($settings['balance_comparison']) ? $settings['balance_comparison'] : 'equal',
+  );
+
+  $form['include_authorizations'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Include authorizations?'),
+    '#description' => t('Should "authorization only" credit card transactions be used in calculating the order balance?'),
+    '#default_value' => isset($settings['include_authorizations']) ? $settings['include_authorizations'] : FALSE,
   );
 
   return $form;

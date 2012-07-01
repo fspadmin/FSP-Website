@@ -22,10 +22,10 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
   }
 
   /**
-   * Sets up the test framework for attribute testing.
+   * Overrides DrupalWebTestCase::setUp().
    */
   function setUp() {
-    parent::setUp(array('uc_attribute'), array('administer attributes'));
+    parent::setUp(array('uc_attribute'), array('administer attributes', 'administer nodes'));
     $this->drupalLogin($this->adminUser);
   }
 
@@ -41,7 +41,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
     $loaded_attribute = uc_attribute_load($attribute->aid);
 
     // Check the attribute integrity.
-    foreach (self::_attributeFieldsToTest() as $field) {
+    foreach (self::attributeFieldsToTest() as $field) {
       if ($loaded_attribute->$field != $attribute->$field) {
         $this->fail(t('Attribute integrity check failed.'), t('Ubercart'));
         break;
@@ -67,7 +67,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
     $loaded_attribute = uc_attribute_load($attribute->aid, $product->nid, 'product');
 
     // Check the attribute integrity.
-    foreach (self::_attributeFieldsToTest('product') as $field) {
+    foreach (self::attributeFieldsToTest('product') as $field) {
       if ($loaded_attribute->$field != $attribute->$field) {
         $this->fail(t('Attribute integrity check failed.'), t('Ubercart'));
         break;
@@ -104,7 +104,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
     $loaded_attribute = uc_attribute_load($attribute->aid, $product_class->pcid, 'class');
 
     // Check the attribute integrity.
-    foreach (self::_attributeFieldsToTest('class') as $field) {
+    foreach (self::attributeFieldsToTest('class') as $field) {
       if ($loaded_attribute->$field != $attribute->$field) {
         $this->fail(t('Attribute integrity check failed.'), t('Ubercart'));
         break;
@@ -152,7 +152,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
     // Make sure all the new options are on attributes correctly.
     foreach ($all_options as $aid => $options) {
       foreach ($options as $oid => $option) {
-        foreach (self::_attributeOptionFieldsToTest() as $field) {
+        foreach (self::attributeOptionFieldsToTest() as $field) {
           if ($option->$field != $attributes_with_options[$aid]->options[$oid]->$field) {
             $this->fail(t('Option integrity check failed.'), t('Ubercart'));
             break;
@@ -173,7 +173,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
 
     // Check the attributes' integrity.
     foreach ($loaded_attributes as $aid => $loaded_attribute) {
-      foreach (self::_attributeFieldsToTest() as $field) {
+      foreach (self::attributeFieldsToTest() as $field) {
         if ($attributes[$aid]->$field != $loaded_attributes[$aid]->$field) {
           $this->fail(t('Attribute integrity check failed.'), t('Ubercart'));
           break;
@@ -199,7 +199,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
 
     // Check the attributes' integrity.
     foreach ($loaded_product_attributes as $aid => $loaded_product_attribute) {
-      foreach (self::_attributeFieldsToTest('product') as $field) {
+      foreach (self::attributeFieldsToTest('product') as $field) {
         if ($loaded_product_attributes[$aid]->$field != $product_attributes[$aid]->$field) {
           $this->fail(t('Attribute integrity check failed.'), t('Ubercart'));
           break;
@@ -212,7 +212,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
       foreach ($options as $oid => $option) {
         if (empty($loaded_product_attributes[$aid]) || empty($loaded_product_attributes[$aid]->options[$oid])) continue;
 
-        foreach (self::_attributeOptionFieldsToTest() as $field) {
+        foreach (self::attributeOptionFieldsToTest() as $field) {
           if ($option->$field != $loaded_product_attributes[$aid]->options[$oid]->$field) {
             $this->fail(t('Option integrity check failed.'), t('Ubercart'));
             break;
@@ -239,7 +239,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
 
     // Check the attributes' integrity.
     foreach ($loaded_class_attributes as $aid => $loaded_class_attribute) {
-      foreach (self::_attributeFieldsToTest('class') as $field) {
+      foreach (self::attributeFieldsToTest('class') as $field) {
         if ($loaded_class_attributes[$aid]->$field != $class_attributes[$aid]->$field) {
           $this->fail(t('Attribute integrity check failed.'), t('Ubercart'));
           break;
@@ -252,7 +252,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
       foreach ($options as $oid => $option) {
         if (empty($loaded_class_attributes[$aid]) || empty($loaded_class_attributes[$aid]->options[$oid])) continue;
 
-        foreach (self::_attributeOptionFieldsToTest() as $field) {
+        foreach (self::attributeOptionFieldsToTest() as $field) {
           if ($option->$field != $loaded_class_attributes[$aid]->options[$oid]->$field) {
             $this->fail(t('Option integrity check failed.'), t('Ubercart'));
             break;
@@ -538,6 +538,57 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
   }
 
   /**
+   * Tests the "bulk edit attribute options" user interface.
+   */
+  public function testAttributeUIAttributeOptionsBulkEdit() {
+    $attribute = self::createAttribute();
+    $option = self::createAttributeOption(array('aid' => $attribute->aid));
+    uc_attribute_option_save($option);
+
+    $class = $this->createProductClass();
+    uc_attribute_subject_save($attribute, 'class', $class->pcid);
+    uc_attribute_subject_option_save($option, 'class', $class->pcid);
+
+    $product = $this->createProduct();
+    uc_attribute_subject_save($attribute, 'product', $product->nid);
+    uc_attribute_subject_option_save($option, 'product', $product->nid);
+
+    $edit = (array) self::createAttributeOption(array('aid' => $attribute->aid), FALSE);
+    unset($edit['aid']);
+    $edit['bulk_update'] = TRUE;
+    $this->drupalPost('admin/store/attributes/'. $attribute->aid .'/options/'. $option->oid .'/edit', $edit, t('Submit'));
+    unset($edit['bulk_update']);
+
+    $this->assertText('Bulk updates applied', t('Bulk update selected.'), t('Ubercart'));
+
+    $option = uc_attribute_subject_option_load($option->oid, 'class', $class->pcid);
+    $fields_ok = TRUE;
+    foreach ($edit as $field => $value) {
+      if ($option->$field != $value) {
+        $this->showVar($option);
+        $this->showVar($edit);
+        $fields_ok = FALSE;
+        break;
+      }
+    }
+
+    $this->assertTrue($fields_ok, t('Class bulk updated successfully.'), t('Ubercart'));
+
+    $product_attributes = uc_attribute_load_multiple(array(), 'product', $product->nid);
+    $fields_ok = TRUE;
+    foreach ($edit as $field => $value) {
+      if ($product_attributes[$attribute->aid]->options[$option->oid]->$field != $value) {
+        $this->showVar($product_attributes);
+        $this->showVar($edit);
+        $fields_ok = FALSE;
+        break;
+      }
+    }
+
+    $this->assertTrue($fields_ok, t('Product bulk updated successfully.'), t('Ubercart'));
+  }
+
+  /**
    * Tests the "delete attribute option" user interface.
    */
   public function testAttributeUIAttributeOptionsDelete() {
@@ -663,6 +714,58 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
   }
 
   /**
+   * Tests the product node attribute user interface.
+   */
+  public function testAttributeUIProductAttributeOverview() {
+    $class = $this->createProductClass();
+    $attribute = self::createAttribute();
+    uc_attribute_subject_save($attribute, 'class', $class->pcid);
+    $product = $this->createProduct(array('type' => $class->pcid));
+
+    // Check product has attribute added by default.
+    $loaded_attribute = uc_attribute_load($attribute->aid, $product->nid, 'product');
+    $this->assertEqual($attribute->name, $loaded_attribute->name, t('Product attribute added by default.'), t('Ubercart'));
+    uc_attribute_subject_delete($attribute->aid, 'product', $product->nid);
+
+    $this->drupalGet('node/'. $product->nid .'/edit/attributes/add');
+    $edit = array();
+    $edit['add_attributes[]'] = $attribute->aid;
+    $this->drupalPost(NULL, $edit, t('Add attributes'));
+    $this->assertText($attribute->name, t('Product attribute added.'), t('Ubercart'));
+
+    $edit = array();
+    $edit["attributes[{$attribute->aid}][remove]"] = TRUE;
+    $this->drupalPost(NULL, $edit, t('Save changes'));
+    $this->assertText(t('You must first add attributes to this product.'), t('Product attribute removed.'), t('Ubercart'));
+
+    $this->drupalPost(NULL, array(), t('Reset to defaults'));
+    $this->drupalPost(NULL, array(), t('Reset'));
+    $this->assertText($attribute->name, t('Product attribute reset successfully.'), t('Ubercart'));
+  }
+
+  /**
+   * Tests the bulk product attribute update user interface.
+   */
+  public function testAttributeUIProductAttributeBulkUpdate() {
+    $class = $this->createProductClass();
+    $attribute = self::createAttribute();
+    uc_attribute_subject_save($attribute, 'class', $class->pcid);
+    $product = $this->createProduct(array('type' => $class->pcid));
+
+    $edit = array();
+    $edit["attributes[{$attribute->aid}][remove]"] = TRUE;
+    $this->drupalPost('node/'. $product->nid .'/edit/attributes', $edit, t('Save changes'));
+    $this->assertText(t('You must first add attributes to this product.'), t('Product attribute removed.'), t('Ubercart'));
+
+    $this->drupalGet('admin/store/products/classes/'. $class->pcid .'/attributes_bulk');
+    $this->assertText($product->title, t('Product name found.'), t('Ubercart'));
+    $this->drupalPost(NULL, array(), t('Flush all'));
+
+    $this->drupalGet('node/'. $product->nid .'/edit/attributes');
+    $this->assertText($attribute->name, t('Product attribute reset successfully.'), t('Ubercart'));
+  }
+
+  /**
    * Creates a product adjustment SKU.
    *
    * @param $data
@@ -679,7 +782,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
    *
    * @param $type
    */
-  protected static function _attributeFieldsToTest($type = '') {
+  protected static function attributeFieldsToTest($type = '') {
     $fields = array(
       'aid', 'name', 'ordering', 'required', 'display', 'description', 'label',
     );
@@ -687,10 +790,9 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
     switch ($type) {
       case 'product':
       case 'class':
-
         $info = uc_attribute_type_info($type);
         $fields = array_merge($fields, array($info['id']));
-      break;
+        break;
     }
     return $fields;
   }
@@ -698,7 +800,7 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
   /**
    * Tests the product class attribute option user interface.
    */
-  protected static function _attributeOptionFieldsToTest($type = '') {
+  protected static function attributeOptionFieldsToTest($type = '') {
     $fields = array(
       'aid', 'oid', 'name', 'cost', 'price', 'weight', 'ordering',
     );
@@ -706,10 +808,9 @@ class UbercartAttributeTestCase extends UbercartTestHelper {
     switch ($type) {
       case 'product':
       case 'class':
-
         $info = uc_attribute_type_info($type);
         $fields = array_merge($fields, array($info['id']));
-      break;
+        break;
     }
     return $fields;
   }

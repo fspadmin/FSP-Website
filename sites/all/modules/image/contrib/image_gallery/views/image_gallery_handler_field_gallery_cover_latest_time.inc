@@ -1,5 +1,4 @@
 <?php
-// $Id: image_gallery_handler_field_gallery_cover_latest_time.inc,v 1.4.2.1 2010/08/03 17:43:00 sun Exp $
 
 /**
  * Field handler for the gallery's updated time.

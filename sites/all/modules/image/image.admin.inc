@@ -1,5 +1,4 @@
 <?php
-// $Id: image.admin.inc,v 1.9.2.2 2010/08/03 17:43:00 sun Exp $
 
 /**
  * Menu callback; Form builder function for image settings.

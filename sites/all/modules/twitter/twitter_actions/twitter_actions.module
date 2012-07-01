@@ -40,13 +40,26 @@ function twitter_actions_set_status_action_form($context = array()) {
     'message' => '',
   );
 
+  $options = array();
+  $results = db_query("SELECT screen_name FROM {twitter_account}");
+  while ($row = db_fetch_array($results)) {
+    $options[$row['screen_name']] = $row['screen_name'];
+  }
+
   $form['screen_name'] = array(
-    '#type'          => 'textfield',
+    '#type'          => 'select',
     '#title'         => t('Twitter account name'),
+    '#options'       => $options,
     '#default_value' => $context['screen_name'],
-    '#size'          => 25,
+    '#description'   => t('The Twitter account which will be used to post to Twitter. It can be ' .
+                          'added by editing a user account.'),
     '#required'      => TRUE,
   );
+
+  if (!count($options)) {
+    $form['screen_name']['#description'] = t('You first need to add a Twitter account to one of ' .
+                                             'your users with rights for posting to Twitter.');
+  }
 
   $form['message'] = array(
     '#type' => 'textarea',
@@ -54,21 +67,42 @@ function twitter_actions_set_status_action_form($context = array()) {
     '#default_value' => $context['message'],
     '#cols' => '80',
     '#rows' => '3',
-    '#description' => t('The message that should be sent. You may include the following variables: %site_name, %username, %node_url, %node_type, %title, %teaser, %body, %tinyurl. Not all variables will be available in all contexts.'),
+    '#description' => t('The message that should be sent. The following tokens are available: ' .
+                        '%site_name, %username, %node_url, %node_type, %title, %teaser, %body, ' .
+                        '%tinyurl. Note that not all variables will be available in all contexts.'),
     '#required'      => TRUE,
   );
+
+  if (module_exists('token')) {
+    $form['token_help'] = array(
+      '#title' => t('Extra replacement tokens'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#description' => t('Prefer raw-text replacements for text to avoid problems with HTML entities!'),
+    );
+
+    $form['token_help']['help'] = array(
+      '#value' => theme('token_help', 'node'),
+    );
+  }
+
   return $form;
 }
 
+/**
+ * Implements hook_actions_set_status_action_validate()
+ */
 function twitter_actions_set_status_action_validate($form, $form_state) {
   if (!_twitter_use_oauth()) {
-    form_set_error('screen_name', t('Oath has not yet been setup.'));
-  }
-  if (!db_result(db_query("SELECT twitter_uid FROM {twitter_account} WHERE screen_name = '%s'", $form_state['values']['screen_name']))) {
-    form_set_error('screen_name', t('Twitter authentication failed. Please check your account name and try again.'));
+    form_set_error('screen_name', t('Oauth has not been setup yet. Please go to !link and follow steps.',
+                                     array('!link' => l(t('Twitter settings'), 'admin/settings/twitter'))));
   }
 }
 
+/**
+ * Implements hook_actions_set_status_action_submit()
+ */
 function twitter_actions_set_status_action_submit($form, $form_state) {
   $form_values = $form_state['values'];
   $twitter_uid = db_result(db_query("SELECT twitter_uid FROM {twitter_account} WHERE screen_name = '%s'", $form_values['screen_name']));
@@ -110,7 +144,7 @@ function twitter_actions_set_status_action($object, $context) {
       if (isset($context['node'])) {
         $node = $context['node'];
       }
-      elseif ($context['recipient'] == '%author') {
+      elseif (isset($context['recipient']) && $context['recipient'] == '%author') {
         // If we don't have a node, we don't have a node author.
         watchdog('error', 'Cannot use %author token in this context.');
         return;
@@ -138,7 +172,7 @@ function twitter_actions_set_status_action($object, $context) {
     if (!isset($account)) {
       $account = user_load(array('uid' => $node->uid));
     }
-    if ($recipient == '%author') {
+    if (isset($context['recipient']) && $context['recipient'] == '%author') {
       $recipient = $account->mail;
     }
   }
@@ -166,6 +200,19 @@ function twitter_actions_set_status_action($object, $context) {
   }
 
   $message = strtr($context['message'], $variables);
+
+  // If token module is available, process status to do the token replacement
+  if (module_exists('token')) {
+    // Token replacement for the main context hooks other than node
+    $context_list = array('workflow', 'comment', 'user', 'taxonomy');
+    if (in_array($context['hook'], $context_list, TRUE)) {
+      $message = token_replace($message, $context['hook'], $object);
+    }
+    // then if we have a node object, also do it for the node
+    if (isset($node) && is_object($node)) {
+      $message = token_replace($message, 'node', $node);
+    }
+  }
 
   module_load_include('inc', 'twitter');
   $twitter_account = twitter_account_load($context['twitter_uid']);

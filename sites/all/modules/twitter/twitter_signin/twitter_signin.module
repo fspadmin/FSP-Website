@@ -61,8 +61,7 @@ function twitter_signin_button() {
  * Submit handler for twitter signin
  */
 function twitter_signin_redirect() {
-  module_load_include('lib.php', 'oauth');
-  module_load_include('lib.php', 'twitter');
+  module_load_include('php', 'oauth_common','lib/OAuth');
   module_load_include('inc', 'twitter');
 
   $key = variable_get('twitter_consumer_key', '');
@@ -118,6 +117,7 @@ function twitter_signin_oauth_callback_submit(&$form, &$form_state) {
   $account = user_external_load($response['user_id']);
   if (isset($account->uid)) {
     user_external_login($account, $response);
+    $form_state['twitter_oauth']['account'] = $account;
     $success = TRUE;
   }
   elseif ($uid = db_result(db_query("SELECT uid FROM {twitter_account} WHERE twitter_uid= %d", $response['user_id']))) {
@@ -126,6 +126,7 @@ function twitter_signin_oauth_callback_submit(&$form, &$form_state) {
     $edit["authname_twitter"] = $response['user_id'];
     user_save($account, $edit);
     $user = $account;
+    $form_state['twitter_oauth']['account'] = $account;
     $success = TRUE;
   }
   else {
@@ -165,22 +166,29 @@ function twitter_signin_oauth_callback_submit(&$form, &$form_state) {
  * Implementation of hook_user().
  *
  * Relates a Twitter account with a created user account if the user
- * signed in with Twitter but did not have an account in the site yet
+ * signed in with Twitter and then created an account or logged in.
  */
 function twitter_signin_user($op, &$edit, &$account, $category = NULL) {
-  if ($op == 'insert' && isset($_SESSION['twitter']['values'])) {
-    module_load_include('lib.php', 'oauth');
-    module_load_include('lib.php', 'twitter');
-    module_load_include('inc', 'twitter');
-    $key = variable_get('twitter_consumer_key', '');
-    $secret = variable_get('twitter_consumer_secret', '');
-    $response = $_SESSION['twitter']['values'];
+  switch ($op) {
+    case 'insert':
+    case 'login':
+      if (isset($_SESSION['twitter']['values'])) {
+        module_load_include('lib.php', 'oauth');
+        module_load_include('inc', 'twitter');
+        $key = variable_get('twitter_consumer_key', '');
+        $secret = variable_get('twitter_consumer_secret', '');
+        $response = $_SESSION['twitter']['values'];
 
-    $twitter = new TwitterOAuth($key, $secret, $response['oauth_token'], $response['oauth_token_secret']);
-    $twitter_account = $twitter->users_show($response['screen_name']);
-    $twitter_account->set_auth($response);
-    twitter_account_save($twitter_account, TRUE, $account);
+        $twitter = new TwitterOAuth($key, $secret, $response['oauth_token'], $response['oauth_token_secret']);
+        $twitter_account = $twitter->users_show($response['screen_name']);
+        $twitter_account->set_auth($response);
+        twitter_account_save($twitter_account, TRUE, $account);
 
-    unset($_SESSION['twitter']);
+        unset($_SESSION['twitter']);
+
+        drupal_set_message(t('You have related a Twitter account with your user. Next time you can sign in with Twitter.'));
+      }
+      break;
   }
+
 }

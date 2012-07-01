@@ -345,10 +345,10 @@ function uc_product_update_6006() {
       'default' => 0.0,
     ),
   );
-  db_change_field($ret, 'uc_products', 'weight', 'weight', $schema['float_spec'] + array('description' => t("The product's physical weight")));
-  db_change_field($ret, 'uc_products', 'length', 'length', $schema['float_spec'] + array('description' => t('Physical length of the product or its packaging.')));
-  db_change_field($ret, 'uc_products', 'width', 'width', $schema['float_spec'] + array('description' => t('Physical width of the product or its packaging.')));
-  db_change_field($ret, 'uc_products', 'height', 'height', $schema['float_spec'] + array('description' => t('Physical height of the product or its packaging.')));
+  db_change_field($ret, 'uc_products', 'weight', 'weight', $schema['float_spec'] + array('description' => "The product's physical weight"));
+  db_change_field($ret, 'uc_products', 'length', 'length', $schema['float_spec'] + array('description' => 'Physical length of the product or its packaging.'));
+  db_change_field($ret, 'uc_products', 'width', 'width', $schema['float_spec'] + array('description' => 'Physical width of the product or its packaging.'));
+  db_change_field($ret, 'uc_products', 'height', 'height', $schema['float_spec'] + array('description' => 'Physical height of the product or its packaging.'));
 
   return $ret;
 }

@@ -24,6 +24,13 @@ function twitter_post_menu() {
 }
 
 /**
+ * Implementation of hook_perm()
+ */
+function twitter_post_perm() {
+  return array('post to twitter');
+}
+
+/**
  * Implementation of hook_form_alter().
  */
 function twitter_post_form_alter(&$form, $form_state, $form_id) {
@@ -126,6 +133,7 @@ function twitter_post_form_alter(&$form, $form_state, $form_id) {
 
     $form['twitter']['status']['#default_value'] = $default_format;
     $form['twitter']['status']['#description'] = t('The given text will be posted to twitter.com. You can use !url, !url-alias, !tinyurl, !title and !user as replacement text.  If the token module is enabled, you may also choose from the tokens listed in the replacement patterns section.');
+    $form['twitter']['status']['#maxlength'] = 150;
 
     twitter_include_token_fields($form);
   }
@@ -207,13 +215,16 @@ function twitter_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
  *   A Drupal user object.
  */
 function twitter_post_form($account = NULL) {
-  drupal_add_js(drupal_get_path('module', 'twitter') .'/twitter.js', 'module');
+  drupal_add_js(drupal_get_path('module', 'twitter_post') .'/twitter_post.js', 'module');
 
   if (empty($account)) {
     global $user;
     $account = $user;
   }
 
+  if (!user_access('post to twitter', $account)) {
+    return;
+  }
   $twitter_accounts = twitter_get_user_accounts($account->uid);
   $options = array();
   foreach ($twitter_accounts as $twitter_account) {

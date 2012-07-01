@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_field_order_id.inc,v 1.1.4.2 2010/12/15 02:16:37 longwave Exp $
 /**
  * @file
  * Contains the basic 'order' field handler.

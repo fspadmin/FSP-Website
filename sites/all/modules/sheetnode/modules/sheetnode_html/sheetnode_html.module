@@ -1,5 +1,4 @@
 <?php
-// $Id: sheetnode_html.module,v 1.1.2.5 2010/11/20 11:38:22 kratib Exp $
 
 /**
  * Implementation of hook_menu().
@@ -23,10 +22,12 @@ function sheetnode_html_import_form() {
     '#type' => 'textfield',
     '#title' => t('URL'),
     '#required' => TRUE,
+    '#description' => t('URL of the page to parse.'),
   );
   $form['querypath'] = array(
     '#type' => 'textfield',
     '#title' => t('QueryPath'),
+    '#description' => t('<a href="@qp">QueryPath expression</a> to find one or more tables to import into a single spreadsheet. For example: <code>table#flat-rates-table</code>.', array('@qp' => 'http://querypath.org/'))
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -41,26 +42,34 @@ function sheetnode_html_import_form() {
 function sheetnode_html_import_form_submit($form, &$form_state) {
   module_load_include('inc', 'node', 'node.pages');
   global $user;
+
   $url = $form_state['values']['url'];
   $querypath = $form_state['values']['querypath'];
   $options = array(
     'ignore_spans' => variable_get('sheetnode_html_ignore_spans', FALSE),
   );
   list($title, $sc) = sheetnode_html_import($url, $querypath, $options);
-  $node = array('type' => 'sheetnode');
-  $form_state_node = array();
-  $form_state_node['values']['title'] = $title;
-  $form_state_node['values']['body'] = $body;
-  $form_state_node['values']['name'] = $user->name;
-  $form_state_node['values']['sheetsave'] = $sc;
-  $form_state_node['values']['op'] = t('Save');
 
-  // Allow other modules to modify the new node's creation parameters.
-  // Hook signature: hook_sheetnode_alter(&$form_state_node, $form, $form_state);
-  drupal_alter('sheetnode', $form_state_node, $form, $form_state);
+  $node = new StdClass;
+  $node->type = 'sheetnode';
 
-  drupal_execute('sheetnode_node_form', $form_state_node, (object)$node);
-  $form_state['redirect'] = 'node/'. $form_state_node['nid'];
+  node_object_prepare($node);
+
+  $node->title = $title;
+  $node->name = $user->name;
+  $node->sheetnode['value'] = $sc;
+  $node->sheetnode['template'] = NULL;
+
+  // Let other modules alter the sheetnode or do other work.
+  drupal_alter('sheetnode_import', $node, array(), array('url' => $url, 'querypath' => $querypath, 'options' => $options));
+
+  // Save the sheetnode.
+  $node = node_submit($node);
+  node_save($node);
+
+  if (!empty($node->nid)) {
+    $form_state['redirect'] = 'node/'. $node->nid;
+  }
 }
 
 /**
@@ -70,10 +79,10 @@ function sheetnode_html_import($url, $querypath, $options = array()) {
   require_once(drupal_get_path('module', 'sheetnode') . '/socialcalc.inc');
   $doc = new DOMDocument('1.0');
   @$doc->loadHTMLFile($url);
-  $qp = qp($doc, NULL, array('ignore_parser_warnings' => TRUE));
-  $title = $qp->find('title')->text();
+  $qp = htmlqp($doc);
+  $title = $qp->top('title')->text();
   $sheet = array();
-  foreach ($qp->top($querypath)->find('table') as $table) {
+  foreach ($qp->top($querypath) as $table) {
     sheetnode_html_import_table($table, $sheet, $options);
   }
   $socialcalc = array(
@@ -92,7 +101,7 @@ function sheetnode_html_import_table($table, &$sheet, $options = array()) {
   $pos = $maxpos = array(1, @$sheet['attribs']['lastrow'] + 1); // col, row
   foreach ($table->find('tr') as $row) {
     $pos[0] = 1;
-    foreach ($row->find('td') as $element) {
+    foreach ($row->find('td,th') as $element) {
       while (isset($spans[socialcalc_cr_to_coord($pos[0], $pos[1])])) {
         $pos[0]++;
       }

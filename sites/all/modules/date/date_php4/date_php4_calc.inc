@@ -1,5 +1,4 @@
 <?php
-// $Id: date_php4_calc.inc,v 1.4.4.2 2008/08/30 13:57:39 karens Exp $
 /**
  * Calculates and manipulates dates with no reliance on 32-bit system
  * timestamps, to work on dates before 1970 and after 2038.
@@ -93,9 +92,9 @@ function date_calc_format($day, $month, $year, $format = DATE_CALC_FORMAT) {
   }
   $output = '';
   for ($strpos = 0; $strpos < strlen($format); $strpos++) {
-    $char = substr($format, $strpos, 1);
+    $char = drupal_substr($format, $strpos, 1);
     if ($char == '%') {
-      $nextchar = substr($format, $strpos + 1, 1);
+      $nextchar = drupal_substr($format, $strpos + 1, 1);
       switch ($nextchar) {
         case 'a':
           $output .= date_calc_get_weekday_abbrname($day, $month, $year);
@@ -137,7 +136,7 @@ function date_calc_format($day, $month, $year, $format = DATE_CALC_FORMAT) {
           $output .= date_calc_week_of_year($day, $month, $year);
           break;
         case 'y':
-          $output .= substr(date_pad($year, 4), 2, 2);
+          $output .= drupal_substr(date_pad($year, 4), 2, 2);
           break;
         case 'Y':
           $output .= date_pad($year, 4);
@@ -158,7 +157,7 @@ function date_calc_format($day, $month, $year, $format = DATE_CALC_FORMAT) {
 }
 
 /**
- * Returns true for valid date, false for invalid date.
+ * Returns true for valid date, FALSE for invalid date.
  * Renamed this function because we already have a similar function that
  * expects a full date as a parameter.
  *
@@ -173,12 +172,12 @@ function date_calc_format($day, $month, $year, $format = DATE_CALC_FORMAT) {
  */
 function date_calc_is_valid($day, $month, $year) {
   if ($year > variable_get('date_max_year', 4000) || $year < variable_get('date_min_year', 1)) {
-    return false;
+    return FALSE;
   }
   if (!checkdate($month, $day, $year)) {
     // Checkdate won't work on very old dates in PHP 4, need more testing.
     if (!date_gmmktime(0, 0, 0, $month, $day, $year)) {
-      return false;
+      return FALSE;
     }
   }
   return true;
@@ -198,8 +197,8 @@ function date_calc_is_valid($day, $month, $year) {
  *   The number of days since the date_calc epoch.
  */
 function date_calc_date_to_days($day, $month, $year) {
-  $century = (int)substr($year, 0, 2);
-  $year = (int)substr($year, 2, 2);
+  $century = (int)drupal_substr($year, 0, 2);
+  $year = (int)drupal_substr($year, 2, 2);
   if ($month > 2) {
     $month -= 3;
   }
@@ -570,7 +569,7 @@ function date_calc_get_month_abbrname($month, $length = 3) {
   if (empty($month)) {
     $month = date_calc_get_month();
   }
-  return drupal_substr(date_calc_get_month_fullname($month), 0, $length);
+  return drupal_drupal_substr(date_calc_get_month_fullname($month), 0, $length);
 }
 
 /**
@@ -985,7 +984,7 @@ function date_calc_next_weekday($day = 0, $month = 0, $year = 0, $format = DATE_
  *   The date in the desired format.
  */
 function date_calc_prev_day_of_week($dow, $day = 0, $month = 0, $year = 0,
-  $format = DATE_CALC_FORMAT, $on_or_before = false) {
+  $format = DATE_CALC_FORMAT, $on_or_before = FALSE) {
   if (empty($year)) {
     $year = date_calc_get_year();
   }
@@ -1031,7 +1030,7 @@ function date_calc_prev_day_of_week($dow, $day = 0, $month = 0, $year = 0,
  * @return string  the date in the desired format
  */
 function date_calc_next_day_of_week($dow, $day = 0, $month = 0, $year = 0,
-  $format = DATE_CALC_FORMAT, $on_or_after = false) {
+  $format = DATE_CALC_FORMAT, $on_or_after = FALSE) {
   if (empty($year)) {
     $year = date_calc_get_year();
   }
@@ -1150,9 +1149,9 @@ function date_calc_begin_of_prev_week($day = 0, $month = 0, $year = 0, $format =
     $day = date_calc_get_day();
   }
   $date = date_calc_days_to_date(date_calc_date_to_days($day-7, $month, $year), '%Y%m%d');
-  $prev_week_year  = intval(substr($date, 0, 4));
-  $prev_week_month = intval(substr($date, 4, 2));
-  $prev_week_day   = intval(substr($date, 6, 2));
+  $prev_week_year  = intval(drupal_substr($date, 0, 4));
+  $prev_week_month = intval(drupal_substr($date, 4, 2));
+  $prev_week_day   = intval(drupal_substr($date, 6, 2));
   return date_calc_begin_of_week($prev_week_day, $prev_week_month, $prev_week_year, $format);
 }
 
@@ -1183,9 +1182,9 @@ function date_calc_begin_of_next_week($day = 0, $month = 0, $year = 0,
     $day = date_calc_get_day();
   }
   $date = date_calc_days_to_date(date_calc_date_to_days($day + 7, $month, $year), '%Y%m%d');
-  $next_week_year  = intval(substr($date, 0, 4));
-  $next_week_month = intval(substr($date, 4, 2));
-  $next_week_day   = intval(substr($date, 6, 2));
+  $next_week_year  = intval(drupal_substr($date, 0, 4));
+  $next_week_month = intval(drupal_substr($date, 4, 2));
+  $next_week_day   = intval(drupal_substr($date, 6, 2));
   return date_calc_begin_of_week($next_week_day, $next_week_month, $next_week_year, $format);
 }
 
@@ -1403,7 +1402,7 @@ function date_calc_is_future_date($day, $month, $year) {
       }
     }
   }
-  return false;
+  return FALSE;
 }
 
 /**
@@ -1435,7 +1434,7 @@ function date_calc_is_past_date($day, $month, $year) {
       }
     }
   }
-  return false;
+  return FALSE;
 }
 
 /**

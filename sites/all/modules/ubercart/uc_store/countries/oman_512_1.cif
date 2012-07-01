@@ -18,7 +18,13 @@ function oman_install() {
     db_query("INSERT INTO {uc_zones} (zone_country_id, zone_code, zone_name) VALUES (%d, '%s', '%s')", $zone);
   }
 
-  variable_set('uc_address_format_512',
-   "!company\r\n!first_name !last_name\r\n!street1\r\n!street2"
-  ."\r\n!city\r\n!zone_name, !country_name_if");
+  uc_set_address_format(
+    512,
+    "!company\r\n".
+    "!first_name !last_name\r\n".
+    "!street1\r\n".
+    "!street2\r\n".
+    "!city\r\n".
+    "!zone_name, !country_name_if"
+  );
 }

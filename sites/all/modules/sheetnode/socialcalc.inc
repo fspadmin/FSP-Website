@@ -1,5 +1,4 @@
 <?php
-// $Id: socialcalc.inc,v 1.1.2.1.2.21 2010/12/27 00:51:32 kratib Exp $
 
 /**
  * @file SocialCalc manipulation functions
@@ -19,6 +18,7 @@ class SocialCalc_Constants {
 }
 
 function socialcalc_parse($data) {
+  $sc = array('sheet' => NULL);
   $parts = socialcalc_parse_parts($data);
   foreach ($parts as $name => $part) {
     $sc[$name] = call_user_func('socialcalc_parse_'. $name, $part);
@@ -663,7 +663,7 @@ function socialcalc_decode_value($s) {
 }
 
 function socialcalc_cellformat_parsefont($cell, $sheet) {
-  if (!isset($cell['font'])) return FALSE;
+  if (empty($cell['font'])) return FALSE;
   $parts = array();
   preg_match('/^(\*|\S+? \S+?) (\S+?) (\S.*)$/', $sheet['fonts'][$cell['font']], $parts);
   $font = array();
@@ -677,18 +677,19 @@ function socialcalc_cellformat_parsefont($cell, $sheet) {
 }
 
 function socialcalc_cellformat_parsecolor($cell, $sheet, $color) {
-  if (!isset($cell[$color])) return FALSE;
+  if (empty($cell[$color])) return FALSE;
   $parts = array();
   preg_match('/^rgb\((\d+?),\s*(\d+?),\s*(\d+?)\)\s*$/', $sheet['colors'][$cell[$color]], $parts);
-  return array(
+  $rgb = array(
     'r' => intval($parts[1]),
     'g' => intval($parts[2]),
     'b' => intval($parts[3]),
   );
+  return $rgb;
 }
 
 function socialcalc_cellformat_parselayout($cell, $sheet) {
-  if (!isset($cell['layout'])) return FALSE;
+  if (empty($cell['layout'])) return FALSE;
   $parts = array();
   preg_match('/^padding:\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+);vertical-align:\s*(\S+);$/', $sheet['layouts'][$cell['layout']], $parts);
   $layout = array();
@@ -701,7 +702,7 @@ function socialcalc_cellformat_parselayout($cell, $sheet) {
 }
 
 function socialcalc_cellformat_parseborder($cell, $sheet, $attrib) {
-  if (!isset($cell[$attrib])) return FALSE;
+  if (empty($cell[$attrib])) return FALSE;
   $parts = array();
   preg_match('/^(\S+)\s+(\S+)\s+(\S.+)$/', $sheet['borderstyles'][$cell[$attrib]], $parts);
   $border['thickness'] = $parts[1];

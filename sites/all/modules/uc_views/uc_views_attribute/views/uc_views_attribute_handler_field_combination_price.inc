@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_attribute_handler_field_combination_price.inc,v 1.1.2.2 2010/06/15 23:13:53 hanoii Exp $
 
 /**
  * @file
@@ -10,14 +9,14 @@
  * Field handler to calculate the price out of the combination of attributes
  */
 class uc_views_attribute_handler_field_combination_price extends uc_views_handler_field_money_amount {
- 
+
   function query() {
     $this->ensure_my_table();
     $this->add_additional_fields();
     // Is this the proper way to access vid?
     $this->aliases['vid'] = $this->query->add_field('node', 'vid');
   }
-  
+
   function render($values) {
     switch ($this->definition['price']) {
       case 'sell_price':
@@ -40,7 +39,7 @@ class uc_views_attribute_handler_field_combination_price extends uc_views_handle
     // but it didn't work.
     $price = db_result(db_query("SELECT $uc_products_field FROM {uc_products} WHERE nid = %d AND vid = %d", $values->nid, $values->{$this->aliases['vid']}));
     $offset_total = 0;
-    
+
     $combination =$values->{$this->aliases['combination']};
     if ($combination) {
       $combination = unserialize($combination);

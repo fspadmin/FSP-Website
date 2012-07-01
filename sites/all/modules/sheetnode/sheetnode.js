@@ -1,52 +1,115 @@
-// $Id: sheetnode.js,v 1.4.2.8.2.41 2010/12/07 06:59:51 kratib Exp $
 (function ($) {
 // START jQuery
 
-Drupal.sheetnode = Drupal.sheetnode || {};
+Drupal.behaviors.sheetnode = function(context) {
+  // Abort early if sheetnode settings not in place (which happens in case of Views style settings).
+  if (typeof(Drupal.settings.sheetnode) == 'undefined') return;
 
-Drupal.sheetnode.functionsSetup = function() {
+  $(".sheetview", context).not(".sheetview-processed").each(function() {
+    if (typeof(Drupal.settings.sheetnode[$(this).attr('id')]) != 'undefined') {
+      Drupal.sheetnode.sheetviews.push(new Drupal.sheetnode(Drupal.settings.sheetnode[$(this).attr('id')], this, context));
+    }
+  });
+}
+
+Drupal.sheetnode = function(settings, container, context) {
+  this.settings = settings;
+  this.$container = $(container);
+  this.context = context;
+  var self = this;
+  window.setTimeout(function(){ self.start(); }, 1);
+}
+
+Drupal.sheetnode.sheetviews = [];
+
+Drupal.sheetnode.prototype.functionsSetup = function() {
+  // Abort if we were already here.
+  if (typeof(SocialCalc.Formula.FunctionList["ORG.DRUPAL.FIELD"]) != 'undefined') return;
+
+  var self = this;
+
   // ORG.DRUPAL.FIELD server-side function.
-  SocialCalc.Formula.FunctionList["ORG.DRUPAL.FIELD"] = [Drupal.sheetnode.functionDrupalField, -1, "drupalfield", "", "drupal"];
+  SocialCalc.Formula.FunctionList["ORG.DRUPAL.FIELD"] = [function(fname, operand, foperand, sheet) {
+    var scf = SocialCalc.Formula;
+    var oid, entity, field;
+
+    field = scf.OperandValueAndType(sheet, foperand);
+    oid = scf.OperandValueAndType(sheet, foperand);
+    entity = scf.OperandValueAndType(sheet, foperand);
+    if (isNaN(parseInt(oid.value))) {
+      oid.value = self.settings.context['oid'];
+      entity.value = self.settings.context['entity-name'];
+    }
+
+    $.ajax({
+      type: 'POST',
+      url: Drupal.settings.basePath+'sheetnode/field',
+      data: 'oid='+oid.value+'&entity='+escape(entity.value)+'&field='+escape(field.value),
+      dataType: 'json',
+      async: false,
+      success: function (data) {
+        operand.push(data);
+      }
+    });
+  }, -1, "drupalfield", "", "drupal"];
   SocialCalc.Constants["s_fdef_ORG.DRUPAL.FIELD"] = 'Returns a field from the specified Drupal entity (node, user, etc.)';
   SocialCalc.Constants.s_farg_drupalfield = 'field-name, [oid, entity-name]';
+
+  // ORG.DRUPAL.TOKEN server-side function.
+  SocialCalc.Formula.FunctionList["ORG.DRUPAL.TOKEN"] = [function(fname, operand, foperand, sheet) {
+    var scf = SocialCalc.Formula;
+    var oid, entity, token;
+
+    token = scf.OperandValueAndType(sheet, foperand);
+    oid = scf.OperandValueAndType(sheet, foperand);
+    entity = scf.OperandValueAndType(sheet, foperand);
+    if (isNaN(parseInt(oid.value))) {
+      oid.value = self.settings.context['oid'];
+      entity.value = self.settings.context['entity-name'];
+    }
+
+    $.ajax({
+      type: 'POST',
+      url: Drupal.settings.basePath+'sheetnode/token',
+      data: 'oid='+oid.value+'&entity='+escape(entity.value)+'&token='+escape(token.value),
+      dataType: 'json',
+      async: false,
+      success: function (data) {
+        operand.push(data);
+      }
+    });
+  }, -1, "drupaltoken", "", "drupal"];
+  SocialCalc.Constants["s_fdef_ORG.DRUPAL.TOKEN"] = 'Returns a token value from the specified Drupal entity (node, user, etc.)';
+  SocialCalc.Constants.s_farg_drupaltoken = 'token, [oid, entity-name]';
+
+  // ORG.DRUPAL.URLQUERY client-side function.
+  SocialCalc.Formula.FunctionList["ORG.DRUPAL.PARSEURL"] = [function(fname, operand, foperand, sheet) {
+    var scf = SocialCalc.Formula;
+    var key = scf.OperandValueAndType(sheet, foperand);
+    var parse = parseUri(location.href);
+    var PushOperand = function(t, v) {operand.push({type: t, value: v});};
+    if (typeof(parse.queryKey[key.value]) == 'undefined') {
+      PushOperand("e#VALUE!", 0);
+    }
+    else {
+      PushOperand(isNaN(parseInt(parse.queryKey[key.value])) ? 't' : 'n', parse.queryKey[key.value]);
+    }
+  }, 1, "drupalparseurl", "", "drupal"];
+  SocialCalc.Constants["s_fdef_ORG.DRUPAL.PARSEURL"] = 'Returns the value of a key in the current URL query string.';
+  SocialCalc.Constants.s_farg_drupalparseurl = 'key';
 
   // Update function classes.
   SocialCalc.Constants.function_classlist.push('drupal');
   SocialCalc.Constants.s_fclass_drupal = "Drupal";
 }
 
-Drupal.sheetnode.functionDrupalField = function(fname, operand, foperand, sheet) {
-  var scf = SocialCalc.Formula;
-  var oid, entity, field;
-
-  field = scf.OperandValueAndType(sheet, foperand);
-  oid = scf.OperandValueAndType(sheet, foperand);
-  entity = scf.OperandValueAndType(sheet, foperand);
-  if (isNaN(parseInt(oid.value))) {
-    oid.value = Drupal.settings.sheetnode.context['oid'];
-    entity.value = Drupal.settings.sheetnode.context['entity-name'];
-  }
-
-  $.ajax({
-    type: 'POST',
-    url: Drupal.settings.basePath+'sheetnode/field',
-    data: 'oid='+oid.value+'&entity='+escape(entity.value)+'&field='+escape(field.value),
-    datatype: 'json',
-    async: false,
-    success: function (data) {
-      var result = Drupal.parseJson(data);
-      operand.push(result);
-    }
-  });
-}
-
-Drupal.sheetnode.loadsheetSetup = function() {
+Drupal.sheetnode.prototype.loadsheetSetup = function() {
   SocialCalc.RecalcInfo.LoadSheet = function(sheetname) {
     data = $.ajax({
       type: 'POST',
       url: Drupal.settings.basePath+'sheetnode/load',
       data: 'sheetname='+escape(sheetname),
-      datatype: 'text',
+      dataType: 'text',
       async: false
     }).responseText;
     if (data !== null) {
@@ -56,10 +119,29 @@ Drupal.sheetnode.loadsheetSetup = function() {
   }
 }
 
-Drupal.sheetnode.focusSetup = function() {
-  $('.form-text,.form-textarea,.form-select').not('.socialcalc-input').focus(function(e) {
+Drupal.sheetnode.prototype.focusSetup = function() {
+  $('.form-text,.form-textarea,.form-select', this.context).not('.socialcalc-input').focus(function(e) {
     SocialCalc.CmdGotFocus(this);
   });
+}
+
+Drupal.sheetnode.prototype.callbackSetup = function() {
+  var self = this;
+  this.spreadsheet.editor.StatusCallback.sheetnode = {
+    func: function(editor, status, arg, params) {
+      if (status == 'calcfinished') {
+        if (!self.settings.saveElement && self.settings.viewMode == Drupal.sheetnode.viewModes.htmlTable) {
+          self.$container.html(SocialCalc.SpreadsheetViewerCreateSheetHTML(self.spreadsheet));
+        }
+      }
+      if (status == 'doneposcalc' && self.settings.saveElement) {
+        window.setTimeout(function() {
+          $('#'+self.settings.saveElement, self.$form).val(self.spreadsheet.CreateSpreadsheetSave());
+        }, 0);
+      }
+    },
+    params: {}
+  };
 }
 
 Drupal.sheetnode.viewModes = {
@@ -68,172 +150,201 @@ Drupal.sheetnode.viewModes = {
   htmlTable: 2
 }
 
-Drupal.sheetnode.start = function(context) {
-  // Just exit if the sheetnode is not in the new context or if it has already been processed.
-  if ($('div#'+Drupal.settings.sheetnode.view_id, context).length == 0) return;
-  if ($('div.sheetview-processed', context).length != 0) return;
+Drupal.sheetnode.prototype.start = function() {
+  var self = this;
+  var showEditor = this.settings.saveElement || this.settings.viewMode == Drupal.sheetnode.viewModes.fiddleMode;
+  var showToolbar = this.settings.saveElement || (this.settings.showToolbar && this.settings.viewMode == Drupal.sheetnode.viewModes.fiddleMode);
   
-  // DOM initialization.
-  $('#'+Drupal.settings.sheetnode.edit_id, context).parents('form').submit(function() {
-    Drupal.sheetnode.save();
-    return true;
-  });
-  $('.collapsed').each(function() {
-    var ev = 'DOMAttrModified';
-    if ($.browser.msie) {
-      ev = 'propertychange';
-    }
-    $(this).bind(ev, function(e) {
-      if (Drupal.sheetnode.spreadsheet) {
-        Drupal.sheetnode.spreadsheet.editor.SchedulePositionCalculations();
-      }
-    }, false);
-  });
-  $(window).resize(function() {
-    Drupal.sheetnode.resize();
-  });
-
   // SocialCalc initialization.
-  SocialCalc.Popup.Controls = {};
-  SocialCalc.ConstantsSetImagePrefix(Drupal.settings.sheetnode.image_prefix);
+  SocialCalc.ConstantsSetImagePrefix(this.settings.imagePrefix);
   SocialCalc.Constants.defaultCommentClass = "cellcomment";
   SocialCalc.Constants.defaultReadonlyClass = "readonly";
-
-  this.spreadsheet = (Drupal.settings.sheetnode.editing || Drupal.settings.sheetnode.fiddling == Drupal.sheetnode.viewModes.fiddleMode) ? new SocialCalc.SpreadsheetControl() : new SocialCalc.SpreadsheetViewer();
-
-  if (Drupal.settings.sheetnode.editing || Drupal.settings.sheetnode.fiddling == Drupal.sheetnode.viewModes.fiddleMode) {
+  this.spreadsheet = showEditor ? new SocialCalc.SpreadsheetControl(this.settings.containerElement+"-") : new SocialCalc.SpreadsheetViewer(this.settings.containerElement+"-");
+  if (showToolbar) {
     // Remove unwanted tabs.
     this.spreadsheet.tabs.splice(this.spreadsheet.tabnums.clipboard, 1);
     this.spreadsheet.tabs.splice(this.spreadsheet.tabnums.audit, 1);
-    if (!Drupal.settings.sheetnode.perm_edit_sheet_settings) {
+    if (!this.settings.permissions['edit sheetnode settings']) {
       this.spreadsheet.tabs.splice(this.spreadsheet.tabnums.settings, 1);
     }
     this.spreadsheet.tabnums = {};
     for (var i=0; i<this.spreadsheet.tabs.length; i++) {
       this.spreadsheet.tabnums[this.spreadsheet.tabs[i].name] = i;
     }
-    
-    // Hide toolbar if we're just viewing.
-    if (!Drupal.settings.sheetnode.editing) {
-      this.spreadsheet.tabbackground="display:none;";
-      this.spreadsheet.toolbarbackground="display:none;";
-    }
-  }
-
-  // Read in data and recompute.
-  parts = this.spreadsheet.DecodeSpreadsheetSave(Drupal.settings.sheetnode.value);
-  if (parts && parts.sheet) {
-    this.spreadsheet.ParseSheetSave(Drupal.settings.sheetnode.value.substring(parts.sheet.start, parts.sheet.end));
-  }
-  if (Drupal.settings.sheetnode.editing || Drupal.settings.sheetnode.fiddling == Drupal.sheetnode.viewModes.fiddleMode) {
-    this.spreadsheet.InitializeSpreadsheetControl(Drupal.settings.sheetnode.view_id, 700, $('div#'+Drupal.settings.sheetnode.view_id).width());
   }
   else {
-    this.spreadsheet.InitializeSpreadsheetViewer(Drupal.settings.sheetnode.view_id, 700, $('div#'+Drupal.settings.sheetnode.view_id).width());
-  }
-  if (parts && parts.edit) {
-    this.spreadsheet.editor.LoadEditorSettings(Drupal.settings.sheetnode.value.substring(parts.edit.start, parts.edit.end));
-  }
-  if (!Drupal.settings.sheetnode.editing && Drupal.settings.sheetnode.fiddling == Drupal.sheetnode.viewModes.htmlTable) {
-    $('div#'+Drupal.settings.sheetnode.view_id).html(SocialCalc.SpreadsheetViewerCreateSheetHTML(this.spreadsheet));
+    this.spreadsheet.tabbackground="display:none;";
+    this.spreadsheet.toolbarbackground="display:none;";
   }
 
-  // Special handling for Views AJAX.
-  try {
-    $('input[type=submit]', Drupal.settings.views.ajax.id).click(function() {
-      Drupal.sheetnode.save();
-    });
+  // Trigger event to alert plugins that we've created the spreadsheet.
+  this.$container.trigger('sheetnodeCreated', {spreadsheet: this.spreadsheet});
+
+  // Read in data and recompute.
+  if (typeof(this.settings.value) == 'string') {
+    var parts = this.spreadsheet.DecodeSpreadsheetSave(this.settings.value);
+    if (parts && parts.sheet) {
+      this.spreadsheet.ParseSheetSave(this.settings.value.substring(parts.sheet.start, parts.sheet.end));
+    }
   }
-  catch (e) {
-    // Do nothing.
+  if (self.settings.saveElement || self.settings.viewMode != Drupal.sheetnode.viewModes.htmlTable) {
+    if (showEditor) {
+      this.spreadsheet.InitializeSpreadsheetControl(this.settings.containerElement, 700, this.$container.width());
+    }
+    else {
+      this.spreadsheet.InitializeSpreadsheetViewer(this.settings.containerElement, 700, this.$container.width());
+    }
+    if (parts && parts.edit) {
+      this.spreadsheet.editor.LoadEditorSettings(this.settings.value.substring(parts.edit.start, parts.edit.end));
+    }
   }
 
   // Call our setup functions.
-  Drupal.sheetnode.focusSetup();
-  Drupal.sheetnode.functionsSetup();
-  Drupal.sheetnode.loadsheetSetup();
+  this.focusSetup();
+  this.functionsSetup();
+  this.loadsheetSetup();
+  this.callbackSetup();
 
-  // Fix DOM where needed.
-  div = $('div#'+Drupal.settings.sheetnode.view_id, context);
-  $('div#SocialCalc-edittools', div).parent('div').attr('id', 'SocialCalc-toolbar');
-  $('td#SocialCalc-edittab', div).parents('div:eq(0)').attr('id', 'SocialCalc-tabbar');
-  $('input:text', div).addClass('form-text socialcalc-input');
-  $('input:radio', div).addClass('form-radio socialcalc-input');
-  $('input:checkbox', div).addClass('form-checkbox socialcalc-input');
-  $('textarea', div).addClass('form-textarea socialcalc-input');
-  $('select', div).addClass('form-select socialcalc-input');
-  $('input:button', div).addClass('form-submit socialcalc-input');
-  $('div#SocialCalc-sorttools td:first', div).css('width', 'auto');
-  $('div#SocialCalc-settingsview', div).css('border', 'none').css('width', 'auto').css('height', 'auto');
+  // DOM initialization.
+  if (this.settings.saveElement) {
+    this.$form = this.$container.parents('form').submit(function() {
+      self.save();
+      return true;
+    });
+    // Special handling for Views AJAX.
+    try {
+      $('input[type=submit]', Drupal.settings.views.ajax.id).click(function() {
+        self.save();
+      });
+    }
+    catch (e) {
+      // Do nothing.
+    }
+  }
+  $(window).resize(function() {
+    self.resize();
+  });
+  $('div#SocialCalc-edittools', this.$container).parent('div').attr('id', 'SocialCalc-toolbar');
+  $('td#SocialCalc-edittab', this.$container).parents('div:eq(0)').attr('id', 'SocialCalc-tabbar');
+  $('input:text', this.$container).addClass('form-text socialcalc-input');
+  $('input:radio', this.$container).addClass('form-radio socialcalc-input');
+  $('input:checkbox', this.$container).addClass('form-checkbox socialcalc-input');
+  $('textarea', this.$container).addClass('form-textarea socialcalc-input');
+  $('select', this.$container).addClass('form-select socialcalc-input');
+  $('input:button', this.$container).addClass('form-submit socialcalc-input');
+  $('div#SocialCalc-sorttools td:first', this.$container).css('width', 'auto');
+  $('div#SocialCalc-settingsview', this.$container).css('border', 'none').css('width', 'auto').css('height', 'auto');
 
   // Lock cells requires special permission.
-  if (Drupal.settings.sheetnode.editing && !Drupal.settings.sheetnode.perm_edit_sheet_settings) {
-    $('#'+Drupal.sheetnode.spreadsheet.idPrefix+'locktools').css('display', 'none');
+  if (showToolbar && !this.settings.permissions['edit sheetnode settings']) {
+    $('span#SocialCalc-locktools', this.$container).css('display', 'none');
   }
 
   // Prepare for fullscreen handling when clicking the SocialCalc icon.
-  $('td#'+SocialCalc.Constants.defaultTableEditorIDPrefix+'logo img', div).attr('title', Drupal.t('Fullscreen')).click(function() {
-    if (div.hasClass('sheetview-fullscreen')) { // Going back to normal:
-      // Restore saved values.
-      div.removeClass('sheetview-fullscreen');
-      if (Drupal.sheetnode.beforeFullscreen.index >= Drupal.sheetnode.beforeFullscreen.parentElement.children().length) {
-        Drupal.sheetnode.beforeFullscreen.parentElement.append(div);
-      } else {
-        div.insertBefore(Drupal.sheetnode.beforeFullscreen.parentElement.children().get(Drupal.sheetnode.beforeFullscreen.index));
-      }
-      Drupal.sheetnode.spreadsheet.requestedHeight = Drupal.sheetnode.beforeFullscreen.requestedHeight;
-      Drupal.sheetnode.resize();
-      $('body').css('overflow', 'auto');
-      window.scroll(Drupal.sheetnode.beforeFullscreen.x, Drupal.sheetnode.beforeFullscreen.y);
-    }
-    else { // Going fullscreen:
-      // Save current values.
-      Drupal.sheetnode.beforeFullscreen = {
-        parentElement: div.parent(),
-        index: div.parent().children().index(div),
-        x: $(window).scrollLeft(), y: $(window).scrollTop(),
-        requestedHeight: Drupal.sheetnode.spreadsheet.requestedHeight
-      };
-
-      // Set values needed to go fullscreen.
-      $('body').append(div).css('overflow', 'hidden');
-      div.addClass('sheetview-fullscreen');
-      Drupal.sheetnode.resize();
-      window.scroll(0,0);
-    }
-  });
+  $('td#'+SocialCalc.Constants.defaultTableEditorIDPrefix+'logo img', this.$container).attr('title', Drupal.t('Fullscreen')).click(function() { self.fullscreen() });
   
   // Signal that we've processed this instance of sheetnode.
-  div.addClass('sheetview-processed');
+  this.$container.addClass('sheetview-processed');
+
+  // Trigger event to alert plugins that we've built the spreadsheet.
+  this.$container.trigger('sheetnodeReady', {spreadsheet: this.spreadsheet});
 
   // Force a recalc to refresh all values and scrollbars.
-  this.spreadsheet.editor.EditorScheduleSheetCommands("recalc");
+  this.spreadsheet.editor.EditorScheduleSheetCommands('recalc');
 }
 
-Drupal.sheetnode.resize = function() {
-  // Adjust width and height if needed.
-  div = $('div#'+Drupal.settings.sheetnode.view_id);
-  if (div.hasClass('sheetview-fullscreen')) {
-    this.spreadsheet.requestedHeight = div.height();
+Drupal.sheetnode.prototype.fullscreen = function() {
+  if (this.$container.hasClass('sheetview-fullscreen')) { // Going back to normal:
+    // Restore saved values.
+    this.$container.removeClass('sheetview-fullscreen');
+    if (this.beforeFullscreen.index >= this.beforeFullscreen.parentElement.children().length) {
+      this.beforeFullscreen.parentElement.append(this.$container);
+    } else {
+      this.$container.insertBefore(this.beforeFullscreen.parentElement.children().get(this.beforeFullscreen.index));
+    }
+    this.spreadsheet.requestedHeight = this.beforeFullscreen.requestedHeight;
+    this.resize();
+    $('body').css('overflow', 'auto');
+    window.scroll(this.beforeFullscreen.x, this.beforeFullscreen.y);
   }
-  this.spreadsheet.requestedWidth = div.width();
+  else { // Going fullscreen:
+    // Save current values.
+    this.beforeFullscreen = {
+      parentElement: this.$container.parent(),
+      index: this.$container.parent().children().index(this.$container),
+      x: $(window).scrollLeft(), y: $(window).scrollTop(),
+      requestedHeight: this.spreadsheet.requestedHeight
+    };
+
+    // Set values needed to go fullscreen.
+    $('body').append(this.$container).css('overflow', 'hidden');
+    this.$container.addClass('sheetview-fullscreen');
+    this.resize();
+    window.scroll(0,0);
+  }
+}
+
+Drupal.sheetnode.prototype.resize = function() {
+  // Adjust width and height if needed.
+  if (this.$container.hasClass('sheetview-fullscreen')) {
+    this.spreadsheet.requestedHeight = this.$container.height();
+  }
+  this.spreadsheet.requestedWidth = this.$container.width();
   this.spreadsheet.DoOnResize();
 }
 
-Drupal.sheetnode.save = function() {
-  $('#'+Drupal.settings.sheetnode.edit_id).val(this.spreadsheet.CreateSpreadsheetSave());
-  log = $('#edit-log').val();
-  if (log != undefined) {
-    audit = this.spreadsheet.sheet.CreateAuditString();
+Drupal.sheetnode.prototype.save = function() {
+  var self = this;
+  $('#'+this.settings.saveElement, this.$form).val(this.spreadsheet.CreateSpreadsheetSave());
+  $('#edit-log', this.$form).each(function() {
+    var audit = self.spreadsheet.sheet.CreateAuditString();
+    var log = $(this).val();
     if (!log.length) {
-      $('#edit-log').val(audit);
+      $(this).val(audit);
     }
     else {
-      $('#edit-log').val(log + '\n' + audit);
+      $(this).val(log + '\n' + audit);
     }
-  }
+  });
 }
 
 // END jQuery
 })(jQuery);
+
+// parseUri 1.2.2
+// (c) Steven Levithan <stevenlevithan.com>
+// MIT License
+// http://blog.stevenlevithan.com/archives/parseuri
+
+// Sublicensed as GPL by infojunkie <karim.ratib@gmail.com>
+// http://programmers.stackexchange.com/questions/105912/can-you-change-code-distributed-under-the-mit-license-and-re-distribute-it-unde
+
+function parseUri (str) {
+  var o   = parseUri.options,
+    m   = o.parser[o.strictMode ? "strict" : "loose"].exec(str),
+    uri = {},
+    i   = 14;
+
+  while (i--) uri[o.key[i]] = m[i] || "";
+
+  uri[o.q.name] = {};
+  uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2) {
+    if ($1) uri[o.q.name][$1] = $2;
+  });
+
+  return uri;
+};
+
+parseUri.options = {
+  strictMode: false,
+  key: ["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
+  q:   {
+    name:   "queryKey",
+    parser: /(?:^|&)([^&=]*)=?([^&]*)/g
+  },
+  parser: {
+    strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
+    loose:  /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
+  }
+};
 

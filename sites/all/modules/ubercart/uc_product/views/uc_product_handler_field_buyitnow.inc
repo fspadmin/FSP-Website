@@ -6,14 +6,21 @@
  */
 
 /**
- * Display the simpler Add to cart form like the catalog.
+ * Displays the simpler Add to cart form like the catalog.
  */
 class uc_product_handler_field_buyitnow extends views_handler_field {
+
+  /**
+   * Overrides views_handler_field::query().
+   */
   function query() {
     $this->ensure_my_table();
     $this->add_additional_fields();
   }
 
+  /**
+   * Overrides views_handler_field::element_type().
+   */
   function element_type() {
     if (isset($this->definition['element type'])) {
       return $this->definition['element type'];
@@ -21,6 +28,9 @@ class uc_product_handler_field_buyitnow extends views_handler_field {
     return 'div';
   }
 
+  /**
+   * Overrides views_handler_field::render().
+   */
   function render($values) {
     $product = node_load($values->{$this->aliases['nid']});
     if (uc_product_is_product($product)) {

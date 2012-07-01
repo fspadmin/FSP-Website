@@ -8,7 +8,7 @@
 
 .uc-store-admin-table {
   margin: 1em auto;
-  border: 1px dashed #BBB;
+  border: 1px dashed #bbb;
 }
 
 .uc-store-admin-table tbody {
@@ -42,12 +42,12 @@
 
 .uc-customer-table tr.odd:hover,
 .uc-customer-table tr.even:hover {
-  background-color: #DDD;
+  background-color: #ddd;
 }
 
 .uc-cust-orders-table tr.odd:hover,
 .uc-cust-orders-table tr.even:hover {
-  background-color: #DDD;
+  background-color: #ddd;
 }
 
 .uc-cust-orders-table .uc-store-icon {
@@ -66,8 +66,21 @@
   height: 0px;
   left: -9999px;
   position: absolute;
-  visibility: hidden;
+  top: -9999px;
   width: 0px;
+}
+
+.uc-store-status td {
+  vertical-align: top;
+}
+
+.uc-store-status td.title {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.uc-store-status td.message {
+  width: 100%;
 }
 
 table.section-items {
@@ -100,7 +113,7 @@ table.section-items td {
 
 .summary-overview {
   padding: .5em;
-  border: 1px dashed #BBB;
+  border: 1px dashed #bbb;
   margin-bottom: -1px;
 }
 
@@ -113,7 +126,7 @@ table.section-items td {
 }
 
 .summaryOnclick-processed:hover {
-  background-color: #DDD;
+  background-color: #ddd;
 }
 
 .summary-edit-icon {

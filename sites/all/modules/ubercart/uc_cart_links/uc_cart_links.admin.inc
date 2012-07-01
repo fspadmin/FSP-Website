@@ -37,12 +37,14 @@ function uc_cart_links_settings_form() {
     '#title' => t('Cart links messages'),
     '#description' => t('Enter messages available to the cart links API for display through a link. Separate messages with a line break. Each message should have a numeric key and text value, separated by "|". For example: 1337|Message text.'),
     '#default_value' => variable_get('uc_cart_links_messages', ''),
+    '#wysiwyg' => FALSE,
   );
   $form['uc_cart_links_restrictions'] = array(
     '#type' => 'textarea',
     '#title' => t('Cart links restrictions'),
     '#description' => t('To restrict what cart links may be used on your site, enter all valid cart links in this textbox.  Separate links with a line break. Leave blank to permit any cart link.'),
     '#default_value' => variable_get('uc_cart_links_restrictions', ''),
+    '#wysiwyg' => FALSE,
   );
   $form['uc_cart_links_invalid_page'] = array(
     '#type' => 'textfield',
@@ -138,7 +140,7 @@ function uc_cart_links_creation_help() {
 
   $build['required'] = array(
     '#prefix' => '<p>',
-    '#value' => t('The only required part of the <code><em>&lt;cart_link_content&gt;</em></code> is the "p" action, which must be immediately followed by a product node number.  For example, to add product node 23 to a cart, use the following:<blockquote><code>/cart/add/p23</code></blockquote>To use this on your site, simply create an HTML anchor tag referencing your Cart Link URL:<blockquote><code>&lt;a href="http://www.example.com/cart/add/p23"&gt;' . t('Link text.') . '&lt;/a&gt;</code></blockquote>'),
+    '#value' => t('The only required part of the <code><em>&lt;cart_link_content&gt;</em></code> is the "p" action, which must be immediately followed by a product node number.  For example, to add product node 23 to a cart, use the following:<blockquote><code>/cart/add/p23</code></blockquote>To use this on your site, simply create an HTML anchor tag referencing your Cart Link URL:<blockquote><code>&lt;a href="http://www.example.com/cart/add/p23"&gt;Link text.&lt;/a&gt;</code></blockquote>'),
     '#suffix' => '</p>',
   );
 
@@ -146,11 +148,11 @@ function uc_cart_links_creation_help() {
   $rows = array(
     array('q', t('Specifies quantity of this product to add.'), t('A positive integer.')),
     array('a&lt;aid&gt;o&lt;oid&gt;', t('Specifies attribute/option for this product.'), t('aid is the integer attribute ID. oid is the integer option ID for radio, checkbox, and select options, or a url-escaped text string for textfield options.')),
-    array('m0', t('Silent.  Supresses add-to-cart message for this product.
+    array('m0', t('Silent.  Suppresses add-to-cart message for this product.
     (The add-to-cart message may be enabled on the <a href="!url">cart settings page</a>).', array('!url' => url('admin/store/settings/cart/edit'))), t('None.')),
   );
   $build['args'] = array(
-    '#prefix' => t('Optional arguments for "p" allow you to control the quantity, set product attributes and options, and supress the default product action message normally shown when a product is added to a cart. These optional arguments are appended to the "p" action and separated with an underscore.  Allowed arguments for "p" are:'),
+    '#prefix' => t('Optional arguments for "p" allow you to control the quantity, set product attributes and options, and suppress the default product action message normally shown when a product is added to a cart. These optional arguments are appended to the "p" action and separated with an underscore.  Allowed arguments for "p" are:'),
     '#value' => theme('table', $header, $rows),
   );
 

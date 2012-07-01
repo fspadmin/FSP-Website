@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function iran_install() {
   db_query("INSERT INTO {uc_countries} (country_id, country_name, country_iso_code_2, country_iso_code_3, version) VALUES (364, 'Iran, Islamic Republic of', 'IR', 'IRN', 2)");

@@ -1,5 +1,4 @@
 <?php
-// $Id: sheetnode_text.module,v 1.1.2.3 2010/11/20 11:38:22 kratib Exp $
 
 /**
  * Implementation of hook_menu().
@@ -50,20 +49,27 @@ function sheetnode_text_import_form_submit($form, &$form_state) {
     'process_dividers' => variable_get('sheetnode_text_process_dividers', TRUE),
   );
   $sc = sheetnode_text_import($text, $options);
-  $node = array('type' => 'sheetnode');
-  $form_state_node = array();
-  $form_state_node['values']['title'] = $title;
-  $form_state_node['values']['body'] = $body;
-  $form_state_node['values']['name'] = $user->name;
-  $form_state_node['values']['sheetsave'] = $sc;
-  $form_state_node['values']['op'] = t('Save');
 
-  // Allow other modules to modify the new node's creation parameters.
-  // Hook signature: hook_sheetnode_alter(&$form_state_node, $form, $form_state);
-  drupal_alter('sheetnode', $form_state_node, $form, $form_state);
+  $node = new StdClass;
+  $node->type = 'sheetnode';
 
-  drupal_execute('sheetnode_node_form', $form_state_node, (object)$node);
-  $form_state['redirect'] = 'node/'. $form_state_node['nid'];
+  node_object_prepare($node);
+
+  $node->title = $title;
+  $node->name = $user->name;
+  $node->sheetnode['value'] = $sc;
+  $node->sheetnode['template'] = NULL;
+
+  $context = array('text' => $text, 'options' => $options);
+  $params = array();
+  drupal_alter('sheetnode_import', $node, $params, $context);
+
+  // Save the sheetnode.
+  $node = node_submit($node);
+  node_save($node);
+  if (!empty($node->nid)) {
+    $form_state['redirect'] = 'node/'. $node->nid;
+  }
 }
 
 /**

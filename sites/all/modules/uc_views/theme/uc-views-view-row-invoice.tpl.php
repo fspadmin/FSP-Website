@@ -1,5 +1,4 @@
 <?php
-// $Id: uc-views-view-row-invoice.tpl.php,v 1.1.2.1 2009/09/29 13:40:01 madsph Exp $
 
 /**
  * @file

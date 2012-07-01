@@ -30,50 +30,7 @@ Drupal.ckeditorToggle = function(textarea_id, TextTextarea, TextRTE, xss_check){
  *
  * @param string textarea_id
  */
-Drupal.ckeditorOn = function(textarea_id) {
-  if ((typeof(Drupal.settings.ckeditor.load_timeout) == 'undefined') && (typeof(CKEDITOR.instances[textarea_id]) != 'undefined')) {
-    return;
-  }
-  if (typeof(Drupal.settings.ckeditor.settings[textarea_id]) == 'undefined') {
-    return;
-  }
-  if (!CKEDITOR.env.isCompatible) {
-    return;
-  }
-  var teaser = Drupal.ckeditorTeaserInfo(textarea_id);
-  if (teaser) {
-    var ch_checked = teaser.checkbox.attr('checked');
-    var tv = teaser.textarea.val();
-    if (!teaser.textarea.attr("disabled")) {
-      $("#" + textarea_id).val(tv + '\n<!--break-->\n' + $("#" + textarea_id).val());
-      teaser.textarea.val('');
-    }
-
-    // [#653498]
-    if (teaser.button.attr('value') != Drupal.t('Split summary at cursor')) {
-      try {
-        teaser.button.click();
-      }
-      catch (e) {
-        teaser.button.val(Drupal.t('Split summary at cursor'));
-      }
-    }
-
-    teaser.buttonContainer.hide();
-    teaser.textareaContainer.hide();
-    teaser.checkboxContainer.show();
-    teaser.checkbox.attr('checked', ch_checked);
-  }
-
-  if (( $("#" + textarea_id) .length > 0 && $("#" + textarea_id).val().length > 0) && ($("#" + textarea_id).attr('class').indexOf("filterxss1") != -1 || $("#" + textarea_id).attr('class').indexOf("filterxss2") != -1)) {
-    $.post(Drupal.settings.basePath + 'index.php?q=ckeditor/xss', {
-      text: $('#' + textarea_id).val(),
-      'filters[]': Drupal.settings.ckeditor.settings[textarea_id].filters
-    }, function(text){
-      $("#" + textarea_id).val(text);
-    });
-  }
-
+Drupal.ckeditorInit = function(textarea_id) {
   $("#" + textarea_id).next(".grippie").css("display", "none");
   $("#" + textarea_id).addClass("ckeditor-processed");
 
@@ -133,6 +90,66 @@ Drupal.ckeditorOn = function(textarea_id) {
   }
 
   Drupal.ckeditorInstance = CKEDITOR.replace(textarea_id, textarea_settings);
+};
+
+Drupal.ckeditorOn = function(textarea_id) {
+  if ((typeof(Drupal.settings.ckeditor.load_timeout) == 'undefined') && (typeof(CKEDITOR.instances[textarea_id]) != 'undefined')) {
+    return;
+  }
+  if (typeof(Drupal.settings.ckeditor.settings[textarea_id]) == 'undefined') {
+    return;
+  }
+  if (!CKEDITOR.env.isCompatible) {
+    return;
+  }
+  var teaser = Drupal.ckeditorTeaserInfo(textarea_id);
+  if (teaser) {
+    var ch_checked = teaser.checkbox.attr('checked');
+    var tv = teaser.textarea.val();
+    if (!teaser.textarea.attr("disabled")) {
+      $("#" + textarea_id).val(tv + '\n<!--break-->\n' + $("#" + textarea_id).val());
+      teaser.textarea.val('');
+    }
+
+    // [#653498]
+    if (teaser.button.attr('value') != Drupal.t('Split summary at cursor')) {
+      try {
+        teaser.button.click();
+      }
+      catch (e) {
+        teaser.button.val(Drupal.t('Split summary at cursor'));
+      }
+    }
+
+    teaser.buttonContainer.hide();
+    teaser.textareaContainer.hide();
+    teaser.checkboxContainer.show();
+    teaser.checkbox.attr('checked', ch_checked);
+  }
+
+  if (( $("#" + textarea_id).length > 0 && $("#" + textarea_id).val().length > 0) && ($("#" + textarea_id).attr('class').indexOf("filterxss1") != -1 || $("#" + textarea_id).attr('class').indexOf("filterxss2") != -1)) {
+    if (typeof Drupal.settings.ckeditor.settings[textarea_id].input_format == 'undefined') {
+        Drupal.settings.ckeditor.settings[textarea_id].input_format = Drupal.settings.ckeditor.default_input_format;
+    }
+    else if (typeof Drupal.settings.ckeditor.settings[textarea_id].input_format == 'object') {
+        Drupal.settings.ckeditor.settings[textarea_id].input_format = Drupal.settings.ckeditor.settings[textarea_id].input_format.pop();
+    }
+    $.post(Drupal.settings.basePath + 'index.php?q=ckeditor/xss', {
+      'text': $('#' + textarea_id).val(),
+      'token': Drupal.settings.ckeditor.ajaxToken,
+      'textarea_id': textarea_id,
+      'query': Drupal.settings.ckeditor.query,
+      'theme': Drupal.settings.ckeditor.theme,
+      'input_format': Drupal.settings.ckeditor.settings[textarea_id].input_format
+    }, function(text){
+      $("#" + textarea_id).val(text);
+      Drupal.ckeditorInit(textarea_id);
+    });
+  }
+  else {
+    Drupal.ckeditorInit(textarea_id);
+  }
+
 };
 
 /**
@@ -353,12 +370,15 @@ Drupal.behaviors.ckeditor = function (context) {
     return;
   }
 
-  $.each(CKEDITOR.instances, function(index, value){
-    if ($('#'+index).length == 0){
-      delete CKEDITOR.instances[index];
-    }
-  });
-
+  if (typeof CKEDITOR.instances != 'undefined')
+  {
+      $.each(CKEDITOR.instances, function(index, value){
+        if ($('#'+index).length == 0)
+        {
+          delete CKEDITOR.instances[index];
+        }
+      });
+  }
   $('.ckeditor_links').show();
   // make sure the textarea behavior is run first, to get a correctly sized grippie
   // the textarea behavior requires the teaser behavior, so load that one as well
@@ -390,7 +410,7 @@ Drupal.behaviors.ckeditor = function (context) {
         $.ajax({
           url: path + 'admin/ckeditor/get_settings',
           dataType: 'json',
-          data: {'id': imagefield_id, 'url': url},
+          data: {'id': imagefield_id, 'url': url, 'token': Drupal.settings.ckeditor.ajaxToken},
           type: 'POST',
           success: function( data ) {
             Drupal.settings.ckeditor.settings[imagefield_id] = data;
@@ -420,12 +440,16 @@ Drupal.behaviors.ckeditor = function (context) {
         if (typeof CKEDITOR.instances['edit-empty'] != 'undefined' )$('#edit-empty').attr('value',CKEDITOR.instances['edit-empty'].document.getBody().getHtml());
     });
     var views_textarea_id = $("textarea", $(context)).attr('id');
-    if (views_textarea_id){
+    if (typeof views_textarea_id != 'undefined' && views_textarea_id != 'edit-options-alter-text'){
       path = Drupal.settings.basePath;
+      views_path = $("form", $(context)).attr('action');
+      if (views_path.indexOf('/') == 0) {
+        views_path = views_path.substr(1)
+      }
       $.ajax({
         url: path + 'admin/ckeditor/get_settings',
         dataType: 'json',
-        data: {'id': views_textarea_id, 'url': 'admin/build/views'},
+        data: {'id': views_textarea_id, 'url': views_path, 'token': Drupal.settings.ckeditor.ajaxToken},
         type: 'POST',
         success: function( data ) {
           if ($(data).length > 0 && typeof CKEDITOR.instances[views_textarea_id] == 'undefined'){

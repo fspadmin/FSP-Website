@@ -69,15 +69,15 @@ table.category-products form {
   width: 100%;
 }
 .category-grid-products table {
-  border-left: 1px solid #CCC;
-  border-top: 1px solid #CCC;
+  border-left: 1px solid #ccc;
+  border-top: 1px solid #ccc;
   text-align: center;
   width: 100%;
 }
 .category-grid-products td {
-  background-color: #FFF;
-  border-bottom: 1px solid #CCC;
-  border-right: 1px solid #CCC;
+  background-color: #fff;
+  border-bottom: 1px solid #ccc;
+  border-right: 1px solid #ccc;
   padding: 20px;
   text-align: center;
 }

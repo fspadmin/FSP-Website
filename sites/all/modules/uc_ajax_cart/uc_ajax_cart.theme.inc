@@ -88,6 +88,37 @@ function uc_ajax_cart_preprocess_uc_ajax_cart_block_content(&$vars) {
             );
     }
   }
+
+  if (module_exists('uc_discounts')) {  
+    // Calculate discounts, if necessary. Calculation code copied from 
+    // uc_discounts_cart_pane_output
+    global $user;
+    //Create phony order object to call to get_discounts_for_order
+    $order           = new stdClass();
+    $order->uid      = $user->uid;
+    $order->products = $content;
+
+    $errors    = array();
+    $warnings  = array();
+    $messages  = array();
+    $discounts = get_discounts_for_order($order, $errors, $warnings, $messages);
+
+    if (count($discounts) > 0) {
+      $discount_total = 0;
+      foreach ($discounts as $discount) {
+        $discount_total += $discount->amount;
+      };
+
+      if ($discount_total) {
+        $vars['total_no_discount'] = uc_price($total, $context);
+        $total = $total - $discount_total;
+        $vars['discount_amount'] = uc_price($discount_total * -1, $context);
+      }
+    }
+  }
+
+
+
   $vars['total'] = uc_price($total, $context);
   $vars['items'] = $items;
   $vars['item_count'] = $total_items;

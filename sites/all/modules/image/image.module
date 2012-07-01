@@ -1,5 +1,4 @@
 <?php
-// $Id: image.module,v 1.322.2.4 2010/08/18 16:40:06 joachim Exp $
 
 define('IMAGE_ORIGINAL', '_original');
 define('IMAGE_PREVIEW', 'preview');
@@ -631,7 +630,7 @@ function image_delete($node) {
 /**
  * Create an <img> tag for an image.
  */
-function image_display($node, $label = IMAGE_PREVIEW, $attributes = array()) {
+function image_display(&$node, $label = IMAGE_PREVIEW, $attributes = array()) {
   if (empty($node->images[$label])) {
     return;
   }

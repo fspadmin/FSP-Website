@@ -1,5 +1,4 @@
 <?php
-// $Id: date_repeat_form.inc,v 1.15.4.19 2010/10/30 10:42:51 karens Exp $
 /**
  * @file
  * Code to add a date repeat selection form to a date field and create
@@ -36,7 +35,7 @@
  */
 function _date_repeat_rrule_process($element, $edit, $form_state, $form) {
   require_once('./'. drupal_get_path('module', 'date_api') .'/date_api_ical.inc');
-  
+
   if (empty($element['#date_repeat_widget'])) {
     $element['#date_repeat_widget'] = module_exists('date_popup') ? 'date_popup' : 'date_select';
   }
@@ -55,10 +54,10 @@ function _date_repeat_rrule_process($element, $edit, $form_state, $form) {
   $rrule = $parts[0];
   $exceptions = $parts[1];
   $additions = $parts[2];
-  
+
   $timezone = !empty($element['#date_timezone']) ? $element['#date_timezone'] : date_default_timezone_name();
   $merged_values = date_repeat_merge($rrule, $element);
-  
+
   $UNTIL = '';
   if (!empty($merged_values['UNTIL']['datetime'])) {
     $until_date = date_make_date($merged_values['UNTIL']['datetime'], $merged_values['UNTIL']['tz']);
@@ -71,11 +70,11 @@ function _date_repeat_rrule_process($element, $edit, $form_state, $form) {
   $element['#description'] = theme('advanced_help_topic', 'date_api', 'date-repeat-form') . t('Choose a frequency and period to repeat this date. If nothing is selected, the date will not repeat.');
   $element['#collapsible'] = TRUE;
   $element['#collapsed'] = $parent_collapsed;
-  
+
   // Make sure we don't get floating parts where we don't want them.
   $element['#prefix'] = '<div class="date-clear">';
   $element['#suffix'] = '</div>';
-  
+
   $element['INTERVAL'] = array(
     '#type' => 'select',
     //'#title' => t('Interval'),
@@ -110,15 +109,14 @@ function _date_repeat_rrule_process($element, $edit, $form_state, $form) {
       '#date_label_position' => !empty($element['#date_label_position']) ? $element['#date_label_position'] : 'within',
       ),
     'tz' => array('#type' => 'hidden', '#value' => $element['#date_timezone']),
-    'all_day' => array('#type' => 'hidden', '#value' => 1),
-    'granularity' => array('#type' => 'hidden', '#value' => serialize(array('year', 'month', 'day'))),
+    'all_day' => array('#type' => 'hidden', '#value' => isset($merged_values['UNTIL']['all_day']) ? $merged_values['UNTIL']['all_day'] : 1),
+    'granularity' => array('#type' => 'hidden', '#value' => isset($merged_values['UNTIL']['granularity']) ? $merged_values['UNTIL']['granularity'] : serialize(array('year', 'month', 'day'))),
     );
-  
   $collapsed = TRUE;
   if (!empty($merged_values['BYDAY']) || !empty($merged_values['BYMONTH'])) {
     $collapsed = FALSE;
   }
-	// start the advanced fieldset
+  // start the advanced fieldset
   $element['advanced'] = array(
     '#type' => 'fieldset',
     '#title' => t('Advanced'),
@@ -194,7 +192,7 @@ function _date_repeat_rrule_process($element, $edit, $form_state, $form) {
       'granularity' => array('#type' => 'hidden', '#value' => serialize(array('year', 'month', 'day'))),
       );
   }
-  
+
   // collect additions in the same way as exceptions - implements RDATE.
   $element['additions'] = array(
     '#type' => 'fieldset',
@@ -254,21 +252,21 @@ function _date_repeat_rrule_process($element, $edit, $form_state, $form) {
       'effect' => 'fade'
     )
   );
-  
+
   return $element;
 }
 
 /**
  * Ajax callback to get the exceptions form.  This is needed to
  * implement the "Add another" button for the date repeat exceptions.
- * 
+ *
  * @param $type - 'exceptions' or 'additions'.
  * @param $field_name - The name of the date field.
  */
 function date_repeat_get_exception_form_ajax($type, $field_name) {
-  // Get the cached form.  
+  // Get the cached form.
   $form_state = array('storage' => NULL, 'submitted' => FALSE);
-  if( !($form = form_get_cache($_POST['form_build_id'], $form_state)) ) {
+  if (!($form = form_get_cache($_POST['form_build_id'], $form_state))) {
     drupal_json(array('status' => FALSE, 'data' => ''));
     exit();
   }
@@ -319,13 +317,16 @@ function date_repeat_merge($form_values, $element) {
   if (array_key_exists('BYDAY', $form_values)) unset($form_values['BYDAY']['']);
   if (array_key_exists('BYMONTH', $form_values)) unset($form_values['BYMONTH']['']);
   if (array_key_exists('BYMONTHDAY', $form_values)) unset($form_values['BYMONTHDAY']['']);
-      
+
   if (array_key_exists('UNTIL', $form_values) && is_array($form_values['UNTIL']['datetime'])) {
     $function = $element['#date_repeat_widget'] .'_input_value';
     $until_element = $element;
     $until_element['#value'] = $form_values['UNTIL']['datetime'];
     $until_element['#date_format'] = date_limit_format($element['#date_format'], array('year', 'month', 'day'));
-    $form_values['UNTIL']['datetime'] = $function($until_element);
+    $form_values['UNTIL']['datetime'] = $function($until_element, 0, 10);
+    $form_values['UNTIL']['datetime'] = substr($form_values['UNTIL']['datetime'], 0, 10);
+    $form_values['UNTIL']['granularity'] = serialize(drupal_map_assoc(array('year', 'month', 'day', 'hour')));
+    $form_values['UNTIL']['all_day'] = TRUE;
   }
   if (array_key_exists('EXDATE', $form_values) && is_array($form_values['EXDATE'])) {
     $function = $element['#date_repeat_widget'] .'_input_value';
@@ -362,10 +363,11 @@ function date_repeat_rrule_validate($element, &$form_state) {
   $item = $form_values[$field_name]['rrule'];
   $item = date_repeat_merge($item, $element);
   if (!empty($item['UNTIL']['datetime'])) {
-    $date = date_make_date($item['UNTIL']['datetime'], $element['#date_timezone']);
+    $date = date_make_date($item['UNTIL']['datetime'], $item['UNTIL']['tz']);
     date_time_set($date, 23, 59, 59);
     date_timezone_set($date, timezone_open('UTC'));
     $item['UNTIL']['datetime'] = date_format($date, DATE_FORMAT_DATETIME);
+    $item['UNTIL']['tz'] = 'UTC';
   }
   $rrule = date_api_ical_build_rrule($item);
   form_set_value($element, $rrule, $form_state);
@@ -377,7 +379,7 @@ function date_repeat_rrule_validate($element, &$form_state) {
 function theme_date_repeat_current_exceptions($rows = array()) {
   $rows_info = array();
   foreach ($rows as $key => $value) {
-    if (substr($key, 0, 1) != '#') {
+    if (drupal_substr($key, 0, 1) != '#') {
       $rows_info[] = array(drupal_render($value['action']), drupal_render($value['display']));
     }
   }
@@ -390,7 +392,7 @@ function theme_date_repeat_current_exceptions($rows = array()) {
 function theme_date_repeat_current_additions($rows = array()) {
   $rows_info = array();
   foreach ($rows as $key => $value) {
-    if (substr($key, 0, 1) != '#') {
+    if (drupal_substr($key, 0, 1) != '#') {
       $rows_info[] = array(drupal_render($value['action']), drupal_render($value['display']));
     }
   }
@@ -401,5 +403,5 @@ function theme_date_repeat_current_additions($rows = array()) {
  * Themes the date repeat element.
  */
 function theme_date_repeat($element) {
-  return theme('form_element', $element, '<div class="container-inline">'. drupal_render($element). '</div>');
+  return theme('form_element', $element, '<div class="container-inline">'. drupal_render($element) . '</div>');
 }

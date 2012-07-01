@@ -8,7 +8,7 @@
 /**
  * UPS Online Tool settings.
  *
- * Records UPS account information neccessary to use the service. Allows testing
+ * Records UPS account information necessary to use the service. Allows testing
  * or production mode. Configures which UPS services are quoted to customers.
  *
  * @see uc_ups_admin_settings_validate()
@@ -53,7 +53,7 @@ function uc_ups_admin_settings() {
     '#title' => t('Mode'),
     '#description' => t('Quotes and shipments requested in Testing mode will not be picked up or charged to your account.'),
     '#options' => array('https://wwwcie.ups.com/ups.app/xml/' => t('Testing'),
-      'https://www.ups.com/ups.app/xml/' => t('Production'),
+      'https://onlinetools.ups.com/ups.app/xml/' => t('Production'),
     ),
     '#default_value' => variable_get('uc_ups_connection_address', 'https://wwwcie.ups.com/ups.app/xml/'),
   );

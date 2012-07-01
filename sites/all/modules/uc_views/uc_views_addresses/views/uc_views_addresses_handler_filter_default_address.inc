@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_addresses_handler_filter_default_address.inc,v 1.1.2.1 2009/10/07 11:43:21 madsph Exp $
 /**
  *
  */

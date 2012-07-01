@@ -1,4 +1,3 @@
-// $Id: CHANGELOG.txt,v 1.144.2.32 2010/12/22 00:09:59 joachim Exp $
 
 Image x.x-x.x, xxxx-xx-xx
 ------------------------
@@ -6,6 +5,9 @@ Image x.x-x.x, xxxx-xx-xx
 
 Image 6.x-1.x, xxxx-xx-xx
 -------------------------
+by sun: Fixed PHP5 E_STRICT compatibility in tests.
+#993042 by sun, joachim: Added setting for number of images to import per page.
+#1004608 by sun, joachim: Fixed image_update_6104().
 
 
 Image 6.x-1.1, 2010-12-22

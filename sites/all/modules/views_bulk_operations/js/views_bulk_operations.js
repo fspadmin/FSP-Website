@@ -15,58 +15,108 @@ Drupal.behaviors.vbo = function(context) {
     .each(Drupal.vbo.prepareSelectors);
 }
 
-Drupal.vbo.selectionModes = {
-  all: 1,
-  allPages: 2,
-  none: 3
-}
-
 Drupal.vbo.prepareSelectors = function() {
   var $form = $(this);
   var form_id = $form.attr('id');
+  var $table = $('table.views-table', $form);
 
-  $('select.views-bulk-operations-selector', $form).change(function() {
-    if (this.options[this.selectedIndex].value == Drupal.vbo.selectionModes.all || this.options[this.selectedIndex].value == Drupal.vbo.selectionModes.allPages) {
-      var selection = {};
-      $('input:checkbox.vbo-select', $form).each(function() {
-        this.checked = true;
-        $(this).parents('tr:first').addClass('selected');
-        selection[this.value] = 1;
-      });
-      selection['selectall'] = this.options[this.selectedIndex].value == Drupal.vbo.selectionModes.allPages ? 1 : 0;
-      $('input#edit-objects-selectall', $form).val(selection['selectall']);
+  // Adjust selection and update server.
+  var updateSelection = function(selectall, selection) {
+    selection = selection || {};
+    selection.selectall = Number(selectall);
 
-      if (Drupal.settings.vbo[form_id].options.preserve_selection) {
-        $.post(Drupal.settings.vbo[form_id].ajax_select, {view_name: Drupal.settings.vbo[form_id].view_name, view_id: Drupal.settings.vbo[form_id].view_id, selection: JSON.stringify(selection)});
-      }
+    // Adjust form value.
+    $('input#edit-objects-selectall', $form).val(Number(selectall > 0));
+
+    // Adjust UI.
+    $('.views-field-select-all input:radio#' + (selectall > 0 ? 'select-all-pages' : 'select-this-page'), $form).attr('checked', 'checked');
+    $('.views-field-select-all span.select', $form)[$('th.select-all input:checkbox', $table).is(':checked') ? 'show' : 'hide']();
+    
+    // Update selection on server.
+    if (Drupal.settings.vbo[form_id].options.preserve_selection) {
+      $.post(
+        Drupal.settings.vbo[form_id].ajax_select, 
+        { 
+          view_name: Drupal.settings.vbo[form_id].view_name, 
+          view_id: Drupal.settings.vbo[form_id].view_id, 
+          selection: JSON.stringify(selection)
+        },
+        function(data) {
+          var count = data.selectall ? Drupal.settings.vbo[form_id].total_rows - data.unselected : data.selected;
+          $('.views-field-select-all span.count', $form).text(count);
+        },
+        'json'
+      );
     }
-    else if (this.options[this.selectedIndex].value == Drupal.vbo.selectionModes.none) {
-      $('input:checkbox.vbo-select', $form).each(function() {
-        this.checked = false;
-        $(this).parents('tr:first').removeClass('selected');
-      });
-      $('input#edit-objects-selectall', $form).val(0);
-
-      if (Drupal.settings.vbo[form_id].options.preserve_selection) {
-        $.post(Drupal.settings.vbo[form_id].ajax_select, {view_name: Drupal.settings.vbo[form_id].view_name, view_id: Drupal.settings.vbo[form_id].view_id, selection: JSON.stringify({'selectall': -1})});
+    else {
+      // Adjust item count for local page.
+      var count;
+      switch (Number(selectall)) {
+        case -1:
+          count = 0;
+          break;
+        case 0:
+          count = $checkboxes.filter(':checked').length;
+          break;
+        case 1:
+          count = Drupal.settings.vbo[form_id].total_rows - $checkboxes.filter(':not(:checked)').length;
+          break;
+        default:
+          console.log('[vbo] Unknown value ' + selectall + ' when refreshing item count.');
+          break;
       }
+      $('.views-field-select-all span.count', $form).text(count);
     }
+  }
+
+  // Handle select-all checkbox.
+  $('th.select-all', $table).click(function() {
+    var selection = {};
+    var checked = $('input:checkbox', this).attr('checked');
+    $('input:checkbox.select', $form).each(function() {
+      selection[this.value] = checked;
+    });
+    setTimeout(function() {
+      updateSelection(false, selection);
+    }, 1);
   });
 
+  // Handle select-all-pages button.
+  $('.views-field-select-all span.select input:radio', $form).click(function() {
+    updateSelection($(this).val());
+  });
+
+  // Handle clear-selection button.
+  $('.views-field-select-all input#clear-selection', $form).click(function() {
+    $('th.select-all input:checkbox', $table).attr('checked', false);
+    $('input:checkbox.select', $form).attr('checked', false).each(function() {
+      $(this).parents('tr:first').removeClass('selected');
+    });
+    updateSelection(-1); // reset selection
+  });
+
+  // Save the operation value.
   $('#views-bulk-operations-dropdown select', $form).change(function() {
     if (Drupal.settings.vbo[form_id].options.preserve_selection) {
-      $.post(Drupal.settings.vbo[form_id].ajax_select, {view_name: Drupal.settings.vbo[form_id].view_name, view_id: Drupal.settings.vbo[form_id].view_id, selection: JSON.stringify({'operation': this.options[this.selectedIndex].value})});
+      $.post(
+        Drupal.settings.vbo[form_id].ajax_select, 
+        {
+          view_name: Drupal.settings.vbo[form_id].view_name, 
+          view_id: Drupal.settings.vbo[form_id].view_id, 
+          selection: JSON.stringify({'operation': this.options[this.selectedIndex].value})
+        }
+      );
     }
   });
 
-  $(':checkbox.vbo-select', $form).click(function() {
-    var selection = {};
-    selection[this.value] = this.checked ? 1 : 0;
+  // Save the selected items.
+  var $checkboxes = $('input:checkbox.select', $form).click(function() {
     $(this).parents('tr:first')[ this.checked ? 'addClass' : 'removeClass' ]('selected');
-
-    if (Drupal.settings.vbo[form_id].options.preserve_selection) {
-      $.post(Drupal.settings.vbo[form_id].ajax_select, {view_name: Drupal.settings.vbo[form_id].view_name, view_id: Drupal.settings.vbo[form_id].view_id, selection: JSON.stringify(selection)});
-    }
+    var selection = {};
+    selection[this.value] = this.checked;
+    setTimeout(function() { // setTimeout is used to ensure that whatever events are queued to be executed will get executed before this code.
+      updateSelection($('input#edit-objects-selectall', $form).val(), selection);
+    }, 1);
   }).each(function() {
     $(this).parents('tr:first')[ this.checked ? 'addClass' : 'removeClass' ]('selected');
   });
@@ -74,7 +124,7 @@ Drupal.vbo.prepareSelectors = function() {
   // Set up the ability to click anywhere on the row to select it.
   $('tr.rowclick', $form).click(function(event) {
     if (event.target.nodeName.toLowerCase() != 'input' && event.target.nodeName.toLowerCase() != 'a') {
-      $(':checkbox.vbo-select', this).each(function() {
+      $('input:checkbox.select', this).each(function() {
         var checked = this.checked;
         // trigger() toggles the checkmark *after* the event is set,
         // whereas manually clicking the checkbox toggles it *beforehand*.
@@ -87,6 +137,14 @@ Drupal.vbo.prepareSelectors = function() {
       });
     }
   });
+
+  // Set up UI based on initial values.
+  setTimeout(function() { // setTimeout is used to ensure that whatever events are queued to be executed will get executed before this code.
+    if ($checkboxes.length == $checkboxes.filter(':checked').length) {
+      $('th.select-all input:checkbox', $table).attr('checked', true);
+      $('.views-field-select-all span.select', $form).show();
+    }
+  }, 1);
 }
 
 Drupal.vbo.prepareAction = function() {
@@ -103,7 +161,7 @@ Drupal.vbo.prepareAction = function() {
       $.each(query, function(i, str) {
         var element = str.split('=');
         if (element[0] == 'view_path') {
-          action = decodeURIComponent(element[1]);
+          action = Drupal.settings.vbo[$form.attr('id')].view_path;
           replaceAction = true;
         }
         else if (element[0] == 'q') {
@@ -116,7 +174,7 @@ Drupal.vbo.prepareAction = function() {
       if (replaceAction) {
         params = $.param(params);
         if (cleanUrl) {
-          action = Drupal.settings.basePath + action;
+          // Do nothing
         }
         else {
           params = 'q=' + action + (params.length > 0 ? '&' + params : '');

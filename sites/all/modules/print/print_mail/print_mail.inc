@@ -16,32 +16,29 @@ require_once(drupal_get_path('module', 'print') .'/print.pages.inc');
 @include_once('Mail/mime.php');
 
 /**
- * Menu callback for the send by e-mail form.
+ * Menu callback for the send by email form.
  *
  * @ingroup forms
  */
 function print_mail_form($form_state) {
   global $user;
 
-  $print_mail_hourly_threshold = variable_get('print_mail_hourly_threshold', PRINT_MAIL_HOURLY_THRESHOLD);
-
-  if ((!user_access('administer print')) && (!flood_is_allowed('print_mail', $print_mail_hourly_threshold))) {
-    $form['flood'] = array(
-      '#type' => 'markup',
-      '#value' => '<p>'. format_plural($print_mail_hourly_threshold,'You cannot send more than 1 message per hour. Please try again later.', 'You cannot send more than @count messages per hour. Please try again later.') . '</p>',
-    );
-    return $form;
-  }
-
-  $print_mail_teaser_default = variable_get('print_mail_teaser_default', PRINT_MAIL_TEASER_DEFAULT_DEFAULT);
-  $print_mail_teaser_choice = variable_get('print_mail_teaser_choice', PRINT_MAIL_TEASER_CHOICE_DEFAULT);
-  $form = array();
-
   // Remove the printmail/ prefix
   $path_arr = explode('/', $_GET['q']);
   unset($path_arr[0]);
-  $path = implode('/', $path_arr);
-  if (ctype_digit($path_arr[1])) {
+  $path = filter_xss(implode('/', $path_arr));
+  if (empty($path)) {
+    // If no path was provided, let's try to generate a page for the referer
+    global $base_url;
+
+    $ref = referer_uri();
+    $path = preg_replace("!^$base_url/!", '', $ref);
+    if (($path === $ref) || empty($path)) {
+      $path = variable_get('site_frontpage', 'node');
+    }
+    drupal_goto(PRINTMAIL_PATH . '/' . $path);
+  }
+  elseif (ctype_digit($path_arr[1])) {
     if (drupal_lookup_path('source', $path)) {
       // This is a numeric alias
       $path = drupal_get_normal_path($path);
@@ -51,6 +48,24 @@ function print_mail_form($form_state) {
       $path = 'node/' . $path;
     }
   }
+  else {
+    $path = drupal_get_normal_path($path);
+  }
+
+  $print_mail_hourly_threshold = variable_get('print_mail_hourly_threshold', PRINT_MAIL_HOURLY_THRESHOLD);
+
+  if ((!user_access('send unlimited emails')) && (!flood_is_allowed('print_mail', $print_mail_hourly_threshold))) {
+    $form['flood'] = array(
+      '#type' => 'markup',
+      '#value' => '<p>'. format_plural($print_mail_hourly_threshold, 'You cannot send more than 1 message per hour. Please try again later.', 'You cannot send more than @count messages per hour. Please try again later.') . '</p>',
+    );
+    return $form;
+  }
+
+  $print_mail_teaser_default = variable_get('print_mail_teaser_default', PRINT_MAIL_TEASER_DEFAULT_DEFAULT);
+  $print_mail_teaser_choice = variable_get('print_mail_teaser_choice', PRINT_MAIL_TEASER_CHOICE_DEFAULT);
+  $form = array();
+
   $cid = isset($_GET['comment']) ? (int)$_GET['comment'] : NULL;
   $title = _print_get_title($path);
 
@@ -70,7 +85,7 @@ function print_mail_form($form_state) {
 
   $form['fld_from_addr'] = array(
     '#type' => 'textfield',
-    '#title' => t('Your e-mail'),
+    '#title' => t('Your email'),
     '#size' => 62,
     '#required' => TRUE,
   );
@@ -86,6 +101,7 @@ function print_mail_form($form_state) {
     '#resizable' => FALSE,
     '#description' => t('Enter multiple addresses separated by commas and/or different lines.'),
     '#required' => TRUE,
+    '#wysiwyg' => FALSE,
   );
   $form['fld_subject'] = array(
     '#type' => 'textfield',
@@ -94,6 +110,10 @@ function print_mail_form($form_state) {
     '#required' => TRUE,
   );
   if (!empty($title)) {
+    if (drupal_substr($path, 0, 5) == 'node/') {
+      $title = t($title);
+    }
+
     $form['fld_title'] = array(
       '#type' => 'item',
       '#title' => t('Page to be sent'),
@@ -106,6 +126,7 @@ function print_mail_form($form_state) {
     '#title' => t('Your message'),
     '#rows' => 6,
     '#required' => TRUE,
+    '#wysiwyg' => FALSE,
   );
 
   if ($print_mail_teaser_choice) {
@@ -122,7 +143,7 @@ function print_mail_form($form_state) {
   $form['btn_submit'] = array(
     '#name' => 'submit',
     '#type' => 'submit',
-    '#value' => t('Send e-mail'),
+    '#value' => t('Send email'),
   );
   $form['btn_clear'] = array(
     '#type' => 'markup',
@@ -187,7 +208,7 @@ function theme_print_mail_form($form) {
  */
 function print_mail_form_validate($form, &$form_state) {
   if (array_key_exists('cancel', $form['#post'])) {
-    form_set_error(NULL,'',TRUE);
+    form_set_error(NULL, '', TRUE);
     drupal_get_messages('error');
     return;
   }
@@ -220,13 +241,13 @@ function print_mail_form_validate($form, &$form_state) {
 
   $print_mail_hourly_threshold = variable_get('print_mail_hourly_threshold', PRINT_MAIL_HOURLY_THRESHOLD);
 
-  if ((!user_access('administer print')) && (!flood_is_allowed('print_mail', $print_mail_hourly_threshold - count($to_array) + 1))) {
+  if ((!user_access('send unlimited emails')) && (!flood_is_allowed('print_mail', $print_mail_hourly_threshold - count($to_array) + 1))) {
     form_set_error('txt_to_addrs',  t('You cannot send more than %number messages per hour. Please reduce the number of recipients.', array('%number' => $print_mail_hourly_threshold)));
   }
 
   // In all fields, prevent insertion of custom headers
   foreach ($form_state['values'] as $key => $string) {
-    if ( (substr($key, 0, 4) == 'fld_') && ((strpos($string, "\n") !== FALSE) || (strpos($string, "\r") !== FALSE)) ) {
+    if ( (drupal_substr($key, 0, 4) == 'fld_') && ((strpos($string, "\n") !== FALSE) || (strpos($string, "\r") !== FALSE)) ) {
       form_set_error($key, 'Found invalid character');
     }
   }
@@ -245,7 +266,7 @@ function print_mail_form_validate($form, &$form_state) {
 function print_mail_form_submit($form, &$form_state) {
   if (!array_key_exists('cancel', $form_state['values'])) {
     if (!empty($form_state['values']['fld_from_name'])) {
-      $from = '"'. $form_state['values']['fld_from_name'] .'" <'. $form_state['values']['fld_from_addr'] .'>';
+      $from = '"'. mime_header_encode($form_state['values']['fld_from_name']) .'" <'. $form_state['values']['fld_from_addr'] .'>';
     }
     else {
       $from = $form_state['values']['fld_from_addr'];
@@ -259,7 +280,7 @@ function print_mail_form_submit($form, &$form_state) {
 
     // Spaces in img URLs must be replaced with %20
     $pattern = '!<(img\s[^>]*?)>!is';
-    $print['content'] = preg_replace_callback($pattern, '_print_mail_encode_urls', $print['content']);
+    $print['content'] = preg_replace_callback($pattern, '_print_replace_spaces', $print['content']);
 
     if ($print !== FALSE) {
       $print_mail_send_option_default = variable_get('print_mail_send_option_default', PRINT_MAIL_SEND_OPTION_DEFAULT);
@@ -273,6 +294,14 @@ function print_mail_form_submit($form, &$form_state) {
       $node = $print['node'];
       $params['body'] = theme('print_page', $print, PRINT_MAIL_FORMAT, $node);
       $params['body'] = drupal_final_markup($params['body']);
+
+      // Img elements must be set to absolute
+      $pattern = '!<(img\s[^>]*?)>!is';
+      $params['body'] = preg_replace_callback($pattern, '_print_rewrite_urls', $params['body']);
+
+      // Convert the a href elements, to make sure no relative links remain
+      $pattern = '!<(a\s[^>]*?)>!is';
+      $params['body'] = preg_replace_callback($pattern, '_print_rewrite_urls', $params['body']);
 
       $ok = FALSE;
       if (function_exists('job_queue_add') && variable_get('print_mail_job_queue', PRINT_MAIL_JOB_QUEUE_DEFAULT)) {
@@ -330,7 +359,7 @@ function print_mail_mail($key, &$message, $params) {
 
   switch ($key) {
     case 'sendpage':
-      $message['body'] = $params['body'];
+      $message['body'] = module_exists('mailsystem') ? check_plain($params['body']) : $params['body'];
       $message['headers']['Content-Type'] = 'text/html; charset=utf-8';
       break;
     case 'sendlink':
@@ -340,7 +369,7 @@ function print_mail_mail($key, &$message, $params) {
 
       // Send HTML-only version if MIME library not present
       if (!class_exists('Mail_mime')) {
-        $message['body'] = $sendlink_html;
+        $message['body'] = module_exists('mailsystem') ? check_plain($sendlink_html) : $sendlink_html;
         $message['headers']['Content-Type'] = 'text/html; charset=utf-8';
         break;
       }
@@ -350,6 +379,8 @@ function print_mail_mail($key, &$message, $params) {
       // Configure new MIME object
       $mime = new Mail_mime("\n");
       $mime_params['html_encoding'] = '7bit';
+      $mime_params['html_charset'] = 'utf-8';
+      $mime_params['text_charset'] = 'utf-8';
 
       // Pass message contents into MIME object
       switch ($key) {
@@ -384,40 +415,4 @@ function print_mail_mail($key, &$message, $params) {
  */
 function print_mail_form_cancel($form, &$form_state) {
   $form_state['redirect'] = preg_replace('!^book/export/html/!', 'node/', $form_state['values']['path']);
-}
-
-/**
- * Callback function for the preg_replace_callback replacing spaces with %20
- *
- * Replace spaces in URLs with %20
- *
- * @param $matches
- *   array with the matched tag patterns, usually <a...>+text+</a>
- * @return
- *   tag with re-written URL
- */
-function _print_mail_encode_urls($matches) {
-  // first, split the html into the different tag attributes
-  $pattern = '!\s*(\w+\s*=\s*"(?:\\\"|[^"])*")\s*|\s*(\w+\s*=\s*\'(?:\\\\\'|[^\'])*\')\s*|\s*(\w+\s*=\s*\w+)\s*|\s+!';
-  $attribs = preg_split($pattern, $matches[1], -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
-  foreach ($attribs as $key => $value) {
-    $attribs[$key] = preg_replace('!(\w)\s*=\s*(.*)!', '$1=$2', $value);
-  }
-
-  $size = count($attribs);
-  for ($i=1; $i < $size; $i++) {
-    // If the attribute is href or src, we may need to rewrite the URL in the value
-    if (preg_match('!^(?:href|src)\s*?=(.*)!i', $attribs[$i], $urls) > 0) {
-      $url = trim($urls[1], " \t\n\r\0\x0B\"'");
-      $new_url = str_replace(' ', '%20', $url);
-      $matches[1] = str_replace($url, $new_url, $matches[1]);
-    }
-  }
-
-  $ret = '<'. $matches[1] .'>';
-  if (count($matches) == 4) {
-    $ret .= $matches[2] . $matches[3];
-  }
-
-  return $ret;
 }

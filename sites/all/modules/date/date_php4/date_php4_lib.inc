@@ -1,5 +1,4 @@
 <?php
-// $Id: date_php4_lib.inc,v 1.4.4.7 2009/02/24 17:14:06 karens Exp $
 
 /**
  * Date Library, extended date functions.
@@ -62,14 +61,14 @@
  * @param $timezone name
  *   Use 'UTC' to avoid timezone conversion.
  */
-function _date_getdate($timestamp = false, $timezone = false) {
+function _date_getdate($timestamp = FALSE, $timezone = FALSE) {
   static $YRS;
   if ($timezone === FALSE) {
     $timezone = date_default_timezone_name();
   }
 
   $timestamp_in = $timestamp;
-    
+
   $_day_power = 86400;
   $_hour_power = 3600;
   $_min_power = 60;
@@ -118,7 +117,7 @@ function _date_getdate($timestamp = false, $timezone = false) {
       1620 => -11044944000,
       1610 => -11360476800,
       1600 => -11676096000);
-    
+
     // The valid range of a 32bit signed timestamp is typically from
     // Fri, 13 Dec 1901 20:45:54 GMT to Tue, 19 Jan 2038 03:14:07 GMT
     //
@@ -162,11 +161,11 @@ function _date_getdate($timestamp = false, $timezone = false) {
     $hour = floor($timestamp/$_hour_power);
   }
   else {
-    
+
     if ($timezone != 'UTC') {
       $timestamp += date_get_gmt_diff_ts($timestamp, $timezone);
     }
-    
+
     for ($a = 1970 ;; $a++) {
       $lastd = $timestamp;
       if ($leap = date_is_leap_year($a)) $timestamp -= $d366;
@@ -222,7 +221,7 @@ function _date_getdate($timestamp = false, $timezone = false) {
  * @param $timezone name
  *   Use 'UTC' to avoid timezone conversion.
  */
-function _date_date($format, $timestamp = false, $timezone = false) {
+function _date_date($format, $timestamp = FALSE, $timezone = FALSE) {
   if ($timezone === FALSE) {
     $timezone = date_default_timezone_name();
   }
@@ -237,7 +236,7 @@ function _date_date($format, $timestamp = false, $timezone = false) {
   $secs = $arr['second'];
   $max = strlen($format);
   $dates = '';
-  
+
   /*
     at this point, we have the following integer vars to manipulate:
     $year, $month, $day, $hour, $min, $secs
@@ -258,7 +257,7 @@ function _date_date($format, $timestamp = false, $timezone = false) {
       $gmt = date_get_gmt_diff_ts($timestamp, $timezone);
       $dates .= sprintf(' %s%04d', ($gmt >= 0) ? '+' : '-', abs($gmt) / 36); break;
     case 'Y': $dates .= date_pad($year, 4); break;
-    case 'y': $dates .= substr($year, strlen($year)-2, 2); break;
+    case 'y': $dates .= drupal_substr($year, strlen($year)-2, 2); break;
     // MONTH
     case 'm': if ($month<10) $dates .= '0'. $month; else $dates .= $month; break;
     case 'Q': $dates .= ($month + 3)>>2; break;
@@ -276,8 +275,8 @@ function _date_date($format, $timestamp = false, $timezone = false) {
     case 'S':
       $d10 = $day % 10;
       if ($d10 == 1) $dates .= 'st';
-      else if ($d10 == 2 && $day != 12) $dates .= 'nd';
-      else if ($d10 == 3) $dates .= 'rd';
+      elseif ($d10 == 2 && $day != 12) $dates .= 'nd';
+      elseif ($d10 == 3) $dates .= 'rd';
       else $dates .= 'th';
       break;
     // HOUR
@@ -286,7 +285,7 @@ function _date_date($format, $timestamp = false, $timezone = false) {
       break;
     case 'O':
       $gmt = date_get_gmt_diff_ts($timestamp, $timezone);
-      $dates .= sprintf('%s%04d', ($gmt<0)?'+':'-', abs($gmt)/36); 
+      $dates .= sprintf('%s%04d', ($gmt<0)?'+':'-', abs($gmt)/36);
       break;
     case 'H':
       if ($hour < 10) $dates .= '0'. $hour;
@@ -351,7 +350,7 @@ function _date_date($format, $timestamp = false, $timezone = false) {
  * @param $timezone name
  *   Use 'UTC' to avoid timezone conversion.
  */
-function _date_mktime($hr, $min, $sec, $mon = false, $day = false, $year = false, $timezone = false) {
+function _date_mktime($hr, $min, $sec, $mon = FALSE, $day = FALSE, $year = FALSE, $timezone = FALSE) {
   if ($timezone === FALSE) {
     $timezone = date_default_timezone_name();
   }
@@ -372,7 +371,7 @@ function _date_mktime($hr, $min, $sec, $mon = false, $day = false, $year = false
     $year += $y;
     $mon -= $y * 12;
   }
-  else if ($mon < 1) {
+  elseif ($mon < 1) {
     $y = ceil((1-$mon) / 12);
     $year -= $y;
     $mon += $y * 12;
@@ -407,7 +406,7 @@ function _date_mktime($hr, $min, $sec, $mon = false, $day = false, $year = false
     $_total_date +=$day-1;
     $ret = ($_total_date * $_day_power) + ($hr * $_hour_power) + ($min * $_min_power) + $sec;
     $ret -= date_get_gmt_diff_ts($ret, $timezone);
-    
+
   }
   else {
     for ($a = 1969 ; $a >= $year; $a--) {
@@ -433,7 +432,7 @@ function _date_mktime($hr, $min, $sec, $mon = false, $day = false, $year = false
     $_day_time = $_day_power - $_day_time;
     $ret = -( $_total_date * $_day_power + $_day_time);
     if ($ret < -12220185600) $ret += 10*86400; // if earlier than 5 Oct 1582 - gregorian correction
-    else if ($ret < -12219321600) $ret = -12219321600; // if in limbo, reset to 15 Oct 1582.
+    elseif ($ret < -12219321600) $ret = -12219321600; // if in limbo, reset to 15 Oct 1582.
   }
   return $ret;
 }

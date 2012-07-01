@@ -1,5 +1,9 @@
 <?php
-// $Id: theme.inc,v 1.1.4.38 2010/11/20 13:25:54 karens Exp $
+/**
+ * @file
+ * Theme functions for Date.
+ */
+
 /**
  *  Preprocessor to construct back and next navigation from the date argument.
  */
@@ -10,7 +14,7 @@ function template_preprocess_date_navigation(&$vars) {
   $pos = $view->date_info->date_arg_pos;
   $min_date = is_object($view->date_info->min_date) ? $view->date_info->min_date : date_now();
   $max_date = is_object($view->date_info->max_date) ? $view->date_info->max_date : date_now();
-  
+
   if (empty($view->date_info->hide_nav)) {
     $prev_date = drupal_clone($min_date);
     date_modify($prev_date, '-1 '. $view->date_info->granularity);
@@ -43,14 +47,14 @@ function template_preprocess_date_navigation(&$vars) {
     $vars['prev_url'] = '';
     $vars['next_options'] = $vars['prev_options'] = array();
   }
-    
-  // Check whether navigation links would point to 
+
+  // Check whether navigation links would point to
   // a date outside the allowed range.
   if (!empty($next_date) && !empty($vars['next_url']) && date_format($next_date, 'Y') > $view->date_info->max_allowed_year) {
-    $vars['next_url'] = '';    
+    $vars['next_url'] = '';
   }
   if (!empty($prev_date) && !empty($vars['prev_url']) && date_format($prev_date, 'Y') < $view->date_info->min_allowed_year) {
-    $vars['prev_url'] = '';    
+    $vars['prev_url'] = '';
   }
 
   $vars['prev_options'] += array('attributes' => array());
@@ -59,7 +63,7 @@ function template_preprocess_date_navigation(&$vars) {
   $next_title = '';
 
   // Build next/prev link titles.
-  switch($view->date_info->granularity) {
+  switch ($view->date_info->granularity) {
     case 'year':
       $prev_title = t('Navigate to previous year');
       $next_title = t('Navigate to next year');
@@ -71,7 +75,7 @@ function template_preprocess_date_navigation(&$vars) {
     case 'week':
       $prev_title = t('Navigate to previous week');
       $next_title = t('Navigate to next week');
-      break;      
+      break;
     case 'day':
       $prev_title = t('Navigate to previous day');
       $next_title = t('Navigate to next day');
@@ -79,17 +83,17 @@ function template_preprocess_date_navigation(&$vars) {
   }
   $vars['prev_options']['attributes'] += array('title' => $prev_title);
   $vars['next_options']['attributes'] += array('title' => $next_title);
-  
+
   // Add nofollow for next/prev links.
   $vars['prev_options']['attributes'] += array('rel' => 'nofollow');
   $vars['next_options']['attributes'] += array('rel' => 'nofollow');
-  
+
   $link = FALSE;
   // Month navigation titles are used as links in the block view.
-	if (!empty($view->date_info->block) && $view->date_info->granularity == 'month') {
-	  $link = TRUE;
+  if (!empty($view->date_info->block) && $view->date_info->granularity == 'month') {
+    $link = TRUE;
   }
-  
+
   $nav_title = theme('date_nav_title', $view->date_info->granularity, $view, $link);
   $vars['nav_title'] = $nav_title;
   $vars['block'] = !empty($view->date_info->block);
@@ -115,25 +119,25 @@ function theme_date_nav_title($granularity, $view, $link = FALSE, $format = NULL
       $date_arg = $view->date_info->year .'-'. date_pad($view->date_info->month) .'-'. date_pad($view->date_info->day);
       break;
     case 'week':
-    	$format = !empty($format) ? $format : (empty($view->date_info->mini) ? 'F j Y' : 'F j');
+      $format = !empty($format) ? $format : (empty($view->date_info->mini) ? 'F j Y' : 'F j');
       $title = t('Week of @date', array('@date' => date_format_date($view->date_info->min_date, 'custom', $format)));
-    	$date_arg = $view->date_info->year .'-W'. date_pad($view->date_info->week);
-    	break;
+      $date_arg = $view->date_info->year .'-W'. date_pad($view->date_info->week);
+      break;
   }
   if (!empty($view->date_info->mini) || $link) {
-  	// Month navigation titles are used as links in the mini view.
+    // Month navigation titles are used as links in the mini view.
     $attributes = array('title' => t('View full page month'));
-  	$url = date_real_url($view, $granularity, $date_arg, TRUE);
+    $url = date_real_url($view, $granularity, $date_arg, TRUE);
     return l($title, $url, array('attributes' => $attributes));
   }
   else {
     return $title;
-  }  
+  }
 }
 
 /**
  *  Preprocessor to construct an ical vcalendar
- * 
+ *
  * @param $events
  *   An array of events where each event is an array keyed on the uid:
  *    'start'
@@ -150,7 +154,7 @@ function theme_date_nav_title($granularity, $view, $link = FALSE, $format = NULL
  *      ID of the event for use by calendaring program, usually the url of the node
  *    'url'
  *      URL of event information
- * 
+ *
  *    'alarm'
  *      sub-array of alarm information for the event, including:
  *      - 'action' - the action to take, either 'DISPLAY' or 'EMAIL'
@@ -164,15 +168,15 @@ function theme_date_nav_title($granularity, $view, $link = FALSE, $format = NULL
  *
  * @param $calname
  *   Name of the calendar.  Use site name if none is specified.
- * 
+ *
  */
 function template_preprocess_date_vcalendar(&$vars) {
-    
+
   $vars['current_date'] = date_format(date_now(), DATE_FORMAT_ICAL);
   $vars['current_date_utc'] = date_format(date_now('UTC'), DATE_FORMAT_ICAL);
   $vars['site_timezone'] = date_default_timezone_name();
   $vars['calname'] = date_ical_escape_text(!empty($vars['calname']) ? $vars['calname'] : variable_get('site_name', ''));
-  
+
   // Format the event results as iCal expects.
   $events_in = $vars['events'];
   $events = array();
@@ -184,25 +188,37 @@ function template_preprocess_date_vcalendar(&$vars) {
       $events[$uid] = $event;
       $timezone = timezone_name_get(date_timezone_get($event['start']));
       if (!empty($timezone)) {
-        $events[$uid]['timezone'] = "TZID=$timezone:";
+        $events[$uid]['timezone'] = "TZID=$timezone;";
       }
       else {
         $events[$uid]['timezone'] = '';
       }
       $date_format = ($row->calendar_all_day == TRUE) ? DATE_FORMAT_ICAL_DATE : DATE_FORMAT_ICAL;
       $events[$uid]['start'] = date_format($event['start'], $date_format);
+
+      // According to RFC 2445 (clarified in RFC 5545) the DTEND value is
+      // non-inclusive.  When it is a DATE rather than a DATETIME, this means
+      // that we should add one day to its value.
+      if ($row->calendar_all_day) {
+        if (empty($event['end'])) {
+          $event['end'] = $event['start'];
+        }
+        date_modify($event['end'], "+1 day");
+      }
+
       if ($event['start'] && $event['end']) {
         $events[$uid]['end'] = date_format($event['end'], $date_format);
       }
       else {
         $events[$uid]['end'] = $events[$uid]['start'];
       }
+
       foreach ($event as $key => $value) {
         if (is_string($value)) {
           $event[trim($key)] = trim($value);
         }
       }
-      
+
       // Escape text values.
       foreach ($event as $key => $value) {
         if ($key == 'alarm') {
@@ -218,8 +234,8 @@ function template_preprocess_date_vcalendar(&$vars) {
       }
     }
   }
-  
-  $vars['events'] = $events;  
+
+  $vars['events'] = $events;
 }
 
 /**
@@ -261,7 +277,7 @@ function theme_date_timezone($element) {
 function theme_date_select($element) {
   $output = '';
   $class = 'container-inline-date';
-  // Add #date_float to allow date parts to float together on the same line. 
+  // Add #date_float to allow date parts to float together on the same line.
   if (empty($element['#date_float'])) {
     $class .= ' date-clear-block';
   }
@@ -283,7 +299,7 @@ function theme_date_select($element) {
 function theme_date_text($element) {
   $output = '';
   $class = 'container-inline-date';
-  // Add #date_float to allow date parts to float together on the same line. 
+  // Add #date_float to allow date parts to float together on the same line.
   if (empty($element['#date_float'])) {
     $class .= ' date-clear-block';
   }
@@ -360,7 +376,7 @@ function theme_date_part_label_timezone($part_type, $element) {
 
 /**
  * Theme for a date block that looks like a mini calendar day.
- * Pass in a date object already set to the right timezone, 
+ * Pass in a date object already set to the right timezone,
  * format as a calendar page date. The calendar styling is created in css.
  */
 function theme_date_calendar_day($date) {
@@ -376,7 +392,7 @@ function theme_date_calendar_day($date) {
 
 function theme_date_time_ago($start_date, $end_date, $interval = 2) {
   // If no date is sent, then return nothing
-  if (empty($start_date) || empty($end_date)){
+  if (empty($start_date) || empty($end_date)) {
     return NULL;
   }
 
@@ -384,7 +400,7 @@ function theme_date_time_ago($start_date, $end_date, $interval = 2) {
   $now = date_format(date_now(), DATE_FORMAT_DATETIME);
   $start = date_format($start_date, DATE_FORMAT_DATETIME);
   $end = date_format($end_date, DATE_FORMAT_DATETIME);
-  
+
   // 1) The date is entirely in the future
   if ($now < $start) {
     return t('!time from now', array('!time' => date_format_interval($start_date, $interval)));

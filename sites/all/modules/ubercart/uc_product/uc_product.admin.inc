@@ -49,9 +49,9 @@ function uc_product_class_default() {
       $ops[] = l(t('delete'), 'admin/store/products/classes/'. $class->pcid .'/delete');
     }
     $rows[] = array(
-      $class->pcid,
-      $class->name,
-      $class->description,
+      check_plain($class->pcid),
+      check_plain($class->name),
+      filter_xss_admin($class->description),
       implode(' ', $ops),
     );
   }
@@ -398,7 +398,7 @@ function uc_product_features($node) {
       $feature = uc_product_feature_load(intval(arg(5)), arg(4));
       if (isset($feature)) {
         // If the user confirmed the delete, process it!
-        if ($_POST['pf_delete']) {
+        if (isset($_POST['pf_delete']) && $_POST['pf_delete']) {
           uc_product_feature_delete(intval(arg(5)));
 
           drupal_set_message(t('The product feature has been deleted.'));
@@ -454,22 +454,18 @@ function uc_product_features($node) {
   else {
     foreach ($features as $feature) {
       $operations = array(
-        l(t('edit'), 'node/'. $node->nid .'/edit/features/'. $feature->fid .'/'. $feature->pfid),
-        l(t('delete'), 'node/'. $node->nid .'/edit/features/'. $feature->fid .'/'. $feature->pfid .'/delete'),
+        'edit' => array('title' => t('edit'), 'href' => 'node/'. $node->nid .'/edit/features/'. $feature->fid .'/'. $feature->pfid),
+        'delete' => array('title' => t('delete'), 'href' => 'node/'. $node->nid .'/edit/features/'. $feature->fid .'/'. $feature->pfid .'/delete'),
       );
       $rows[] = array(
-        'data' => array(
-          array('data' => uc_product_feature_data($feature->fid, 'title'), 'nowrap' => 'nowrap'),
-          array('data' => $feature->description, 'width' => '100%'),
-          array('data' => implode(' ', $operations), 'nowrap' => 'nowrap'),
-        ),
-        'valign' => 'top',
+        array('data' => uc_product_feature_data($feature->fid, 'title')),
+        array('data' => $feature->description),
+        theme('links', $operations, array('class' => 'links inline')),
       );
     }
   }
 
-  $output = theme('table', $header, $rows)
-          . drupal_get_form('uc_product_feature_add_form');
+  $output = theme('table', $header, $rows, array('class' => 'uc-product-features')) . drupal_get_form('uc_product_feature_add_form');
 
   return $output;
 }
@@ -515,7 +511,7 @@ function theme_uc_product_feature_add_form($form) {
 /**
  * Form submission handler for uc_product_feature_add_form().
  *
- * @see uc_product_feature_add_form().
+ * @see uc_product_feature_add_form()
  */
 function uc_product_feature_add_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'node/'. arg(1) .'/edit/features/'. $form_state['values']['feature'] .'/add';
@@ -571,13 +567,14 @@ function uc_product_class_form($form_state, $class = NULL) {
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Class name'),
+    '#description' => t('The human-readable name of this content type as it should appear on the !create_content page.  There are no character restrictions on this name.', array('!create_content' => l(t('Create content'), 'node/add'))),
     '#default_value' => $classname,
     '#required' => TRUE,
   );
   $form['description'] = array(
     '#type' => 'textarea',
     '#title' => t('Description'),
-    '#description' => t('This text describes the content type created for this product class to administrators.'),
+    '#description' => t('This text describes the content type to administrators.'),
     '#default_value' => $classdesc,
   );
   $form['submit'] = array(

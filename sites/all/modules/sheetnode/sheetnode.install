@@ -1,18 +1,62 @@
 <?php
-// $Id: sheetnode.install,v 1.1.4.15 2011/01/02 07:52:18 kratib Exp $
 
+/**
+ * Implementation of hook_install().
+ */
 function sheetnode_install() {
   drupal_install_schema('sheetnode');
+  if (module_exists('content')) {
+    drupal_load('module', 'content');
+    content_notify('install', 'sheetnode');
+  }
 }
 
+/**
+ * Implementation of hook_uninstall().
+ */
 function sheetnode_uninstall() {
   drupal_uninstall_schema('sheetnode');
+  db_query("DELETE FROM {variable} WHERE name LIKE 'sheetnode_%'");
+  if (module_exists('content')) {
+    drupal_load('module', 'content');
+    content_notify('uninstall', 'sheetnode');
+  }
 }
 
+/**
+ * Implementation of hook_enable().
+ *
+ * Notify content module when this module is enabled.
+ */
+function sheetnode_enable() {
+  if (module_exists('content')) {
+    drupal_load('module', 'content');
+    content_notify('enable', 'sheetnode');
+  }
+}
+
+/**
+ * Implementation of hook_disable().
+ *
+ * Notify content module when this module is disabled.
+ */
+function sheetnode_disable() {
+  if (module_exists('content')) {
+    drupal_load('module', 'content');
+    content_notify('disable', 'sheetnode');
+  }
+}
+
+/**
+ * Implementation of hook_schema().
+ */
 function sheetnode_schema() {
-  return sheetnode_schema_6005();
+  return sheetnode_schema_6008();
 }
 
+/**
+ * Schema function.
+ */
 function sheetnode_schema_6001() {
   $schema['sheetnode'] = array(
     'fields' => array(
@@ -62,6 +106,9 @@ function sheetnode_schema_6001() {
   return $schema;
 }
 
+/**
+ * Implementation of hook_update_N().
+ */
 function sheetnode_update_6001(&$sandbox) {
   $ret = array();
   $schema = sheetnode_schema_6001();
@@ -70,6 +117,9 @@ function sheetnode_update_6001(&$sandbox) {
   return $ret;
 }
 
+/**
+ * Implementation of hook_update_N().
+ */
 function sheetnode_update_6002(&$sandbox) {
   drupal_load('module', 'sheetnode');
   require_once(drupal_get_path('module', 'sheetnode') .'/socialcalc.inc');
@@ -107,6 +157,9 @@ function sheetnode_update_6002(&$sandbox) {
   return $ret;
 }
 
+/**
+ * Schema function.
+ */
 function sheetnode_schema_6003() {
   $schema['sheetnode'] = array(
     'fields' => array(
@@ -165,6 +218,9 @@ function sheetnode_schema_6003() {
   return $schema;
 }
 
+/**
+ * Implementation of hook_update_N().
+ */
 function sheetnode_update_6003(&$sandbox) {
   $ret = array();
   $schema = sheetnode_schema_6003();
@@ -179,6 +235,9 @@ function sheetnode_update_6003(&$sandbox) {
   return $ret;
 }
 
+/**
+ * Implementation of hook_update_N().
+ */
 function sheetnode_update_6004(&$sandbox) {
   $ret = array();
   db_drop_unique_key($ret, 'sheetnode', 'nid');
@@ -187,6 +246,9 @@ function sheetnode_update_6004(&$sandbox) {
   return $ret;
 }
 
+/**
+ * Schema function.
+ */
 function sheetnode_schema_6005() {
   $schema['sheetnode'] = array(
     'fields' => array(
@@ -251,6 +313,9 @@ function sheetnode_schema_6005() {
   return $schema;
 }
 
+/**
+ * Implementation of hook_update_N().
+ */
 function sheetnode_update_6005(&$sandbox) {
   $ret = array();
   $schema = sheetnode_schema_6005();
@@ -258,12 +323,16 @@ function sheetnode_update_6005(&$sandbox) {
   return $ret;
 }
 
+/**
+ * Implementation of hook_update_N().
+ */
 function sheetnode_update_6006(&$sandbox) {
   return array();
 }
 
 /**
- * New file structure: inform user.
+ * Implementation of hook_update_N().
+ * Inform user of new file structure.
  */
 function sheetnode_update_6007(&$sandbox) {
   $files = array(
@@ -284,5 +353,114 @@ function sheetnode_update_6007(&$sandbox) {
   watchdog('sheetnode', $msg, $args, WATCHDOG_ALERT);
   drupal_set_message(t($msg, $args), 'warning');
   return array();
+}
+
+/**
+ * Schema function.
+ */
+function sheetnode_schema_6008() {
+  $schema['sheetnode'] = array(
+    'fields' => array(
+      'nid' => array(
+        'description' => t('The primary identifier for a node.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'description' => t('The revision identifier for a node.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => t('The worksheet content.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('vid'),
+    'indexes' => array(
+      'nid' => array('nid'),
+    ),
+  );
+  $schema['sheetnode_template'] = array(
+    'fields' => array(
+      'tid' => array(
+        'description' => t('The primary identifier for the template.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => t('The unique name of the template. May only be alphanumeric characters plus underscores.'),
+      ),
+      'value' => array(
+        'description' => t('The worksheet template content.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'description' => t('The original node version for this template.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('tid'),
+    'unique keys' => array(
+      'key_name' => array('name'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_update_N().
+ * Remove sheetnode serialization.
+ */
+function sheetnode_update_6008(&$sandbox) {
+  $ret = array();
+
+  // Set up Batch API loop to update sheetnodes and templates.
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['sheetnode_current'] = 0;
+    $sandbox['sheetnode_max'] = db_result(db_query("SELECT COUNT(vid) FROM {sheetnode}")) + 0;
+    $sandbox['template_current'] = 0;
+    $sandbox['template_max'] = db_result(db_query("SELECT COUNT(tid) FROM {sheetnode_template}")) + 0;
+    $sandbox['max'] = $sandbox['sheetnode_max'] + $sandbox['template_max'];
+  }
+  if ($sandbox['progress'] < $sandbox['sheetnode_max']) {
+    $sheetnodes = db_query_range("SELECT vid, value FROM {sheetnode} WHERE vid > %d ORDER BY vid ASC", $sandbox['sheetnode_current'], 0, 1);
+    while ($sheetnode = db_fetch_object($sheetnodes)) {
+      if (!empty($sheetnode->value)) {
+        $value = db_escape_string(unserialize($sheetnode->value));
+        $ret[] = update_sql("UPDATE {sheetnode} SET value = '$value' WHERE vid = {$sheetnode->vid}");
+      }
+      $sandbox['progress']++;
+      $sandbox['sheetnode_current'] = $sheetnode->vid;
+    }
+  }
+  else {
+    $templates = db_query_range("SELECT tid, value FROM {sheetnode_template} WHERE tid > %d ORDER BY tid ASC", $sandbox['template_current'], 0, 1);
+    while ($template = db_fetch_object($templates)) {
+      if (!empty($template->value)) {
+        $value = db_escape_string(unserialize($template->value));
+        $ret[] = update_sql("UPDATE {sheetnode_template} SET value = '$value' WHERE tid = {$template->tid}");
+      }
+      $sandbox['progress']++;
+      $sandbox['template_current'] = $template->tid;
+    }
+  }
+
+  $ret['#finished'] = !$sandbox['max'] ? 1 : ($sandbox['progress'] / $sandbox['max']);
+  return $ret;
 }
 

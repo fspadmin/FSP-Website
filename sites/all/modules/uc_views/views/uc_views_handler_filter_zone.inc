@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_filter_zone.inc,v 1.1 2009/03/24 09:43:50 madsph Exp $
 /**
  * Filter by zone code
  */

@@ -1,5 +1,4 @@
 <?php
-// $Id: image_gallery.admin.inc,v 1.2.2.1 2010/08/03 17:43:00 sun Exp $
 
 /**
  * @file

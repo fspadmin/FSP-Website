@@ -56,7 +56,7 @@ function uc_quote_request_quotes() {
   // Consider the total to be from products only, because line items are
   // mostly non-existent at this point.
   $fake_order->order_total = uc_order_get_total($fake_order, TRUE);
-  // Get all quote types neccessary to fulfill order.
+  // Get all quote types necessary to fulfill order.
   $quote_data = _uc_quote_assemble_quotes($fake_order);
   //drupal_set_message('<pre>'. print_r($methods, TRUE) .'</pre>');
   //drupal_set_message('<pre>'. print_r($quote_data, TRUE) .'</pre>');
@@ -138,7 +138,7 @@ function _uc_quote_assemble_quotes($order) {
     $predicates = ca_load_trigger_predicates('get_quote_from_'. $method['id']);
     $predicate = array_shift($predicates);
     if ($predicate && ca_evaluate_conditions($predicate, $arguments)) {
-      $data = uc_quote_action_get_quote($order, $method, $user);
+      $data = uc_quote_action_get_quote($order, $method);
 
       foreach ($data as &$quote) {
         if (isset($quote['rate'])) {

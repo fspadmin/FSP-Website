@@ -1,5 +1,4 @@
 <?php
-// $Id: image_gallery_plugin_display_image_gallery.inc,v 1.1.2.1 2010/08/03 17:43:00 sun Exp $
 
 /**
  * A display plugin for image galleries.

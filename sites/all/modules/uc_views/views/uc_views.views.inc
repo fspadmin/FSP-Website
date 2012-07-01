@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views.views.inc,v 1.13.2.5.2.25 2010/12/22 18:49:05 hanoii Exp $
 /**
  * @file
  * Views 2 hooks and callback registries.
@@ -44,8 +43,14 @@ function uc_views_views_data() {
     'filter' => array(
       'handler' => 'views_handler_filter_numeric',
     ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+      'name field' => 'title',
+      'numeric' => TRUE,
+      'validate type' => 'order_product_id',
+    ),
   );
-  
+
   $data['uc_order_products']['model'] = array(
     'title' => t('SKU'),
     'help' => $order_products['fields']['model']['description'],
@@ -428,7 +433,7 @@ function uc_views_views_data() {
         ),
       );
     }
-    
+
     $data['uc_orders'][$prefix.'_full_name'] = array(
       'title' => t('!titleprefix full name', $args),
       'help' => $prefix == 'delivery' ? t('The full name (first and last) of the person receiving shipment.') : t('The full name (first and last) of the person paying for the order.'),
@@ -524,7 +529,7 @@ function uc_views_views_data() {
     // join to the uc_order_products, if used as base, via uc_orders
     $data[$key]['table']['join']['uc_order_products'] = $data[$key]['table']['join']['uc_orders'];
     $data[$key]['table']['join']['uc_order_products']['left_table'] = 'uc_orders';
-    
+
     $data[$key]['country_id'] = array(
       'title' => t($value['prefix'].' country id'),
       'help' => $order_schema['fields'][$value['field']]['description'],
@@ -635,7 +640,7 @@ function uc_views_views_data() {
     // join to the uc_order_products, if used as base, via uc_orders
     $data[$key]['table']['join']['uc_order_products'] = $data[$key]['table']['join']['uc_orders'];
     $data[$key]['table']['join']['uc_order_products']['left_table'] = 'uc_orders';
-    
+
     $data[$key]['zone_id'] = array(
       'title' => t($value['prefix'].' zone id'),
       'help' => $order_schema['fields'][$value['field']]['description'],
@@ -697,7 +702,7 @@ function uc_views_views_data() {
   // line items
   $line_items = array();
   foreach (_line_item_list() as $line_item) {
-    if (!in_array($line_item['id'], array('subtotal', 'tax_subtotal', 'total', 'generic')) && $line_item['stored']) {
+    if (!in_array($line_item['id'], array('subtotal', 'tax_subtotal', 'total')) && $line_item['stored']) {
       $line_items[$line_item['id']] = $line_item['title'];
     }
   }
@@ -739,7 +744,7 @@ function uc_views_views_data() {
         'float' => TRUE,
       ),
       'filter' => array(
-        'handler' => 'views_handler_filter_amount',
+        'handler' => 'views_handler_filter_float',
       ),
     );
   }
@@ -997,5 +1002,9 @@ function uc_views_views_plugins() {
  * Implementation of hook_views_query_substitutions().
  */
 function uc_views_views_query_substitutions($view) {
-  return array('***CURRENT_CART_ID***' => uc_cart_get_id());
+  if (module_exists('uc_cart')) {
+    if ($cart_id = uc_cart_get_id(FALSE)) {
+      return array('***CURRENT_CART_ID***' => $cart_id);
+    }
+  }
 }

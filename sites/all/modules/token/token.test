@@ -247,10 +247,16 @@ class TokenUnitTestCase extends TokenTestHelper {
       array('text' => 'Test [foo] [] test.',    'tokens' => array('foo')),
       array('text' => 'Test [foo][] test.',     'tokens' => array('foo')),
       array('text' => 'Test [foo][bar] test.',  'tokens' => array('foo', 'bar')),
+      // Test the e-mail token syntax.
       array('text' => 'Test %foo %%bar test.',   'tokens' => array('foo', 'bar'), 'leading' => '%', 'trailing' => ''),
       array('text' => 'Test %foo % test.',      'tokens' => array('foo'),        'leading' => '%', 'trailing' => ''),
       array('text' => 'Test %foo% test.',       'tokens' => array('foo'),        'leading' => '%', 'trailing' => ''),
       array('text' => 'Test %foo%%bar test.',    'tokens' => array('foo', 'bar'), 'leading' => '%', 'trailing' => ''),
+      // Test the rules token syntax.
+      array('text' => 'Test [global:foo] [global:bar] test.', 'tokens' => array('foo', 'bar'), 'leading' => '[global:'),
+      array('text' => 'Test [node:foo] [node:] test.', 'tokens' => array('foo'), 'leading' => '[node:'),
+      array('text' => 'Test [node:foo][node:] test.', 'tokens' => array('foo'), 'leading' => '[node:'),
+      array('text' => 'Test [node:foo][node:bar] test.', 'tokens' => array('foo', 'bar'), 'leading' => '[node:'),
     );
     foreach ($tests as $test) {
       $test += array('leading' => TOKEN_PREFIX, 'trailing' => TOKEN_SUFFIX);

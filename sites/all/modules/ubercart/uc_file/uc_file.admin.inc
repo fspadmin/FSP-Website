@@ -298,7 +298,7 @@ function uc_file_admin_files_form_action($form_state) {
 
       break;
 
-    case 'uc_file_upload': //Upload file
+    case 'uc_file_upload': // Upload file
 
       // Calculate the max size of uploaded files, in bytes.
       $max_bytes = trim(ini_get('post_max_size'));
@@ -512,8 +512,8 @@ function _uc_file_build_js_file_display($file_ids) {
     $recursion[] = '<li>'. $file->filename .'</li>';
   }
 
-  // Gather the files if recursion isn't selected. Get 'em all ready to be punched into
-  // the file list.
+  // Gather the files if recursion ISN'T selected.
+  // Get 'em all ready to be punched into the file list.
   $no_recursion_file_ids = $file_ids;
   foreach ($no_recursion_file_ids as $file_id) {
     $file = uc_file_get_by_id($file_id);

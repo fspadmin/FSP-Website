@@ -1,5 +1,4 @@
 <?php
-// $Id: image_plugin_argument_default_image_size.inc,v 1.1.2.1 2010/08/03 17:43:00 sun Exp $
 
 /**
  * @file

@@ -1,12 +1,15 @@
 <?php
-// $Id: image_gallery.test,v 1.3 2009/08/08 13:32:53 joachim Exp $
 
 class ImageGalleryTest extends DrupalTestCase {
 
   protected $web_user;
 
-  function get_info() {
-    return array('name' => t('Image Gallery tests'), 'desc' => t('Test Image Gallery module functionality.'), 'group' => 'Image');
+  public static function getInfo() {
+    return array(
+      'name' => 'Image Gallery tests',
+      'description' => 'Test Image Gallery module functionality.',
+      'group' => 'Image',
+    );
   }
 
   function setUp() {

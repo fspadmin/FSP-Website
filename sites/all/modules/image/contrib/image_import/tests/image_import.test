@@ -1,11 +1,12 @@
 <?php
-// $Id: image_import.test,v 1.3 2009/08/08 13:32:54 joachim Exp $
 
 class ImageImportTest extends DrupalTestCase {
-
-
-  function get_info() {
-    return array('name' => t('Image Import tests'), 'desc' => t('Test Image Import module functionality.'), 'group' => 'Image');
+  public static function getInfo() {
+    return array(
+      'name' => 'Image Import tests',
+      'description' => 'Test Image Import module functionality.',
+      'group' => 'Image',
+    );
   }
 
   function setUp() {

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views.install,v 1.2.4.2 2010/11/18 15:17:22 longwave Exp $
 
 /**
  * Remove database views that were previously in the core module - but has now been moved to uc_views_marketing

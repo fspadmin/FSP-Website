@@ -1,5 +1,4 @@
 <?php
-// $Id: image-gallery-view-image-gallery-terms.tpl.php,v 1.1 2009/08/27 12:10:57 joachim Exp $
 /**
  * @file
  * Template for a list of gallery terms.

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_filter_payment_method.inc,v 1.1.2.1 2009/11/02 12:06:14 madsph Exp $
 
 /**
  * @file
@@ -8,7 +7,7 @@
  */
 
 /**
- * Filter by payment method 
+ * Filter by payment method
  *
  */
 class uc_views_handler_filter_payment_method extends views_handler_filter_in_operator {
@@ -25,16 +24,12 @@ class uc_views_handler_filter_payment_method extends views_handler_filter_in_ope
  *returns an array of DISTINCT payment methods from the uc_oders table
 */
 function _distinct_payment_methods() {
-	
-	$methods = array();
-	
-	$result = db_query("SELECT DISTINCT payment_method AS payment_methods FROM {uc_orders}");
-	while($pm = db_fetch_object($result)) {
-		
-		$methods[$pm->payment_methods] = $pm->payment_methods;
-	
-	}
-	
-	return $methods;
-	
+  $methods = array();
+
+  $result = db_query("SELECT DISTINCT payment_method AS payment_methods FROM {uc_orders}");
+  while ($pm = db_fetch_object($result)) {
+    $methods[$pm->payment_methods] = $pm->payment_methods;
+  }
+
+  return $methods;
 }
