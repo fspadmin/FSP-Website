@@ -115,14 +115,15 @@ function db_prefix_tables($sql) {
  * code.
  *
  * @param $name
- *   The name assigned to the newly active database connection. If omitted, the
+ *   The key in the $db_url global variable from settings.php. If omitted, the
  *   default connection will be made active.
  *
- * @return the name of the previously active database or FALSE if non was found.
+ * @return
+ *   The name of the previously active database, or FALSE if none was found.
  */
 function db_set_active($name = 'default') {
-  global $db_url, $db_slave_url, $db_type, $active_db, $active_slave_db;
-  static $db_conns, $db_slave_conns, $active_name = FALSE;
+  global $db_url, $db_type, $active_db;
+  static $db_conns, $active_name = FALSE;
 
   if (empty($db_url)) {
     include_once 'includes/install.inc';
@@ -133,23 +134,9 @@ function db_set_active($name = 'default') {
     // Initiate a new connection, using the named DB URL specified.
     if (is_array($db_url)) {
       $connect_url = array_key_exists($name, $db_url) ? $db_url[$name] : $db_url['default'];
-      if (is_array($db_slave_url[$name])) {
-        $slave_index = mt_rand(0, count($db_slave_url[$name]) - 1);
-        $slave_connect_url = $db_slave_url[$name][$slave_index];
-      }
-      else {
-        $slave_connect_url = $db_slave_url[$name];        
-      }
     }
     else {
       $connect_url = $db_url;
-      if (is_array($db_slave_url)) {
-        $slave_index = mt_rand(0, count($db_slave_url) - 1);
-        $slave_connect_url = $db_slave_url[$slave_index];
-      }
-      else {
-        $slave_connect_url = $db_slave_url;        
-      }
     }
 
     $db_type = substr($connect_url, 0, strpos($connect_url, '://'));
@@ -163,21 +150,12 @@ function db_set_active($name = 'default') {
     }
 
     $db_conns[$name] = db_connect($connect_url);
-    if (!empty($slave_connect_url)) {
-      $db_slave_conns[$name] = db_connect($slave_connect_url); 
-    }
   }
 
   $previous_name = $active_name;
   // Set the active connection.
   $active_name = $name;
   $active_db = $db_conns[$name];
-  if (isset($db_slave_conns[$name])) {
-    $active_slave_db = $db_slave_conns[$name];
-  }
-  else {
-    unset($active_slave_db);
-  }
 
   return $previous_name;
 }
@@ -196,7 +174,7 @@ function _db_error_page($error = '') {
   global $db_type;
   drupal_init_language();
   drupal_maintenance_theme();
-  drupal_set_header('HTTP/1.1 503 Service Unavailable');
+  drupal_set_header($_SERVER['SERVER_PROTOCOL'] .' 503 Service Unavailable');
   drupal_set_title('Site off-line');
 
   $message = '<p>The site is currently not available due to technical problems. Please try again later. Thank you for your understanding.</p>';
@@ -326,42 +304,6 @@ function _db_rewrite_sql($query = '', $primary_table = 'n', $primary_field = 'ni
   $join = empty($join) ? '' : implode(' ', $join);
 
   return array($join, $where, $distinct);
-}
-
-/**
- * Runs a basic query in the active slave database.
- *
- * User-supplied arguments to the query should be passed in as separate
- * parameters so that they can be properly escaped to avoid SQL injection
- * attacks.
- *
- * @param $query
- *   A string containing an SQL query.
- * @param ...
- *   A variable number of arguments which are substituted into the query
- *   using printf() syntax. Instead of a variable number of query arguments,
- *   you may also pass a single array containing the query arguments.
- *
- *   Valid %-modifiers are: %s, %d, %f, %b (binary data, do not enclose
- *   in '') and %%.
- *
- *   NOTE: using this syntax will cast NULL and FALSE values to decimal 0,
- *   and TRUE values to decimal 1.
- *
- * @return
- *   A database query result resource, or FALSE if the query was not
- *   executed correctly.
- */
-function db_query_slave($query) {
-  $args = func_get_args();
-  array_shift($args);
-  $query = db_prefix_tables($query);
-  if (isset($args[0]) and is_array($args[0])) { // 'All arguments in one array' syntax
-    $args = $args[0];
-  }
-  _db_query_callback($args, TRUE);
-  $query = preg_replace_callback(DB_QUERY_REGEXP, '_db_query_callback', $query);
-  return _db_query($query, FALSE, TRUE);
 }
 
 /**
