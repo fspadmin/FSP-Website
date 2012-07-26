@@ -1,0 +1,32 @@
+	#!/usr/bin/gnuplot
+
+    set terminal png font "n019004l.pfb" 12 size 750,600 enhanced  \
+      xffffff x000000 x404040 xc79f6c x0000ff
+      # background, border, axes, plotting colors...
+
+    set xlabel "Weeks" 0,-3.5
+    set ylabel "Number of Friends"
+    set title "New Friends, Past 90 Days"
+    set bmargin 7.5
+    set label "Created on 2012/07/01 at 14:30:09" at screen 1.0,0.01 right font "n019004l.pfb,14"
+    set label "2012 Free State Project www.freestateproject.org" \
+      at screen 0.01,0.01 left font "n019004l.pfb,14"
+    set key off
+    set grid lt 0
+
+    set timefmt "%Y/%m/%d"
+    set xdata time
+    set format x "%Y/%m/%d"
+    set xtics rotate by 90 "2012/04/02",604800,"2012/06/25"
+    set datafile separator ","
+
+    set boxwidth 1.0 relative
+    set style fill solid 1.00 noborder
+    set datafile missing '-'
+    set style data boxes
+
+    set output "/var/www/drupal_files/fsp/fsp-graphs/Friends_Last_90_Days.png"
+
+    plot ["2012/04/02":"2012/07/01"] [0:] "/var/www/drupal_files/fsp/fsp-graphs/binned_week.txt" using 1:2 \
+      with boxes lt 1
+    set output
