@@ -1168,7 +1168,7 @@ function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalf
                         $start_date, $end_date, $xtics_str, $plotfile, $font_name)
 {
   $gnuplotfile = FSP_PLOT_PATH . "/gnuplot.txt";
-  $gnuplot_cmd = sprintf("set GDFONTPATH=%s\n gnuplot %s", FSP_PLOT_PATH, $gnuplotfile);
+  $gnuplot_cmd = sprintf("set GDFONTPATH=%s; gnuplot %s", FSP_PLOT_PATH, $gnuplotfile);
 
   list($sec, $min, $hour, $day, $month, $year) = localtime();
   $year += 1900; $month++;
