@@ -1,3 +1,6 @@
+Release #636 8/26/2012, by lcalitz
+- Clarification of sign-up process
+
 Release #635 7/1/2012, by lcalitz
 - Core & contrib updates
 
