@@ -1451,19 +1451,39 @@ function fsp_form_alter(&$form, $form_state, $form_id){
 function fsp_form_rolodex_node_form_alter(&$form, $form_state){
   // drupal_set_message(print "<pre>".print_r($form,true)."</pre>");
   if (!$form['nid']['#value']) { 
-    drupal_set_title(t('Now, we need some contact info...'));
-    $form['buttons']['submit']['#value'] = t('Next (almost finished)');
+    drupal_set_title(t('Step 2 (almost done): Please let us know more about yourself'));
+    $form['buttons']['submit']['#value'] = t('Next (to last step)');
     $form['buttons']['submit']['#submit'][] = 'fsp_determine_nextstep';
+    // Disable the "contact me" flag on the entry form (to keep data)
+    $form['field_fsp_local_contact']['#attributes']['disabled'] = 'disabled';
+    // Add introductory text
+    $form['introduction'] = array(
+      '#value' => '<p>Enter you contact information below. ' .
+                  'The items with the red asterisks are required for ' .
+                  'becoming a Participant or Friend. All information ' .
+                  'entered here will be kept private.</p>'
+    );
   }
 }
 
 function fsp_form_participant_node_form_alter(&$form, $form_state){
   //drupal_set_message(print "<pre>".print_r($form,true)."</pre>");
   if (!$form['nid']['#value']) {
-    drupal_set_title(t('Become an FSP Participant...'));
+    drupal_set_title(t('The Final Step: Become a Participant, or a Friend'));
     // Change the default buttons
     $form['buttons']['submit']['#value'] = t('Finish');
     unset($form['buttons']['preview']);
+    // Explanation of form
+    $form['introduction'] = array(
+      '#value' => '<p>If you are not yet ready to become a Participant, ' .
+                  'or already live in New Hampshire, ' .
+                  '<a href="http://fsp.local/friend/grant">click here to ' .
+                  'confirm your Friend status</a>. In order to become a ' .
+                  'Participant, please check the Statement of Intent ' .
+                  'checkbox below and click “Submit”. The rest of the ' .
+                  'questions are optional, and will hopefully provide ' .
+                  'motivation to move to the Free State sooner.</p>'
+    );
   }
 }
 
