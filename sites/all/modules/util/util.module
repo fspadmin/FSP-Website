@@ -1,5 +1,4 @@
 <?php
-// $Id: util.module,v 1.12.2.2.2.1 2010/10/28 19:38:48 nancyw Exp $
 
 /**
  * @file
@@ -36,10 +35,6 @@ function util_menu() {
     );
 
   return $menu;
-}
-
-function _util_page() {
-  return drupal_get_form('util_page');
 }
 
 function util_page() {

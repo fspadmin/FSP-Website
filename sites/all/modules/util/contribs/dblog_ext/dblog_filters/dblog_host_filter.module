@@ -1,5 +1,4 @@
 <?php
-// $Id: dblog_host_filter.module,v 1.1.2.1 2009/10/09 19:45:26 nancyw Exp $
 
 define('DBLOG_HOST_FILTER__COMPARISON_CONTAINS', "'contains'");
 define('DBLOG_HOST_FILTER__COMPARISON_STARTS', "'starts'");

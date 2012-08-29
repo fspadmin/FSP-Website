@@ -71,6 +71,7 @@ function sheetnode_view($node, $teaser = FALSE, $page = FALSE) {
   if (!$teaser) {
     $output = _sheetnode_inject(
       'sheetnode-' . $node->nid, 
+      'sheetnode',
       $node->sheetnode['value'], 
       FALSE, 
       array('entity-name' => 'node', 'oid' => $node->nid)
@@ -113,6 +114,7 @@ function sheetnode_form(&$node, $form_state) {
   }
   $output = _sheetnode_inject(
     'sheetnode-' . (empty($node->nid) ? 'new' : $node->nid), 
+    'sheetnode',
     $value, 
     'edit-sheetnode-value', 
     array('entity-name' => 'node', 'oid' => $nid)
@@ -145,6 +147,7 @@ function sheetnode_validate($node, &$form) {
   if (!empty($errors)) {
     _sheetnode_inject(
       'sheetnode-' . (empty($form['nid']['#value']) ? 'new' : $form['nid']['#value']), 
+      'sheetnode',
       $form['sheetnode']['value']['#value'], 
       'edit-sheetnode-value', 
       array('entity-name' => 'node', 'oid' => $form['nid']['#value'])
@@ -197,7 +200,7 @@ function _sheetnode_content_field_edit_form_submit($form, &$form_state) {
 /**
  * Helper function to inject Sheetnode JavaScript.
  */
-function _sheetnode_inject($sheet_id, $value, $save_element, $context, $ahah = FALSE) {
+function _sheetnode_inject($sheet_id, $sheet_aliases, $value, $save_element, $context, $ahah = FALSE) {
   $path = drupal_get_path('module', 'sheetnode');
   drupal_add_js($path . '/socialcalc/socialcalcconstants.js');
   drupal_add_js($path . '/socialcalc/socialcalc-3.js');
@@ -211,11 +214,16 @@ function _sheetnode_inject($sheet_id, $value, $save_element, $context, $ahah = F
   drupal_add_css($path . '/socialcalc/socialcalc.css');
   drupal_add_css($path . '/sheetnode.css');
 
+  // Allow other modules to add their own JS/CSS.
   module_invoke_all('sheetnode_plugins', $value, $save_element, $context, $ahah);
+
+  // Lower-case sheet aliases.
+  $sheet_aliases = array_map('strtolower', (array)$sheet_aliases);
 
   if ($ahah) {
     static $settings = NULL;
     $settings['sheetnode'][$sheet_id] = array(
+      'aliases' => $sheet_aliases,
       'value' => $value, 
       'imagePrefix' => base_path() . $path . '/socialcalc/images/sc-',
       'containerElement' => $sheet_id,
@@ -242,6 +250,7 @@ EOS;
     static $sheets = NULL;
     if (!isset($sheets[$sheet_id])) {
       drupal_add_js(array('sheetnode' => array($sheet_id => array(
+        'aliases' => $sheet_aliases,
         'value' => $value, 
         'imagePrefix' => base_path() . $path . '/socialcalc/images/sc-',
         'containerElement' => $sheet_id,
@@ -301,6 +310,9 @@ function sheetnode_nodeapi($node, $op) {
     }
     foreach (sheetnode_get_sheetfields($node->type) as $field_name => $field) {
       foreach ($node->$field_name as $item) {
+        if (!empty($item['name'])) {
+          $output .= '<h5>' . $item['name'] . '</h5>';
+        }
         $output .= _sheetnode_update_index($item['value']);
       }
     }
@@ -646,6 +658,11 @@ function sheetnode_field_settings($op, $field) {
     $schema = sheetnode_schema();
     $columns['value'] = $schema['sheetnode']['fields']['value'];
     $columns['value']['not null'] = FALSE;
+    $columns['name'] = array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+    );
     return $columns;
   }
 }
@@ -750,7 +767,7 @@ function sheetnode_elements() {
   return array(
     'sheetfield_spreadsheet' => array(
       '#input' => TRUE,
-      '#columns' => array('value'), 
+      '#columns' => array('value', 'name'), 
       '#delta' => 0,
       '#process' => array('_sheetfield_spreadsheet_process'),
       '#autocomplete_path' => FALSE,
@@ -762,22 +779,41 @@ function sheetnode_elements() {
  * Process function for sheetfield_spreadsheet element.
  */
 function _sheetfield_spreadsheet_process($element, $edit, $form_state, $form) {
-  $field_key = $element['#columns'][0];
-  $value = !empty($element['#value'][$field_key]) && is_string($element['#value'][$field_key]) ? $element['#value'][$field_key] : (
-           !empty($element['#value']) && is_string($element['#value']) ? $element['#value'] : (
-           !empty($element['#default_value'][$field_key]) && is_string($element['#default_value'][$field_key]) ? $element['#default_value'][$field_key] : (
-           !empty($element['#default_value']) && is_string($element['#default_value']) ? $element['#default_value'] : '')));
+  $defaults = $element['#value'];
+  $field = content_fields($element['#field_name']);
   $output = _sheetnode_inject(
     'sheetfield-' . $element['#id'], 
-    $value, 
-    $element['#id'] . '-' . $field_key, 
+    _sheetnode_sheetfield_aliases($element['#field_name'], $field['widget'], $defaults, $element['#delta']),
+    @$defaults['value'], 
+    $element['#id'] . '-' . 'value', 
     isset($form['#node']) ? array('entity-name' => 'node', 'oid' => @$form['#node']->nid) : NULL,
     !empty($form['#post']) && empty($form['#post']['op']) && !empty($form['#post'][ $element['#field_name'] . '_add_more' ])
   );
   $element['#tree'] = TRUE;
   $element['sheetview'] = array('#value' => $output, '#weight' => -1);
-  $element[$field_key] = array('#type' => 'hidden');
+  $element['value'] = array('#type' => 'hidden');
+  $element['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#default_value' => @$defaults['name'],
+    '#weight' => -2,
+  );
   return $element;
+}
+
+/**
+ * Helper function to retrieve possible sheetfield aliases.
+ */
+function _sheetnode_sheetfield_aliases($field_name, $widget, $value, $delta) {
+  $names = array();
+  $names[] = $field_name . '/' . $delta;
+  if (!empty($widget['label'])) {
+    $names[] = $widget['label'] . '/' . $delta;
+  }
+  if (!empty($value['name'])) {
+    $names[] = $value['name'];
+  }
+  return $names;
 }
 
 /**
@@ -792,11 +828,16 @@ function theme_sheetfield_spreadsheet($element) {
  */
 function theme_sheetnode_formatter_default($element) {
   $output = '';
-  $value = $element['#item']['value'];
-  if (!empty($value)) {
-    $output = _sheetnode_inject(
-      'sheetfield-' . str_replace('_', '-', $element['#field_name']) . '-' . $element['#item']['#delta'], 
-      $value, 
+  $field = content_fields($element['#field_name']);
+  $item = $element['#item'];
+  if (!empty($item['value'])) {
+    if (!empty($item['name'])) {
+      $output .= '<div class="sheetfield-title">' . $item['name'] . '</div>';
+    }
+    $output .= _sheetnode_inject(
+      'sheetfield-' . str_replace('_', '-', $element['#field_name']) . '-' . $item['#delta'], 
+      _sheetnode_sheetfield_aliases($element['#field_name'], $field['widget'], $item, $item['#delta']),
+      $item['value'], 
       FALSE, 
       isset($element['#node']) ? array('entity-name' => 'node', 'oid' => @$element['#node']->nid) : NULL
     );
@@ -861,9 +902,11 @@ function sheetnode_find_sheet($sheetname) {
     $target_field = empty($args[0]) ? FALSE : $args[0];
     $target_delta = empty($args[1]) ? 0 : intval($args[1]);
     foreach (sheetnode_get_sheetfields($node->type) as $field_name => $field_info) {
+      $name = @$node->{$field_name}[$target_delta]['name'];
       if ((!$target_field || 
            0 == strcasecmp($target_field, $field_name) || 
-           0 == strcasecmp($target_field, $field_info['widget']['label'])
+           0 == strcasecmp($target_field, $field_info['widget']['label']) ||
+           0 == strcasecmp($target_field, $name)
           ) &&
           !empty($node->{$field_name}[$target_delta])
       ) {

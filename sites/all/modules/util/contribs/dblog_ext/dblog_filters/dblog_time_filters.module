@@ -1,5 +1,4 @@
 <?php
-// $Id: dblog_time_filters.module,v 1.1.2.1.2.1 2009/12/29 16:37:46 nancyw Exp $
 
 define('DBLOB_FILTERS__DEFAULT_RECENT', serialize(array(1, 5, 15, 30, 45)));
 define('DBLOB_FILTERS__DEFAULT_AGED', serialize(array(30, 45, 60, 90, 120)));

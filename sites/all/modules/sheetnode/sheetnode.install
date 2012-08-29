@@ -464,3 +464,36 @@ function sheetnode_update_6008(&$sandbox) {
   return $ret;
 }
 
+/**
+ * Implementation of hook_update_N().
+ * Add sheetfield name.
+ */
+function sheetnode_update_6009(&$sandbox) {
+  // @see http://nodesforbreakfast.com/article/2012/02/14/addremove-columns-compound-cck-field-hookupdaten
+  include_once(drupal_get_path('module', 'content') . '/includes/content.admin.inc');
+  content_clear_type_cache(TRUE);
+
+  // Build a list of fields that need data updating.
+  $fields = array();
+  foreach (content_types_install() as $type_name => $type_fields) {
+    foreach ($type_fields as $field) {
+      if ($field['module'] == 'sheetnode') {
+        $fields[$field['field_name']] = $field;
+      }
+    }
+  }
+
+  foreach ($fields as $field) {
+    $old_field = $new_field = $field;
+    unset($old_field['name']);
+    content_alter_db($old_field, $new_field);
+    $ret[] = array(
+      'query' => t('Added %column_name to the %field field.', array('%field' => $field['field_name'], '%column_name' => 'name')), 
+      'success' => TRUE,
+    );
+  }
+  
+  content_associate_fields('sheetnode');
+  return $ret;
+}
+

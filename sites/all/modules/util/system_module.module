@@ -1,5 +1,4 @@
 <?php
-// $Id: system_module.module,v 1.4.2.3.2.2 2010/06/04 18:39:33 nancyw Exp $
 
 /**
  * @file
@@ -9,7 +8,7 @@
 function system_module_help($path, $args) {
   switch ($path) {
     case 'admin/build/modules':
-      return '<p>'. l(t('Set collapsed state'), 'admin/settings/util/sysmods') .'</p>';
+      return drupal_get_form('system_module_temp_form');
 
     case 'admin/settings/util/sysmods':
       return l(t('Go to modules admin page'), 'admin/build/modules');
@@ -100,13 +99,13 @@ function system_module_settings() {
     theme('item_list', array_slice($list, $piece, $piece)),
     theme('item_list', array_slice($list, 2 * $piece)),
     ));
-// dsm(print_r($cols,true));
+
   $form['dir']['list'] = array(
     '#type' => 'markup',
     '#value' => theme('table', $header, $rows, array('id' => 'modules-by-package'))
       . theme('table', array(), $cols, array('id' => 'modules-by-name')),
     );
-    
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Save configuration',
@@ -163,6 +162,49 @@ function system_module_disable() {
   drupal_rebuild_theme_registry();
 }
 
+function system_module_temp_form(&$form_state) {
+  $form = array('#attributes' => array('class' => 'container-inline'));
+
+  $form['perm'] = array(
+    '#type' => 'submit',
+    '#value' => t('Set Permanent State'),
+    );
+
+  $form['stuff'] = array(
+    '#type' => 'markup',
+    '#value' => ' ' . t('or temporarily') . ' ',
+    );
+
+  $form['expand'] = array(
+    '#type' => 'submit',
+    '#value' => t('Expand All'),
+    );
+
+  $form['collapse'] = array(
+    '#type' => 'submit',
+    '#value' => t('Collapse All'),
+    );
+
+  return $form;
+}
+
+function system_module_temp_form_submit($form, &$form_state) {
+  $temp = '';
+  switch ($form_state['values']['op']) {
+    case t('Expand All'):
+      $form_state['redirect'] = array('admin/build/modules', 'temp=expand');
+      break;
+
+    case t('Collapse All'):
+      $form_state['redirect'] = array('admin/build/modules', 'temp=collapse');
+      break;
+
+    case t('Set Permanent State'):
+      $form_state['redirect'] = array('admin/settings/util/sysmods');
+      break;
+  }
+}
+
 // Most of this function was copied from system.module.
 function theme_system_modules_theme($form) {
   global $user;   //needed to enable
@@ -194,10 +236,24 @@ function theme_system_modules_theme($form) {
   // Display packages.
   $output = '';
   $collapse_all = variable_get('system_module_collapse_all', 0);
+  if (isset($_GET['temp'])) {
+    $temp = array(t('expand'), t('collapse'));
+    if (in_array($_GET['temp'], $temp)) {
+      $collapse_all = array_search($_GET['temp'], $temp);
+    }
+    else {
+      drupal_set_message(t('Invalid "temp" value ignored.'));
+    }
+  }
+
   $throttle_available = module_exists('throttle');
+
   $status_error_php = theme('image', 'misc/watchdog-error.png', t('incompatible'), t('Incompatible with this version of PHP'));
+
   $status_error_core = theme('image', 'misc/watchdog-error.png', t('incompatible'), t('Incompatible with this version of Drupal core'));
+
   $incompat_core = '<div class="incompatible">'. t('This version is incompatible with the !core_version version of Drupal core.', array('!core_version' => VERSION)) .'</div>';
+
   $incompat_php = '<div class="incompatible">'. t('This module requires PHP version @php_required and is incompatible with PHP version !php_version.', array('@php_required' => $php_required, '!php_version' => phpversion())) .'</div>';
 
   foreach ($packages as $package => $modules) {

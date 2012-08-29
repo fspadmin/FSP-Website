@@ -1,5 +1,4 @@
 <?php
-// $Id: comment_box.module,v 1.1.2.1 2010/06/16 16:33:05 nancyw Exp $
 
 /**
  * @file
@@ -56,7 +55,7 @@ function comment_box_settings() {
     $var_name = "comment_box_size_$type";
     $form[$var_name] = array(
       '#type' => 'textfield',
-      '#title' => check_plain($type) . ' ',
+      '#title' => check_plain($name) . ' ',
       '#default_value' => variable_get($var_name, 10),
       '#attributes' => array('class' => 'container-inline'),
       );

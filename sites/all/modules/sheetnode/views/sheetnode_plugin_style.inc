@@ -95,7 +95,9 @@ class sheetnode_plugin_style extends views_plugin_style {
         unset($socialcalc['sheet']['cells'][$field['coord']]);
         $newcell = $field['cell'];
         $pos = $maxpos = $newcell['pos'];
-        foreach ($this->view->result as $result) {
+        $this->view->row_index = 0;
+        foreach ($this->view->result as $j => $result) {
+          $this->view->row_index = $j;
           $value = $field['info']->theme($result);
           if (is_array($value)) {
             // Expand an array of values into consecutive cells.
@@ -133,7 +135,9 @@ class sheetnode_plugin_style extends views_plugin_style {
         $pos = $newcell['pos'];
         $matches = array();
         $count = preg_match_all('/@(.*?)@|\$(.*?)\$/', $fe['expression'], $matches);
+        $this->view->row_index = 0;
         foreach ($this->view->result as $j => $result) {
+          $this->view->row_index = $j;
           $expression = $fe['expression'];
           $newcell['pos'] = $pos;
           for ($i=0; $i<$count; $i++) {
@@ -161,16 +165,21 @@ class sheetnode_plugin_style extends views_plugin_style {
               );
             }
             else if ($matches[0][$i][0] == '$') {
-              $replace = $result->{$this->view->field[$field_name]->field_alias};
+              if (!isset($result->{$this->view->field[$field_name]->field_alias})) {
+                $replace = NULL;
+              }
+              else {
+                $replace = $result->{$this->view->field[$field_name]->field_alias};
+              }
             }
-            if (!empty($replace)) {
+            if (!is_null($replace)) {
               $expression = str_replace($matches[0][$i], $replace, $expression);
             }
             else {
               $expression = NULL;
             }
           }
-          if (!empty($expression)) {
+          if (!is_null($expression)) {
             $newcell['formula'] = $expression;
             $newcell['datatype'] = 'f';
             $newcell['valuetype'] = 'n';
@@ -209,14 +218,14 @@ class sheetnode_plugin_style extends views_plugin_style {
             $field = $fields[$field_name];
             $replace = socialcalc_cr_to_coord($field['cell']['pos'][0], $field['cell']['pos'][1]) .':'. socialcalc_cr_to_coord($field['endpos'][0], $field['endpos'][1]);
           }
-          if (!empty($replace)) {
+          if (!is_null($replace)) {
             $expression = str_replace($matches[0][$i], $replace, $expression);
           }
           else {
             $expression = NULL;
           }
         }
-        if (!empty($expression)) {
+        if (!is_null($expression)) {
           $newcell['formula'] = $expression;
           $newcell['datatype'] = 'f';
           $newcell['valuetype'] = 'n';
@@ -320,7 +329,9 @@ class sheetnode_plugin_style extends views_plugin_style {
         $pos[$tangent]++;
       }
       $pos[$normal] = 2;
-      foreach ($this->view->result as $result) {
+      $this->view->row_index = 0;
+      foreach ($this->view->result as $j => $result) {
+        $this->view->row_index = $j;
         $pos[$tangent] = 1;
         foreach ($this->view->field as $field => $info) {
           if ($info->options['exclude']) continue;
@@ -378,6 +389,7 @@ class sheetnode_plugin_style extends views_plugin_style {
         'audit' => socialcalc_default_audit($sheet),
       );
     }
+    unset($this->view->row_index);
     return $socialcalc;
   }
 
@@ -387,6 +399,7 @@ class sheetnode_plugin_style extends views_plugin_style {
       $sheet_id .= '-preview';
     }
     $settings = drupal_to_js(array('sheetnode' => array($sheet_id => array(
+      'aliases' => array($this->view->name),
       'value' => $value,
       'imagePrefix' => base_path() . drupal_get_path('module', 'sheetnode') . '/socialcalc/images/sc-',
       'containerElement' => $sheet_id,
@@ -434,6 +447,7 @@ EOS;
 
     $sheet_id = 'sheetview-' . str_replace('_', '-', $this->view->name);
     drupal_add_js(array('sheetnode' => array($sheet_id => array(
+      'aliases' => array($this->view->name),
       'value' => $value,
       'imagePrefix' => base_path() . $path . '/socialcalc/images/sc-',
       'containerElement' => $sheet_id,

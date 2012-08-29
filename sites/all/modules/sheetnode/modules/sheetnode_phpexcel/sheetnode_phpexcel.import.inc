@@ -281,12 +281,17 @@ function _sheetnode_phpexcel_import_cell($workbook, $sheet, $cell, &$sc, &$style
       }
       $c['datavalue'] = $cellData;
       $c['valuetype'] = 'th';
+      $c['datatype'] = 't';
+    }
+    else if (empty($text)) { // empty text?
+      // That's a bug in PHPExcel where a blank cell is implictly converted to a text cell.
+      // Convert it back here by leaving the datatype and valuetype blank.
     }
     else { // it is plain text
       $c['datavalue'] = $text;
       $c['valuetype'] = 't';
+      $c['datatype'] = 't';
     }
-    $c['datatype'] = 't';
     break;
   case PHPExcel_Cell_DataType::TYPE_FORMULA:
     $c['datatype'] = 'f';

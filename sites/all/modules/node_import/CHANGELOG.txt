@@ -1,3 +1,25 @@
+Changes since 6.x-1.1:
+
+ New features:
+
+ * Issue #405348 by skwashd, Docc, shawngo: Node import - User Profile Values not imported.
+ * Issue #1082700 by Robrecht Jacques: Import Fails to process Image Alt Tag.
+ * Issue #1079976 by Robrecht Jacques: Scheduler?
+ * Issue #368728 by stacysimpson: menu support for node_import.
+
+ User interface:
+
+ * Issue #930994 by Robrecht Jacques: 'Remember' file options in step 3 of 8.
+ * Issue #578270 by Robrecht Jacques: Streamline File Upload.
+ * by Robrecht Jacques: Better autodetect of file options (using previously used options).
+
+ Bugfixes:
+
+ * Issue #1121524 by Bloodcarver: Act just before deletion of task.
+ * Issue #422322 by hovel, sirkitree: Fatal error: Only variables can be passed by reference...
+ * Issue #1130860 by Robrecht Jacques: Conflict with Node Form Settings module.
+ * Issue #1709996 by underq : Strick warning : Only variables should be passed by reference (line 1565).
+
 Changes in 6.x-1.1:
 
  * Issue #267555 by mvc, Robrecht Jacques: Added support for core locale module.

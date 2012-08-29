@@ -251,6 +251,12 @@ function node_import_fields($type, $reset = FALSE) {
     drupal_alter('node_import_fields', $fields[$type], $type);
 
     // Sort by weight.
+    $count = 0;
+    $max_count = count($fields[$type]) * 10;
+    foreach ($fields[$type] as $fieldname => $fieldinfo) {
+      $fields[$type][$fieldname]['weight'] += $count / $max_count;
+      $count++;
+    }
     uasort($fields[$type], 'node_import_sort');
   }
 
@@ -570,6 +576,7 @@ function node_import_values($type, $data, $map, $defaults, $options, $fields, $p
   $values = module_invoke_all('node_import_values', $type, $defaults, $options, $fields, $preview);
 
   foreach ($fields as $fieldname => $fieldinfo) {
+    $map[$fieldname] = isset($map[$fieldname]) ? $map[$fieldname] : '';
     $map[$fieldname] = is_array($map[$fieldname]) ? $map[$fieldname] : array($map[$fieldname]);
     $map_count = node_import_field_map_count($fieldname, $map);
 
@@ -658,17 +665,24 @@ function node_import_values($type, $data, $map, $defaults, $options, $fields, $p
 
     // Preprocess the data as long as the value is not empty and it
     // validates.
+    $values[$fieldname] = isset($values[$fieldname]) ? $values[$fieldname] : array('');
     foreach ((array)$values[$fieldname] as $i => $value) {
       foreach ($fieldinfo['preprocess'] as $function) {
         if ((is_array($values[$fieldname][$i]) && !empty($values[$fieldname][$i])) // has_multiple values are arrays
             || (is_string($values[$fieldname][$i]) && drupal_strlen($values[$fieldname][$i]) > 0)) {
           $options[$fieldname] = isset($options[$fieldname]) ? $options[$fieldname] : array();
-          $return = $function($values[$fieldname][$i], $fieldinfo, $options[$fieldname], $preview);
+
+          $value = $values[$fieldname][$i];
+          $return = $function($value, $fieldinfo, $options[$fieldname], $preview);
+          $values[$fieldname][$i] = $value;
+
           if ($return === FALSE) {
+            // No longer validates - stop.
             $values[$fieldname][$i] = '';
             continue 2;
           }
           else if ($return === TRUE) {
+            // Final preprocess reported - stop.
             continue 2;
           }
         }
@@ -1115,10 +1129,9 @@ function node_import_list_tasks($all = FALSE) {
  *   Nothing.
  */
 function node_import_delete_task($taskid) {
+  module_invoke_all('node_import_task', $taskid, 'delete');
   db_query("DELETE FROM {node_import_tasks} WHERE taskid = %d", $taskid);
   db_query("DELETE FROM {node_import_status} WHERE taskid = %d", $taskid);
-
-  module_invoke_all('node_import_task', $taskid, 'delete');
 }
 
 /**
@@ -1482,11 +1495,18 @@ function node_import_extract_property($array, $property = 'title') {
  * Function used by uasort to sort structured arrays by weight.
  */
 function node_import_sort($a, $b) {
+  $a_group = (is_array($a) && isset($a['group'])) ? $a['group'] : '';
+  $b_group = (is_array($b) && isset($b['group'])) ? $b['group'] : '';
+  if ($a_group !== $b_group && ($a_group === '' || $b_group === '')) {
+    return ($a_group === '') ? -1 : 1;
+  }
+
   $a_weight = (is_array($a) && isset($a['weight'])) ? $a['weight'] : 0;
   $b_weight = (is_array($b) && isset($b['weight'])) ? $b['weight'] : 0;
   if ($a_weight == $b_weight) {
     return 0;
   }
+
   return ($a_weight < $b_weight) ? -1 : 1;
 }
 
@@ -1562,7 +1582,8 @@ function node_import_directory($reset = FALSE) {
       $path = '';
       while (!empty($parts)) {
         $path .= array_shift($parts) . '/';
-        file_check_directory(file_create_path($path), FILE_CREATE_DIRECTORY, 'node_import:directory');
+        $path_to_check = file_create_path($path);
+        file_check_directory($path_to_check, FILE_CREATE_DIRECTORY, 'node_import:directory');
       }
     }
 
@@ -1657,6 +1678,8 @@ function node_import_list_files($reset = FALSE) {
  *   Array of mapping.
  */
 function node_import_automap($type, $headers) {
+  global $user;
+
   if (user_access('administer imports')) {
     $result = db_query("SELECT map FROM {node_import_tasks} WHERE type = '%s' AND LOWER(headers) = '%s' ORDER BY created DESC LIMIT 1", $type, strtolower(serialize($headers)));
   }
@@ -1687,6 +1710,10 @@ function node_import_automap($type, $headers) {
  * Return an autodetected file format and file options for given
  * file.
  *
+ * This checks which file format options cause the file to contain
+ * the most fields. The file options tested are the ones used
+ * by the user (last 5) and the builtin ones.
+ *
  * @param $filepath
  *   String. Path to file.
  *
@@ -1694,9 +1721,49 @@ function node_import_automap($type, $headers) {
  *   Array of file options.
  */
 function node_import_autodetect($filepath) {
-  //TODO: really implement this.
+  global $user;
+
+  if (user_access('administer imports')) {
+    $result = db_query("SELECT DISTINCT file_options FROM {node_import_tasks} ORDER BY created DESC LIMIT 5");
+  }
+  else {
+    $result = db_query("SELECT DISTINCT file_options FROM {node_import_tasks} WHERE uid = %d ORDER BY created DESC LIMIT 5");
+  }
+
   $file_formats = node_import_format_options('file formats');
-  return $file_formats['csv'] + array('file_format' => 'csv');
+  while (($used_format = db_fetch_array($result))) {
+    $file_formats[] = unserialize($used_format['file_options']);
+  }
+
+  $format = 'csv';
+  $max_cols = 0;
+
+  foreach ($file_formats as $file_format => $file_options) {
+    $file_offset = 0;
+
+    $num_rows = variable_get('node_import:detect:row_count', 5);
+    $num_cols = 0;
+    $fields = array();
+
+    while ($num_rows > 0 && is_array($fields)) {
+      list($new_offset, $fields) = node_import_read_from_file($filepath, $file_offset, $file_options);
+      $num_rows--;
+
+      if (is_array($fields) && count($fields) > $num_cols) {
+        $num_cols = count($fields);
+      }
+    }
+
+    if ($num_cols > $max_cols) {
+      $format = $file_format;
+      $max_cols = $num_cols;
+    }
+  }
+
+  $file_options = $file_formats[$format];
+  $file_options['file_format'] = is_int($format) ? '' : $format;
+
+  return $file_options;
 }
 
 /**
@@ -1863,22 +1930,38 @@ function node_import_read_from_file($filepath, $file_offset, $file_options) {
 }
 
 function _node_import_sanitize_file_options(&$file_options) {
-  // File options.
-  $replaces = array('<newline>' => "\n", '<tab>' => "\t", '<none>' => '');
+  // When file_format is not '', we need to load the options from the
+  // predefined file_format.
+  if (isset($file_options['file_format']) && $file_options['file_format'] !== '') {
+    $file_formats = node_import_format_options('file formats');
+    $file_options = array_merge($file_options, $file_formats[$file_options['file_format']]);
+  }
+
+  // The default options (CSV).
   $options = array(
     'record separator' => '<newline>',
-    'field separator' => ',',
-    'text delimiter' => '"',
+    'field separator'  => ',',
+    'text delimiter'   => '"',
     'escape character' => '"',
   );
+
+  // Use 'other ...' when selected.
   foreach ($options as $key => $default) {
-    if (isset($file_options[$key]) && strlen($file_options[$key]) > 0) {
+    if (isset($file_options[$key]) && drupal_strlen($file_options[$key]) > 0) {
       $options[$key] = $file_options[$key];
     }
-    else if (isset($file_options['other '. $key]) && strlen($file_options['other '. $key]) > 0) {
+    else if (isset($file_options['other '. $key]) && drupal_strlen($file_options['other '. $key]) > 0) {
       $options[$key] = $file_options['other '. $key];
     }
   }
+
+  // Replace our special characters.
+  $replaces = array(
+    '<newline>' => "\n",
+    '<none>'    => '',
+    '<space>'   => ' ',
+    '<tab>'     => "\t",
+  );
   $file_options = str_replace(array_keys($replaces), array_values($replaces), $options);
 }
 

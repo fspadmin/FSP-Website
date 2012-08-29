@@ -466,6 +466,24 @@ function socialcalc_save_edit($edit) {
     $result .= "range:". $edit['range']['anchorcoord'] .":". $edit['range']['top'] .":". $edit['range']['bottom'] .":". $edit['range']['left'] .":". $edit['range']['right'] ."\n";
   }
 
+  unset($edit['rowpanes'], $edit['colpanes'], $edit['ecell'], $edit['range']);
+  $result .= socialcalc_save_pairs($edit);
+
+  return $result;
+}
+
+function socialcalc_save_pairs($values) {
+  $result = '';
+  if (!empty($values)) foreach ($values as $key => $value) {
+    $result .= $key . ":";
+    if (is_array($value)) {
+      $result .= implode(":", $value);
+    }
+    else {
+      $result .= $value;
+    }
+    $result .= "\n";
+  }
   return $result;
 }
 

@@ -69,7 +69,9 @@ function node_import_uninstall() {
   variable_del('node_import:hierarchy_separator');
 
   variable_del('node_import:annoy');
+
   variable_del('node_import:debug:row_count');
+  variable_del('node_import:detect:row_count');
 }
 
 /**

@@ -52,6 +52,19 @@
   background: inherit;
 }
 
-/* Fix fieldset relative offset problem: http://drupal.org/node/735674 */
-html.js fieldset.collapsible { position: static; }
+body:last-child .sheetview .defaultPeer {
+    border-collapse: separate;
+    filter: none;
+}
 
+.sheetview .defaultPeer {
+    box-shadow: inset 0 0 0 2px blue;
+    -webkit-box-shadow: inset 0 0 0 2px blue;
+    -moz-box-shadow: inset 0 0 0 2px blue;
+    *background: white;
+    filter: progid:DXImageTransform.Microsoft.DropShadow(OffX=1, OffY=1, Color=#0000ff),
+            progid:DXImageTransform.Microsoft.DropShadow(OffX=-1, OffY=1, Color=#0000ff),
+            progid:DXImageTransform.Microsoft.DropShadow(OffX=1, OffY=-1, Color=#0000ff),
+            progid:DXImageTransform.Microsoft.DropShadow(OffX=-1, OffY=-1, Color=#0000ff),
+            progid:DXImageTransform.Microsoft.Chroma(Color=#FFFFFF);
+}

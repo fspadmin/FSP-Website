@@ -1,5 +1,4 @@
 <?php
-// $Id: module_weights.module,v 1.1.2.3.2.4 2010/08/22 19:02:43 nancyw Exp $
 
 /**
  * @file
@@ -7,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_help().
+ * Implements hook_help().
  */
 function module_weights_help($path, $arg) {
   $output = '';
@@ -16,10 +15,17 @@ function module_weights_help($path, $arg) {
       $output .= '<p>'. t('Drupal assigns each module a weight. For most operations involving any module that defines a particular hook, the modules are invoked in order first by weight, then by name.') .'</p>';
       $output .= '<p>'. t('This module adds a weight column to the modules table at !modules, allowing weights to be viewed and edited. Once activated, a weight column appears on the modules table. To change a module weight, edit its value and press "Save configuration". Any user who can submit the !modules form will be able to change module weights.', array('!modules' => l('admin/build/modules', 'admin/build/modules'))) .'</p>';
       break;
+    
+    case 'admin/build/modules':
+      $output .= '<p>'. t('For more information on module weights, see <a href="!url">Drupal.org</a>.', array('!url' => 'http://drupal.org/node/110238')) .'</p>';
+      break;
   }
   return $output;
 }
 
+/**
+ * Implements hook_menu().
+ */
 function module_weights_menu() {
   $menu['admin/settings/util/module_weights'] = array(
     'title'            => 'Module Weights',
@@ -33,14 +39,18 @@ function module_weights_menu() {
 }
 
 /**
+ * Implements hook_TYPE_alter().
  * Add weight header.
  */
 function module_weights_system_module_headers_alter(&$header) {
   array_unshift($header, 'Weight');
 }
 
+/**
+ * Implements hook_TYPE_alter().
+ */
 function module_weights_system_module_weights_alter(&$row, $module, &$form) {
-  array_unshift($row, drupal_render($form['weights'][$module]));  
+  array_unshift($row, drupal_render($form['weights'][$module]));
   // CLEANUP what we added in hook_form_alter().
   unset($form['weights'][$module]);
 }
@@ -57,7 +67,7 @@ function fetch_module_weights($name = NULL) {
       // When a module is deleted, it remains in the system table.
       // If module has been deleted, omit it from the list.
       if (file_exists($row->filename)) {
-        $module_weights[$row->name] = $row->weight;
+        $module_weights[$row->name] =  empty($row->weight) ? 0 : $row->weight;
       }
       else {
         // Do we want a warning?
@@ -83,6 +93,9 @@ function fetch_module_weights($name = NULL) {
   }
 }
 
+/**
+ * Implements hook_form_alter().
+ */
 function module_weights_form_alter(&$form, $form_state, $form_id) {
   switch ($form_id) {
     // The admin modules page.
@@ -94,7 +107,7 @@ function module_weights_form_alter(&$form, $form_state, $form_id) {
           // We add "w_" to the name so as not to upset system module.
           $form['description'][$name]['weights']["w_$name"] = array(
             '#type'          => 'textfield',
-            '#default_value' => $weight,
+            '#default_value' => empty($weight) ? 0 : $weight,
             '#title'         => t('Module weight'),
             '#size'          => 4,
             '#prefix'        => '<div class="container-inline">',
@@ -111,6 +124,9 @@ function module_weights_form_alter(&$form, $form_state, $form_id) {
   }
 }
 
+/**
+ * Implements form_validate().
+ */
 function module_weights_system_module_validate($form, &$form_state) {
   $weights = fetch_module_weights();
   foreach ($weights as $name => $weight) {
@@ -125,6 +141,9 @@ function module_weights_system_module_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Implements form_submit().
+ */
 function module_weights_system_module_submit($form, &$form_state) {
   foreach ($form_state['values'] as $key => $weight) {
     // Extra step of optimization, update only weights that changed
@@ -140,6 +159,9 @@ function module_weights_system_module_submit($form, &$form_state) {
   }
 }
 
+/**
+ * Implements hook_settings().
+ */
 function module_weights_settings() {
   drupal_add_css(drupal_get_path('module', 'module_weights') .'/module_weights.css');
   $form = array();

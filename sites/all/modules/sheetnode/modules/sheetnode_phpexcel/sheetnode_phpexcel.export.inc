@@ -198,18 +198,18 @@ function _sheetnode_phpexcel_export_sheet($worksheet, $title, $socialcalc) {
     
     if (!empty($style)) {
       // Font
+      $font = $style->getFont();
       if (!empty($c['font'])) {
         $scf = socialcalc_cellformat_parsefont($c, $sc);
-        $font = $style->getFont();
         if (!empty($scf['family'])) $font->setName($scf['family']);
         if (!empty($scf['size'])) $font->setSize(floatval($scf['size']));
         if (!empty($scf['bold'])) $font->setBold(true);
         if (!empty($scf['italic'])) $font->setItalic(true);
-        if (!empty($c['color'])) {
-          $scc = socialcalc_cellformat_parsecolor($c, $sc, 'color');
-          $rgb = sprintf('%02X%02X%02X', $scc['r'], $scc['g'], $scc['b']);
-          $font->getColor()->setRGB($rgb);
-        }
+      }
+      if (!empty($c['color'])) {
+        $scc = socialcalc_cellformat_parsecolor($c, $sc, 'color');
+        $rgb = sprintf('%02X%02X%02X', $scc['r'], $scc['g'], $scc['b']);
+        $font->getColor()->setRGB($rgb);
       }
   
       // Borders
