@@ -1,6 +1,7 @@
 Release #637 9/2/2012, by lcalitz
 - Fixed friend grant URL to be relative instead of hardcoded
   link to local system page
+- Core & contrib updates
 
 Release #636 8/26/2012, by lcalitz
 - Clarification of sign-up process
