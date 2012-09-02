@@ -1477,7 +1477,7 @@ function fsp_form_participant_node_form_alter(&$form, $form_state){
     $form['introduction'] = array(
       '#value' => '<p>If you are not yet ready to become a Participant, ' .
                   'or already live in New Hampshire, ' .
-                  '<a href="http://fsp.local/friend/grant">click here to ' .
+                  '<a href="/friend/grant">click here to ' .
                   'confirm your Friend status</a>. In order to become a ' .
                   'Participant, please check the Statement of Intent ' .
                   'checkbox below and click “Submit”. The rest of the ' .
