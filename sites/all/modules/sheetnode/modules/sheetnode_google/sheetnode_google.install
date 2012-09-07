@@ -1,5 +1,4 @@
 <?php
-// $Id: sheetnode_google.install,v 1.1.2.1 2010/11/22 09:29:36 kratib Exp $
 
 /**
  * Implementation of hook_update_N().

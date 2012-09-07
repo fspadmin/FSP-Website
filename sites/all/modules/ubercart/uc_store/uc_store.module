@@ -1142,8 +1142,12 @@ function uc_get_zone_code($zone = NULL) {
 }
 
 /**
- * Returns the rows of countries whose data matches the fields specified in the
- * $fields array.
+ * Returns country data based on the supplied criteria.
+ *
+ * @param $match
+ *   An associative array of fields to match.
+ * @param $sort
+ *   The field to sort by.
  */
 function uc_get_country_data($match = array(), $sort = 'country_name') {
   $valid_fields = array('country_id', 'country_name', 'country_iso_code_2', 'country_iso_code_3', 'version');
@@ -1319,7 +1323,12 @@ function uc_country_get_by_id($id) {
 
 /**
  * Creates a country select box for a form.
- * $display can be 'name', 'code2' for the 2-digit code, or 'code3' for the 3-digit code.
+ *
+ * @param $display
+ *   One of:
+ *   - 'name': for the country name.
+ *   - 'code2': for the 2-digit ISO code.
+ *   - 'code3': for the 3-digit ISO code.
  */
 function uc_country_select($title, $default = NULL, $description = NULL, $display = 'name', $required = FALSE) {
   if ($display == 'code2') {
@@ -1661,23 +1670,22 @@ function uc_get_message($message_id) {
  */
 function theme_uc_pane_sort_table($form) {
   $prefix = $form['#pane_prefix'];
-  if (isset($form['#table_attributes']) && is_array($form['#table_attributes'])) {
-    $attributes = $form['#table_attributes'];
-  }
-  else {
-    $attributes = array();
+
+  $attributes = array();
+  if (isset($form['#draggable'])) {
+    $attributes['id'] = $form['#draggable'] . '-table';
+    drupal_add_tabledrag($form['#draggable'] . '-table', 'order', 'sibling', $form['#draggable']);
   }
 
-  $header = array(t('Enabled'), t('Title'), t('List position'));
+  $header = array(t('Pane'), t('List position'));
 
   foreach (element_children($form) as $pane_id) {
     $rows[] = array(
-      array(
-        'data' => drupal_render($form[$pane_id][$prefix .'_'. $pane_id .'_enabled']),
-        'align' => 'center'
+      'data' => array(
+        drupal_render($form[$pane_id][$prefix .'_'. $pane_id .'_enabled']),
+        drupal_render($form[$pane_id][$prefix .'_'. $pane_id .'_weight']),
       ),
-      drupal_render($form[$pane_id]['title']),
-      drupal_render($form[$pane_id][$prefix .'_'. $pane_id .'_weight']),
+      'class' => 'draggable',
     );
   }
 
@@ -1813,40 +1821,47 @@ function uc_store_email_to_username($email) {
 }
 
 /**
- * Handle credit-card encryption.
+ * Handle encryption of credit-card information.
  *
  * Trimmed down version of GPL class by Tony Marston.  Details available at
  * http://www.tonymarston.co.uk/php-mysql/encryption.html
  *
  * Usage:
  * 1) Create an encryption object.
- *    ex: $crypt = new uc_encryption_class;
+ *    ex: $crypt = new uc_encryption_class();
  * 2) To encrypt string data, use the encrypt method with the key.
  *    ex: $encrypted = $crypt->encrypt($key, $string);
  * 3) To decrypt string data, use the decrypt method with the original key.
  *    ex: $decrypted = $crypt->decrypt($key, $string);
  * 4) To check for errors, use the errors method to return an array of errors.
- *    ex: $errors = $crypt->errors();
+ *    ex: $errors = $crypt->getErrors();
  */
 class uc_encryption_class {
-  var $scramble1;
-  var $scramble2;
-  var $errors;
-  var $adj;
-  var $mod;
 
-  function uc_encryption_class() {
-    $this->errors = array();
-    $this->scramble1 = '! #$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"abcdefghijklmnopqrstuvwxyz{|}~';
-    $this->scramble2 = 'f^jAE]okIOzU[2&q1{3`h5w_794p@6s8?BgP>dFV=m" D<TcS%Ze|r:lGK/uCy.Jx)HiQ!#$~(;Lt-R}Ma,NvW+Ynb*0X';
-    $this->adj = 1.75;
-    $this->mod = 3;
-  }
+  protected static $scramble1 = '! #$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"abcdefghijklmnopqrstuvwxyz{|}~';
+  protected static $scramble2 = 'f^jAE]okIOzU[2&q1{3`h5w_794p@6s8?BgP>dFV=m" D<TcS%Ze|r:lGK/uCy.Jx)HiQ!#$~(;Lt-R}Ma,NvW+Ynb*0X';
 
+  protected $errors = array();
+  protected $adj = 1.75;
+  protected $mod = 3;
+
+
+  /**
+   * Decrypts cyphertext.
+   *
+   * @param $key
+   *   String key used for encryption.
+   * @param $source
+   *   Cyphertext. Text string containing encrypted $source.
+   *
+   * @return
+   *   Plaintext. Text string to be encrypted.
+   */
   function decrypt($key, $source) {
     $this->errors = array();
 
-    $fudgefactor = $this->_convertKey($key);
+    // Convert key into sequence of numbers
+    $fudgefactor = $this->convertKey($key);
     if ($this->errors) {
       return;
     }
@@ -1864,28 +1879,44 @@ class uc_encryption_class {
     for ($i = 0; $i < strlen($source); $i++) {
       $char2 = substr($source, $i, 1);
 
-      $num2 = strpos($this->scramble2, $char2);
+      $num2 = strpos(self::$scramble2, $char2);
       if ($num2 === FALSE) {
-        $this->errors[] = t('Source string contains an invalid character (!char)', array('!char' => $char2));
+        $this->errors[] = t('Source string contains an invalid character (@char)', array('@char' => $char2));
         return;
       }
 
-      $adj = $this->_applyFudgeFactor($fudgefactor);
+      $adj = $this->applyFudgeFactor($fudgefactor);
       $factor1 = $factor2 + $adj;
       $num1 = $num2 - round($factor1);
-      $num1 = $this->_checkRange($num1);
+      $num1 = $this->checkRange($num1);
       $factor2 = $factor1 + $num2;
-      $char1 = substr($this->scramble1, $num1, 1);
+
+      $char1 = substr(self::$scramble1, $num1, 1);
       $target .= $char1;
     }
 
     return rtrim($target);
   }
 
+  /**
+   * Encrypts plaintext.
+   *
+   * @param $key
+   *   String key used for encryption.
+   * @param $source
+   *   Plaintext. Text string to be encrypted.
+   * @param $sourcelen
+   *   Minimum plaintext length.  Plaintext $source which is shorter than
+   *   $sourcelen will be padded by appending spaces.
+   *
+   * @return
+   *   Cyphertext. Text string containing encrypted $source.
+   */
   function encrypt($key, $source, $sourcelen = 0) {
     $this->errors = array();
-    $fudgefactor = $this->_convertKey($key);
 
+    // Convert key into sequence of numbers
+    $fudgefactor = $this->convertKey($key);
     if ($this->errors) {
       return;
     }
@@ -1907,44 +1938,74 @@ class uc_encryption_class {
     for ($i = 0; $i < strlen($source); $i++) {
       $char1 = substr($source, $i, 1);
 
-      $num1 = strpos($this->scramble1, $char1);
+      $num1 = strpos(self::$scramble1, $char1);
       if ($num1 === FALSE) {
-        $this->errors[] = t('Source string contains an invalid character (!char)', array('!char' => $char1));
+        $this->errors[] = t('Source string contains an invalid character (@char)', array('@char' => $char1));
         return;
       }
 
-      $adj = $this->_applyFudgeFactor($fudgefactor);
+      $adj = $this->applyFudgeFactor($fudgefactor);
       $factor1 = $factor2 + $adj;
       $num2 = round($factor1) + $num1;
-      $num2 = $this->_checkRange($num2);
+      $num2 = $this->checkRange($num2);
       $factor2 = $factor1 + $num2;
-      $char2 = substr($this->scramble2, $num2, 1);
+      $char2 = substr(self::$scramble2, $num2, 1);
       $target .= $char2;
     }
 
     return $target;
   }
 
+  /**
+   * Accessor for errors property.
+   */
+  public function getErrors() {
+    return $this->errors;
+  }
+
+  /**
+   * Mutator for errors property.
+   */
+  public function setErrors(array $errors) {
+    $this->errors = $errors;
+  }
+
+  /**
+   * Accessor for adj property.
+   */
   function getAdjustment() {
     return $this->adj;
   }
 
-  function getModulus() {
-    return $this->mod;
-  }
-
+  /**
+   * Mutator for adj property.
+   */
   function setAdjustment($adj) {
     $this->adj = (float) $adj;
   }
 
-  function setModulus($mod) {
-    $this->mod = (int)abs($mod);
+  /**
+   * Accessor for mod property.
+   */
+  function getModulus() {
+    return $this->mod;
   }
 
-  function _applyFudgeFactor(&$fudgefactor) {
+  /**
+   * Mutator for mod property.
+   */
+  function setModulus($mod) {
+    $this->mod = (int) abs($mod);
+  }
+
+  /**
+   * Returns an adjustment value based on the contents of $fudgefactor.
+   */
+  function applyFudgeFactor(&$fudgefactor) {
     static $alerted = FALSE;
 
     if (!is_array($fudgefactor)) {
+      $fudge = 0;
       if (!$alerted) {
         // Throw an error that makes sense so this stops getting reported.
         $this->errors[] = t('No encryption key was found.');
@@ -1969,9 +2030,12 @@ class uc_encryption_class {
     return $fudge;
   }
 
-  function _checkRange($num) {
+  /**
+   * Checks that $num points to an entry in self::$scramble1.
+   */
+  function checkRange($num) {
     $num = round($num);
-    $limit = strlen($this->scramble1);
+    $limit = strlen(self::$scramble1);
 
     while ($num >= $limit) {
       $num = $num - $limit;
@@ -1983,7 +2047,16 @@ class uc_encryption_class {
     return $num;
   }
 
-  function _convertKey($key) {
+  /**
+   * Converts encryption key into an array of numbers.
+   *
+   * @param $key
+   *   Encryption key.
+   *
+   * @return
+   *   Array of integers.
+   */
+  function convertKey($key) {
     if (empty($key)) {
       // Commented out to prevent errors getting logged for use cases that may
       // have variable encryption/decryption requirements. -RS
@@ -1997,7 +2070,7 @@ class uc_encryption_class {
     for ($i = 0; $i < strlen($key); $i++) {
       $char = substr($key, $i, 1);
 
-      $num = strpos($this->scramble1, $char);
+      $num = strpos(self::$scramble1, $char);
       if ($num === FALSE) {
         $this->errors[] = "Key contains an invalid character ($char)";
         return;
@@ -2022,8 +2095,9 @@ class uc_encryption_class {
  *   The module name to specify in the watchdog notices.
  */
 function uc_store_encryption_errors(&$crypt, $module) {
-  if (!empty($crypt->errors)) {
-    foreach ($crypt->errors as $message) {
+  $errors = $crypt->getErrors();
+  if (!empty($errors)) {
+    foreach ($errors as $message) {
       $items[] = $message;
     }
     watchdog('encryption', 'Encryption failed. !messages', array('!messages' => theme('item_list', $items)), WATCHDOG_ERROR);
@@ -2239,7 +2313,7 @@ function uc_store_format_price_field_value($price, $prec = NULL) {
  * modules to alter the form before the Drupal layer hook_form_alter() is
  * invoked.
  *
- * @see hook_uc_form_alter().
+ * @see hook_uc_form_alter()
  */
 function uc_form_alter(&$form, &$form_state, $form_id) {
   $form['__drupal_alter_by_ref'] = array(&$form_state);

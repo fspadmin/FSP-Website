@@ -70,7 +70,7 @@ function uc_cybersource_payment_gateway_settings_submit($form, &$form_state) {
   // If CC encryption has been configured properly.
   if ($key = uc_credit_encryption_key()) {
     // Setup our encryption object.
-    $crypt = new uc_encryption_class;
+    $crypt = new uc_encryption_class();
 
     // Encrypt the Merchant ID and Transaction key.
     if (!empty($form_state['values']['uc_cybersource_soap_merchant_id'])) {
@@ -258,6 +258,7 @@ function uc_cybersource_settings_form() {
     '#type' => 'textarea',
     '#title' => t('Transaction key'),
     '#default_value' => $login['transaction_key'],
+    '#wysiwyg' => FALSE,
   );
   $form['soap']['uc_cybersource_soap_create_profile'] = array(
     '#type' => 'checkbox',
@@ -865,9 +866,14 @@ function _uc_cybersource_soap_charge($order, $amount, $data, $cc_type, $country)
       }
 
       // Add the line items to the item array.
+      $discount_amount = 0;
       foreach ((array) $order->line_items as $line_item) {
+        // Handle negative line items.
+        if ($line_item['amount'] < 0) {
+          $discount_amount += -$line_item['amount'];
+        }
         // Skip subtotal line items.
-        if (strpos($line_item['type'], 'subtotal') === FALSE) {
+        elseif (strpos($line_item['type'], 'subtotal') === FALSE) {
           $obj = $request->item[] = new stdClass();
 
           $obj->productName = $line_item['title'];
@@ -879,6 +885,11 @@ function _uc_cybersource_soap_charge($order, $amount, $data, $cc_type, $country)
           $counter++;
         }
       }
+    }
+
+    // Add the total order discount into the request.
+    if ($discount_amount != 0) {
+      $request->purchaseTotals->discountAmount = $discount_amount;
     }
 
     // Add business rules.
@@ -1267,7 +1278,7 @@ function _uc_cybersource_soap_login_data() {
   // If CC encryption has been configured properly.
   if ($key = uc_credit_encryption_key()) {
     // Setup our encryption object.
-    $crypt = new uc_encryption_class;
+    $crypt = new uc_encryption_class();
 
     // Decrypt the Merchant ID and Transaction key.
     if (!empty($merchant_id)) {

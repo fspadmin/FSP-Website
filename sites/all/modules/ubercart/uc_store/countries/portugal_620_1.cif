@@ -38,7 +38,13 @@ function portugal_install() {
   // Use uc_set_address_format() with the country ID as the first argument and
   // an address format string as the second.
 
-  variable_set('uc_address_format_620',
-               "!company\r\n!first_name !last_name\r\n!street1\r\n!street2"
-              ."\r\n!city, !zone_name\r\n!country_name");
+  uc_set_address_format(
+    620,
+    "!company\r\n".
+    "!first_name !last_name\r\n".
+    "!street1\r\n".
+    "!street2\r\n".
+    "!city, !zone_name\r\n".
+    "!country_name"
+  );
 }

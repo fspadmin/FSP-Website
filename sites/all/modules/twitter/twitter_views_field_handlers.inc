@@ -5,11 +5,12 @@
  */
 class twitter_views_handler_field_xss extends views_handler_field {
   function option_definition() {
+    $conf = TwitterConf::instance();
     $options = parent::option_definition();
     $options['link_urls'] = array('default' => TRUE);
     $options['link_usernames'] = array('default' => TRUE);
     $options['link_hashtags'] = array('default' => FALSE);
-    $options['hashtags_url'] = array('default' => 'http://search.twitter.com/search?q=%23');
+    $options['hashtags_url'] = array('default' => 'http://' . $conf->get('search') . '/search?q=%23');
     return $options;
   }
 

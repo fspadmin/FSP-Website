@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_field_conditional_addtocart.inc,v 1.1 2009/04/17 07:50:06 madsph Exp $
 
 /**
  * @file

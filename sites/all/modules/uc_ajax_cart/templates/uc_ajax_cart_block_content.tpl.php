@@ -38,14 +38,53 @@
 </div>
 <table>
   <tbody>
-    <tr>
-      <td class="cart-block-summary-items">
-        <?php print $items_text; ?>
-      </td>
-      <td class="cart-block-summary-total">
-        <label><?php print t('Total'); ?>: </label><?php print $total ;?>
-      </td>
-    </tr>
+  <?php
+  if ($total_no_discount) {
+  ?>
+  <tr>
+    <td class="cart-block-summary-items">
+      &nbsp;
+    </td>
+    <td class="cart-block-summary-total">
+      <?php print t('Subtotal'); ?>:
+      <?php print $total_no_discount; ?>
+    </td>
+  </tr>
+  <tr>
+    <td class="cart-block-summary-items">
+      &nbsp;
+    </td>
+    <td class="cart-block-summary-total">
+      <?php print t('Discount'); ?>:
+      <?php print $discount_amount; ?>
+    </td>
+  </tr>
+  <tr>
+    <td class="cart-block-summary-items">
+      <?php print $items_text; ?>
+    </td>
+    <td class="cart-block-summary-total">
+      <?php print t('Total'); ?>:
+      <?php print $total; ?>
+    </td>
+  </tr>
+
+  <?php
+  }
+  else {
+  ?>
+      <tr>
+        <td class="cart-block-summary-items">
+          <?php print $items_text; ?>
+        </td>
+        <td class="cart-block-summary-total">
+        <label><?php print t('Total'); ?>: </label><?php print $total ?>
+        </td>
+      </tr>
+  <?php }; // no discounts ?>
+
+
+
     <tr class="cart-block-summary-links">
       <td colspan="2">
         <?php print $cart_links; ?>

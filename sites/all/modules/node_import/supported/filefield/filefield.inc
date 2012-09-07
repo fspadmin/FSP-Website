@@ -26,17 +26,36 @@ function filefield_node_import_fields($type) {
           break;
 
         case 'list':
-          // Don't think we really need to map this.
-          $fields[$cck_fieldname]['is_mappable'] = FALSE;
+          $fields[$cck_fieldname]['title'] = $fieldinfo['widget']['label'] .' - '. t('List');
+          $fields[$cck_fieldname]['is_mappable'] = $fieldinfo['list_field'];
           $fields[$cck_fieldname]['input_format'] = 'boolean';
           $fields[$cck_fieldname]['default_value'] = $fieldinfo['list_default'];
           break;
 
         case 'data':
-          // Not sure, but this seems to store the description only.
-          $fields[$cck_fieldname]['title'] = $fieldinfo['widget']['label'] .' - '. t('Description');
-          $fields[$cck_fieldname]['is_mappable'] = $fieldinfo['show_description'];
-          $fields[$cck_fieldname]['default_value'] = '';
+          // The data column stores a number of values, each needing a separate
+          // field! Only 'description' is supported by filefield module, we
+          // make the others unmappable by default.
+          foreach (filefield_data_info() as $key => $datainfo) {
+            $data_fieldname = $cck_fieldname . ':' . $key;
+            $fields[$data_fieldname] = $fields[$cck_fieldname];
+
+            switch ($key) {
+              case 'description':
+                $fields[$data_fieldname]['title'] = $fieldinfo['widget']['label'] .' - '. t('Description');
+                $fields[$data_fieldname]['is_mappable'] = $fieldinfo['description_field'];
+                $fields[$data_fieldname]['default_value'] = '';
+                break;
+
+              default:
+                $fields[$data_fieldname]['title'] = t('Unsupported: ') . $fieldinfo['widget']['label'] .' - '. $datainfo['title'];
+                $fields[$data_fieldname]['is_mappable'] = FALSE;
+                break;
+            }
+          }
+
+          // Hide the data field.
+          $fields[$cck_fieldname]['is_mappable'] = FALSE;
           break;
 
         default:
@@ -50,14 +69,63 @@ function filefield_node_import_fields($type) {
 }
 
 /**
+ * Implementation of hook_node_import_defaults().
+ */
+function filefield_node_import_defaults($type, $defaults, $fields, $map) {
+  $form = array();
+
+  foreach (node_import_cck_fields($type, 'filefield') as $fieldname => $fieldinfo) {
+    $data_fieldname = node_import_cck_name($fieldname, 'data') . ':description';
+    if (isset($fields[$data_fieldname]) && $fields[$data_fieldname]['is_mappable']) {
+      $form[$data_fieldname] = array(
+        '#title' => $fieldinfo['widget']['label'] .' - '. t('Description'),
+        '#type' => 'textfield',
+        '#maxlength' => 128,
+        '#size' => 60,
+        '#default_value' => isset($defaults[$data_fieldname]) ? $defaults[$data_fieldname] : $fields[$data_fieldname]['default_value'],
+      );
+    }
+
+    $list_fieldname = node_import_cck_name($fieldname, 'list');
+    if (isset($fields[$list_fieldname]) && $fields[$list_fieldname]['is_mappable']) {
+      $form[$list_fieldname] = array(
+        '#title' => $fieldinfo['widget']['label'] .' - '. t('List'),
+        '#type' => 'radios',
+        '#options' => array(
+          '0' => t('No'),
+          '1' => t('Yes'),
+        ),
+        '#default_value' => isset($defaults[$list_fieldname]) ? $defaults[$list_fieldname] : $fields[$list_fieldname]['default_value'],
+      );
+    }
+  }
+
+  return $form;
+}
+
+/**
  * Implementation of hook_node_import_values_alter().
  */
-function filefield_node_import_value_alter(&$values, $type, $defaults, $options, $fields, $preview) {
+function filefield_node_import_values_alter(&$values, $type, $defaults, $options, $fields, $preview) {
   foreach (node_import_cck_fields($type, 'filefield') as $fieldname => $fieldinfo) {
-    foreach ($values[$fieldname] as $i => $value) {
-      if (isset($values[$fieldname][$i]['data'])) {
-        $values[$fieldname][$i]['data'] = array('description' => $values[$fieldname][$i]['data']);
+    $num_values = count($values[$fieldname]);
+    if ($num_values > 0) {
+      foreach (filefield_data_info() as $key => $datainfo) {
+        $data_fieldname = node_import_cck_name($fieldname, 'data') . ':' . $key;
+        $data_values = isset($values[$data_fieldname]) ? $values[$data_fieldname] : '';
+        $data_values = is_array($data_values) ? $data_values : array($data_values);
+        $data_values = $data_values + array_fill(count($data_values), $num_values, isset($defaults[$data_fieldname]) ? $defaults[$data_fieldname] : $fields[$data_fieldname]['default_value']);
+        $data_values = array_slice($data_values, 0, $num_values);
+
+        foreach ($values[$fieldname] as $i => $value) {
+          if (!isset($values[$fieldname][$i]['data']) || !is_array($values[$fieldname][$i]['data'])) {
+            $values[$fieldname][$i]['data'] = array();
+          }
+
+          $values[$fieldname][$i]['data'][$key] = $data_values[$i];
+        }
       }
     }
   }
 }
+

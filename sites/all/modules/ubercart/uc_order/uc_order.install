@@ -484,7 +484,6 @@ function uc_order_schema() {
       'qty' => array(
         'description' => 'The number of the same product ordered.',
         'type' => 'int',
-        'size' => 'small',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
@@ -680,7 +679,7 @@ function uc_order_update_6000() {
   db_change_field($ret, 'uc_order_products', 'order_id', 'order_id', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0), array('indexes' => array('order_id' => array('order_id'))));
   db_change_field($ret, 'uc_order_products', 'nid', 'nid', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0));
   db_change_field($ret, 'uc_order_products', 'qty', 'qty', array('type' => 'int', 'unsigned' => TRUE, 'size' => 'small', 'not null' => TRUE, 'default' => 0));
-  db_change_field($ret, 'uc_order_products', 'cost', 'cost', array('type' => 'numeric', 'precision' => 10, 'scale' => 2,'not null' => TRUE, 'default' => 0));
+  db_change_field($ret, 'uc_order_products', 'cost', 'cost', array('type' => 'numeric', 'precision' => 10, 'scale' => 2, 'not null' => TRUE, 'default' => 0));
   db_change_field($ret, 'uc_order_products', 'price', 'price', array('type' => 'numeric', 'precision' => 10, 'scale' => 2, 'not null' => TRUE, 'default' => 0));
   db_change_field($ret, 'uc_order_products', 'weight', 'weight', array('type' => 'float', 'not null' => TRUE, 'default' => 0));
   if ($GLOBALS['db_type'] == 'pgsql') {
@@ -701,7 +700,7 @@ function uc_order_update_6001() {
   $ret = array();
 
   db_change_field($ret, 'uc_order_products', 'cost', 'cost', array('type' => 'numeric', 'precision' => 10, 'scale' => 2, 'not null' => TRUE, 'default' => 0));
-  db_change_field($ret, 'uc_order_products', 'price', 'price', array('type' => 'numeric', 'precision' => 10, 'scale' => 2,'not null' => TRUE, 'default' => 0));
+  db_change_field($ret, 'uc_order_products', 'price', 'price', array('type' => 'numeric', 'precision' => 10, 'scale' => 2, 'not null' => TRUE, 'default' => 0));
 
   return $ret;
 }
@@ -713,7 +712,7 @@ function uc_order_update_6002() {
   $ret = array();
 
   $host_schema = array(
-    'description' => t('Host IP address of the person paying for the order.'),
+    'description' => 'Host IP address of the person paying for the order.',
     'type' => 'varchar',
     'length' => 255,
     'not null' => TRUE,
@@ -757,7 +756,7 @@ function uc_order_update_6005() {
   $ret = array();
 
   $result = db_query("SELECT * FROM {permission}");
-  while($perm = db_fetch_object($result)) {
+  while ($perm = db_fetch_object($result)) {
     $perm->perm = str_replace("delete any order", "unconditionally delete orders", $perm->perm);
     drupal_write_record('permission', $perm, 'pid');
   }
@@ -774,7 +773,7 @@ function uc_order_update_6006() {
 
   $schema = array(
     'weight' => array(
-      'description' => t('The physical weight.'),
+      'description' => 'The physical weight.',
       'type' => 'float',
       'not null' => TRUE,
       'default' => 0.0,
@@ -873,7 +872,7 @@ function uc_order_update_6011() {
   $ret = array();
 
   $spec = array(
-    'description' => t('The total product quantity of the order.'),
+    'description' => 'The total product quantity of the order.',
     'type' => 'int',
     'unsigned' => TRUE,
     'not null' => TRUE,
@@ -1068,5 +1067,43 @@ function uc_order_update_6019() {
   db_add_index($ret, 'uc_order_products', 'qty', array('qty'));
   db_add_index($ret, 'uc_order_products', 'nid', array('nid'));
 
+  return $ret;
+}
+
+/**
+ * Increase maximum order item quantity.
+ */
+function uc_order_update_6020() {
+  $ret = array();
+
+  db_change_field($ret, 'uc_order_products', 'qty', 'qty', array(
+    'description' => 'The number of the same product ordered.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+   ));
+
+  return $ret;
+}
+
+/**
+ * Delete unwanted sensitive data.
+ */
+function uc_order_update_6200() {
+  $ret = array();
+
+  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE data LIKE '%s:4:\"pass\"%'");
+  while ($row = db_fetch_object($result)) {
+    $data = unserialize($row->data);
+    if (isset($data['new_user']['pass'])) {
+      unset($data['new_user']['pass']);
+      db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $row->order_id);
+    }
+  }
+
+  variable_del('uc_order_cron_last');
+
+  $ret[] = array('success' => TRUE, 'query' => 'Deleted unwanted sensitive data.');
   return $ret;
 }

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_marketing.install,v 1.1.4.5 2010/11/18 14:47:25 longwave Exp $
 
 /**
  * Implementation of hook_requirements().

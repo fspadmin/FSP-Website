@@ -1,5 +1,4 @@
 <?php
-// $Id: sheetnode_phpexcel.views.inc,v 1.1.2.1 2010/11/21 03:11:27 kratib Exp $
 
 /**
  * Implementation of hook_views_plugins().

@@ -1,5 +1,4 @@
 <?php
-// $Id: image_handler_field_image_node_image.inc,v 1.3 2009/08/26 14:42:04 joachim Exp $
 
 /**
  * @file

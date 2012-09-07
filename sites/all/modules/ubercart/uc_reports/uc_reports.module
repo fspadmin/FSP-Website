@@ -276,8 +276,7 @@ function _uc_reports_get_csv($report_id, $user_id) {
 }
 
 /**
- * Given a timestamp and time period function returns sales that occurred in
- * that time period.
+ * Returns sales that occurred in a given time period.
  *
  * @param $time
  *   A UNIX time stamp representing the time in which to get sales data

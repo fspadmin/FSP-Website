@@ -422,9 +422,9 @@ function uc_shipping_update_6004() {
       'default' => 0.0,
     ),
   );
-  db_change_field($ret, 'uc_packages', 'length', 'length', $schema['float_spec'] + array('description' => t('Physical length of the packaging.')));
-  db_change_field($ret, 'uc_packages', 'width', 'width', $schema['float_spec'] + array('description' => t('Physical width of the packaging.')));
-  db_change_field($ret, 'uc_packages', 'height', 'height', $schema['float_spec'] + array('description' => t('Physical height of the packaging.')));
+  db_change_field($ret, 'uc_packages', 'length', 'length', $schema['float_spec'] + array('description' => 'Physical length of the packaging.'));
+  db_change_field($ret, 'uc_packages', 'width', 'width', $schema['float_spec'] + array('description' => 'Physical width of the packaging.'));
+  db_change_field($ret, 'uc_packages', 'height', 'height', $schema['float_spec'] + array('description' => 'Physical height of the packaging.'));
 
   return $ret;
 }

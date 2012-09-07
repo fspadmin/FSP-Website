@@ -118,7 +118,7 @@ function uc_google_checkout_init() {
   $id = variable_get('googleanalytics_account', '');
   if (module_exists('googleanalytics') && !empty($id) && _googleanalytics_visibility_pages() && _googleanalytics_visibility_user($user)) {
     $scope = variable_get('googleanalytics_js_scope', 'footer');
-    drupal_add_js('document.write(unescape("%3Cscript src=\"http://checkout.google.com/files/digital/ga_post.js\" type=\"text/javascript\"%3E%3C/script%3E"));', 'inline', $scope);
+    drupal_add_js('document.write(unescape("%3Cscript src=\"//checkout.google.com/files/digital/ga_post.js\" type=\"text/javascript\"%3E%3C/script%3E"));', 'inline', $scope);
   }
 }
 
@@ -271,24 +271,24 @@ function uc_google_checkout_line_item() {
 /**
  * Implements hook_order().
  */
-function uc_google_checkout_order($op, &$arg1, $arg2) {
+function uc_google_checkout_order($op, &$order, $arg2) {
   switch ($op) {
     case 'load':
-      $result = db_query("SELECT * FROM {uc_gc_orders} WHERE order_id = %d", $arg1->order_id);
+      $result = db_query("SELECT * FROM {uc_gc_orders} WHERE order_id = %d", $order->order_id);
       if ($gc = db_fetch_object($result)) {
-        $arg1->google_order_number = $gc->gc_order_number;
-        $arg1->financial_state = $gc->financial_state;
-        $arg1->fulfillment_state = $gc->fulfillment_state;
-        $arg1->gc_total = $gc->gc_total;
+        $order->google_order_number = $gc->gc_order_number;
+        $order->financial_state = $gc->financial_state;
+        $order->fulfillment_state = $gc->fulfillment_state;
+        $order->gc_total = $gc->gc_total;
       }
     break;
     case 'can_update':
-      if (is_null($arg1->google_order_number) || isset($_SESSION['google_updates']) && $_SESSION['google_updates']) {
+      if (!isset($order->google_order_number) || isset($_SESSION['google_updates']) && $_SESSION['google_updates']) {
         return TRUE;
       }
       switch ($arg2) {
         case 'canceled':
-          if (uc_google_checkout_cancel_order($arg1)) {
+          if (uc_google_checkout_cancel_order($order)) {
             drupal_set_message(t('Cancel order request sent to Google Checkout. The order will be updated momentarily.'));
           }
           else {

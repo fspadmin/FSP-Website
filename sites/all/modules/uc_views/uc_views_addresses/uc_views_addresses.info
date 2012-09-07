@@ -1,4 +1,3 @@
-; $Id: uc_views_addresses.info,v 1.1.2.2 2010/11/18 20:59:38 longwave Exp $
 name = Ubercart Views Addresses
 description = Views definitions for Ubercart Addresses module.
 dependencies[] = views
@@ -6,9 +5,9 @@ dependencies[] = uc_addresses
 package = "Ubercart - views"
 core = 6.x
 
-; Information added by drupal.org packaging script on 2010-12-23
-version = "6.x-3.1"
+; Information added by drupal.org packaging script on 2012-03-27
+version = "6.x-3.2"
 core = "6.x"
 project = "uc_views"
-datestamp = "1293106023"
+datestamp = "1332885049"
 

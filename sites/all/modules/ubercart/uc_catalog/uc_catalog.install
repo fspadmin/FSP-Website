@@ -70,12 +70,12 @@ function uc_catalog_schema() {
  */
 function uc_catalog_install() {
   $t = get_t();
-  //Find possible Product Catalog vocabulary.
+  // Find possible Product Catalog vocabulary.
   $result = db_query("SELECT vid FROM {vocabulary} WHERE name = 'Catalog'");
   if ($vocab = db_fetch_object($result)) {
     $vid = $vocab->vid;
   }
-  else { //If none, create one.
+  else { // If none, create one.
     db_query("INSERT INTO {vocabulary} (name, description, help, relations, hierarchy, multiple, required, tags, module, weight)
       VALUES ('%s', '', '%s', 0, 1, 1, 0, 0, 'uc_catalog', 0)", $t('Catalog'), $t('Hold Ctrl while clicking to select multiple categories.'));
     $vid = db_last_insert_id('vocabulary', 'vid');

@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_field_order_cc_data.inc,v 1.1.2.1 2010/01/12 15:17:29 hanoii Exp $
 
 /**
  * @file

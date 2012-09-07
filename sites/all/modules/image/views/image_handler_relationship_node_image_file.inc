@@ -1,5 +1,4 @@
 <?php
-// $Id: image_handler_relationship_node_image_file.inc,v 1.1 2009/05/01 22:29:47 sun Exp $
 
 /**
  * @file

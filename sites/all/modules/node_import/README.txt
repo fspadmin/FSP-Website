@@ -28,12 +28,9 @@ your site.
 Extending node_import (for developers)
 ------------------------------------------------------------------------------
 
-All code is documented. You can run:
-
-  doxygen doxygen.txt
-
-to generate the documentation in HTML format. The documentation is then
-available on sites/all/modules/node_import/help/devel/index.html.
+If you install the "API" (http://drupal.org/project/api) module, you can read
+the documentation in the "Node import API" topic on your site if you have
+configured the API module to index the Node import code in the 6.x branch.
 
 Bugs and shortcomings
 ------------------------------------------------------------------------------

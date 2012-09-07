@@ -1,5 +1,4 @@
 <?php
-// $Id: enforce_revlog.module,v 1.1.2.1 2010/06/16 16:56:06 nancyw Exp $
 
 /**
  * @file

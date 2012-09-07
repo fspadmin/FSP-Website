@@ -6,14 +6,21 @@
  */
 
 /**
- * Display the "Add to cart" form like the product page.
+ * Displays the "Add to cart" form like the product page.
  */
 class uc_product_handler_field_addtocart extends views_handler_field {
+
+  /**
+   * Overrides views_handler_field::query().
+   */
   function query() {
     $this->ensure_my_table();
     $this->add_additional_fields();
   }
 
+  /**
+   * Overrides views_handler_field::element_type().
+   */
   function element_type() {
     if (isset($this->definition['element type'])) {
       return $this->definition['element type'];
@@ -21,6 +28,9 @@ class uc_product_handler_field_addtocart extends views_handler_field {
     return 'div';
   }
 
+  /**
+   * Overrides views_handler_field::render().
+   */
   function render($values) {
     if (uc_product_is_product($values->{$this->aliases['type']})) {
       $type = node_get_types('type', $values->{$this->aliases['type']});

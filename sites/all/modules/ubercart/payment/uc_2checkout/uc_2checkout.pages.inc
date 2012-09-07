@@ -46,6 +46,9 @@ function uc_2checkout_complete($cart_id = 0) {
     $order->billing_country = $country_id;
   }
 
+  // Save changes to order without it's completion.
+  uc_order_save($order);
+
   if (strtolower($_POST['email']) !== strtolower($order->primary_email)) {
     uc_order_comment_save($order->order_id, 0, t('Customer used a different e-mail address during payment: !email', array('!email' => check_plain($_POST['email']))), 'admin');
   }
@@ -61,9 +64,6 @@ function uc_2checkout_complete($cart_id = 0) {
 
   // Empty that cart...
   uc_cart_empty($cart_id);
-
-  // Save changes to order without it's completion.
-  uc_order_save($order);
 
   // Add a comment to let sales team know this came in through the site.
   uc_order_comment_save($order->order_id, 0, t('Order created through website.'), 'admin');

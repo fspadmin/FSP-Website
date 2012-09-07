@@ -1,4 +1,3 @@
-; $Id: dblog_host_filter.info,v 1.1.2.1 2009/10/09 19:45:26 nancyw Exp $
 
 name = Log hostname filter
 description = Provides hostname filter for "Recent log" report page.
@@ -8,9 +7,9 @@ package = Util
 
 dependencies[] = dblog_filters
 
-; Information added by drupal.org packaging script on 2010-10-28
-version = "6.x-3.0"
+; Information added by drupal.org packaging script on 2012-08-26
+version = "6.x-3.1"
 core = "6.x"
 project = "util"
-datestamp = "1288295149"
+datestamp = "1345944854"
 

@@ -1,12 +1,12 @@
-name = "Send by e-mail"
-description = "Provides the capability to send the web page by e-mail"
+name = "Send by email"
+description = "Provides the capability to send the web page by email"
 dependencies[] = print
 core=6.x
-package = "Printer, e-mail and PDF versions"
+package = "Printer, email and PDF versions"
 
-; Information added by drupal.org packaging script on 2011-08-18
-version = "6.x-1.14"
+; Information added by drupal.org packaging script on 2012-05-24
+version = "6.x-1.17"
 core = "6.x"
 project = "print"
-datestamp = "1313694720"
+datestamp = "1337901688"
 

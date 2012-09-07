@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_marketing.views_default.inc,v 1.1.2.1.2.1 2010/11/18 14:20:40 longwave Exp $
 
 /**
  * @file

@@ -1,5 +1,4 @@
 <?php
-// $Id: date_handler_field_multiple.inc,v 1.1.2.14 2010/03/05 12:02:31 karens Exp $
 
 /**
  * @file
@@ -9,16 +8,19 @@
  * field and formatter handling can extend this class.
  */
 class date_handler_field_multiple extends content_handler_field_multiple {
-  
+
   function option_definition() {
     $options = parent::option_definition();
     $options['repeat'] = array(
       'contains' => array(
         'show_repeat_rule' => array('default' => ''),
       )
-    );  
+    );
     $options['multiple'] = array(
       'contains' => array(
+        'group' => array('default' => TRUE),
+        'multiple_number' => array('default' => ''),
+        'multiple_from' => array('default' => ''),
         'multiple_to' => array('default' => ''),
       )
     );
@@ -28,9 +30,9 @@ class date_handler_field_multiple extends content_handler_field_multiple {
       )
     );
 
-    return $options;  
+    return $options;
   }
-  
+
   /**
    * Provide 'group multiple values' option,
    * adapted to the needs of the Date module.
@@ -38,12 +40,12 @@ class date_handler_field_multiple extends content_handler_field_multiple {
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     unset($form['multiple']);
-    
+
     $field = $this->content_field;
     $options = $this->options;
 
     $form += date_formatter_settings($form_state, $field, $options, TRUE);
-    $form['multiple']['#weight']  = 1;   
+    $form['multiple']['#weight']  = 1;
     $form['multiple']['group'] = array(
       '#title' => t('Group multiple values'),
       '#type' => 'checkbox',
@@ -51,9 +53,9 @@ class date_handler_field_multiple extends content_handler_field_multiple {
       '#description' => t('If unchecked, each item in the field will create a new row, which may appear to cause duplicates. This setting is not compatible with click-sorting in table displays.'),
     );
   }
-    
-  function pre_render($values) {
-    
+
+  function pre_render(&$values) {
+
     // If there are no values to render (displaying a summary, or query returned no results),
     // or if this is not a grouped field, do nothing specific.
     if (isset($this->view->build_info['summary']) || empty($values) || !$this->defer_query) {
@@ -89,7 +91,7 @@ class date_handler_field_multiple extends content_handler_field_multiple {
       $query_fields[] = "$alias.$attributes[column]";
     }
     // Retrieve all values, we limit them in date_prepare_node(),
-    // a function that is used both by the handler and by the 
+    // a function that is used both by the handler and by the
     // node theme to take advantage of formatter settings.
     $where = array('1');
     $query = 'SELECT '. implode(', ', $query_columns) .
@@ -111,16 +113,16 @@ class date_handler_field_multiple extends content_handler_field_multiple {
   }
 
   function render($values) {
-    
+
     // By this time $values is a pseudo node that will be passed
     // to the theme. Add view information to it.
-    $values->date_info = !empty($this->view->date_info) ? $this->view->date_info : new StdClass();
+    $values->date_info = !empty($this->view->date_info) ? $this->view->date_info : new stdClass();
     $values->date_info->date_handler_fields = date_handler_fields($this->view);
-    
+
     // Add the formatter settings to the pseudo node.
     $values->date_info->formatter_settings = $this->options;
     $values->date_info->aliases = $this->aliases;
-    
+
     // If this is not a grouped field, use content_handler_field::render().
     if (!$this->defer_query) {
       return parent::render($values);
@@ -140,7 +142,7 @@ class date_handler_field_multiple extends content_handler_field_multiple {
       $node->vid = $values->{$this->aliases['vid']};
       $items = $this->field_values[$vid];
       $node->$field_name = $items;
-      
+
       // Some formatters need to behave differently depending on the build_mode
       // (for instance: preview), so we provide one.
       $node->build_mode = NODE_BUILD_NORMAL;
@@ -176,8 +178,9 @@ class date_handler_field_multiple extends content_handler_field_multiple {
       }
     }
 
-    return '';    
-    
+    return '';
+
   }
 
 }
+

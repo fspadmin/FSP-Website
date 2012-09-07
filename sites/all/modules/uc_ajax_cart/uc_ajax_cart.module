@@ -12,10 +12,8 @@ define('UC_AJAX_CART_DEFAULT_EFFECT', 1);
 define('UC_AJAX_CART_DEFAULT_PANE_EFFECT_DURATION', 200) ;
 
 include 'uc_ajax_cart.php';
-include 'uc_modules_add_to_cart.php';
 
 
-_uc_ajax_cart_load_res();
 
 function uc_ajax_cart_perm() {
   return array('show uncached cart', 'use cart');
@@ -89,16 +87,12 @@ function uc_ajax_cart_menu() {
 
 function uc_ajax_cart_callback($op, $nid = NULL, $data = NULL) {
 
-  $cacheEnabled = variable_get('cache', 0);
-  if ($cacheEnabled > 0 && !$user->uid) {
-    $page = request_uri();
-    global $base_root;
-    cache_clear_all($base_root . 'uc_ajax_cart/show', 'cache_page');
-    cache_clear_all($base_root . 'uc_ajax_cart/remove', 'cache_page');
-    cache_clear_all($base_root . 'uc_ajax_cart/show-cart-view', 'cache_page');
-    cache_clear_all($base_root . 'uc_ajax_cart/update', 'cache_page');
-    cache_clear_all($base_root . 'uc_ajax_cart/link', 'cache_page');
-  }
+  // No caching for this URL.
+  global $conf;
+  $conf['cache'] = FALSE;
+  header('Cache-Control: private, no-cache, no-store, must-revalidate, max-age=0');
+  header('Pragma: no-cache');
+
 
   switch ($op) {
     case 'remove':
@@ -179,7 +173,7 @@ function uc_ajax_cart_add_item($data) {
 
   $formValues = array('values' => $data);
 
-  drupal_execute($formID, $formValues, $product);
+  drupal_execute($data['form_id'], $formValues, $product);
   return;
 }
 
@@ -271,9 +265,22 @@ function uc_ajax_cart_block($op = 'list', $delta = 0, $edit = array()) {
    }
 }
 
+function uc_ajax_cart_get_messages() {
+  $defaults = array(
+    'ADD_TITLE' => t('Please wait'),
+    'ADD_MESSAGES' => array(t('Adding product to cart...')),
+    'REMOVE_TITLE' => t('Please wait'),
+    'REMOVE_MESSAGES' => array(t('Removing product from cart...')),
+    'UPDATE_TITLE' => t('Please wait'),
+    'UPDATE_MESSAGES' => array(t('Updating cart...')),
+    'CART_OPERATION' => t('Cart'),
+  );
+  $messages = variable_get('uc_ajax_cart_messages', array());
+  $messages += $defaults;
+  return $messages;
+}
 
-
-function _uc_ajax_cart_load_res() {
+function uc_ajax_cart_init() {
   static $loaded;
 
   if (isset($loaded) && $loaded === TRUE) return;
@@ -289,18 +296,11 @@ function _uc_ajax_cart_load_res() {
   $settings = array(
     'CALLBACK' => url(UC_AJAX_CART_ADD_CALLBACK),
     'SHOW_CALLBACK' => url(UC_AJAX_CART_SHOW_CALLBACK) ,
-    'ADD_TITLE' => t('Please wait'), // Message's title displayed when a product is being added to cart.
-    'ADD_MESSAGE' => t('Add product to cart'), // Message displayed when a product is being added to cart.
-    'REMOVE_TITLE' => t('Please wait'), // Message's title displayed when a product is being removed to cart.
-    'REMOVE_MESSAGE' => t('Remove product from cart'), // Message displayed when a product is being removed from cart.
     'CART_LINK_CALLBACK' => url(UC_AJAX_CART_LINK_CALLBACK),
     'BLOCK_UI' => (int) variable_get('ajax_cart_message_effect' , UC_AJAX_CART_DEFAULT_EFFECT),
     'TIMEOUT' => (int) variable_get('ajax_cart_message_timeout', UC_AJAX_CART_DEFAULT_TIMEOUT),
     'UPDATE_CALLBACK' => url(UC_AJAX_CART_UPDATE_CALLBACK),
-    'UPDATE_MESSAGE' => t('Update cart'), // Message displayed when a product is being updated in cart.
-    'SESSION' => session_id(),
     'UPDATE' => variable_get('uc_ajax_cart_closed_update',0),
-    'CART_OPERATION' => t('Cart'), // Message's title displayed when a product is being added to cart.
     'CART_VIEW_ON' => variable_get('uc_ajax_cart_cart_view', 0),
     'SHOW_VIEW_CALLBACK' => url(UC_AJAX_CART_SHOW_VIEW_CALLBACK),
     'TRACK_CLOSED_STATE' => variable_get('uc_ajax_cart_track_closed_state', 0),
@@ -309,7 +309,8 @@ function _uc_ajax_cart_load_res() {
     'CART_PANE_EFFECT_DURATION' => (int) variable_get('uc_ajax_cart_pane_effect_duration', UC_AJAX_CART_DEFAULT_PANE_EFFECT_DURATION),
     'HIDE_CART_OPERATIONS'=> variable_get('uc_ajax_cart_hide_cart_op_msgs', FALSE),
     'COLLAPSIBLE_CART' => variable_get('uc_ajax_cart_closed', 0),
-   );
+  );
+  $settings += uc_ajax_cart_get_messages();
 
   if (($include_exclude = variable_get('uc_ajax_cart_include_exclude', 0)) && ($ajaxify_class = variable_get('uc_ajax_cart_ajaxify_class', ''))) {
     $settings['AJAXIFY_CLASS_EXCLUDES'] = ($include_exclude - 1);
@@ -406,4 +407,48 @@ function uc_ajax_cart_theme_registry_alter(&$theme_registry) {
  */
 function  uc_ajax_uc_empty_cart() {
   return '<p id="cart-form-pane">'. t('There are no products in your shopping cart.') .'</p>';
+}
+
+
+/**
+* Implements hook_exit().
+*
+* Code from CacheExclude - http://drupal.org/project/cacheexclude
+*/
+function uc_ajax_cart_exit() {
+  global $base_root;
+
+  $pages = array('uc_ajax_cart', UC_AJAX_CART_ADD_CALLBACK, UC_AJAX_CART_REMOVE_CALLBACK, UC_AJAX_CART_SHOW_CALLBACK, UC_AJAX_CART_LINK_CALLBACK, UC_AJAX_CART_UPDATE_CALLBACK, UC_AJAX_CART_SHOW_VIEW_CALLBACK);
+  $this_page = request_uri();
+  foreach ($pages as $page) {
+    if ($page && strstr($this_page, $page) !== FALSE) {
+      cache_clear_all($base_root . $this_page, 'cache_page');
+      return;
+    }
+  }
+}
+
+/**
+ * Implements hook_add_to_cart().
+ */
+function uc_ajax_cart_add_to_cart($nid, $qty, $data) {
+  if (module_exists('uc_cart_links')) {
+    $atts = uc_product_get_attributes($nid);
+    if (!is_array($atts) || count($atts) == 0) return;
+    if (!is_array($data) || !is_array($data['attributes'])) {
+      $data['attributes'] = array();
+    }
+    $attsSubmitted = $data['attributes'];
+    foreach ($atts as $key => $att) {
+      if (!$att->required) {
+        continue ;
+      }
+      if (!isset($data['attributes'][$att->aid]) || empty($data['attributes'][$att->aid])) {
+        return array(array(
+          'success' => FALSE,
+          'message' => t('You must specify an option for !attribute', array('!attribute'=>$att->name)),
+        ));
+      }
+    }
+  }
 }

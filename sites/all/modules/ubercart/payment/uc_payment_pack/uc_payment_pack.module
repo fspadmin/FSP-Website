@@ -122,7 +122,7 @@ function uc_payment_method_other($op, &$order) {
 /**
  * Form to collect additional information needed by payment method "Other".
  *
- * @see theme_uc_payment_method_other_form().
+ * @see theme_uc_payment_method_other_form()
  * @ingroup forms
  */
 function uc_payment_method_other_form($form_state, $order) {
@@ -139,7 +139,7 @@ function uc_payment_method_other_form($form_state, $order) {
 /**
  * Theme function for uc_payment_method_other_form().
  *
- * @see uc_payment_method_other_form().
+ * @see uc_payment_method_other_form()
  * @ingroup themeable
  */
 function theme_uc_payment_method_other_form($form) {
@@ -282,7 +282,7 @@ function uc_payment_method_cod($op, &$order) {
  * Form to collect additional information needed by the "Cash on Delivery"
  * payment method.
  *
- * @see theme_uc_payment_method_cod_form().
+ * @see theme_uc_payment_method_cod_form()
  * @ingroup forms
  */
 function uc_payment_method_cod_form($form_state, $order) {

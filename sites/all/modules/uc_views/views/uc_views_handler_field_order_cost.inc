@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_field_order_cost.inc,v 1.1.2.1 2010/01/12 15:17:29 hanoii Exp $
 
 /**
  * @file
@@ -20,7 +19,7 @@ class uc_views_handler_field_order_cost extends uc_views_handler_field_money_amo
 
   function render($values) {
     $this->field_alias = 'order_cost';
-    $cost = db_result(db_query("SELECT SUM(cost) FROM {uc_order_products} WHERE order_id = %d", $values->{$this->aliases['order_id']}));
+    $cost = db_result(db_query("SELECT SUM(qty * cost) FROM {uc_order_products} WHERE order_id = %d", $values->{$this->aliases['order_id']}));
     $values->{$this->field_alias} = $cost;
     return parent::render($values);
   }

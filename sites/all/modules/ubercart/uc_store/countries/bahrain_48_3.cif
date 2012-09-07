@@ -25,7 +25,14 @@ function bahrain_install() {
   // an address format string as the second.  Documentation on address formats
   // is available at:
   // http://www.ubercart.org/ubercart_users_guide/country_settings#address_format_docs
-  uc_set_address_format(48, "!company\r\n!first_name !last_name\r\n!street1 !street2\r\n!zone_name !postal_code\r\n\r\n!country_name_if");
+  uc_set_address_format(
+    48,
+    "!company\r\n".
+    "!first_name !last_name\r\n".
+    "!street1 !street2\r\n".
+    "!zone_name !postal_code\r\n".
+    "!country_name_if"
+  );
 }
 
 function bahrain_update($version) {

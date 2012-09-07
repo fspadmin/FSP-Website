@@ -1,4 +1,4 @@
-$content[type]  = array (
+$content[type]  = array(
   'name' => 'Event',
   'type' => 'event',
   'description' => 'Events have a start date and an optional end date.',
@@ -6,8 +6,8 @@ $content[type]  = array (
   'body_label' => 'Body',
   'min_word_count' => '0',
   'help' => '',
-  'node_options' => 
-  array (
+  'node_options' =>
+  array(
     'status' => true,
     'promote' => true,
     'sticky' => false,
@@ -21,9 +21,9 @@ $content[type]  = array (
   'modified' => '1',
   'locked' => '0',
 );
-$content[fields]  = array (
-  0 => 
-  array (
+$content[fields]  = array(
+  0 =>
+  array(
     'label' => 'Date',
     'field_name' => 'field_event_date',
     'type' => 'date',
@@ -38,11 +38,11 @@ $content[fields]  = array (
     'input_format_custom' => '',
     'year_range' => '-3:+3',
     'increment' => '15',
-    'advanced' => 
-    array (
+    'advanced' =>
+    array(
       'label_position' => 'above',
-      'text_parts' => 
-      array (
+      'text_parts' =>
+      array(
         'year' => 0,
         'month' => 0,
         'day' => 0,
@@ -52,8 +52,8 @@ $content[fields]  = array (
       ),
     ),
     'label_position' => 'above',
-    'text_parts' => 
-    array (
+    'text_parts' =>
+    array(
     ),
     'description' => '',
     'group' => false,
@@ -61,8 +61,8 @@ $content[fields]  = array (
     'multiple' => '0',
     'repeat' => 0,
     'todate' => 'optional',
-    'granularity' => 
-    array (
+    'granularity' =>
+    array(
       'year' => 'year',
       'month' => 'month',
       'day' => 'day',
@@ -83,58 +83,58 @@ $content[fields]  = array (
     'op' => 'Save field settings',
     'module' => 'date',
     'widget_module' => 'date',
-    'columns' => 
-    array (
-      'value' => 
-      array (
+    'columns' =>
+    array(
+      'value' =>
+      array(
         'type' => 'varchar',
         'length' => 20,
         'not null' => false,
         'sortable' => true,
       ),
-      'value2' => 
-      array (
+      'value2' =>
+      array(
         'type' => 'varchar',
         'length' => 20,
         'not null' => false,
         'sortable' => true,
       ),
-      'timezone' => 
-      array (
+      'timezone' =>
+      array(
         'type' => 'varchar',
         'length' => 50,
         'not null' => false,
         'sortable' => true,
       ),
-      'offset' => 
-      array (
+      'offset' =>
+      array(
         'type' => 'int',
         'not null' => false,
         'sortable' => true,
       ),
-      'offset2' => 
-      array (
+      'offset2' =>
+      array(
         'type' => 'int',
         'not null' => false,
         'sortable' => true,
       ),
     ),
-    'display_settings' => 
-    array (
-      'label' => 
-      array (
+    'display_settings' =>
+    array(
+      'label' =>
+      array(
         'format' => 'above',
       ),
-      'teaser' => 
-      array (
+      'teaser' =>
+      array(
         'format' => 'default',
       ),
-      'full' => 
-      array (
+      'full' =>
+      array(
         'format' => 'default',
       ),
-      4 => 
-      array (
+      4 =>
+      array(
         'format' => 'default',
       ),
     ),

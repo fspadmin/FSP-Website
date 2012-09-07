@@ -1,5 +1,4 @@
 <?php
-// $Id: image_plugin_argument_validate_image_size.inc,v 1.2 2009/08/26 18:41:44 joachim Exp $
 
 /**
  * @file

@@ -1,11 +1,10 @@
 <?php
-// $Id: uc_views_attribute_handler_field_order_product_attribute.inc,v 1.1.2.2 2010/01/12 20:07:04 hanoii Exp $
 
 /**
  * Field handler to provide a human-readable version of the selected combination of attributes
  */
 class uc_views_attribute_handler_field_order_product_attribute extends views_handler_field {
- 
+
   /**
    * Defines a few default options for the combination field
    */

@@ -16,7 +16,7 @@ function views_bulk_operations_script_action(&$object, $context) {
     $msg = 'An attempt to execute arbitrary PHP script action by user <a href="user/!uid">%user</a> was blocked because of lack of permission.';
     $arg = array('%user' => $user->name, '!uid' => $user->uid);
     drupal_set_message(t($msg, $arg), 'error', FALSE);
-    watchdog('actions', $msg, $arg, WATCHDOG_ERROR);
+    watchdog('vbo', $msg, $arg, WATCHDOG_ERROR);
     return;
   }
   $return = eval($context['script']);
@@ -32,7 +32,7 @@ function views_bulk_operations_script_action(&$object, $context) {
       );
     }
     drupal_set_message(t($msg, $arg), 'error', FALSE);
-    watchdog('actions', $msg, $arg, WATCHDOG_ERROR);
+    watchdog('vbo', $msg, $arg, WATCHDOG_ERROR);
   }
 }
 

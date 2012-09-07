@@ -1,0 +1,116 @@
+<?php
+
+/**
+ * @file
+ * Provides block to show blog of node's author.
+ */
+
+/**
+ * Implements hook_block();
+ */
+function related_blog_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      return related_blog_block_list();
+
+    case 'view':
+      return related_blog_block_view($delta);
+
+    case 'configure':
+      return related_blog_block_configure($delta);
+
+    case 'save':
+      return related_blog_block_save($delta, $edit);
+  }
+}
+
+/**
+ * Function for related_blog_block(op = 'list').
+ */
+function related_blog_block_list() {
+  return array(
+    'related_blog' => array(
+      'info' => t('Util: Related Blog'),
+      'visibility' => 1,    /* Show only on. */
+      'pages' => 'node/*',
+      'cache' => BLOCK_NO_CACHE,
+      ),
+    );
+}
+
+/**
+ * Function for related_blog_block(op = 'view').
+ */
+function related_blog_block_view($delta = 0) {
+  $block = array();
+
+  switch ($delta) {
+    case 'related_blog':
+      // Make sure it makes sense to show this.
+      // That is, not on node add/edit, etc.
+      $extra = arg(2);
+      if ($extra) {
+        return $block;
+      }
+
+      // Get configured content types.
+      $types = variable_get('related_blog_types', array());
+
+      // Get the currently displayed node.
+      $node = menu_get_object();
+
+      // Make sure it's one of our types.
+      if (in_array($node->type,  $types)) {
+        $account = user_load(array('uid' => $node->uid));
+
+        // Get the current title (note that this is already sanitized).
+        $title = drupal_get_title();
+
+        // Make sure the blog code is loaded.
+        module_load_include('inc', 'blog', 'blog.pages');
+
+        // Call the blog page code.
+        $block['content'] = blog_page_user($account);
+        
+        // Restore the title as blog_page_user will screw it up.
+        drupal_set_title($title);
+      }
+
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Function for related_blog_block(op = 'configure').
+ */
+function related_blog_block_configure($delta = 0) {
+  $form = array();
+
+  switch ($delta) {
+    case 'related_blog':
+      $form['types'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Show on these content types'),
+        '#default_value' => variable_get('related_blog_types', array()),
+        '#options' => node_get_types('names'),
+        '#attributes' => array('class' => 'container-inline'),
+        );
+      break;
+}
+
+  return $form;
+}
+
+/**
+ * Function for related_blog_block(op = 'save').
+ */
+function related_blog_block_save($delta = 0, $edit = array()) {
+  switch ($delta) {
+    case 'related_blog':
+      variable_set('related_blog_types', $edit['types']);
+      return;
+  }
+}
+

@@ -1,5 +1,4 @@
 <?php
-// $Id: dblog_ext.admin.inc,v 1.1.2.2.2.1 2009/12/29 18:31:59 nancyw Exp $
 
 /**
  * Menu callback; displays a listing of log messages.

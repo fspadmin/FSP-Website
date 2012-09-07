@@ -17,5 +17,5 @@
      Ex: to have the user visit their edit page, with a final destination of
          node/foo, you would use: user/%uid/edit?destination=node/foo
 
-3. A new 'Delete unvalidated users after' feature has been added.  This feature
+3. A new 'Delete unvalidated users after' feature has been added. This feature
    is handy for automatically cleaning up spam registrations.

@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Provides summaries of forms and fieldsets to give "at-a-glance" settings
- * information.
+ * Provides summaries of forms and fieldsets.
  */
 
 /**
- * Summarizes the elements in a form array, recursively building summaries of
- * items nested in fieldsets if applicable.
+ * Summarizes the elements in a form array.
+ *
+ * Recursively builds summaries of items nested in fieldsets if applicable.
  *
  * @param $form
  *   The form array to summarize.
@@ -102,7 +102,7 @@ function summarize_element($form, $title = FALSE) {
           }
           // Return an item list of the selected options.
           return array(array(
-            'data' => $form['#title'].':',
+            'data' => $form['#title'] . ':',
             'children' => $options,
           ));
         }
@@ -136,8 +136,7 @@ function summarize_null($form) {
 }
 
 /**
- * Return the correct summary string for a checkbox element based on its
- *   current value.
+ * Returns the summary string for a checkbox element based on its current value.
  *
  * @param $true
  *   The summary string to use if the checkbox has been checked.

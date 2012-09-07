@@ -170,7 +170,6 @@ function uc_taxes_order($op, $arg1, $arg2) {
         ),
       );
       if (is_array($arg1->line_items)) {
-        //drupal_set_message('<pre>'. var_export($arg1->line_items, TRUE) .'</pre>');
         foreach ($arg1->line_items as $i => $line) {
           if ($line['type'] == 'tax') {
             $delete = TRUE;
@@ -439,7 +438,7 @@ function uc_taxes_calculate_tax($order) {
 
   $predicates = ca_load_trigger_predicates('calculate_taxes');
   foreach (uc_taxes_rate_load() as $tax_rate) {
-    $tax = clone ($tax_rate);
+    $tax = clone $tax_rate;
     if ($use_same_rates) {
       foreach ((array)$order->line_items as $old_line) {
         if ($old_line['type'] == 'tax' && $old_line['data']['tax_id'] == $tax->id) {
@@ -547,7 +546,13 @@ function uc_taxes_apply_tax($order, $tax) {
         continue;
       }
       if (in_array($line_item['type'], $taxed_line_items)) {
-        $taxable_amount += $line_item['amount'];
+        $callback = _line_item_data($line_item['type'], 'tax_adjustment');
+        if (isset($callback) && function_exists($callback)) {
+          $taxable_amount += $callback($line_item['amount'], $order, $tax) / $tax->rate;
+        }
+        else {
+          $taxable_amount += $line_item['amount'];
+        }
       }
     }
   }

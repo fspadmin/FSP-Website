@@ -342,16 +342,25 @@ function uc_usps_quote($products, $details, $method) {
   // filled out the destination address, so check to see whether the address
   // has all needed fields. If not, abort.
   $destination = (object) $details;
-  if (empty($destination->zone)        ||
-      empty($destination->postal_code) ||
-      empty($destination->country)       ) {
+
+  // Country code is always needed.
+  if (empty($destination->country)) {
     // Skip this shipping method.
     return array();
   }
 
+  // Shipments to the US also need zone and postal_code.
+  if (($destination->country == 840) &&
+      (empty($destination->zone) || empty($destination->postal_code))) {
+    // Skip this shipping method.
+    return array();
+  }
+
+  // USPS Production server.
   $connection_url = 'http://production.shippingapis.com/ShippingAPI.dll';
 
-  $services = array();
+  // Initialize $services to prevent PHP notices here and in uc_quote.
+  $services['data'] = array('debug' => NULL, 'error' => array());
   $addresses = array((array)variable_get('uc_quote_store_default_address', new stdClass()));
   $packages = _uc_usps_package_products($products, $addresses);
   if (!count($packages)) {
@@ -414,6 +423,10 @@ function uc_usps_quote($products, $details, $method) {
             foreach ($package->Service as $service) {
               $id = (string)$service['ID'];
               $services[$id]['label'] = t('U.S.P.S. @service', array('@service' => (string)$service->SvcDescription));
+              // Markup rate before customer sees it
+              if (!isset($services[$id]['rate'])) {
+                $services[$id]['rate'] = 0;
+              }
               $services[$id]['rate'] += uc_usps_markup((string)$service->Postage);
             }
           }
@@ -421,7 +434,7 @@ function uc_usps_quote($products, $details, $method) {
             foreach ($package->Postage as $postage) {
               $classid = (string)$postage['CLASSID'];
               if ($classid === '0') {
-                if ((string)$postage->MailService == "First-Class Mail® Package") {
+                if ((string)$postage->MailService == "First-Class Mail® Parcel") {
                   $classid = 'zeroParcel';
                 }
                 elseif ((string)$postage->MailService == "First-Class Mail® Letter") {
@@ -430,6 +443,9 @@ function uc_usps_quote($products, $details, $method) {
                 else {
                   $classid = 'zero';
                 }
+              }
+              if (!isset($services[$classid]['rate'])) {
+                $services[$classid]['rate'] = 0;
               }
               $services[$classid]['label'] = t('U.S.P.S. @service', array('@service' => (string)$postage->MailService));
               // Markup rate before customer sees it
@@ -471,7 +487,18 @@ function uc_usps_quote($products, $details, $method) {
     }
   }
 
+  // Separate debug data out of $services.  This is necessary because
+  // $services['data'] is not sortable by a 'rate' key, so it has to be
+  // kept separate from the reset of the $services array until after the sort.
+  $debug_data = $services['data'];
+  unset($services['data']);
+
   uasort($services, 'uc_quote_price_sort');
+
+  if (isset($debug_data['debug']) ||
+      (isset($debug_data['error']) && count($debug_data['error']))) {
+    $services['data'] = $debug_data;
+  }
 
   return $services;
 }
@@ -488,8 +515,13 @@ function uc_usps_quote($products, $details, $method) {
  * @ingroup themeable
  */
 function theme_uc_usps_option_label($service, $packages) {
-  // Start with logo
-  $output = '<img class="usps-logo" src="'. url(drupal_get_path('module', 'uc_usps')) .'/uc_usps_logo.gif" alt="'. t('USPS Logo') .'" /> ';
+  // Start with USPS logo
+  $output  = theme('image',
+    drupal_get_path('module', 'uc_usps') . '/uc_usps_logo.gif',
+    t('USPS logo'),
+    '',
+    array('class' => 'usps-logo')
+  );
 
   // Add USPS service name, removing the first nine characters
   // (== 'U.S.P.S. ') because these replicate the logo image

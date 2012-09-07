@@ -43,7 +43,8 @@ function uc_shipping_order_packages($order) {
     $rows[] = $row;
   }
   if (empty($rows)) {
-    $rows[][] = array('data' => t("This order's products have not been organized into packages."), 'colspan' => 11);
+    drupal_set_message(t("This order's products have not been organized into packages."));
+    drupal_goto('admin/store/orders/' . $order->order_id . '/packages/new');
   }
   $output = theme('table', $header, $rows);
   $result = db_query("SELECT op.order_product_id, CASE WHEN COUNT(pp.qty) = 0 THEN 0 ELSE SUM(op.qty) / COUNT(pp.qty) END AS total, SUM(pp.qty) AS packaged FROM {uc_order_products} AS op LEFT JOIN {uc_packaged_products} AS pp ON op.order_product_id = pp.order_product_id WHERE op.order_id = %d AND op.data LIKE '%%%s%%' GROUP BY op.order_product_id HAVING SUM(pp.qty) IS NULL OR CASE WHEN COUNT(pp.qty) = 0 THEN 0 ELSE SUM(op.qty) / COUNT(pp.qty) END > SUM(pp.qty)", $order->order_id, 's:9:"shippable";s:1:"1";');
@@ -93,11 +94,13 @@ function uc_shipping_new_package($form_state, $order) {
   $shipping_type_options = uc_quote_shipping_type_options();
   foreach ($shipping_types_products as $shipping_type => $products) {
     $form['shipping_types'][$shipping_type] = array(
-      '#type' => 'fieldset',
-      '#title' => isset($shipping_type_options[$shipping_type]) ? $shipping_type_options[$shipping_type] : ucwords(str_replace('_', ' ', $shipping_type)),
+      '#type'        => 'fieldset',
+      '#title'       => isset($shipping_type_options[$shipping_type]) ?
+                        $shipping_type_options[$shipping_type]        :
+                        ucwords(str_replace('_', ' ', $shipping_type)),
       '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#weight' => $shipping_type_weights[$shipping_type],
+      '#collapsed'   => FALSE,
+      '#weight'      => isset($shipping_type_weights[$shipping_type]) ? $shipping_type_weights[$shipping_type] : 0,
     );
     foreach ($products as $product) {
       $unboxed_qty = $product->qty;
@@ -437,7 +440,8 @@ function uc_shipping_order_shipments($order) {
     $rows[] = $row;
   }
   if (empty($rows)) {
-    $rows[] = array(array('data' => t('No shipments have been made for this order.'), 'colspan' => 12));
+    drupal_set_message(t('No shipments have been made for this order.'));
+    drupal_goto('admin/store/orders/' . $order->order_id . '/shipments/new');
   }
   $output = theme('table', $header, $rows);
   $packages = db_result(db_query("SELECT COUNT(*) FROM {uc_packages} WHERE order_id = %d AND sid IS NULL", $order->order_id));
@@ -812,19 +816,29 @@ function uc_shipping_shipment_edit($form_state, $order, $shipment) {
     '#collapsible' => TRUE,
   );
 
-  // Determine shipping option chosen by the customer
-  $method  = $order->quote['method'];
-  $methods = module_invoke_all('shipping_method');
-  if (isset($methods[$method])) {
-    $services = $methods[$method]['quote']['accessorials'];
-    $method   = $services[$order->quote['accessorials']];
+  // Determine shipping option chosen by the customer.
+  $message = '';
+  if (isset($order->quote['method'])) {
+    // Order has a quote attached.
+    $method  = $order->quote['method'];
+    $methods = module_invoke_all('uc_shipping_method');
+    if (isset($methods[$method])) {
+      // Quote is from a currently-active shipping method.
+      $services = $methods[$method]['quote']['accessorials'];
+      $method   = $services[$order->quote['accessorials']];
+    }
+    $message = t('Customer selected "@method" as the shipping method and paid @rate', array('@method' => $method, '@rate' => uc_currency_format($order->quote['rate'])));
+  }
+  else {
+    // No quotes for this order.
+    $message = t('There are no shipping quotes attached to this order. Customer was not charged for shipping.');
   }
 
-  // Inform user of customer's shipping choice
+  // Inform administrator of customer's shipping choice.
   $form['shipment']['shipping_choice'] = array(
     '#type'   => 'markup',
     '#prefix' => '<div>',
-    '#value' => t('Customer selected "@method" as the shipping method and paid @rate', array('@method' => $method, '@rate' => uc_currency_format($order->quote['rate']))),
+    '#value'  => $message,
     '#suffix' => '</div>',
   );
 

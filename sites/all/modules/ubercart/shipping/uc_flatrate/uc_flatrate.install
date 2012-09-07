@@ -56,7 +56,7 @@ function uc_flatrate_schema() {
         'not null' => TRUE,
       ),
       'title' => array(
-        'description' => 'The method title, displayed on adminstration pages.',
+        'description' => 'The method title, displayed on administration pages.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,

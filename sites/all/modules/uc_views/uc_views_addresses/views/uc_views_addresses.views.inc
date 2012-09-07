@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_addresses.views.inc,v 1.1.2.1 2009/10/07 11:43:21 madsph Exp $
 /**
  * @file
  * Created with http://drupal.org/project/code_gen
@@ -345,7 +344,7 @@ function uc_views_addresses_views_data() {
     'field' => 'uid',
   );
 
-  
+
   return $data;
 }
 

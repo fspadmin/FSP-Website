@@ -26,7 +26,9 @@ function uc_product_classes_features_export($data, &$export, $module_name = '') 
   }
 
   // Create a pipe for the CCK fields and variables to be exported.
-  $pipe = array('node' => $data);
+  // This used to just return $pipe = array('node' => $data); but this
+  // stopped working in Features 6.x-1.2. See http://drupal.org/node/1404486
+  $pipe = node_features_export($data, $export, $module_name);
 
   // If strongarm is available, export the shippable and image settings.
   if (module_exists('strongarm')) {
@@ -63,7 +65,7 @@ function uc_product_classes_features_revert($module) {
         // Our existing fields ($fields) needs to be the first argument here,
         // so only fields that don't exist in code can be de-activated.
         if ($deleted_fields = array_diff(content_features_fields_normal($type_name), content_features_fields_default($type_name))) {
-          foreach($deleted_fields as $field_name) {
+          foreach ($deleted_fields as $field_name) {
             db_query("UPDATE {". content_instance_tablename() ."} SET widget_active = 0 WHERE field_name = '%s' AND type_name = '%s'", $field_name, $type_name);
           }
         }

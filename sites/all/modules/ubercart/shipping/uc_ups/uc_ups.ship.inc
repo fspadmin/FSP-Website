@@ -371,62 +371,61 @@ function uc_ups_shipment_request($packages, $origin, $destination, $ups_service)
 
   $package_schema = '';
   foreach ($packages as $package) {
+    // Determine length conversion factor and weight conversion factor
+    // for this shipment
+    $length_factor = uc_length_conversion($package->length_units, variable_get('uc_ups_unit_system', variable_get('uc_length_unit', 'in')));
+    switch ($ups_units) {
+      case 'in':
+        $weight_factor = uc_weight_conversion($package->weight_units, 'lb');
+        break;
+      case 'cm':
+        $weight_factor = uc_weight_conversion($package->weight_units, 'kg');
+        break;
+    }
+
     $qty = $package->qty;
     for ($i = 0; $i < $qty; $i++) {
       $package_type = array('code' => $package->pkg_type, 'description' => $pkg_types[$package->pkg_type]);
       $package_schema .= "<Package>";
-        $package_schema .= "<PackagingType>";
-          $package_schema .= "<Code>". $package_type['code'] ."</Code>";
-        $package_schema .= "</PackagingType>";
-        if ($package->pkg_type == '02' && $package->length && $package->width && $package->height) {
-          if ($package->length < $package->width) {
-            list($package->length, $package->width) = array($package->width, $package->length);
-          }
-          $package_schema .= "<Dimensions>";
-            $package_schema .= "<UnitOfMeasurement>";
-            $conversion = uc_length_conversion($package->length_units, variable_get('uc_ups_unit_system', variable_get('uc_length_unit', 'in')));
-            $package_schema .= "<Code>". strtoupper(variable_get('uc_ups_unit_system', variable_get('uc_length_unit', 'in'))) ."</Code>";
-            $package_schema .= "</UnitOfMeasurement>";
-            $package_schema .= "<Length>". (floor($package->length * $conversion) + 1) ."</Length>";
-            $package_schema .= "<Width>". (floor($package->width * $conversion) + 1) ."</Width>";
-            $package_schema .= "<Height>". (floor($package->height * $conversion) + 1) ."</Height>";
-          $package_schema .= "</Dimensions>";
+      $package_schema .=   "<PackagingType>";
+      $package_schema .=     "<Code>" . $package_type['code'] . "</Code>";
+      $package_schema .=   "</PackagingType>";
+      if ($package->pkg_type == '02' && $package->length && $package->width && $package->height) {
+        if ($package->length < $package->width) {
+          list($package->length, $package->width) = array($package->width, $package->length);
         }
-        $size = $package->length * $conversion + 2 * $conversion * ($package->width + $package->height);
-        switch ($ups_units) {
-          case 'in':
-            $conversion = uc_weight_conversion($package->weight_units, 'lb');
-            $units = 'LBS';
-            $unit_name = 'Pounds';
-            break;
-          case 'cm':
-            $conversion = uc_weight_conversion($package->weight_units, 'kg');
-            $units = 'KGS';
-            $unit_name = 'Kilograms';
-            break;
-        }
-        $weight = max(1, $package->weight * $conversion);
-        $package_schema .= "<PackageWeight>";
-          $package_schema .= "<UnitOfMeasurement>";
-            $package_schema .= "<Code>$units</Code>";
-            $package_schema .= "<Description>$unit_name</Description>";
-          $package_schema .= "</UnitOfMeasurement>";
-          $package_schema .= "<Weight>". number_format($weight, 1, '.', '') ."</Weight>";
-        $package_schema .= "</PackageWeight>";
-        if ($size > 130 && $size <= 165) {
-          $package_schema .= "<LargePackageIndicator/>";
-        }
-        $package_schema .= "<PackageServiceOptions>";
-          $package_schema .= "<InsuredValue>";
-            $package_schema .= "<CurrencyCode>". variable_get('uc_currency_code', 'USD') ."</CurrencyCode>";
-            $package_schema .= "<MonetaryValue>". number_format($package->value, 2, '.', '') ."</MonetaryValue>";
-          $package_schema .= "</InsuredValue>";
-        $package_schema .= "</PackageServiceOptions>";
+        $package_schema .= "<Dimensions>";
+        $package_schema .=   "<UnitOfMeasurement>";
+        $package_schema .=     "<Code>" . strtoupper(variable_get('uc_ups_unit_system', variable_get('uc_length_unit', 'in'))) . "</Code>";
+        $package_schema .=   "</UnitOfMeasurement>";
+        $package_schema .=   "<Length>" . (floor($package->length * $length_factor) + 1) . "</Length>";
+        $package_schema .=   "<Width>" . (floor($package->width * $length_factor) + 1) . "</Width>";
+        $package_schema .=   "<Height>" . (floor($package->height * $length_factor) + 1) . "</Height>";
+        $package_schema .= "</Dimensions>";
+      }
+      $size = $package->length * $length_factor + 2 * $length_factor * ($package->width + $package->height);
+      $weight = max(1, $package->weight * $weight_factor);
+      $package_schema .=   "<PackageWeight>";
+      $package_schema .=     "<UnitOfMeasurement>";
+      $package_schema .=       "<Code>" . $units . "</Code>";
+      $package_schema .=       "<Description>" . $unit_name . "</Description>";
+      $package_schema .=     "</UnitOfMeasurement>";
+      $package_schema .=     "<Weight>" . number_format($weight, 1, '.', '') . "</Weight>";
+      $package_schema .=   "</PackageWeight>";
+      if ($size > 130 && $size <= 165) {
+        $package_schema .= "<LargePackageIndicator/>";
+      }
+      $package_schema .=   "<PackageServiceOptions>";
+      $package_schema .=     "<InsuredValue>";
+      $package_schema .=       "<CurrencyCode>" . variable_get('uc_currency_code', 'USD') . "</CurrencyCode>";
+      $package_schema .=       "<MonetaryValue>" . number_format($package->value, 2, '.', '') . "</MonetaryValue>";
+      $package_schema .=     "</InsuredValue>";
+      $package_schema .=   "</PackageServiceOptions>";
       $package_schema .= "</Package>";
     }
   }
 
-  $schema = uc_ups_access_request() ."
+  $schema = uc_ups_access_request() . "
 <?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <ShipmentConfirmRequest xml:lang=\"en-US\">
   <Request>

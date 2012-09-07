@@ -21,7 +21,7 @@ function uc_stock_settings_form() {
     '#type' => 'textfield',
     '#title' => t('Notification recipients'),
     '#default_value' => variable_get('uc_stock_threshold_notification_recipients', uc_store_email()),
-    '#description' => t('The list of comma seperated email addresses that will receive the notification.'),
+    '#description' => t('The list of comma separated email addresses that will receive the notification.'),
   );
 
   $form['uc_stock_threshold_notification_subject'] = array(
@@ -70,7 +70,7 @@ function uc_stock_report() {
   $result = pager_query($sql . tablesort_sql($header), $page_size, 0, NULL);
   while ($stock = db_fetch_object($result)) {
     $op = array();
-    if (user_access('administer products')) {
+    if (user_access('administer product stock')) {
       $op[] = l(t('edit'), 'node/'. $stock->nid .'/edit/stock', $options = array('query' => 'destination=admin/store/reports/stock'));
     }
 
@@ -149,7 +149,7 @@ function uc_stock_edit_form($form_state, $node) {
   $form = array();
   $form['stock'] = array('#tree' => TRUE);
 
-  $skus = uc_product_get_models($node);
+  $skus = uc_product_get_models($node->nid);
 
   // Remove 'Any'.
   unset($skus[NULL]);
@@ -222,6 +222,7 @@ function theme_uc_stock_edit_form($form) {
     array('data' => t('Stock')),
     array('data' => t('Threshold')),
   );
+  $rows = array();
 
   foreach (element_children($form['stock']) as $id) {
     $rows[] = array(
@@ -248,7 +249,7 @@ function uc_stock_edit_form_submit($form, &$form_state) {
       intval($form_state['values']['stock'][$id]['threshold']), $form_state['values']['stock'][$id]['sku']);
 
     if (!db_affected_rows()) {
-      db_query("INSERT INTO {uc_product_stock} (sku, nid, active, stock, threshold) VALUES ('%s', %d, %d, %d, %d)",
+      @db_query("INSERT INTO {uc_product_stock} (sku, nid, active, stock, threshold) VALUES ('%s', %d, %d, %d, %d)",
         $form_state['values']['stock'][$id]['sku'], $form_state['values']['nid'], $form_state['values']['stock'][$id]['active'] ? 1 : 0,
         intval($form_state['values']['stock'][$id]['stock']), intval($form_state['values']['stock'][$id]['threshold']));
     }

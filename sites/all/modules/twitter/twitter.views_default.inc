@@ -58,7 +58,7 @@ function twitter_views_default_views() {
       'title' => '%1\'s tweets',
       'default_argument_type' => 'user',
       'default_argument' => '',
-      'validate_type' => 'none',
+      'validate_type' => 'php',
       'validate_fail' => 'not found',
       'break_phrase' => 0,
       'not' => 0,
@@ -79,7 +79,24 @@ function twitter_views_default_views() {
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(),
       'validate_argument_type' => 'tid',
-      'validate_argument_php' => '',
+      'validate_argument_php' => '$uid = arg(1);
+                                  if (!empty($uid)) {
+                                    $account = user_load($uid);
+                                    $twitter_accounts = twitter_twitter_accounts($account);
+                                    if (count($twitter_accounts)) {
+                                      return TRUE;
+                                    }
+                                    else {
+                                      return FALSE;
+                                    }
+                                  }',
+      'validate_user_argument_type' => 'uid',
+      'validate_user_roles' => array(
+        '2' => 0,
+      ),
+      'default_options_div_prefix' => '',
+      'validate_argument_transform' => 0,
+      'validate_user_restrict_roles' => 0,
     ),
   ));
   $handler->override_option('filters', array(

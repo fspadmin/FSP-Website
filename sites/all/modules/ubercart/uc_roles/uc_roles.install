@@ -10,7 +10,7 @@
  */
 function uc_roles_schema() {
   $schema['uc_roles_products'] = array(
-    'description' => 'Maps puchasable roles to Ubercart products.',
+    'description' => 'Maps purchasable roles to Ubercart products.',
     'fields' => array(
       'rpid' => array(
         'description' => 'Primary key: the role-product id.',

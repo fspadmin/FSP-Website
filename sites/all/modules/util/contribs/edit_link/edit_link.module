@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @file
+ * Add an 'edit' link to nodes.
+ */
+
+/**
+ * Implements hook_link().
+ */
+function edit_link_link($type, $object, $teaser = FALSE) {
+  static $ntypes;
+  if ($type == 'node' && $teaser && node_access('update', $object)) {
+    $objtype = 'post';
+    if (variable_get('edit_link_type', 0)) {
+      if (!isset($ntypes)) {
+        $ntypes = node_get_types('names');
+      }
+      $objtype = $ntypes[$object->type];
+    }
+    
+    return array('util-edit-link' => array(
+        'title' => t('Edit this @type', array('@type' => $objtype)),
+        'href' => "node/$object->nid/edit",
+        'attributes' => array('title' => t('Edit this @type', array('@type' => $object->type))),
+        ),
+      );
+  }
+}
+
+/**
+ * Implements hook_settings().
+ */
+function edit_link_form_alter(&$form, $form_state, $form_id) {
+  $noyes = array(t('No'), t('Yes'));
+
+  switch ($form_id) {
+    case 'util_page':
+      $form['edit'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Edit Link Options'),
+        '#collapsible' => TRUE,
+        '#group' => 'node',
+        );
+
+      $form['edit']['edit_link_type'] = array(
+        '#title' => t('Show content type?'),
+        '#type' => 'radios',
+        '#options' => $noyes,
+        '#default_value' => variable_get('edit_link_type', 0),
+        '#description' => t("If this option is chosen, a post's content type will be shown in the edit link."),
+        '#attributes' => array('class' => 'container-inline'),
+        '#prefix' => '<div id="edit-type">',
+        '#suffix' => '</div>',
+        );
+  }
+}
