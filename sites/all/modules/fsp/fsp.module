@@ -40,7 +40,7 @@ define('FSP_DAILYSTATS_HR', 1);       // Run at 1AM Pacific time, 4AM Eastern
 define('FSP_EPOCH_DATE_STR', "2001/08/01");
 define('FSP_EPOCH_DATE', strtotime(FSP_EPOCH_DATE_STR));
 // Storage location for plot files
-define('FSP_PLOT_PATH', $_SERVER['DOCUMENT_ROOT'].'sites/all/modules/fsp/fsp_statistics');
+define('FSP_PLOT_PATH', file_directory_path().'/fsp-graphs');
 
 //define(FSP_TWITTER_COUNTER_NAME, 'FSPCounter');
 define('FSP_TWITTER_COUNTER_NAME', 'DanDevAccount');
@@ -1016,7 +1016,6 @@ function _fsp_state_map() {
  */
 
 function _fsp_stats_plot() {
-
   # query mysql database to get all people at once
   list($participant_data, $friend_data) =
     _fsp_get_mysql_data($mysql_database, $mysql_host, $mysql_user, 
@@ -1167,6 +1166,7 @@ function _fsp_make_all_plots($data, $type, $epoch_date, $current_date, $old_date
 function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalflag,
                         $start_date, $end_date, $xtics_str, $plotfile, $font_name)
 {
+echo "Line ".__LINE__."\n";
   $gnuplotfile = FSP_PLOT_PATH . "/gnuplot.txt";
   $gnuplot_cmd = sprintf("set GDFONTPATH=%s; gnuplot %s", FSP_PLOT_PATH, $gnuplotfile);
 
