@@ -40,7 +40,7 @@ define('FSP_DAILYSTATS_HR', 1);       // Run at 1AM Pacific time, 4AM Eastern
 define('FSP_EPOCH_DATE_STR', "2001/08/01");
 define('FSP_EPOCH_DATE', strtotime(FSP_EPOCH_DATE_STR));
 // Storage location for plot files
-define('FSP_PLOT_PATH', $_SERVER['DOCUMENT_ROOT'].'sites/all/modules/fsp/fsp_statistics');
+define('FSP_PLOT_PATH', file_directory_path().'/fsp-graphs');
 
 //define(FSP_TWITTER_COUNTER_NAME, 'FSPCounter');
 define('FSP_TWITTER_COUNTER_NAME', 'DanDevAccount');
@@ -377,6 +377,7 @@ function _fsp_stats_recalc($recalc_type = NULL) {
   if ($recalc_daily || $recalc_type == "daily") {
     _fsp_stats_recalc_daily($fsp_stats);
   }
+_fsp_stats_recalc_daily($fsp_stats);
   variable_set("_fsp_stats", $fsp_stats);
   return $fsp_stats;
 }
@@ -1015,7 +1016,6 @@ function _fsp_state_map() {
  */
 
 function _fsp_stats_plot() {
-
   # query mysql database to get all people at once
   list($participant_data, $friend_data) =
     _fsp_get_mysql_data($mysql_database, $mysql_host, $mysql_user, 
@@ -1166,8 +1166,9 @@ function _fsp_make_all_plots($data, $type, $epoch_date, $current_date, $old_date
 function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalflag,
                         $start_date, $end_date, $xtics_str, $plotfile, $font_name)
 {
+echo "Line ".__LINE__."\n";
   $gnuplotfile = FSP_PLOT_PATH . "/gnuplot.txt";
-  $gnuplot_cmd = sprintf('GDFONTPATH=%s gnuplot %s', FSP_PLOT_PATH, $gnuplotfile);
+  $gnuplot_cmd = sprintf("set GDFONTPATH=%s; gnuplot %s", FSP_PLOT_PATH, $gnuplotfile);
 
   list($sec, $min, $hour, $day, $month, $year) = localtime();
   $year += 1900; $month++;
@@ -1189,7 +1190,9 @@ function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalf
       #ffffff #000000 #404040 #c79f6c #0000ff
       # background, border, axes, plotting colors...
 
-    set xlabel "$xlabel" 0,-3.5
+    set xlabel "$xlabel"
+    set xlabel offset 0,3.3
+    set xrange [-3.5:0]
     set ylabel "$ylabel"
     set title "$plottitle"
     set bmargin 7.5
@@ -1203,6 +1206,7 @@ function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalf
     set xdata time
     set format x "%Y/%m/%d"
     set xtics rotate by 90 $xtics_str
+    set xtics offset 0,-5
     set datafile separator ","
 
     set boxwidth 1.0 relative
@@ -1234,8 +1238,13 @@ END;
   fwrite($gnuplot_fh, $gnuplot_text);
   fclose($gnuplot_fh);
 
-die("Execute $gnuplot_cmd");
-  exec($gnuplot_cmd);
+echo("Execute $gnuplot_cmd");
+  $plot_err = array();
+  exec($gnuplot_cmd, &$plot_err);
+  if( count($plot_err) > 0 )
+  {
+    print_r($plot_err);
+  }
 
   echo "<img src=\"$imagefile\"/>\n";
 }
