@@ -1,3 +1,6 @@
+Release #639 9/13/2012, by lcalitz
+- Stat graphs fix (Dave Scotese)
+
 Release #638 9/13/2012, by lcalitz
 - Removed superfluous gnuplot source file (auto-generated)
 - Added Webmaster Tools verification file
