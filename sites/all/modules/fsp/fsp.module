@@ -40,7 +40,7 @@ define('FSP_DAILYSTATS_HR', 1);       // Run at 1AM Pacific time, 4AM Eastern
 define('FSP_EPOCH_DATE_STR', "2001/08/01");
 define('FSP_EPOCH_DATE', strtotime(FSP_EPOCH_DATE_STR));
 // Storage location for plot files
-define('FSP_PLOT_PATH', '/var/www/drupal_files/fsp/fsp-graphs');
+define('FSP_PLOT_PATH', $_SERVER['DOCUMENT_ROOT'].'sites/all/modules/fsp/fsp_statistics');
 
 //define(FSP_TWITTER_COUNTER_NAME, 'FSPCounter');
 define('FSP_TWITTER_COUNTER_NAME', 'DanDevAccount');
@@ -66,8 +66,8 @@ function fsp_help($section='') {
  **/
 function fsp_views_api(){
   return array(
-	'api' => 2,
-	'path' => drupal_get_path('module','fsp') . '/views/*.inc',
+    'api' => 2,
+    'path' => drupal_get_path('module','fsp') . '/views/*.inc',
   );
 }
 
@@ -81,7 +81,7 @@ function fsp_perm() {
 
 function fsp_menu() {
   // This is the minimum information you can provide for a menu item.
-	$items = array();
+    $items = array();
   $items['friend/grant'] = array(
     'title' => '',
     'page callback' => 'fsp_friend_grant',
@@ -154,14 +154,14 @@ function fsp_user($op, &$edit, &$user) {
  * Implements hook_nodeapi to render PHP formatted pages blank to the search engine
  */
 function fsp_nodeapi(&$node, $op, $teaser = FALSE, $page = FALSE) {
-	// If both $teaser and $page are FALSE, the node is being rendered for search results.
-	if ('view' == $op && !$teaser && !$page) {
-		if($node->format == 2) {
-			$node->body = '';
-		}else {
-			$node->body = truncate_utf8($node->body, 1024, TRUE);
-		}
-	}
+    // If both $teaser and $page are FALSE, the node is being rendered for search results.
+    if ('view' == $op && !$teaser && !$page) {
+        if($node->format == 2) {
+            $node->body = '';
+        }else {
+            $node->body = truncate_utf8($node->body, 1024, TRUE);
+        }
+    }
 }
 
 /**
@@ -187,9 +187,9 @@ function _fsp_newuser_email(&$edit, &$account) {
     $from
   );
   watchdog("fsp",
-	  "Authentication alert sent for " . $account->name . " to " .  $conf["fsp_register_email_to"], 
-	  array(),
-	  $severity = WATCHDOG_NOTICE);
+      "Authentication alert sent for " . $account->name . " to " .  $conf["fsp_register_email_to"], 
+      array(),
+      $severity = WATCHDOG_NOTICE);
 }
 
 /**
@@ -198,7 +198,7 @@ function _fsp_newuser_email(&$edit, &$account) {
 function _fsp_update_moved($edit, $user) {
   fsp_get_stats("moved_to_nh");
   watchdog("fsp", "Already in NH counter recalculated", 
-	   array(),
+       array(),
            $severity = WATCHDOG_NOTICE);
 }
 
@@ -392,7 +392,7 @@ function _fsp_stats_recalc_hourly(&$stats) {
   $stats["last_week"]    = _fsp_stats_last_week();
   $stats["last_hourly"]  = getdate();
   watchdog("fsp", "Hourly stats recalculation completed at " . strftime("%T"), 
-	array(),
+    array(),
            $severity = WATCHDOG_NOTICE);
 }
 
@@ -401,7 +401,7 @@ function _fsp_stats_recalc_hourly(&$stats) {
  */
 function _fsp_stats_recalc_daily(&$stats) {
   watchdog("fsp", "Daily stats recalculation started at " . strftime("%T"), 
-	array(),
+    array(),
            $severity = WATCHDOG_NOTICE);
 
   $stats["last_daily"]          = getdate();
@@ -414,31 +414,31 @@ function _fsp_stats_recalc_daily(&$stats) {
 
   _fsp_stats_plot();
   _fsp_fill_member_report();
-	/**
-	 * Disabled now that LF 2010 over.  Remove code next year if better method found
+    /**
+     * Disabled now that LF 2010 over.  Remove code next year if better method found
 
   _fsp_DISABLED_liberty_forum_report(); // dgarthwaite - temporarly run _fsp_liberty_forum_report
 
-	 */
+     */
 
-	// If participants or movers counter moved, send tweet
+    // If participants or movers counter moved, send tweet
   $midnight_count = _fsp_stats_participants($since_midnight = TRUE);
-	$count_delta = $stats['participants'] - $midnight_count;
+    $count_delta = $stats['participants'] - $midnight_count;
   watchdog("fsp", "DEBUG: ".$stats['participants'] . " - $midnight_count  = " . $count_delta,
-	array(),
+    array(),
            $severity = WATCHDOG_DEBUG);
 
   $midnight_movers = _fsp_stats_moved_to_nh($since_midnight = TRUE);
-	$mover_delta = $stats['moved_to_nh'] - $midnight_movers;
+    $mover_delta = $stats['moved_to_nh'] - $midnight_movers;
 
-	if( $count_delta > 0 || $mover_delta > 0 ){
-		$msg = sprintf( 'FSP Participants: %-5s (+%s) Movers: %-5s (+%s)',
-				$stats['participants'], $count_delta, $stats['moved_to_nh'], $mover_delta
-				);
-		_fsp_send_tweet( $msg );
-	}
+    if( $count_delta > 0 || $mover_delta > 0 ){
+        $msg = sprintf( 'FSP Participants: %-5s (+%s) Movers: %-5s (+%s)',
+                $stats['participants'], $count_delta, $stats['moved_to_nh'], $mover_delta
+                );
+        _fsp_send_tweet( $msg );
+    }
   watchdog("fsp", "Daily stats recalculation completed at " . strftime("%T"), 
-	array(),
+    array(),
            $severity = WATCHDOG_NOTICE);
 }
 /** 
@@ -446,7 +446,7 @@ function _fsp_stats_recalc_daily(&$stats) {
  */
 function _fsp_stats_participants( $since_midnight = FALSE) {
   global $conf;
-	/* old query - dgarthwaite
+    /* old query - dgarthwaite
     select count(pv_part.uid)
     from
       ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
@@ -458,210 +458,210 @@ function _fsp_stats_participants( $since_midnight = FALSE) {
       and r.name = '%s' 
       and u.status = '1'
     $query_participants ="
-		SELECT count(node.nid) FROM {node} node
-		INNER JOIN {users} users ON node.uid = users.nid -- link profile to user
-		LEFT JOIN {content_type_profile} member_type ON node.nid = member_type.nid
-		INNER JOIN {users_roles} users_roles ON node.uid = users_roles.uid
-		WHERE 
-			member_type.field_member_type_value = 'Participant'
-			AND users_roles.rid = 16
-	"; */
-	$query_participants = "
-		SELECT count( u.uid )
-		FROM users AS u
-		JOIN users_roles as isAur on u.uid = isAur.uid
-		JOIN role AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
-		JOIN users_roles as isPur on u.uid = isPur.uid
-		JOIN role AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
-		WHERE u.status=1";
-	if ( $since_midnight === TRUE ) $query_participants .= " AND u.created <= unix_timestamp(date(date_sub(now(), INTERVAL 1 DAY )))";
-	$result = db_result(db_query( $query_participants ));
-	$result = 0 + $result + FSP_NEW_OFFSET;
-	return $result;
+        SELECT count(node.nid) FROM {node} node
+        INNER JOIN {users} users ON node.uid = users.nid -- link profile to user
+        LEFT JOIN {content_type_profile} member_type ON node.nid = member_type.nid
+        INNER JOIN {users_roles} users_roles ON node.uid = users_roles.uid
+        WHERE 
+            member_type.field_member_type_value = 'Participant'
+            AND users_roles.rid = 16
+    "; */
+    $query_participants = "
+        SELECT count( u.uid )
+        FROM users AS u
+        JOIN users_roles as isAur on u.uid = isAur.uid
+        JOIN role AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+        JOIN users_roles as isPur on u.uid = isPur.uid
+        JOIN role AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+        WHERE u.status=1";
+    if ( $since_midnight === TRUE ) $query_participants .= " AND u.created <= unix_timestamp(date(date_sub(now(), INTERVAL 1 DAY )))";
+    $result = db_result(db_query( $query_participants ));
+    $result = 0 + $result + FSP_NEW_OFFSET;
+    return $result;
 }
 
 /**
  * Calculate participants by state
  */
 function _fsp_stats_by_state() {
-	global $conf;
-	/* old query - dgarthwaite
-		 $result = db_query(
-		 "
-		 select 
-		 count(pv_state.uid) as number, pv_state.value as state
-		 from
-		 ( ( ( ( ( ( ( users u
-		 inner join users_roles ur on u.uid = ur.uid )
-		 inner join role r on ur.rid = r.rid )
-		 inner join profile_values pv_part on u.uid = pv_part.uid )
-		 inner join profile_fields pf_part on pv_part.fid = pf_part.fid )
-		 inner join profile_values pv_state on u.uid = pv_state.uid )
-		 inner join profile_fields pf_state on pv_state.fid = pf_state.fid )
-		 inner join profile_values pv_us on u.uid = pv_us.uid )
-		 inner join profile_fields pf_us on pv_us.fid = pf_us.fid
-		 where
-		 pf_part.name = 'profile_member_type'
-		 and pv_part.value = 'Participant' and pf_state.name = 'profile_state'
-		 and pf_us.name = 'profile_country' and pv_us.value = 'United States'
-		 and r.name = '%s' and u.status = '1'
-		 group by 
-		 pv_state.value
-		 order by 
-		 state
-		 ",
-		 $conf["fsp_approved_role"]
-		 );
-	 */
-	$query_by_state="
-		SELECT rolodex.field_fsp_state_value AS state_name,
-					 COUNT( rolodex.field_fsp_state_value  ) AS population
-						 FROM node node
-						 LEFT JOIN content_type_rolodex rolodex ON node.vid = rolodex.vid
-						 INNER JOIN users_roles users_roles ON node.uid = users_roles.uid
-						 WHERE node.type = 'rolodex' AND users_roles.rid = 30
-						 GROUP BY rolodex.field_fsp_state_value
-						 ORDER BY state_name
-						 ";
-	$result = db_query($query_by_state);
+    global $conf;
+    /* old query - dgarthwaite
+         $result = db_query(
+         "
+         select 
+         count(pv_state.uid) as number, pv_state.value as state
+         from
+         ( ( ( ( ( ( ( users u
+         inner join users_roles ur on u.uid = ur.uid )
+         inner join role r on ur.rid = r.rid )
+         inner join profile_values pv_part on u.uid = pv_part.uid )
+         inner join profile_fields pf_part on pv_part.fid = pf_part.fid )
+         inner join profile_values pv_state on u.uid = pv_state.uid )
+         inner join profile_fields pf_state on pv_state.fid = pf_state.fid )
+         inner join profile_values pv_us on u.uid = pv_us.uid )
+         inner join profile_fields pf_us on pv_us.fid = pf_us.fid
+         where
+         pf_part.name = 'profile_member_type'
+         and pv_part.value = 'Participant' and pf_state.name = 'profile_state'
+         and pf_us.name = 'profile_country' and pv_us.value = 'United States'
+         and r.name = '%s' and u.status = '1'
+         group by 
+         pv_state.value
+         order by 
+         state
+         ",
+         $conf["fsp_approved_role"]
+         );
+     */
+    $query_by_state="
+        SELECT rolodex.field_fsp_state_value AS state_name,
+                     COUNT( rolodex.field_fsp_state_value  ) AS population
+                         FROM node node
+                         LEFT JOIN content_type_rolodex rolodex ON node.vid = rolodex.vid
+                         INNER JOIN users_roles users_roles ON node.uid = users_roles.uid
+                         WHERE node.type = 'rolodex' AND users_roles.rid = 30
+                         GROUP BY rolodex.field_fsp_state_value
+                         ORDER BY state_name
+                         ";
+    $result = db_query($query_by_state);
 
-	$state_stats["None"] = 0;
-	while ($item = db_fetch_object($result)) {
-		$state = $item->state_name;
-		$population = $item->population;
-		if (strlen($state) < 1) {
-			$state_stats["None"] += $population;
-		}
-		else {
-			$state_stats[$state] = $population;
-		}
-	}
-	return $state_stats;
+    $state_stats["None"] = 0;
+    while ($item = db_fetch_object($result)) {
+        $state = $item->state_name;
+        $population = $item->population;
+        if (strlen($state) < 1) {
+            $state_stats["None"] += $population;
+        }
+        else {
+            $state_stats[$state] = $population;
+        }
+    }
+    return $state_stats;
 }
 
 /**
  * Calculate participants by country
  */
 function _fsp_stats_by_country() {
-	global $conf;
-	/* $old_query_country ="
-		 SELECT user_profile.field_country_value AS country, COUNT(node.nid) AS population
-		 FROM node node 
-		 LEFT JOIN content_type_profile user_profile ON node.vid = user_profile.vid
-		 INNER JOIN users_roles users_roles ON node.uid = users_roles.uid
-		 WHERE ((user_profile.field_member_type_value) = ('Participant'))
-		 AND (users_roles.rid = 16)
-		 GROUP BY country
-		 ORDER BY population DESC "; */
+    global $conf;
+    /* $old_query_country ="
+         SELECT user_profile.field_country_value AS country, COUNT(node.nid) AS population
+         FROM node node 
+         LEFT JOIN content_type_profile user_profile ON node.vid = user_profile.vid
+         INNER JOIN users_roles users_roles ON node.uid = users_roles.uid
+         WHERE ((user_profile.field_member_type_value) = ('Participant'))
+         AND (users_roles.rid = 16)
+         GROUP BY country
+         ORDER BY population DESC "; */
 
-	$query_country = "
-		SELECT rolodex.field_fsp_country_value AS country_name,
-					 COUNT( rolodex.field_fsp_country_value  ) AS population
-						 FROM node node
-						 LEFT JOIN content_type_rolodex rolodex ON node.vid = rolodex.vid
-						 INNER JOIN users_roles users_roles ON node.uid = users_roles.uid
-						 WHERE node.type = 'rolodex' AND users_roles.rid = 30
-						 GROUP BY rolodex.field_fsp_country_value
-						 ORDER BY country_name
-						 ";
+    $query_country = "
+        SELECT rolodex.field_fsp_country_value AS country_name,
+                     COUNT( rolodex.field_fsp_country_value  ) AS population
+                         FROM node node
+                         LEFT JOIN content_type_rolodex rolodex ON node.vid = rolodex.vid
+                         INNER JOIN users_roles users_roles ON node.uid = users_roles.uid
+                         WHERE node.type = 'rolodex' AND users_roles.rid = 30
+                         GROUP BY rolodex.field_fsp_country_value
+                         ORDER BY country_name
+                         ";
 
-	$result = db_query( $query_country );
+    $result = db_query( $query_country );
 
-	$country_stats = array();
-	while ($stat = db_fetch_object($result)) {
-		if (strlen($stat->country_name) < 1) {
-			$country_stats["None"] = $stat->population;
-		}
-		else {
-			$country_stats[$stat->country_name] = $stat->population;
-		}
-	}
-	return $country_stats;
+    $country_stats = array();
+    while ($stat = db_fetch_object($result)) {
+        if (strlen($stat->country_name) < 1) {
+            $country_stats["None"] = $stat->population;
+        }
+        else {
+            $country_stats[$stat->country_name] = $stat->population;
+        }
+    }
+    return $country_stats;
 }
 
 /**
  * Calculate participants by move plans
  */
 function _fsp_stats_by_move_plans() {
-	/*  dgarthwaite - jmaltz - old query
-	global $conf;
-			$result = db_query( "
-			select count(pv_move.uid) as number, pv_move.value as move_plan
-			from ( ( ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
-			inner join role r on ur.rid = r.rid )
-			inner join profile_values pv_part on u.uid = pv_part.uid )
-			inner join profile_fields pf_part on pv_part.fid = pf_part.fid )
-			inner join profile_values pv_move on u.uid = pv_move.uid )
-			inner join profile_fields pf_move on pv_move.fid = pf_move.fid
-			where
-			pf_part.name = 'profile_member_type' and pv_part.value = 'Participant' 
-			and pf_move.name = 'profile_when_move' and r.name = '%s' and u.status = '1'
-			group by pv_move.value ",
-			$conf["fsp_approved_role"]
-			); */
-	$move_plan_query = "
-		SELECT
-			count( u.uid ) as `number`
-			field_fsp_move_plan as plan
-		FROM {users} AS u
-			JOIN {users_roles} as isAur on u.uid = isAur.uid
-			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
-			JOIN {users_roles} as isPur on u.uid = isPur.uid
-			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
-	  GROUP BY field_fsp_move_plan
-	 ";
+    /*  dgarthwaite - jmaltz - old query
+    global $conf;
+            $result = db_query( "
+            select count(pv_move.uid) as number, pv_move.value as move_plan
+            from ( ( ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
+            inner join role r on ur.rid = r.rid )
+            inner join profile_values pv_part on u.uid = pv_part.uid )
+            inner join profile_fields pf_part on pv_part.fid = pf_part.fid )
+            inner join profile_values pv_move on u.uid = pv_move.uid )
+            inner join profile_fields pf_move on pv_move.fid = pf_move.fid
+            where
+            pf_part.name = 'profile_member_type' and pv_part.value = 'Participant' 
+            and pf_move.name = 'profile_when_move' and r.name = '%s' and u.status = '1'
+            group by pv_move.value ",
+            $conf["fsp_approved_role"]
+            ); */
+    $move_plan_query = "
+        SELECT
+            count( u.uid ) as `number`
+            field_fsp_move_plan as plan
+        FROM {users} AS u
+            JOIN {users_roles} as isAur on u.uid = isAur.uid
+            JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+            JOIN {users_roles} as isPur on u.uid = isPur.uid
+            JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+      GROUP BY field_fsp_move_plan
+     ";
 
-	$result = db_query( $move_plan_query );
+    $result = db_query( $move_plan_query );
 
-	// Comment out the next line in production - dgarthwaite
-	//if(!$result) die("Error in sql $move_plan_query");
+    // Comment out the next line in production - dgarthwaite
+    //if(!$result) die("Error in sql $move_plan_query");
 
-	$move_plan_stats = array();
-	while ($stat = db_fetch_object($result)) {
-		if (strlen($stat->plan) < 1) {
-			$move_plan_stats["None"] = $stat->movers;
-		}
-		else {
-			$move_plan_stats[$stat->plan] = $stat->movers;
-		}
-	}
-	return $move_plan_stats;
+    $move_plan_stats = array();
+    while ($stat = db_fetch_object($result)) {
+        if (strlen($stat->plan) < 1) {
+            $move_plan_stats["None"] = $stat->movers;
+        }
+        else {
+            $move_plan_stats[$stat->plan] = $stat->movers;
+        }
+    }
+    return $move_plan_stats;
 }
 
 /**
  * Calculate members in NH
  */
 function _fsp_stats_moved_to_nh( $since_midnight=FALSE) {
-	global $conf;
-	/* old query - dgarthwaite
-		 select 
-		 count(pv_nh.uid)
-		 from
-		 ( ( ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
-		 inner join role r on ur.rid = r.rid )
-		 inner join profile_values pv_part on u.uid = pv_part.uid )
-		 inner join profile_fields pf_part on pv_part.fid = pf_part.fid )
-		 inner join profile_values pv_nh on u.uid = pv_nh.uid )
-		 inner join profile_fields pf_nh on pv_nh.fid = pf_nh.fid
-		 where
-		 pf_part.name = 'profile_member_type' and pv_part.value = 'Participant' 
-		 and pf_nh.name = 'profile_state' and pv_nh.value = 'New Hampshire' 
-		 and r.name = '%s'
-		 and u.status = '1' */
+    global $conf;
+    /* old query - dgarthwaite
+         select 
+         count(pv_nh.uid)
+         from
+         ( ( ( ( ( users u inner join users_roles ur on u.uid = ur.uid )
+         inner join role r on ur.rid = r.rid )
+         inner join profile_values pv_part on u.uid = pv_part.uid )
+         inner join profile_fields pf_part on pv_part.fid = pf_part.fid )
+         inner join profile_values pv_nh on u.uid = pv_nh.uid )
+         inner join profile_fields pf_nh on pv_nh.fid = pf_nh.fid
+         where
+         pf_part.name = 'profile_member_type' and pv_part.value = 'Participant' 
+         and pf_nh.name = 'profile_state' and pv_nh.value = 'New Hampshire' 
+         and r.name = '%s'
+         and u.status = '1' */
 
-	$query_movers = "
-		SELECT
-			count( u.uid ) as movers
-		FROM {users} AS u
-			LEFT JOIN {node} node_users ON u.uid = node_users.uid AND node_users.type = 'rolodex'
-			LEFT JOIN {content_type_rolodex} AS rolodex_state ON node_users.vid = rolodex_state.vid
-			JOIN {users_roles} as isAur on u.uid = isAur.uid
-			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
-			JOIN {users_roles} as isPur on u.uid = isPur.uid
-			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
-		WHERE rolodex_state.field_fsp_state_value = 'New Hampshire' AND u.status=1 
-	";
-	if ( $since_midnight === TRUE ) $query_movers .= "AND u.created <= unix_timestamp(date(date_sub(now(), INTERVAL 1 DAY )))";
+    $query_movers = "
+        SELECT
+            count( u.uid ) as movers
+        FROM {users} AS u
+            LEFT JOIN {node} node_users ON u.uid = node_users.uid AND node_users.type = 'rolodex'
+            LEFT JOIN {content_type_rolodex} AS rolodex_state ON node_users.vid = rolodex_state.vid
+            JOIN {users_roles} as isAur on u.uid = isAur.uid
+            JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+            JOIN {users_roles} as isPur on u.uid = isPur.uid
+            JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+        WHERE rolodex_state.field_fsp_state_value = 'New Hampshire' AND u.status=1 
+    ";
+    if ( $since_midnight === TRUE ) $query_movers .= "AND u.created <= unix_timestamp(date(date_sub(now(), INTERVAL 1 DAY )))";
   $result = db_result(db_query( $query_movers ));
   return $result;
 }
@@ -670,7 +670,7 @@ function _fsp_stats_moved_to_nh( $since_midnight=FALSE) {
  * Calculate six-month sign up stats
  */
 function _fsp_stats_weekly_sixmonth_avg() {
-	/*
+    /*
   global $conf;
   $old_query = t(db_result(db_query( "
     select 
@@ -688,17 +688,17 @@ function _fsp_stats_weekly_sixmonth_avg() {
     ",
     $conf["fsp_approved_role"]
     )));
-	*/
-	$weekly_avg_query = "
-		SELECT
-			count( u.uid ) / 182 * 7 as `avg`
-		FROM {users} AS u
-			JOIN {users_roles} as isAur on u.uid = isAur.uid
-			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
-			JOIN {users_roles} as isPur on u.uid = isPur.uid
-			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
-		WHERE DATEDIFF( NOW(), FROM_UNIXTIME(u.created) ) <= '182'
-	";
+    */
+    $weekly_avg_query = "
+        SELECT
+            count( u.uid ) / 182 * 7 as `avg`
+        FROM {users} AS u
+            JOIN {users_roles} as isAur on u.uid = isAur.uid
+            JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+            JOIN {users_roles} as isPur on u.uid = isPur.uid
+            JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+        WHERE DATEDIFF( NOW(), FROM_UNIXTIME(u.created) ) <= '182'
+    ";
   return t(db_result(db_query( $weekly_avg_query )));
 }
 
@@ -706,7 +706,7 @@ function _fsp_stats_weekly_sixmonth_avg() {
  * Calculate last month's weekly sign-up stats
  */
 function _fsp_stats_weekly_month_avg() {
-	/*
+    /*
   global $conf;
   $result = t(db_result(db_query( "
     select 
@@ -725,17 +725,17 @@ function _fsp_stats_weekly_month_avg() {
     $conf["fsp_approved_role"]
     )));
   return $result;
-	*/
-	$monthly_avg_query = "
-		SELECT
-			count( u.uid ) / 30 * 7 as `avg`
-		FROM {users} AS u
-			JOIN {users_roles} as isAur on u.uid = isAur.uid
-			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
-			JOIN {users_roles} as isPur on u.uid = isPur.uid
-			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
-		WHERE DATEDIFF( NOW(), FROM_UNIXTIME(u.created) ) <= '30'
-	";
+    */
+    $monthly_avg_query = "
+        SELECT
+            count( u.uid ) / 30 * 7 as `avg`
+        FROM {users} AS u
+            JOIN {users_roles} as isAur on u.uid = isAur.uid
+            JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+            JOIN {users_roles} as isPur on u.uid = isPur.uid
+            JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+        WHERE DATEDIFF( NOW(), FROM_UNIXTIME(u.created) ) <= '30'
+    ";
   return t(db_result(db_query( $monthly_avg_query )));
 }
 
@@ -743,7 +743,7 @@ function _fsp_stats_weekly_month_avg() {
  * Calculate last week's sign-ups. 
  */
 function _fsp_stats_last_week() {
-	/*
+    /*
   global $conf;
   $participants = t(db_result(db_query(
     "
@@ -763,17 +763,17 @@ function _fsp_stats_last_week() {
     $conf["fsp_approved_role"]
     )));
   return $participants;
-	*/
-	$last_week_query = "
-		SELECT
-			count( u.uid )
-		FROM {users} AS u
-			JOIN {users_roles} as isAur on u.uid = isAur.uid
-			JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
-			JOIN {users_roles} as isPur on u.uid = isPur.uid
-			JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
-		WHERE DATEDIFF( NOW(), FROM_UNIXTIME(u.created) ) <= '7'
-	";
+    */
+    $last_week_query = "
+        SELECT
+            count( u.uid )
+        FROM {users} AS u
+            JOIN {users_roles} as isAur on u.uid = isAur.uid
+            JOIN {role} AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+            JOIN {users_roles} as isPur on u.uid = isPur.uid
+            JOIN {role} AS isP ON isPur.rid = isP.rid AND isP.name = 'participant'
+        WHERE DATEDIFF( NOW(), FROM_UNIXTIME(u.created) ) <= '7'
+    ";
   return t(db_result(db_query( $last_week_query )));
 }
 
@@ -851,7 +851,7 @@ function _fsp_fill_member_report() {
   $fp = fopen($csv_file,'w');
   if (!$fp) {
     watchdog('fsp', "Unable to open '$csv_file' for writing member report", 
-	array(),
+    array(),
              $severity = WATCHDOG_ERROR);
     return;
   }
@@ -942,7 +942,7 @@ function _fsp_fill_member_report() {
   }
   fclose($fp);   
   watchdog("fsp", "Generated member report in '$csv_file'", 
-	array(),
+    array(),
            $severity = WATCHDOG_NOTICE);
 }
 
@@ -1020,7 +1020,7 @@ function _fsp_stats_plot() {
   list($participant_data, $friend_data) =
     _fsp_get_mysql_data($mysql_database, $mysql_host, $mysql_user, 
       $mysql_pass, FSP_EPOCH_DATE);
-	// die(print_r($friend_data,TRUE));
+// die("Friend data: ".print_r($friend_data,TRUE));
 
   # parameters for all plots
   $current_date = time();
@@ -1050,7 +1050,7 @@ function _fsp_stats_plot() {
     mkdir(FSP_PLOT_PATH, "2775");
   }
 
-	//die(print_r(get_defined_vars(),TRUE));
+// die(print_r(get_defined_vars(),TRUE));
 
   # make the plots
   _fsp_make_all_plots($participant_data, 
@@ -1072,7 +1072,7 @@ function _fsp_stats_plot() {
                       $totalflag, 
                       $font_name);
   watchdog("fsp", "Statistics plots generated in " . FSP_PLOT_PATH, 
-	array(),
+    array(),
            $severity = WATCHDOG_NOTICE);
 }
 
@@ -1098,7 +1098,6 @@ function _fsp_make_all_plots($data, $type, $epoch_date, $current_date, $old_date
   _fsp_bin_people_week($data, $binfile_week);
   # create binned data file by month
   _fsp_bin_people_month($data, $binfile_month);
-
   # make the since epoch plot (cumulative)
   _fsp_make_plot($type,
                  $plot_path . $type."_Since_Epoch_Cum.png",
@@ -1178,16 +1177,16 @@ function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalf
   $gnuplot_fh = fopen($gnuplotfile,"w");
   if (!gnuplot_fh) {
     watchdog("fsp", "Unable to open '$gnuplotfile' for writing!", 
-	array(),
+    array(),
              $severity = WATCHDOG_ERROR);
     return;
   }
 
   $gnuplot_text = <<<END
-	#!/usr/bin/gnuplot
+    #!/usr/bin/gnuplot
 
     set terminal png font "$font_name" 12 size 750,600 enhanced  \
-      xffffff x000000 x404040 xc79f6c x0000ff
+      #ffffff #000000 #404040 #c79f6c #0000ff
       # background, border, axes, plotting colors...
 
     set xlabel "$xlabel" 0,-3.5
@@ -1235,6 +1234,7 @@ END;
   fwrite($gnuplot_fh, $gnuplot_text);
   fclose($gnuplot_fh);
 
+die("Execute $gnuplot_cmd");
   exec($gnuplot_cmd);
 
   echo "<img src=\"$imagefile\"/>\n";
@@ -1251,7 +1251,7 @@ function _fsp_accumulate_people($data, $totalfile, $start_date, $end_date)
   $total_fh = fopen($totalfile,"w");
   if (!total_fh) {
     watchdog("fsp", "Unable to open '$totalfile' for writing!", 
-	array(),
+    array(),
              $severity = WATCHDOG_ERROR);
     return;
   }
@@ -1419,18 +1419,18 @@ function _fsp_get_mysql_query($type, $start_date)
     $type, 
     $start_date_str
     );
-	*/
-	$result = db_query("
-			SELECT u.uid, u.created, isP.name
-			FROM users AS u
-			JOIN users_roles as isAur on u.uid = isAur.uid
-			JOIN role AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
-			JOIN users_roles as isPur on u.uid = isPur.uid
-			JOIN role AS isP ON isPur.rid = isP.rid AND isP.name = '%s'
-			WHERE u.status=1 AND u.created >= '%s'",
-			strtolower($type), $start_date_str	);
+    */
+    $result = db_query("
+            SELECT u.uid, u.created, isP.name
+            FROM users AS u
+            JOIN users_roles as isAur on u.uid = isAur.uid
+            JOIN role AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
+            JOIN users_roles as isPur on u.uid = isPur.uid
+            JOIN role AS isP ON isPur.rid = isP.rid AND isP.name = '%s'
+            WHERE u.status=1 AND u.created >= '%s'",
+            strtolower($type), $start_date_str  );
 
-	$mylist = array();
+    $mylist = array();
   while ($data = db_fetch_object($result)) {
     $mylist[] = $data->created;
   }
@@ -1581,89 +1581,89 @@ function fsp_block($op = 'list', $delta = 0, $edit = array()) {
           $block['content'] = fsp_social_media_block();
           break;
         case 1:
-	  // The subject is displayed at the top of the block. Note that it
-	  // should be passed through t() for translation.
-	  $block['subject'] = t('Spotlight');
-	  // The content of the block is typically generated by calling a custom
-	  // function.
-	  $block['content'] = fsp_spotlight_contents();
+      // The subject is displayed at the top of the block. Note that it
+      // should be passed through t() for translation.
+      $block['subject'] = t('Spotlight');
+      // The content of the block is typically generated by calling a custom
+      // function.
+      $block['content'] = fsp_spotlight_contents();
       }
       return $block;
   }
 }
 
 function fsp_social_media_block(){
-	$links = '<ul>
-	<li><a href="http://www.facebook.com/pages/Free-State-Project/147390698637518" target="_blank"><img src="/images/facebook_0.jpg">&nbsp;Facebook</a></li>
-	<li><a href="http://www.youtube.com/freestateprojectnh" target="_blank"><img src="/images/youtube.jpg">&nbsp;YouTube</a></li>
-	<li><a href="http://twitter.com/FreeStateNH" target="_blank"><img src="/images/twitter_0.jpg">&nbsp;Twitter</a></li>
-	<li><a href="http://www.myspace.com/freestateproject" target="_blank"><img src="/images/myspace_0.jpg">&nbsp;MySpace</a></li>
-	<li><a href="http://www.linkedin.com/groups?home=&gid=1835717" target="_blank"><img src="/images/linkedin_0.jpg">&nbsp;LinkedIn</a></li>
-	<!--li><a href="http://bureaucrashsocial.ning.com/group/FreeStateProject" target="_blank"><img src="/images/bureaucrash_0.jpg">&nbsp;Bureaucrash</a></li-->
-	<li><a href="http://fr33agents.net/groups" target="_blank"><img src="/images/fr33agentsicon.jpg">&nbsp;Fr33 Agents</a></li>
-	</ul>';
-	return $links;
+    $links = '<ul>
+    <li><a href="http://www.facebook.com/pages/Free-State-Project/147390698637518" target="_blank"><img src="/images/facebook_0.jpg">&nbsp;Facebook</a></li>
+    <li><a href="http://www.youtube.com/freestateprojectnh" target="_blank"><img src="/images/youtube.jpg">&nbsp;YouTube</a></li>
+    <li><a href="http://twitter.com/FreeStateNH" target="_blank"><img src="/images/twitter_0.jpg">&nbsp;Twitter</a></li>
+    <li><a href="http://www.myspace.com/freestateproject" target="_blank"><img src="/images/myspace_0.jpg">&nbsp;MySpace</a></li>
+    <li><a href="http://www.linkedin.com/groups?home=&gid=1835717" target="_blank"><img src="/images/linkedin_0.jpg">&nbsp;LinkedIn</a></li>
+    <!--li><a href="http://bureaucrashsocial.ning.com/group/FreeStateProject" target="_blank"><img src="/images/bureaucrash_0.jpg">&nbsp;Bureaucrash</a></li-->
+    <li><a href="http://fr33agents.net/groups" target="_blank"><img src="/images/fr33agentsicon.jpg">&nbsp;Fr33 Agents</a></li>
+    </ul>';
+    return $links;
 }
 
 function fsp_spotlight_contents() {
     $output = "";
 
-	/**
-	 * This php snippet displays (x) days left to a specific event
-	 *eChange the values for keyMonth, keyDay and keyYear to suit
-	 * Tested and works with drupal 4.6 and 4.5
-	 */
+    /**
+     * This php snippet displays (x) days left to a specific event
+     *eChange the values for keyMonth, keyDay and keyYear to suit
+     * Tested and works with drupal 4.6 and 4.5
+     */
 
   $spotlight_date = variable_get('fsp_spotlight_date', FALSE);
-	if( ! $spotlight_date === FALSE ) {
-		$keyMonth = $spotlight_date['month']; 
-		$keyDay = $spotlight_date['day']; 
-		$keyYear = $spotlight_date['year']; 
+    if( ! $spotlight_date === FALSE ) {
+        $keyMonth = $spotlight_date['month']; 
+        $keyDay = $spotlight_date['day']; 
+        $keyYear = $spotlight_date['year']; 
 
-		$stillTime="<b>There ";
-		$stillTime2=" to sign up!";
-		$noTime ="<b>The Free State Project Money Bomb is underway!</b>";
+        $stillTime="<b>There ";
+        $stillTime2=" to sign up!";
+        $noTime ="<b>The Free State Project Money Bomb is underway!</b>";
 
-		$month = date(F); 
-		$mon = date(n); 
-		$day = date(j); 
-		$year = date(Y);
-		$hours_left = ((mktime(0,0,0,$keyMonth,$keyDay,$keyYear) - time())/3600); 
-		$daysLeft = ceil($hours_left/24) ;
+        $month = date(F); 
+        $mon = date(n); 
+        $day = date(j); 
+        $year = date(Y);
+        $hours_left = ((mktime(0,0,0,$keyMonth,$keyDay,$keyYear) - time())/3600); 
+        $daysLeft = ceil($hours_left/24) ;
 
-		if ($daysLeft > 1) {
-			$pfdeadline = "are only " . (string)$daysLeft . " days left";
-			$PFLine= $stillTime . $pfdeadline . $stillTime2;
-		}
-		elseif ($daysLeft == 1)
-		{    
-			$pfdeadline = "is only one day left";
-			$PFLine= $stillTime . $pfdeadline . $stillTime2;
-		} else {
-			$PFLine = $noTime;
-		}
-	} // end if( ! $spotlight_date === FALSE )
+        if ($daysLeft > 1) {
+            $pfdeadline = "are only " . (string)$daysLeft . " days left";
+            $PFLine= $stillTime . $pfdeadline . $stillTime2;
+        }
+        elseif ($daysLeft == 1)
+        {    
+            $pfdeadline = "is only one day left";
+            $PFLine= $stillTime . $pfdeadline . $stillTime2;
+        } else {
+            $PFLine = $noTime;
+        }
+    } // end if( ! $spotlight_date === FALSE )
 
-	$fsp_spotlight_title = variable_get('fsp_spotlight_title',
-			'Unconfigured Spotlight');
-	$fsp_spotlight_body = variable_get('fsp_spotlight_body',
-			'<a href="/admin/build/block">Please configure the Spotlight block.</a>');
+    $fsp_spotlight_title = variable_get('fsp_spotlight_title',
+            'Unconfigured Spotlight');
+    $fsp_spotlight_body = variable_get('fsp_spotlight_body',
+            '<a href="/admin/build/block">Please configure the Spotlight block.</a>');
 
-	$output .= '
-		<div id="fsp_spotlight_block">
-		<table border="0" class="center-table">
-			<tr class="center">
-				<td width="46">
-					<img src="/files/images/spotlight-left.gif" alt="" width="23" height="22" />
-				</td>
-				<td><h5><em>'.$fsp_spotlight_title.'</em></h5></td>
-				<td width="46">
-					<img src="/files/images/spotlight-right.gif" alt="" width="23" height="22" />
-				</td>
-			</tr>
-		</table>
-		<p>'.$fsp_spotlight_body.'</p></div>
-	';
+    $output .= '
+        <div id="fsp_spotlight_block">
+        <table border="0" class="center-table">
+            <tr class="center">
+                <td width="46">
+                    <img src="/files/images/spotlight-left.gif" alt="" width="23" height="22" />
+                </td>
+                <td><h5><em>'.$fsp_spotlight_title.'</em></h5></td>
+                <td width="46">
+                    <img src="/files/images/spotlight-right.gif" alt="" width="23" height="22" />
+                </td>
+            </tr>
+        </table>
+        <p>'.$fsp_spotlight_body.'</p></div>
+    ';
 
     return $output;
 }
@@ -1671,7 +1671,7 @@ function fsp_spotlight_contents() {
 function fsp_fieldgroup_form(&$form, $form_state, $form_id, $group){
   switch( $form_id ){
     case 'participant_node_form':
-		_fsp_mangle_participant_form($form, $form_state, $form_id, $group);  break;
+        _fsp_mangle_participant_form($form, $form_state, $form_id, $group);  break;
   }
 }
 
@@ -1712,34 +1712,34 @@ function _fsp_participant_soi_validate($element){
  * FSP settings form 
  */
 function fsp_admin_settings() {
-	$form = array();
-	$form['fsp_greeter_email_to'] = array(
-			'#type' => 'textfield',
-			'#title' => t('Who gets email to greet new users.  Hi Liz.'),
-			'#default_value' => variable_get('fsp_greeter_email_to', 'thefreestate@gmail.com'),
-			);
-	$form['fsp_greeter_email_from'] = array(
-			'#type' => 'textfield',
-			'#title' => t('From field for greeter email'),
-			'#default_value' => variable_get('fsp_greeter_email_from', 'webadmin@freestatproject.org'),
-			);
-	$form['fsp_member_report_path'] = array(
-			'#type' => 'textfield',
-			'#title' => t('Where monthly user dumps are kept'),
-			'#default_value' => variable_get('fsp_member_report_path', '/home/webadmin'),
-			);
-	$form['fsp_register_email_to'] = array(
-			'#type' => 'textfield',
-			'#title' => t('Who gets email when new user signs up'),
-			'#default_value' => variable_get('fsp_register_email_to', 'registrationadmin@freestateproject.org'),
-			);
-	$form['fsp_approved_role'] = array(
-			'#type' => 'textfield',
-			'#title' => t('Obsolete role for approval'),
-			'#default_value' => variable_get('fsp_approved_role', 'approved user'),
-			);
-	$form = system_settings_form($form);
-	return $form;
+    $form = array();
+    $form['fsp_greeter_email_to'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Who gets email to greet new users.  Hi Liz.'),
+            '#default_value' => variable_get('fsp_greeter_email_to', 'thefreestate@gmail.com'),
+            );
+    $form['fsp_greeter_email_from'] = array(
+            '#type' => 'textfield',
+            '#title' => t('From field for greeter email'),
+            '#default_value' => variable_get('fsp_greeter_email_from', 'webadmin@freestatproject.org'),
+            );
+    $form['fsp_member_report_path'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Where monthly user dumps are kept'),
+            '#default_value' => variable_get('fsp_member_report_path', '/home/webadmin'),
+            );
+    $form['fsp_register_email_to'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Who gets email when new user signs up'),
+            '#default_value' => variable_get('fsp_register_email_to', 'registrationadmin@freestateproject.org'),
+            );
+    $form['fsp_approved_role'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Obsolete role for approval'),
+            '#default_value' => variable_get('fsp_approved_role', 'approved user'),
+            );
+    $form = system_settings_form($form);
+    return $form;
 }
 
 function _fsp_DISABLED_liberty_forum_report() {
@@ -1747,7 +1747,7 @@ function _fsp_DISABLED_liberty_forum_report() {
   // This code and the corresponding crontab entry should be removed after LF2010
   //   -- and the ~webadmin/bin/send-LF2010-* script
   //   -- and the entry above on line 326 or so in this file
-	/* DISABLED UNTIL NEXT YEAR - dgarthwaite */
+    /* DISABLED UNTIL NEXT YEAR - dgarthwaite */
   global $conf;
 
   $result = db_query("SELECT * FROM libertyforum_reg WHERE forum_year = 2010 ORDER BY reg_id ASC");
@@ -1761,7 +1761,7 @@ function _fsp_DISABLED_liberty_forum_report() {
 
   $numfields = mysql_num_fields( $result );
   for ( $i = 0; $i < $numfields; $i++ )
-	  $names[] = mysql_field_name( $result, $i );
+      $names[] = mysql_field_name( $result, $i );
   fwrite($fp, implode(',', $names) . "\r\n");
 
   while ($registrant = db_fetch_array($result)) {
@@ -1776,16 +1776,16 @@ function _fsp_DISABLED_liberty_forum_report() {
  * Function to tweet a single string argument, and log it
  */
 function _fsp_send_tweet( $msg ){
-	// insert code here to actually send tweet
-	module_load_include('inc','twitter');
-	if( ! function_exists('twitter_set_status') ) {
-		watchdog('fsp', 'Unable to find twitter_set_status' , array(), $severity = WATCHDOG_ERROR);
-	} elseif( "" != $msg ) {
-		$res=twitter_set_status(FSP_TWITTER_COUNTER_NAME, FSP_TWITTER_COUNTER_PASS, $msg);
-		watchdog('fsp', sprintf('Tweeting: %s',$msg), $severity = WATCHDOG_NOTICE);
-	} else {
-		watchdog('fsp', 'Attempt to tweet an empty message' , array(), $severity = WATCHDOG_ERROR);
-	}
+    // insert code here to actually send tweet
+    module_load_include('inc','twitter');
+    if( ! function_exists('twitter_set_status') ) {
+        watchdog('fsp', 'Unable to find twitter_set_status' , array(), $severity = WATCHDOG_ERROR);
+    } elseif( "" != $msg ) {
+        $res=twitter_set_status(FSP_TWITTER_COUNTER_NAME, FSP_TWITTER_COUNTER_PASS, $msg);
+        watchdog('fsp', sprintf('Tweeting: %s',$msg), $severity = WATCHDOG_NOTICE);
+    } else {
+        watchdog('fsp', 'Attempt to tweet an empty message' , array(), $severity = WATCHDOG_ERROR);
+    }
 }
 
 /**
@@ -1795,24 +1795,24 @@ function _fsp_send_tweet( $msg ){
 
 function fsp_user_import_record_alter(&$fields) {
 
-	if( empty($fields['user']['email'][0]) ) {
-		$firstname = preg_replace('#\W#', '', $fields['content_profile']['rolodex cck:field_fsp_first_name:value'][0]);
-		$lastname  = preg_replace('#\W#', '', $fields['content_profile']['rolodex cck:field_fsp_last_name:value'][0]);
+    if( empty($fields['user']['email'][0]) ) {
+        $firstname = preg_replace('#\W#', '', $fields['content_profile']['rolodex cck:field_fsp_first_name:value'][0]);
+        $lastname  = preg_replace('#\W#', '', $fields['content_profile']['rolodex cck:field_fsp_last_name:value'][0]);
 
-		if(empty($firstname)) $firstname = 'nofirstname';
-		if(empty($lastname)) $lastname = 'nolastname';
+        if(empty($firstname)) $firstname = 'nofirstname';
+        if(empty($lastname)) $lastname = 'nolastname';
 
-		$value = sprintf('%s.%s@fsn.freestateproject.org', $firstname, $lastname);
-		$fields['user']['email'][0] = $value;
-	}
+        $value = sprintf('%s.%s@fsn.freestateproject.org', $firstname, $lastname);
+        $fields['user']['email'][0] = $value;
+    }
 
   $referrer = $fields['content_profile']['rolodex cck:field_fsp_referral:value'][0];
   $fields['content_profile']['rolodex cck:field_fsp_referral:value'][0] = 'FSN ' . drupal_strtoupper($referrer);
 
   $soi = drupal_strtoupper($fields['content_profile']['participant cck:field_fsp_soi:value'][0]);
-	if( substr( $soi,0,1 ) == 'S' ) {
+    if( substr( $soi,0,1 ) == 'S' ) {
     $fields['content_profile']['participant cck:field_fsp_soi:value'][0] = 1;
-	} elseif ( substr( $soi,0,1)  == 'F' ) {
+    } elseif ( substr( $soi,0,1)  == 'F' ) {
     $fields['content_profile']['participant cck:field_fsp_soi:value'][0] = 0;
-	}
+    }
 }
