@@ -1195,9 +1195,9 @@ function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalf
     set ylabel "$ylabel"
     set title "$plottitle"
     set bmargin 7.5
-    set label "$timelabel" at screen 1.0,0.01 right font "$font_name,14"
+    set label "$timelabel" at screen 1.0,0.01 right font "$font_name,8"
     set label "$year Free State Project www.freestateproject.org" \
-      at screen 0.01,0.01 left font "$font_name,14"
+      at screen 0.01,0.01 left font "$font_name,8"
     set key off
     set grid lt 0
 
@@ -1244,7 +1244,6 @@ END;
     print_r($plot_err);
   }
 
-  echo "<img src=\"$imagefile\"/>\n";
 }
 
 /**
