@@ -1,3 +1,6 @@
+Release #640 9/19/2012, by lcalitz
+- Released Dave's ORDER BY query fix for graphs
+
 Release #639 9/13/2012, by lcalitz
 - Stat graphs fix (Dave Scotese)
 - Added BCC module to copy all emails
