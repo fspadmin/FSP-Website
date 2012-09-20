@@ -1244,7 +1244,7 @@ END;
     print_r($plot_err);
   }
 
-  echo "<img src=\"$imagefile\"/>\n";
+//  echo "<img src=\"$imagefile\"/>\n";
 }
 
 /**
