@@ -1166,7 +1166,6 @@ function _fsp_make_all_plots($data, $type, $epoch_date, $current_date, $old_date
 function _fsp_make_plot($type, $imagefile, $plottitle, $xlabel, $ylabel, $totalflag,
                         $start_date, $end_date, $xtics_str, $plotfile, $font_name)
 {
-echo "Line ".__LINE__."\n";
   $gnuplotfile = FSP_PLOT_PATH . "/gnuplot.txt";
   $gnuplot_cmd = sprintf("set GDFONTPATH=%s; gnuplot %s", FSP_PLOT_PATH, $gnuplotfile);
 
@@ -1238,7 +1237,6 @@ END;
   fwrite($gnuplot_fh, $gnuplot_text);
   fclose($gnuplot_fh);
 
-echo("Execute $gnuplot_cmd");
   $plot_err = array();
   exec($gnuplot_cmd, &$plot_err);
   if( count($plot_err) > 0 )
@@ -1436,7 +1434,7 @@ function _fsp_get_mysql_query($type, $start_date)
             JOIN role AS isA ON isAur.rid = isA.rid AND isA.name = 'approved user'
             JOIN users_roles as isPur on u.uid = isPur.uid
             JOIN role AS isP ON isPur.rid = isP.rid AND isP.name = '%s'
-            WHERE u.status=1 AND u.created >= '%s'",
+            WHERE u.status=1 AND u.created >= '%s' order by u.created",
             strtolower($type), $start_date_str  );
 
     $mylist = array();
