@@ -1,5 +1,6 @@
 Release #639 9/13/2012, by lcalitz
 - Stat graphs fix (Dave Scotese)
+- Added BCC module to copy all emails
 
 Release #638 9/13/2012, by lcalitz
 - Removed superfluous gnuplot source file (auto-generated)
