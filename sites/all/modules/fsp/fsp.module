@@ -436,7 +436,11 @@ function _fsp_stats_recalc_daily(&$stats) {
         $msg = sprintf( 'FSP Participants: %-5s (+%s) Movers: %-5s (+%s)',
                 $stats['participants'], $count_delta, $stats['moved_to_nh'], $mover_delta
                 );
-        _fsp_send_tweet( $msg );
+        /* LDC: Disabled because twitter module breaks cron.php (but only on
+         *      production)
+         *
+         * _fsp_send_tweet( $msg );
+         */
     }
   watchdog("fsp", "Daily stats recalculation completed at " . strftime("%T"), 
     array(),
