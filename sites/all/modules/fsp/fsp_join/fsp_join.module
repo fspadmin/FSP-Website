@@ -132,10 +132,13 @@ function fsp_join_wizard_finish(&$form_state) {
   );
 
   $account = user_save(NULL, $user_array);
+  /* debugging
+  */
   if (!$account || $account->uid < 28585) {
     dsm(array('user_array'=>$user_array, 'account'=>$account));
     drupal_goto('fsp_join_wizard/confirm');
   }
+  /* */
 
   // Save rolodex
   $rolodex = new stdClass();
