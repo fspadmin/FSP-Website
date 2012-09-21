@@ -1,5 +1,4 @@
 <?php
-// $Id: image.install,v 1.33.2.3 2010/08/25 13:35:11 joachim Exp $
 
 /**
  * Implementation of hook_schema().
@@ -317,20 +316,20 @@ function image_update_6100() {
     'default' => 0,
   ));
 
-  /**
-   * We remove and re-add primary keys and indexes because the column types
-   * are changed.
-   * Sometimes however these don't exist in the first place (@see
-   * <http://drupal.org/node/562810>; the @ takes care of suppressing the
-   * error message this causes.
-   */
+  // We remove and re-add primary keys and indexes because the column types
+  // are changed. Sometimes however these don't exist in the first place.
+  // @see http://drupal.org/node/562810
+  // Try to suppress errors during removal.
   @db_drop_primary_key($ret, 'image');
   db_add_primary_key($ret, 'image', array('nid', 'image_size'));
   @db_drop_index($ret, 'image', 'image_fid');
   db_add_index($ret, 'image', 'fid', array('fid'));
 
   // Notify the user that they may get harmless fail messages here.
-  $ret[] = array('success' => TRUE, 'query' => t('If you see a message of the form "Failed: ALTER TABLE {image} DROP PRIMARY KEY" or "DROP INDEX image_fid" here it is harmless.'));
+  $ret[] = array(
+    'success' => TRUE,
+    'query' => t('You can safely ignore the error message "Failed: ALTER TABLE {image} DROP PRIMARY KEY" or "DROP INDEX image_fid".'),
+  );
   return $ret;
 }
 
@@ -382,8 +381,16 @@ function image_update_6103() {
  */
 function image_update_6104() {
   $ret = array();
-  $query = "ALTER TABLE {image} ALTER COLUMN image_size SET DEFAULT ''";
-  $ret[] = update_sql($query);
+  db_drop_primary_key($ret, 'image');
+  db_change_field($ret, 'image', 'image_size', 'image_size', array(
+    'description' => 'Primary Key: The {files}.filename of the image file. For image module this indicates the file size.',
+    'type' => 'varchar',
+    'length' => 32,
+    'not null' => TRUE,
+    'default' => '',
+  ), array(
+    'primary key' => array('nid', 'image_size'),
+  ));
   return $ret;
 }
 

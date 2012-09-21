@@ -380,57 +380,62 @@ function uc_ups_shipping_quote($packages, $origin, $destination, $ups_service) {
   $shipment_weight = 0;
   $package_schema = '';
   foreach ($packages as $package) {
+
+    // Determine length conversion factor and weight conversion factor
+    // for this shipment
+    $length_factor = uc_length_conversion($package->length_units, variable_get('uc_ups_unit_system', variable_get('uc_length_unit', 'in')));
+    switch ($ups_units) {
+      case 'in':
+        $weight_factor = uc_weight_conversion($package->weight_units, 'lb');
+        break;
+      case 'cm':
+        $weight_factor = uc_weight_conversion($package->weight_units, 'kg');
+        break;
+    }
+
+    // Loop over quantity of packages in this shipment
     $qty = $package->qty;
     for ($i = 0; $i < $qty; $i++) {
+      // Build XML for this package
       $package_type = array('code' => $package->pkg_type, 'description' => $pkg_types[$package->pkg_type]);
       $package_schema .= "<Package>";
-        $package_schema .= "<PackagingType>";
-          $package_schema .= "<Code>". $package_type['code'] ."</Code>";
-          //$package_schema .= "<Description>". $package_type['description'] ."</Description>";
-        $package_schema .= "</PackagingType>";
-        if ($package->pkg_type == '02' && $package->length && $package->width && $package->height) {
-          if ($package->length < $package->width) {
-            list($package->length, $package->width) = array($package->width, $package->length);
-          }
-          $package_schema .= "<Dimensions>";
-            $package_schema .= "<UnitOfMeasurement>";
-            $conversion = uc_length_conversion($package->length_units, variable_get('uc_ups_unit_system', variable_get('uc_length_unit', 'in')));
-            $package_schema .= "<Code>". strtoupper(variable_get('uc_ups_unit_system', variable_get('uc_length_unit', 'in'))) ."</Code>";
-            $package_schema .= "</UnitOfMeasurement>";
-            $package_schema .= "<Length>". number_format($package->length * $conversion, 2, '.', '') ."</Length>";
-            $package_schema .= "<Width>". number_format($package->width * $conversion, 2, '.', '') ."</Width>";
-            $package_schema .= "<Height>". number_format($package->height * $conversion, 2, '.', '') ."</Height>";
-          $package_schema .= "</Dimensions>";
+      $package_schema .=   "<PackagingType>";
+      $package_schema .=     "<Code>" . $package_type['code'] . "</Code>";
+      $package_schema .=   "</PackagingType>";
+      if ($package->pkg_type == '02' && $package->length && $package->width && $package->height) {
+        if ($package->length < $package->width) {
+          list($package->length, $package->width) = array($package->width, $package->length);
         }
-        $size = $package->length * $conversion + 2 * $conversion * ($package->width + $package->height);
-        switch ($ups_units) {
-          case 'in':
-            $conversion = uc_weight_conversion($package->weight_units, 'lb');
-            break;
-          case 'cm':
-            $conversion = uc_weight_conversion($package->weight_units, 'kg');
-            break;
-        }
-        $weight = max(1, $package->weight * $conversion);
-        $shipment_weight += $weight;
-        $package_schema .= "<PackageWeight>";
-          $package_schema .= "<UnitOfMeasurement>";
-            $package_schema .= "<Code>$units</Code>";
-            $package_schema .= "<Description>$unit_name</Description>";
-          $package_schema .= "</UnitOfMeasurement>";
-          $package_schema .= "<Weight>". number_format($weight, 1, '.', '') ."</Weight>";
-        $package_schema .= "</PackageWeight>";
-        if ($size > 130 && $size <= 165) {
-          $package_schema .= "<LargePackageIndicator/>";
-        }
-        if (variable_get('uc_ups_insurance', TRUE)) {
-          $package_schema .= "<PackageServiceOptions>";
-            $package_schema .= "<InsuredValue>";
-              $package_schema .= "<CurrencyCode>". variable_get('uc_currency_code', 'USD') ."</CurrencyCode>";
-              $package_schema .= "<MonetaryValue>". $package->price ."</MonetaryValue>";
-            $package_schema .= "</InsuredValue>";
-          $package_schema .= "</PackageServiceOptions>";
-        }
+        $package_schema .= "<Dimensions>";
+        $package_schema .=   "<UnitOfMeasurement>";
+        $package_schema .=     "<Code>" . strtoupper(variable_get('uc_ups_unit_system', variable_get('uc_length_unit', 'in'))) . "</Code>";
+        $package_schema .=   "</UnitOfMeasurement>";
+        $package_schema .=   "<Length>" . number_format($package->length * $length_factor, 2, '.', '') . "</Length>";
+        $package_schema .=   "<Width>" . number_format($package->width * $length_factor, 2, '.', '') . "</Width>";
+        $package_schema .=   "<Height>" . number_format($package->height * $length_factor, 2, '.', '') . "</Height>";
+        $package_schema .= "</Dimensions>";
+      }
+      $size = $package->length * $length_factor + 2 * $length_factor * ($package->width + $package->height);
+      $weight = max(1, $package->weight * $weight_factor);
+      $shipment_weight += $weight;
+      $package_schema .=   "<PackageWeight>";
+      $package_schema .=     "<UnitOfMeasurement>";
+      $package_schema .=       "<Code>" . $units . "</Code>";
+      $package_schema .=       "<Description>" . $unit_name . "</Description>";
+      $package_schema .=     "</UnitOfMeasurement>";
+      $package_schema .=     "<Weight>" . number_format($weight, 1, '.', '') . "</Weight>";
+      $package_schema .=   "</PackageWeight>";
+      if ($size > 130 && $size <= 165) {
+        $package_schema .= "<LargePackageIndicator/>";
+      }
+      if (variable_get('uc_ups_insurance', TRUE)) {
+        $package_schema .= "<PackageServiceOptions>";
+        $package_schema .=   "<InsuredValue>";
+        $package_schema .=     "<CurrencyCode>" . variable_get('uc_currency_code', 'USD') . "</CurrencyCode>";
+        $package_schema .=     "<MonetaryValue>" . $package->price . "</MonetaryValue>";
+        $package_schema .=   "</InsuredValue>";
+        $package_schema .= "</PackageServiceOptions>";
+      }
       $package_schema .= "</Package>";
     }
   }
@@ -489,8 +494,8 @@ function uc_ups_shipping_quote($packages, $origin, $destination, $ups_service) {
       <Weight>". number_format($shipment_weight, 1, '.', '') ."</Weight>
     </ShipmentWeight>
     <Service>
-      <Code>". $service['code'] ."</Code>
-      <Description>{$service[description]}</Description>
+      <Code>{$service['code']}</Code>
+      <Description>{$service['description']}</Description>
     </Service>
     ";
     $schema .= $package_schema;
@@ -561,10 +566,10 @@ function uc_ups_quote($products, $details) {
       $package->weight += $weight;
       $package->price += $product->price * $product->qty;
 
-      $conversion = uc_length_conversion($product->length_units, 'in');
-      $package->length = max($product->length * $conversion, $package->length);
-      $package->width = max($product->width * $conversion, $package->width);
-      $package->height = max($product->height * $conversion, $package->height);
+      $length_factor = uc_length_conversion($product->length_units, 'in');
+      $package->length = max($product->length * $length_factor, $package->length);
+      $package->width = max($product->width * $length_factor, $package->width);
+      $package->height = max($product->height * $length_factor, $package->height);
 
       $packages[$key][] = $package;
     }
@@ -638,7 +643,10 @@ function uc_ups_quote($products, $details) {
       $request = uc_ups_shipping_quote($ship_packages, $orig, $dest, $ups_service);
       $resp = drupal_http_request(variable_get('uc_ups_connection_address', 'https://wwwcie.ups.com/ups.app/xml/') .'Rate', array(), 'POST', $request);
       if (user_access('configure quotes') && variable_get('uc_quote_display_debug', FALSE)) {
-        $quotes[$ups_service]['debug'] .= /* '<pre>'. print_r($ship_packages, TRUE) .'</pre>' . */ htmlentities($request) .' <br /><br /> '. htmlentities($resp->data);
+        if (!isset($quotes[$usps_service]['debug'])) {
+          $quotes[$usps_service]['debug'] = '';
+        }
+        $quotes[$ups_service]['debug'] .= htmlentities($request) . ' <br /><br /> ' . htmlentities($resp->data);
       }
       $response = new SimpleXMLElement($resp->data);
       if (isset($response->Response->Error)) {
@@ -660,8 +668,11 @@ function uc_ups_quote($products, $details) {
         if (isset($response->RatedShipment->NegotiatedRates)) {
           $charge = $response->RatedShipment->NegotiatedRates->NetSummaryCharges->GrandTotal;
         }
-        if (!isset($charge->CurrencyCode) || (string)$charge->CurrencyCode == variable_get('uc_currency_code', "USD")) {
-          $rate = uc_ups_markup((string)$charge->MonetaryValue);
+        if (!isset($charge->CurrencyCode) || (string) $charge->CurrencyCode == variable_get('uc_currency_code', "USD")) {
+          if (!isset($quotes[$ups_service]['rate'])) {
+            $quotes[$ups_service]['rate'] = 0;
+          }
+          $rate = uc_ups_markup((string) $charge->MonetaryValue);
           $quotes[$ups_service]['rate'] += $rate;
         }
       }
@@ -691,15 +702,17 @@ function uc_ups_quote($products, $details) {
    * Copied from http://drupal.org/node/70915 and then improved by Lyle.
    */
   $messages = drupal_set_message();
-  $errors = $messages['error'];
-  $total = count($errors);
-  for ($i = 0; $i <= $total; $i++) {
-    if (strpos($errors[$i], 'SSL: fatal protocol error in')) {
-      unset($_SESSION['messages']['error'][$i]);
+  if (isset($messages['error'])) {
+    $errors = $messages['error'];
+    $total = count($errors);
+    for ($i = 0; $i < $total; $i++) {
+      if (strpos($errors[$i], 'SSL: fatal protocol error in')) {
+        unset($_SESSION['messages']['error'][$i]);
+      }
     }
-  }
-  if (empty($_SESSION['messages']['error'])) {
-    unset($_SESSION['messages']['error']);
+    if (empty($_SESSION['messages']['error'])) {
+      unset($_SESSION['messages']['error']);
+    }
   }
   db_query("DELETE FROM {watchdog} WHERE type = 'php' AND variables LIKE '%%SSL: fatal protocol error%%'");
   // End of ugly hack.
@@ -720,7 +733,12 @@ function uc_ups_quote($products, $details) {
  */
 function theme_uc_ups_option_label($service, $packages) {
   // Start with logo as required by the UPS terms of service.
-  $output = '<img class="ups-logo" src="'. url(drupal_get_path('module', 'uc_ups')) .'/uc_ups_logo.gif" alt="'. t('UPS Logo') .'" /> ';
+  $output  = theme('image',
+    drupal_get_path('module', 'uc_ups') . '/uc_ups_logo.gif',
+    t('UPS logo'),
+    '',
+    array('class' => 'ups-logo')
+  );
 
   // Add the UPS service name.
   $output .= t('@service Rate', array('@service' => $service));

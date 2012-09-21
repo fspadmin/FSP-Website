@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_field_conditional_buyitnow.inc,v 1.2 2009/04/17 07:50:06 madsph Exp $
 
 /**
  * @file

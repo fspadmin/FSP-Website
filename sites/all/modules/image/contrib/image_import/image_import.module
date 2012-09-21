@@ -1,5 +1,4 @@
 <?php
-// $Id: image_import.module,v 1.21.2.1 2010/08/03 17:43:00 sun Exp $
 
 /**
  * Implementation of hook_help().

@@ -10,7 +10,7 @@
  */
 class UbercartTestHelper extends DrupalWebTestCase {
 
-  /** User with privileges to do everthing. */
+  /** User with privileges to do everything. */
   protected $adminUser;
 
   /** Authenticated but unprivileged user. */
@@ -95,6 +95,8 @@ class UbercartTestHelper extends DrupalWebTestCase {
     $product_class = (object) $product_class;
 
     drupal_write_record('uc_product_classes', $product_class);
+    uc_product_node_info(TRUE);
+    node_types_rebuild();
 
     return $product_class;
   }

@@ -1,5 +1,4 @@
 <?php
-// $Id: views_handler_filter_order_status.inc,v 1.1 2009/03/09 09:36:12 madsph Exp $
 /**
  * Filter by order status
  * Thank you river_t for the Patch!

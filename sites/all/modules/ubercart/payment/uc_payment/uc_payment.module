@@ -5,11 +5,9 @@
  * Defines the payment API that lets payment modules interact with Ubercart.
  *
  * The payment system in Ubercart relies on hooks to let the main program know
- * what payment modules are installed and what their current settings are.  The
+ * what payment modules are installed and what their current settings are. The
  * customer can choose a payment type at checkout, and the proper information
  * will be collected to complete the purchase.
- *
- * Development sponsored by the Ubercart project.  http://www.ubercart.org
  */
 
 require_once('uc_payment_checkout_pane.inc');
@@ -556,7 +554,7 @@ function uc_payment_process($method, $order_id, $amount, $data = NULL, $default 
       else {
         // Otherwise display an error message to administrators.
         if (user_access('administer store')) {
-          drupal_set_message(t('An error has occurred with your payment gateway.  The charge function could not be found.'));
+          drupal_set_message(t('An error has occurred with your payment gateway. The charge function could not be found.'));
         }
 
         $result['success'] = FALSE;
@@ -617,8 +615,13 @@ function uc_payment_process($method, $order_id, $amount, $data = NULL, $default 
  *   payment.
  * @param $comment
  *   (optional) The comment to enter in the payment log.
+ * @param $received
+ *   (optional) The timestamp at which the payment was received.
  */
-function uc_payment_enter($order_id, $method, $amount, $uid = 0, $data = NULL, $comment = '') {
+function uc_payment_enter($order_id, $method, $amount, $uid = 0, $data = NULL, $comment = '', $received = NULL) {
+  if ($received == NULL) {
+    $received = time();
+  }
   $method_name = _payment_method_data($method, 'review');
   if (empty($method_name)) {
     $method_name = _payment_method_data($method, 'name');
@@ -641,7 +644,7 @@ function uc_payment_enter($order_id, $method, $amount, $uid = 0, $data = NULL, $
   }
 
   db_query("INSERT INTO {uc_payment_receipts} (order_id, method, amount, uid, data, comment, received) VALUES (%d, '%s', %f, %d, '%s', '%s', %d)",
-    $order_id, $method_name, $amount, $uid, $data, $comment, time());
+    $order_id, $method_name, $amount, $uid, $data, $comment, $received);
 
   $order = uc_order_load($order_id);
   $account = user_load($uid);
@@ -748,6 +751,10 @@ function _payment_method_list($action = NULL) {
   }
 
   $methods = module_invoke_all('payment_method');
+
+  // Allow other modules to alter the payment methods.
+  drupal_alter('payment_method', $methods);
+
   foreach ($methods as $i => $value) {
     $methods[$i]['checkout'] = variable_get('uc_payment_method_'. $methods[$i]['id'] .'_checkout', $methods[$i]['checkout']);
     $methods[$i]['weight'] = variable_get('uc_payment_method_'. $methods[$i]['id'] .'_weight', $methods[$i]['weight']);

@@ -1,5 +1,4 @@
 <?php
-// $Id: top_buttons.install,v 1.1.2.2 2010/10/28 19:43:26 nancyw Exp $
 
 /**
  * @file
@@ -19,5 +18,5 @@ function top_buttons_install() {
  * Remove module variables.
  */
 function top_buttons_uninstall() {
-  db_query("DELETE FROM {variables} WHERE name LIKE 'top_buttons_%'");
+  db_query("DELETE FROM {variable} WHERE name LIKE 'top_buttons_%'");
 }

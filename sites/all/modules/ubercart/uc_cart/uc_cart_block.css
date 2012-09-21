@@ -3,9 +3,10 @@
  */
 .cart-block-icon-full,
 .cart-block-icon-empty {
-  display: inline;
-  height: 7px;
-  padding: 4px 12px 0;
+  float: left;
+  height: 16px;
+  margin: 2px 6px 0 0;
+  width: 16px;
 }
 
 .cart-block-icon-full {
@@ -21,6 +22,8 @@
  */
 .cart-block-title-bar {
   display: inline;
+  padding-right: 20px;
+  position: relative;
 }
 
 .cart-block-toggle {
@@ -28,9 +31,11 @@
 }
 
 .cart-block-arrow {
-  display: inline;
-  height: 7px;
-  padding: 4px 12px 0;
+  height: 5px;
+  position: absolute;
+  right: 0;
+  top: 9px;
+  width: 10px;
 }
 
 .cart-block-title-bar .arrow-up {

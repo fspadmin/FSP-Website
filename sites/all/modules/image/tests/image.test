@@ -1,5 +1,4 @@
 <?php
-// $Id: image.test,v 1.14 2009/12/30 12:51:47 joachim Exp $
 
 /**
  * Test image functionality.
@@ -9,11 +8,11 @@ class ImageTestCase extends DrupalWebTestCase {
   protected $image;
   protected $another_image;
 
-  function getInfo() {
+  public static function getInfo() {
     return array(
-      'name' => t('Image functionality'),
-      'description' => t('Test Image module functionality.'),
-      'group' => t('Image'),
+      'name' => 'Image functionality',
+      'description' => 'Test Image module functionality.',
+      'group' => 'Image',
     );
   }
 

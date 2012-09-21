@@ -1,9 +1,8 @@
-// $Id: README.txt,v 1.3.2.1.2.2 2010/11/28 22:00:17 longwave Exp $
 
 Welcome to Ubercart Views.
 --------------------------
 
-If you're having trouble installing this module, please ensure that your 
+If you're having trouble installing this module, please ensure that your
 tar program is not flattening the directory tree, truncating filenames
 or losing files.
 

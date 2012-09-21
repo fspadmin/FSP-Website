@@ -34,57 +34,19 @@ define('FILE_STATUS_PERMANENT', 1);
 /**
  * Create the download path to a file.
  *
- * There are two kinds of local files:
- * - "created files", i.e. those in the files directory (which is stored in
- *   the file_directory_path variable and can be retrieved using
- *   file_directory_path()). These are files that have either been uploaded by
- *   users or were generated automatically (for example through CSS
- *   aggregation).
- * - "shipped files", i.e. those outside of the files directory, which ship as
- *   part of Drupal core or contributed modules or themes.
- *
- * @param $path
- *   A string containing the Drupal path (i.e. path relative to the Drupal
- *   root directory) of the file to generate the URL for.
- * @return
- *   A string containing a URL that can be used to download the file.
+ * @param $path A string containing the path of the file to generate URL for.
+ * @return A string containing a URL that can be used to download the file.
  */
 function file_create_url($path) {
-  // Clean up Windows paths.
-  $old_path = $path = str_replace('\\', '/', $path);
-
-  drupal_alter('file_url', $path);
-
-  // If any module has altered the path, then return the alteration.
-  if ($path != $old_path) {
-    return $path;
+  // Strip file_directory_path from $path. We only include relative paths in urls.
+  if (strpos($path, file_directory_path() .'/') === 0) {
+    $path = trim(substr($path, strlen(file_directory_path())), '\\/');
   }
-
-  // Otherwise serve the file from Drupal's web server. This point will only
-  // be reached when either no custom_file_url_rewrite() function has been
-  // defined, or when that function returned FALSE, thereby indicating that it
-  // cannot (or doesn't wish to) rewrite the URL. This is typically because
-  // the file doesn't match some conditions to be served from a CDN or static
-  // file server, or because the file has not yet been synced to the CDN or
-  // static file server.
-
-  // Shipped files.
-  if (strpos($path, file_directory_path() . '/') !== 0) {
-    return base_path() . $path;
-  }
-  // Created files.
-  else {
-    switch (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC)) {
-      case FILE_DOWNLOADS_PUBLIC:
-        return $GLOBALS['base_url'] . '/' . $path;
-      case FILE_DOWNLOADS_PRIVATE:
-        // Strip file_directory_path from $path. Private downloads' URLs are
-        // rewritten to be served relatively to system/files (which is a menu
-        // callback that streams the file) instead of relatively to the file
-        // directory path.
-        $path = file_directory_strip($path);
-        return url('system/files/' . $path, array('absolute' => TRUE));
-    }
+  switch (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC)) {
+    case FILE_DOWNLOADS_PUBLIC:
+      return $GLOBALS['base_url'] .'/'. file_directory_path() .'/'. str_replace('\\', '/', $path);
+    case FILE_DOWNLOADS_PRIVATE:
+      return url('system/files/'. $path, array('absolute' => TRUE));
   }
 }
 
@@ -497,6 +459,7 @@ function file_create_filename($basename, $directory) {
     }
     else {
       $name = $basename;
+      $ext = '';
     }
 
     $counter = 0;
@@ -720,7 +683,7 @@ function file_validate_extensions($file, $extensions) {
 
   // Bypass validation for uid  = 1.
   if ($user->uid != 1) {
-    $regex = '/\.('. ereg_replace(' +', '|', preg_quote($extensions)) .')$/i';
+    $regex = '/\.('. @ereg_replace(' +', '|', preg_quote($extensions)) .')$/i';
     if (!preg_match($regex, $file->filename)) {
       $errors[] = t('Only files with the following extensions are allowed: %files-allowed.', array('%files-allowed' => $extensions));
     }
@@ -868,8 +831,13 @@ function file_save_data($data, $dest, $replace = FILE_EXISTS_RENAME) {
 /**
  * Set the status of a file.
  *
- * @param file A Drupal file object
- * @param status A status value to set the file to.
+ * @param $file 
+ *   A Drupal file object.
+ * @param $status
+ *   A status value to set the file to. One of:
+ *   - FILE_STATUS_PERMANENT
+ *   - FILE_STATUS_TEMPORARY
+ *
  * @return FALSE on failure, TRUE on success and $file->status will contain the
  *     status.
  */
@@ -956,6 +924,7 @@ function file_download() {
 
 /**
  * Finds all files that match a given mask in a given directory.
+ *
  * Directories and files beginning with a period are excluded; this
  * prevents hidden files and directories (such as SVN working directories)
  * from being scanned.
@@ -972,18 +941,19 @@ function file_download() {
  *   When TRUE, the directory scan will recurse the entire tree
  *   starting at the provided directory.
  * @param $key
- *   The key to be used for the returned array of files. Possible
- *   values are "filename", for the path starting with $dir,
- *   "basename", for the basename of the file, and "name" for the name
- *   of the file without an extension.
+ *   The key to be used for the returned associative array of files. Possible
+ *   values are "filename", for the path starting with $dir; "basename", for
+ *   the basename of the file; and "name" for the name of the file without the
+ *   extension.
  * @param $min_depth
  *   Minimum depth of directories to return files from.
  * @param $depth
- *   Current depth of recursion. This parameter is only used internally and should not be passed.
+ *   Current depth of recursion. This parameter is only used internally and
+ *   should not be passed in.
  *
  * @return
  *   An associative array (keyed on the provided key) of objects with
- *   "path", "basename", and "name" members corresponding to the
+ *   "filename", "basename", and "name" members corresponding to the
  *   matching files.
  */
 function file_scan_directory($dir, $mask, $nomask = array('.', '..', 'CVS'), $callback = 0, $recurse = TRUE, $key = 'filename', $min_depth = 0, $depth = 0) {
@@ -997,7 +967,7 @@ function file_scan_directory($dir, $mask, $nomask = array('.', '..', 'CVS'), $ca
           // Give priority to files in this folder by merging them in after any subdirectory files.
           $files = array_merge(file_scan_directory("$dir/$file", $mask, $nomask, $callback, $recurse, $key, $min_depth, $depth + 1), $files);
         }
-        elseif ($depth >= $min_depth && ereg($mask, $file)) {
+        elseif ($depth >= $min_depth && @ereg($mask, $file)) {
           // Always use this match over anything already set in $files with the same $$key.
           $filename = "$dir/$file";
           $basename = basename($file);
@@ -1067,23 +1037,6 @@ function file_directory_temp() {
  */
 function file_directory_path() {
   return variable_get('file_directory_path', conf_path() .'/files');
-}
-
-/**
- * Remove a possible leading file directory path from the given path.
- *
- * @param $path
- *   Path to a file that may be in Drupal's files directory.
- * @return
- *   String with Drupal's files directory removed from it.
- */
-function file_directory_strip($path) {
-  // Strip file_directory_path from $path. We only include relative paths in
-  // URLs.
-  if (strpos($path, file_directory_path() . '/') === 0) {
-    $path = trim(substr($path, strlen(file_directory_path())), '\\/');
-  }
-  return $path;
 }
 
 /**

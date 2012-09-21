@@ -168,15 +168,15 @@ function ckeditor_install() {
     ['Source'],
     ['Cut','Copy','Paste','PasteText','PasteFromWord','-','SpellChecker', 'Scayt'],
     ['Undo','Redo','Find','Replace','-','SelectAll','RemoveFormat'],
-    ['Image','Flash','Table','HorizontalRule','Smiley','SpecialChar'],
+    ['Image','Flash','Table','HorizontalRule','Smiley','SpecialChar','Iframe'],
     ['Maximize', 'ShowBlocks'],
     '/',
     ['Format'],
     ['Bold','Italic','Underline','Strike','-','Subscript','Superscript'],
-    ['NumberedList','BulletedList','-','Outdent','Indent','Blockquote'],
+    ['NumberedList','BulletedList','-','Outdent','Indent','Blockquote','CreateDiv'],
     ['JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock','-','BidiRtl','BidiLtr'],
     ['Link','Unlink','Anchor','Linkit','LinkToNode','LinkToMenu'],
-    ['DrupalBreak', 'DrupalPageBreak']
+    ['DrupalBreak']
 ]
       ";
 
@@ -217,7 +217,7 @@ function ckeditor_install() {
       "admin/settings/actions/configure/*\n".
       "*.edit-target\n".
       "*.edit-wysiwyg-filter-*\n".
-      "admin/build/views/*\n"
+      "admin/build/views*\n"
       );
 
       //force by default simple toolbar on selected textareas
@@ -377,18 +377,18 @@ function _ckeditor_requirements_getinstalledversion() {
  */
 function _ckeditor_requirements_ckfinder_config_check($profile_name) {
   module_load_include('module', 'ckeditor');
-  $lib_path = drupal_get_path('module', 'ckeditor');
-  $config_path = $lib_path .'/ckfinder/config.php';
+  $ckfinder_full_path = ckfinder_path();
+  $config_path = $ckfinder_full_path . '/config.php';
 
   if (!file_exists($config_path)) {
     return t('!ckfinder is not installed correctly: <code>!config</code> not found. Make sure that you uploaded all files and did not accidentally remove the configuration file.', array(
-      '!config' => $lib_path .'/ckfinder/config.php',
+      '!config' => $config_path,
       '!ckfinder' => '<a href="http://ckfinder.com">CKFinder</a>'
     ));
   }
 
   if (!is_readable($config_path)) {
-    return t('CKEditor needs read permission to the <code>!config</code> file.', array('!config' => 'ckfinder/config.php'));
+    return t('CKEditor needs read permission to the <code>!config</code> file.', array('!config' => $config_path));
   }
 
   $config_contents = file($config_path);
@@ -418,12 +418,12 @@ function _ckeditor_requirements_ckfinder_config_check($profile_name) {
   }
 
   if (!$require_once_found) {
-    return t('You are using a feature that requires manual integration in the <code>config.php</code> file. Please read the "Installing CKFinder" section in the <code>!readme</code> file carefully and add a <code>require_once ...</code> statement to the <code>%ckfconfig</code> file.', array('%ckfconfig' => drupal_get_path('module', 'ckeditor') . '/ckfinder/config.php', '!readme' => l(t('README.txt'), $base_url . '/' . drupal_get_path('module', 'ckeditor') . '/README.txt', array('absolute' => TRUE))));
+    return t('You are using a feature that requires manual integration in the <code>config.php</code> file. Please read the "Installing CKFinder" section in the <code>!readme</code> file carefully and add a <code>require_once ...</code> statement to the <code>%ckfconfig</code> file.', array('%ckfconfig' => $config_path, '!readme' => l(t('README.txt'), $base_url . '/' . drupal_get_path('module', 'ckeditor') . '/README.txt', array('absolute' => TRUE))));
   }
 
   if ($userfiles_absolute_path_line && $force_single_extension_line && (
   $require_once_line < $userfiles_absolute_path_line || $require_once_line > $force_single_extension_line)) {
-    return t('You are using a feature that requires manual integration in the <code>config.php</code> file. You have added a <code>require_once ...</code> statement to the <code>%ckfconfig</code> file, but in the wrong line.', array('%ckfconfig' => drupal_get_path('module', 'ckeditor') . '/ckfinder/config.php'));
+    return t('You are using a feature that requires manual integration in the <code>config.php</code> file. You have added a <code>require_once ...</code> statement to the <code>%ckfconfig</code> file, but in the wrong line.', array('%ckfconfig' => $config_path));
   }
 
   return FALSE;
@@ -551,7 +551,7 @@ function ckeditor_update_6102() {
     $name = $profile->name;
     $settings = unserialize($profile->settings);
 
-    if ($settings['toolbar'] == 'DrupalBasic'){
+    if ($settings['toolbar'] == 'DrupalBasic') {
       $settings['toolbar'] = "
 [
     [ 'Format', 'Bold', 'Italic', '-', 'NumberedList','BulletedList', '-', 'Link', 'Unlink', 'Image' ]
@@ -563,7 +563,7 @@ function ckeditor_update_6102() {
       $return = db_query( "UPDATE {ckeditor_settings} SET settings = '%s' WHERE name = '%s'", $settings, $name);
       $ret[] = array('success' => $return !== FALSE, 'query' => "UPDATE PROFILE - {$name}");
     }
-    else if ($settings['toolbar'] == 'DrupalFiltered'){
+    elseif ($settings['toolbar'] == 'DrupalFiltered') {
       $settings['toolbar'] = "
 [
     ['Source'],
@@ -586,7 +586,7 @@ function ckeditor_update_6102() {
       $return = db_query( "UPDATE {ckeditor_settings} SET settings = '%s' WHERE name = '%s'", $settings, $name);
       $ret[] = array('success' => $return !== FALSE, 'query' => "UPDATE PROFILE - {$name}");
     }
-    else if ($settings['toolbar'] == 'DrupalFull'){
+    elseif ($settings['toolbar'] == 'DrupalFull') {
       $settings['toolbar'] = "
 [
       ['Source'],

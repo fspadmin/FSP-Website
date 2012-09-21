@@ -14,7 +14,7 @@
  */
 
 /**
- * Do extra processing when an item is added to the shopping cart.
+ * Performs extra processing when an item is added to the shopping cart.
  *
  * Some modules need to be able to hook into the process of adding items to a
  * cart. For example, an inventory system may need to check stock levels and
@@ -22,28 +22,30 @@
  * lets developers squeeze right in at the end of the process after the product
  * information is all loaded and the product is about to be added to the cart.
  * In the event that a product should not be added to the cart, you simply have
- * to return a failure message described below. This hook may also be used simply
- * to perform some routine action when products are added to the cart.
+ * to return a failure message described below. This hook may also be used
+ * simply to perform some routine action when products are added to the cart.
  *
  * @param $nid
- *   The node ID of the product
+ *   The node ID of the product.
  * @param $qty
- *   The quantity being added
+ *   The quantity being added.
  * @param $data
- *   The data array, including attributes and model number adjustments
+ *   The data array, including attributes and model number adjustments.
+ *
  * @return
  *   The function can use this data to whatever purpose to see if the item can
  *   be added to the cart or not. The function should return an array containing
- *   the result array. (This is due to the nature of Drupal's module_invoke_all()
- *   function. You must return an array within an array or other module data will
- *   end up getting ignored.) At this moment, there are only three keys:
- *   - "success": TRUE or FALSE for whether the specified quantity of the item
- *       may be added to the cart or not; defaults to TRUE.
- *   - "message": the fail message to display in the event of a failure; if
- *       omitted, Ubercart will display a default fail message.
- *   - "silent": return TRUE to suppress the display of any messages; useful
- *       when a module simply needs to do some other processing during an add to
- *       cart or fail silently.
+ *   the result array. (This is due to the nature of Drupal's
+ *   module_invoke_all() function. You must return an array within an array or
+ *   other module data will end up getting ignored.) At this moment, there are
+ *   only three keys:
+ *   - success: TRUE or FALSE for whether the specified quantity of the item
+ *     may be added to the cart or not; defaults to TRUE.
+ *   - message: The fail message to display in the event of a failure; if
+ *     omitted, Ubercart will display a default fail message.
+ *   - silent: Return TRUE to suppress the display of any messages; useful when
+ *     a module simply needs to do some other processing during an add to cart
+ *     or fail silently.
  */
 function hook_add_to_cart($nid, $qty, $data) {
   if ($qty > 1) {
@@ -56,14 +58,15 @@ function hook_add_to_cart($nid, $qty, $data) {
 }
 
 /**
- * Add extra information to a cart item's "data" array.
+ * Adds extra information to a cart item's "data" array.
  *
- * This is effectively the submit handler of any alterations to the Add to Cart
+ * This is effectively the submit handler of any alterations to the Add-to-cart
  * form. It provides a standard way to store the extra information so that it
  * can be used by hook_add_to_cart().
  *
  * @param $form_values
- *   The values submitted to the Add to Cart form.
+ *   The values submitted to the Add-to-cart form.
+ *
  * @return
  *   An array of data to be merged into the item added to the cart.
  */
@@ -73,10 +76,11 @@ function hook_add_to_cart_data($form_values) {
 }
 
 /**
- * Calculate tax line items for an order.
+ * Calculates tax line items for an order.
  *
  * @param $order
  *   An order object or an order id.
+ *
  * @return
  *   An array of tax line item objects keyed by a module-specific id.
  */
@@ -157,15 +161,19 @@ function hook_calculate_tax($order) {
 }
 
 /**
- * Control the display of an item in the cart.
+ * Controls the display of an item in the cart.
  *
  * Product type modules allow the creation of nodes that can be added to the
  * cart. The cart determines how they are displayed through this hook. This is
- * especially important for product kits, because it may be displayed as a single
- * unit in the cart even though it is represented as several items.
+ * especially important for product kits, because it may be displayed as a
+ * single unit in the cart even though it is represented as several items.
+ *
+ * This hook is only called for the module that owns the cart item in
+ * question, as set in $item->module.
  *
  * @param $item
  *   The item in the cart to display.
+ *
  * @return
  *   A form array containing the following elements:
  *   - "nid"
@@ -176,11 +184,12 @@ function hook_calculate_tax($order) {
  *     - #value: The module implementing this hook and the node represented by
  *       $item.
  *   - "remove"
- *     - #type: checkbox
- *     - #value: If selected, removes the $item from the cart.
+ *     - #type: submit
+ *     - #value: t('Remove'); when clicked, will remove $item from the cart.
  *   - "description"
  *     - #type: markup
- *     - #value: Themed markup (usually an unordered list) displaying extra information.
+ *     - #value: Themed markup (usually an unordered list) displaying extra
+ *       information.
  *   - "title"
  *     - #type: markup
  *     - #value: The displayed title of the $item.
@@ -193,8 +202,8 @@ function hook_calculate_tax($order) {
  *     - #value: The serialized $item->data.
  *   - "qty"
  *     - #type: textfield
- *     - #value: The quantity of $item in the cart. When "Update cart" is clicked,
- *         the customer's input is saved to the cart.
+ *     - #value: The quantity of $item in the cart. When "Update cart" is
+ *       clicked, the customer's input is saved to the cart.
  */
 function hook_cart_display($item) {
   $node = node_load($item->nid);
@@ -237,7 +246,7 @@ function hook_cart_display($item) {
 }
 
 /**
- * Add extra data about an item in the cart.
+ * Adds extra data about an item in the cart.
  *
  * Products that are added to a customer's cart are referred as items until the
  * sale is completed. Just think of a grocery store having a bunch of products
@@ -248,26 +257,28 @@ function hook_cart_display($item) {
  * Here's the rationale for this hook: Products may change on a live site during
  * a price increase or change to attribute adjustments. If a user has previously
  * added an item to their cart, when they go to checkout or view their cart
- * screen we want the latest pricing and model numbers to show. So, the essential
- * product information is stored in the cart, but when the items in a cart are
- * loaded, modules are given a chance to adjust the data against the latest settings.
+ * screen we want the latest pricing and model numbers to show. So, the
+ * essential product information is stored in the cart, but when the items in a
+ * cart are loaded, modules are given a chance to adjust the data against the
+ * latest settings.
  *
  * @param $op
  *   The action that is occurring. Possible values:
- *   - "load" - Passed for each item when a cart is being loaded in the function
- *       uc_cart_get_contents(). This gives modules the chance to tweak information
- *       for items when the cart is being loaded prior to being view or added to
- *       an order. No return value is expected.
- *   - "can_ship" - Passed when a cart is being scanned for items that are not
- *       shippable items. Übercart will bypass cart and checkout operations
- *       specifically related to tangible products if nothing in the cart is
- *       shippable. hook_cart_item functions that check for this op are expected
- *       to return TRUE or FALSE based on whether a product is shippable or not.
- *   - "remove" - Passed when an item is removed from the cart.
- *   - "checkout" - Passed for each item when the cart is being emptied for checkout.
+ *   - load: Passed for each item when a cart is being loaded in the function
+ *     uc_cart_get_contents(). This gives modules the chance to tweak
+ *     information for items when the cart is being loaded prior to being view
+ *     or added to an order. No return value is expected.
+ *   - can_ship: Passed when a cart is being scanned for items that are not
+ *     shippable items. Ubercart will bypass cart and checkout operations
+ *     specifically related to tangible products if nothing in the cart is
+ *     shippable. hook_cart_item() functions that check for this op are expected
+ *     to return TRUE or FALSE based on whether a product is shippable or not.
+ *   - remove: Passed when an item is removed from the cart.
+ *   - checkout: Passed for each item when the cart is being emptied for
+ *     checkout.
+ *
  * @return
- *   No return value for load.
- *   TRUE or FALSE for can_ship.
+ *   No return value for load. TRUE or FALSE for can_ship.
  */
 function hook_cart_item($op, &$item) {
   switch ($op) {
@@ -279,18 +290,19 @@ function hook_cart_item($op, &$item) {
 }
 
 /**
- * Register callbacks for a cart pane.
+ * Registers callbacks for a cart pane.
  *
  * The default cart view page displays a table of the cart contents and a few
  * simple form features to manage the cart contents. For a module to add
- * information to this page, it must use hook_cart_pane to define extra panes
+ * information to this page, it must use hook_cart_pane() to define extra panes
  * that may be ordered to appear above or below the default information.
  *
  * @param $items
  *   The current contents of the shopping cart.
+ *
  * @return
- *   The function is expected to return an array of pane arrays with the following
- *   keys:
+ *   The function is expected to return an array of pane arrays with the
+ *   following keys:
  *   - "id"
  *     - type: string
  *     - value: The internal ID of the pane, using a-z, 0-9, and - or _.
@@ -309,8 +321,8 @@ function hook_cart_item($op, &$item) {
  *     - value: The body of the pane when rendered on the cart view screen.
  *
  * The body gets printed to the screen if it is on the cart view page.  For the
- * settings page, the body field is ignored.  You may want your function to check
- * for a NULL argument before processing any queries or foreach() loops.
+ * settings page, the body field is ignored.  You may want your function to
+ * check for a NULL argument before processing any queries or foreach() loops.
  */
 function hook_cart_pane($items) {
   $panes[] = array(
@@ -325,11 +337,11 @@ function hook_cart_pane($items) {
 }
 
 /**
- * Alter cart pane definitions.
+ * Alters cart pane definitions.
  *
  * @param $panes
- *   The array of pane information in the format defined in hook_cart_pane(), passed
- *   by reference.
+ *   The array of pane information in the format defined in hook_cart_pane(),
+ *   passed by reference.
  *
  * @param $items
  *   The array of item information.
@@ -343,20 +355,21 @@ function hook_cart_pane_alter(&$panes, $items) {
 }
 
 /**
- * Register callbacks for a checkout pane.
+ * Registers callbacks for a checkout pane.
  *
  * The checkout screen for Ubercart is a compilation of enabled checkout panes.
  * A checkout pane can be used to display order information, collect data from
- * the customer, or interact with other panes. Panes are defined in enabled modules
- * with hook_checkout_pane() and displayed and processed through specified callback
- * functions. Some of the settings for each pane are configurable from the checkout
- * settings page with defaults being specified in the hooks.
+ * the customer, or interact with other panes. Panes are defined in enabled
+ * modules with hook_checkout_pane() and displayed and processed through
+ * specified callback functions. Some of the settings for each pane are
+ * configurable from the checkout settings page with defaults being specified
+ * in the hooks.
  *
  * The default panes are defined in uc_cart.module in the function
  * uc_cart_checkout_pane(). These include panes to display the contents of the
- * shopping cart and to collect essential site user information, a shipping address,
- * a payment address, and order comments. Other included modules offer panes for
- * shipping and payment purposes as well.
+ * shopping cart and to collect essential site user information, a shipping
+ * address, a payment address, and order comments. Other included modules offer
+ * panes for shipping and payment purposes as well.
  *
  * @return
  *   An array of checkout pane arrays using the following keys:
@@ -365,36 +378,36 @@ function hook_cart_pane_alter(&$panes, $items) {
  *     - value: The internal ID of the checkout pane, using a-z, 0-9, and - or _.
  *   - "title"
  *     - type: string
- *     - value:The name of the pane as it appears on the checkout form.
+ *     - value: The name of the pane as it appears on the checkout form.
  *   - "desc"
  *     - type: string
  *     - value: A short description of the pane for the admin pages.
  *   - "callback"
  *     - type: string
  *     - value: The name of the callback function for this pane.  View
- *         @link http://www.ubercart.org/docs/developer/245/checkout this page @endlink
- *         for more documentation and examples of checkout pane callbacks.
+ *       @link http://www.ubercart.org/docs/developer/245/checkout this page @endlink
+ *       for more documentation and examples of checkout pane callbacks.
  *   - "weight"
  *     - type: integer
  *     - value: Default weight of the pane, defining its order on the checkout form.
  *   - "enabled"
  *     - type: boolean
  *     - value: Optional. Whether or not the pane is enabled by default. Defaults
- *         to TRUE.
+ *       to TRUE.
  *   - "process"
  *     - type: boolean
- *     - value: Optional. Whether or not this pane needs to be processed when the
- *         checkout form is submitted. Defaults to TRUE.
+ *     - value: Optional. Whether or not this pane needs to be processed when
+ *       the checkout form is submitted. Defaults to TRUE.
  *   - "collapsible"
  *     - type: boolean
  *     - value: Optional. Whether or not this pane is displayed as a collapsible
- *         fieldset. Defaults to TRUE.
+ *       fieldset. Defaults to TRUE.
  */
 function hook_checkout_pane() {
   $panes[] = array(
     'id' => 'cart',
     'callback' => 'uc_checkout_pane_cart',
-    'title' => t('Cart Contents'),
+    'title' => t('Cart contents'),
     'desc' => t("Display the contents of a customer's shopping cart."),
     'weight' => 1,
     'process' => FALSE,
@@ -404,7 +417,7 @@ function hook_checkout_pane() {
 }
 
 /**
- * Alter checkout pane definitions.
+ * Alters checkout pane definitions.
  *
  * @param $panes
  *   Array with the panes information as defined in hook_checkout_pane(), passed
@@ -419,7 +432,7 @@ function hook_checkout_pane_alter(&$panes) {
 }
 
 /**
- * Give clearance to a user to download a file.
+ * Gives clearance to a user to download a file.
  *
  * By default the uc_file module can implement 3 restrictions on downloads: by
  * number of IP addresses downloaded from, by number of downloads, and by a set
@@ -428,10 +441,11 @@ function hook_checkout_pane_alter(&$panes) {
  * the uc_file module will check for implementations of this hook.
  *
  * @param $user
- *   The drupal user object that has requested the download
+ *   The drupal user object that has requested the download.
  * @param $file_download
  *   The file download object as defined as a row from the uc_file_users table
- *   that grants the user the download
+ *   that grants the user the download.
+ *
  * @return
  *   TRUE or FALSE depending on whether the user is to be permitted download of
  *   the requested files. When a implementation returns FALSE it should set an
@@ -440,7 +454,7 @@ function hook_checkout_pane_alter(&$panes) {
  */
 function hook_download_authorize($user, $file_download) {
   if (!$user->status) {
-    drupal_set_message(t("This account has been banned and can't download files anymore. "),'error');
+    drupal_set_message(t("This account has been banned and can't download files anymore. "), 'error');
     return FALSE;
   }
   else {
@@ -449,97 +463,100 @@ function hook_download_authorize($user, $file_download) {
 }
 
 /**
- * Perform actions on file products.
+ * Performs actions on file products.
  *
  * The uc_file module comes with a file manager (found at Administer » Store
  * administration » Products » View file downloads) that provides some basic
- * functionality: deletion of multiple files and directories, and upload of single
- * files (those looking to upload multiple files should just directly upload them
- * to their file download directory then visit the file manager which automatically
- * updates new files found in its directory). Developers that need to create more
- * advanced actions with this file manager can do so by using this hook.
+ * functionality: deletion of multiple files and directories, and upload of
+ * single files (those looking to upload multiple files should just directly
+ * upload them to their file download directory then visit the file manager
+ * which automatically updates new files found in its directory). Developers
+ * that need to create more advanced actions with this file manager can do so
+ * by using this hook.
  *
  * @param $op
  *   The operation being taken by the hook, possible ops defined below.
- *   - 'info': Called before the uc_file module builds its list of possible file
- *       actions. This op is used to define new actions that will be placed in
- *       the file action select box.
- *   - 'insert': Called after uc_file discovers a new file in the file download
- *       directory.
- *   - 'form': When any defined file action is selected and submitted to the form
- *       this function is called to render the next form. Because this is called
- *       whenever a module-defined file action is selected, the variable
- *       $args['action'] can be used to define a new form or append to an existing
- *       form.
- *   - 'upload': After a file has been uploaded, via the file manager's built in
- *       file upload function, and moved to the file download directory this op
- *       can perform any remaining operations it needs to perform on the file
- *       before its placed into the uc_files table.
- *   - 'upload_validate': This op is called to validate the uploaded file that
- *       was uploaded via the file manager's built in file upload function. At
- *       this point, the file has been uploaded to PHP's temporary directory.
- *       Files passing this upload validate function will be moved into the file
- *       downloads directory.
- *   - 'validate': This op is called to validate the file action form.
- *   - 'submit': This op is called to submit the file action form.
+ *   - info: Called before the uc_file module builds its list of possible file
+ *     actions. This op is used to define new actions that will be placed in
+ *     the file action select box.
+ *   - insert: Called after uc_file discovers a new file in the file download
+ *     directory.
+ *   - form: When any defined file action is selected and submitted to the form
+ *     this function is called to render the next form. Because this is called
+ *     whenever a module-defined file action is selected, the variable
+ *     $args['action'] can be used to define a new form or append to an existing
+ *     form.
+ *   - upload: After a file has been uploaded, via the file manager's built in
+ *     file upload function, and moved to the file download directory this op
+ *     can perform any remaining operations it needs to perform on the file
+ *     before its placed into the uc_files table.
+ *   - upload_validate: This op is called to validate the uploaded file that
+ *     was uploaded via the file manager's built in file upload function. At
+ *     this point, the file has been uploaded to PHP's temporary directory.
+ *     Files passing this upload validate function will be moved into the file
+ *     downloads directory.
+ *   - validate: This op is called to validate the file action form.
+ *   - submit: This op is called to submit the file action form.
  * @param $args
  *   A keyed array of values that varies depending on the op being performed,
  *   possible values defined below.
- *   - 'info': None
- *   - 'insert':
- *     - 'file_object': The file object of the newly discovered file
- *   - 'form':
- *     - 'action': The file action being performed as defined by the key in the
- *         array sent by hook_file_action($op = 'info')
- *     - 'file_ids' - The file ids (as defined in the uc_files table) of the
- *          selected files to perform the action on
- *   - 'upload':
- *     - 'file_object': The file object of the file moved into file downloads
- *         directory
- *     - 'form_id': The form_id variable of the form_submit function
- *     - 'form_values': The form_values variable of the form_submit function
- *   - 'upload_validate':
- *     - 'file_object': The file object of the file that has been uploaded into
- *         PHP's temporary upload directory
- *     - 'form_id': The form_id variable of the form_validate function
- *     - 'form_values': The form_values variable of the form_validate function
- *   - 'validate':
- *     - 'form_id': The form_id variable of the form_validate function
- *     - 'form_values': The form_values variable of the form_validate function
- *   - 'submit':
- *     - 'form_id': The form_id variable of the form_submit function
- *     - 'form_values': The form_values variable of the form_submit function
+ *   - info: None
+ *   - insert:
+ *     - file_object: The file object of the newly discovered file.
+ *   - form:
+ *     - action: The file action being performed as defined by the key in the
+ *       array sent by hook_file_action($op = 'info').
+ *     - file_ids: The file ids (as defined in the uc_files table) of the
+ *       selected files to perform the action on.
+ *   - upload:
+ *     - file_object: The file object of the file moved into file downloads
+ *       directory.
+ *     - form_id: The form_id variable of the form_submit function.
+ *     - form_values: The form_values variable of the form_submit function.
+ *   - upload_validate:
+ *     - file_object: The file object of the file that has been uploaded into
+ *       PHP's temporary upload directory.
+ *     - form_id: The form_id variable of the form_validate function.
+ *     - form_values: The form_values variable of the form_validate function.
+ *   - validate:
+ *     - form_id: The form_id variable of the form_validate function.
+ *     - form_values: The form_values variable of the form_validate function.
+ *   - submit:
+ *     - form_id: The form_id variable of the form_submit function.
+ *     - form_values: The form_values variable of the form_submit function.
+ *
  * @return
  *   The return value of hook depends on the op being performed, possible return
  *   values defined below.
- *   - 'info': The associative array of possible actions to perform. The keys are
- *       unique strings that defines the actions to perform. The values are the
- *       text to be displayed in the file action select box.
- *   - 'insert': None
- *   - 'form': This op should return an array of drupal form elements as defined
- *       by the drupal form API.
- *   - 'upload': None
- *   - 'upload_validate': None
- *   - 'validate': None
- *   - 'submit': None
+ *   - info: The associative array of possible actions to perform. The keys are
+ *     unique strings that defines the actions to perform. The values are the
+ *     text to be displayed in the file action select box.
+ *   - insert: None
+ *   - form: This op should return an array of drupal form elements as defined
+ *     by the drupal form API.
+ *   - upload: None
+ *   - upload_validate: None
+ *   - validate: None
+ *   - submit: None
  */
 function hook_file_action($op, $args) {
   switch ($op) {
     case 'info':
       return array('uc_image_watermark_add_mark' => 'Add Watermark');
     case 'insert':
-      //automatically adds watermarks to any new files that are uploaded to the file download directory
+      // Automatically adds watermarks to any new files that are uploaded to
+      // the file download directory
       _add_watermark($args['file_object']->filepath);
     break;
     case 'form':
       if ($args['action'] == 'uc_image_watermark_add_mark') {
         $form['watermark_text'] = array(
           '#type' => 'textfield',
-          '#title' => t('Watermark Text'),
+          '#title' => t('Watermark text'),
         );
         $form['submit_watermark'] = array(
           '#type' => 'submit',
-          '#value' => t('Add Watermark'),
+          '#value' => t('Add watermark'),
         );
       }
     return $form;
@@ -547,23 +564,23 @@ function hook_file_action($op, $args) {
       _add_watermark($args['file_object']->filepath);
       break;
     case 'upload_validate':
-      //Given a file path, function checks if file is valid JPEG
-      if(!_check_image($args['file_object']->filepath)) {
-        form_set_error('upload',t('Uploaded file is not a valid JPEG'));
+      // Given a file path, function checks if file is valid JPEG
+      if (!_check_image($args['file_object']->filepath)) {
+        form_set_error('upload', t('Uploaded file is not a valid JPEG'));
       }
     break;
     case 'validate':
       if ($args['form_values']['action'] == 'uc_image_watermark_add_mark') {
         if (empty($args['form_values']['watermark_text'])) {
-          form_set_error('watermar_text',t('Must fill in text'));
+          form_set_error('watermar_text', t('Must fill in text'));
         }
       }
     break;
     case 'submit':
       if ($args['form_values']['action'] == 'uc_image_watermark_add_mark') {
         foreach ($args['form_values']['file_ids'] as $file_id) {
-          $filename = db_result(db_query("SELECT filename FROM {uc_files} WHERE fid = %d",$file_id));
-          //Function adds watermark to image
+          $filename = db_result(db_query("SELECT filename FROM {uc_files} WHERE fid = %d", $file_id));
+          // Function adds watermark to image
           _add_watermark($filename);
         }
       }
@@ -572,48 +589,53 @@ function hook_file_action($op, $args) {
 }
 
 /**
- * Make changes to a file before it is downloaded by the customer.
+ * Makes changes to a file before it is downloaded by the customer.
  *
- * Stores, either for customization, copy protection or other reasons, might want
- * to send customized downloads to customers. This hook will allow this to happen.
- * Before a file is opened to be transfered to a customer, this hook will be called
- * to make any altercations to the file that will be used to transfer the download
- * to the customer. This, in effect, will allow a developer to create a new,
- * personalized, file that will get transfered to a customer.
+ * Stores, either for customization, copy protection or other reasons, might
+ * want to send customized downloads to customers. This hook will allow this to
+ * happen. Before a file is opened to be transferred to a customer, this hook
+ * will be called to make any alterations to the file that will be used to
+ * transfer the download to the customer. This, in effect, will allow a
+ * developer to create a new, personalized, file that will get transferred to a
+ * customer.
  *
  * @param $file_user
- *   The file_user object (i.e. an object containing a row from the uc_file_users
- *   table) that corresponds with the user download being accessed.
+ *   The file_user object (i.e. an object containing a row from the
+ *   uc_file_users table) that corresponds with the user download being
+ *   accessed.
  * @param $ip
- *   The IP address from which the customer is downloading the file
+ *   The IP address from which the customer is downloading the file.
  * @param $fid
- *   The file id of the file being transfered
+ *   The file id of the file being transferred.
  * @param $file
- *   The file path of the file to be transfered
+ *   The file path of the file to be transferred.
+ *
  * @return
  *   The path of the new file to transfer to customer.
  */
 function hook_file_transfer_alter($file_user, $ip, $fid, $file) {
-  $file_data = file_get_contents($file)." [insert personalized data]"; //for large files this might be too memory intensive
-  $new_file = tempnam(file_directory_temp(),'tmp');
-  file_put_contents($new_file,$file_data);
+  $file_data = file_get_contents($file) ." [insert personalized data]"; // For large files this might be too memory intensive
+  $new_file = tempnam(file_directory_temp(), 'tmp');
+  file_put_contents($new_file, $file_data);
   return $new_file;
 }
 
 /**
- * Used to define line items that are attached to orders.
+ * Defines line items that are attached to orders.
  *
  * A line item is a representation of charges, fees, and totals for an order.
  * Default line items include the subtotal and total line items, the tax line
- * item, and the shipping line item. There is also a generic line item that store
- * admins can use to add extra fees and discounts to manually created orders.
+ * item, and the shipping line item. There is also a generic line item that
+ * store admins can use to add extra fees and discounts to manually created
+ * orders.
+ *
  * Module developers will use this hook to define new types of line items for
  * their stores. An example use would be for a module that allows customers to
  * use coupons and wants to represent an entered coupon as a line item.
  *
- * Once a line item has been defined in hook_line_item, Übercart will begin
- * interacting with it in various parts of the code. One of the primary ways this
- * is done is through the callback function you specify for the line item.
+ * Once a line item has been defined in hook_line_item(), Ubercart will begin
+ * interacting with it in various parts of the code. One of the primary ways
+ * this is done is through the callback function you specify for the line item.
  *
  * @return
  *   Your hook should return an array of associative arrays. Each item in the
@@ -623,42 +645,42 @@ function hook_file_transfer_alter($file_user, $ip, $fid, $file) {
  *     - value: The internal ID of the line item.
  *   - "title"
  *     - type: string
- *     - value: The title of the line item shown to the user in various interfaces.
- *         Use t().
+ *     - value: The title of the line item shown to the user in various
+ *       interfaces. Use t().
  *   - "callback"
  *     - type: string
  *     - value: Name of the line item's callback function, called for various
- *         operations.
+ *       operations.
  *   - "weight"
  *     - type: integer
  *     - value: Display order of the line item in lists; "lighter" items are
- *         displayed first.
+ *       displayed first.
  *   - "stored"
  *     - type: boolean
  *     - value: Whether or not the line item will be stored in the database.
- *         Should be TRUE for any line item that is modifiable from the order
- *         edit screen.
+ *       Should be TRUE for any line item that is modifiable from the order
+ *       edit screen.
  *   - "add_list"
  *     - type: boolean
  *     - value: Whether or not a line item should be included in the "Add a Line
- *         Item" select box on the order edit screen.
+ *       Item" select box on the order edit screen.
  *   - "calculated"
  *     - type: boolean
- *     - value: Whether or not the value of this line item should be added to the
- *         order total. (Ex: would be TRUE for a shipping charge line item but
- *         FALSE for the subtotal line item since the product prices are already
- *         taken into account.)
+ *     - value: Whether or not the value of this line item should be added to
+ *       the order total. (Ex: would be TRUE for a shipping charge line item but
+ *       FALSE for the subtotal line item since the product prices are already
+ *       taken into account.)
  *   - "display_only"
  *     - type: boolean
  *     - value: Whether or not this line item is simply a display of information
- *         but not calculated anywhere. (Ex: the total line item uses display to
- *         simply show the total of the order at the bottom of the list of line
- *         items.)
+ *       but not calculated anywhere. (Ex: the total line item uses display to
+ *       simply show the total of the order at the bottom of the list of line
+ *       items.)
  */
 function hook_line_item() {
   $items[] = array(
     'id' => 'generic',
-    'title' => t('Empty Line'),
+    'title' => t('Empty line'),
     'weight' => 2,
     'default' => FALSE,
     'stored' => TRUE,
@@ -671,7 +693,7 @@ function hook_line_item() {
 }
 
 /**
- * Alter a line item on an order when the order is loaded.
+ * Alters a line item on an order when the order is loaded.
  *
  * @param &$item
  *   The line item array.
@@ -684,7 +706,7 @@ function hook_line_item_alter(&$item, $order) {
 }
 
 /**
- * Alter the line item definitions declared in hook_line_item().
+ * Alters the line item definitions declared in hook_line_item().
  *
  * @param &$items
  *   The combined return value of hook_line_item().
@@ -706,15 +728,16 @@ function hook_line_item_data_alter(&$items) {
 
 
 /**
- * Perform actions on orders.
+ * Performs actions on orders.
  *
- * An order in Übercart represents a single transaction. Orders are created
- * during the checkout process where they sit in the database with a status of In
- * Checkout. When a customer completes checkout, the order's status gets updated
- * to show that the sale has gone through. Once an order is created, and even
- * during its creation, it may be acted on by any module to connect extra
- * information to an order. Every time an action occurs to an order, hook_order()
- * gets invoked to let your modules know what's happening and make stuff happen.
+ * An order in Ubercart represents a single transaction. Orders are created
+ * during the checkout process where they sit in the database with a status of
+ * "In Checkout". When a customer completes checkout, the order's status gets
+ * updated to show that the sale has gone through. Once an order is created,
+ * and even during its creation, it may be acted on by any module to connect
+ * extra information to an order. Every time an action occurs to an order,
+ * hook_order() gets invoked to let your modules know what's happening and
+ * make stuff happen.
  *
  * @param $op
  *   The action being performed.
@@ -723,47 +746,46 @@ function hook_line_item_data_alter(&$items) {
  * @param $arg2
  *   This is variable and is based on the value of $op:
  *   - new: Called when an order is created. $arg1 is a reference to the new
- *       order object, so modules may add to or modify the order at creation.
+ *     order object, so modules may add to or modify the order at creation.
  *   - presave: Before an order object is saved, the hook gets invoked with this
- *       op to let other modules alter order data before it is written to the
- *       database. $order is a reference to the order object.
- *   - save: When an order object is being saved, the hook gets invoked with this
- *       op to let other modules do any necessary saving. $arg1 is a reference to
- *       the order object.
+ *     op to let other modules alter order data before it is written to the
+ *     database. $order is a reference to the order object.
+ *   - save: When an order object is being saved, the hook gets invoked with
+ *     this op to let other modules do any necessary saving. $arg1 is a
+ *     reference to the order object.
  *   - load: Called when an order is loaded after the order and product data has
- *       been loaded from the database. Passes $arg1 as the reference to the
- *       order object, so modules may add to or modify the order object when it's
- *       loaded.
+ *     been loaded from the database. Passes $arg1 as the reference to the
+ *     order object, so modules may add to or modify the order object when it's
+ *     loaded.
  *   - submit: When a sale is being completed and the customer has clicked the
- *       Submit order button from the checkout screen, the hook is invoked with
- *       this op. This gives modules a chance to determine whether or not the
- *       order should be allowed. An example use of this is the credit module
- *       attempting to process payments when an order is submitted and returning
- *       a failure message if the payment failed.
- *
- *       To prevent an order from passing through, you must return an array
- *       resembling the following one with the failure message:
- *       @code
- *         return array(array('pass' => FALSE, 'message' => t('We were unable to process your credit card.')));
- *       @endcode
+ *     Submit order button from the checkout screen, the hook is invoked with
+ *     this op. This gives modules a chance to determine whether or not the
+ *     order should be allowed. An example use of this is the credit module
+ *     attempting to process payments when an order is submitted and returning
+ *     a failure message if the payment failed.
+ *     To prevent an order from passing through, you must return an array
+ *     resembling the following one with the failure message:
+ *     @code
+ *       return array(array('pass' => FALSE, 'message' => t('We were unable to process your credit card.')));
+ *     @endcode
  *   - can_update: Called before an order's status is changed to make sure the
- *       order can be updated. $arg1 is the order object with the old order
- *       status ID ($arg1->order_status), and $arg2 is simply the new order
- *       status ID. Return FALSE to stop the update for some reason.
+ *     order can be updated. $arg1 is the order object with the old order
+ *     status ID ($arg1->order_status), and $arg2 is simply the new order
+ *     status ID. Return FALSE to stop the update for some reason.
  *   - update: Called when an order's status is changed. $arg1 is the order
- *       object with the old order status ID ($arg1->order_status), and $arg2 is
- *       the new order status ID.
- *   - can_delete: Called before an order is deleted to verify that the order may
- *       be deleted. Returning FALSE will prevent a delete from happening. (For
- *       example, the payment module returns FALSE by default when an order has
- *       already received payments.)
+ *     object with the old order status ID ($arg1->order_status), and $arg2 is
+ *     the new order status ID.
+ *   - can_delete: Called before an order is deleted to verify that the order
+ *     may be deleted. Returning FALSE will prevent a delete from happening.
+ *     (For example, the payment module returns FALSE by default when an order
+ *     has already received payments.)
  *   - delete: Called when an order is deleted and before the rest of the order
- *       information is removed from the database. Passes $arg1 as the order
- *       object to let your module clean up it's tables.
+ *     information is removed from the database. Passes $arg1 as the order
+ *     object to let your module clean up it's tables.
  *   - total: Called when the total for an order is being calculated after the
- *       total of the products has been added. Passes $arg1 as the order object.
- *       Expects in return a value (positive or negative) by which to modify the
- *       order total.
+ *     total of the products has been added. Passes $arg1 as the order object.
+ *     Expects in return a value (positive or negative) by which to modify the
+ *     order total.
  */
 function hook_order($op, $arg1, $arg2) {
   switch ($op) {
@@ -774,16 +796,17 @@ function hook_order($op, $arg1, $arg2) {
 }
 
 /**
- * Add links to local tasks for orders on the admin's list of orders.
+ * Adds links to local tasks for orders on the admin's list of orders.
  *
  * @param $order
  *   An order object.
+ *
  * @return
  *   An array of specialized link arrays. Each link has the following keys:
- *   - "name": The title of page being linked.
- *   - "url": The link path. Do not use url(), but do use the $order's order_id.
- *   - "icon": HTML of an image.
- *   - "title": Title attribute text (mouseover tool-tip).
+ *   - name: The title of page being linked.
+ *   - url: The link path. Do not use url(), but do use the $order's order_id.
+ *   - icon: HTML of an image.
+ *   - title: Title attribute text (mouseover tool-tip).
  */
 function hook_order_actions($order) {
   $actions = array();
@@ -814,24 +837,25 @@ function hook_order_actions($order) {
 }
 
 /**
- * Register callbacks for an order pane.
+ * Registers callbacks for an order pane.
  *
- * This hook is used to add panes to the order viewing and administration screens.
- * The default panes include areas to display and edit addresses, products,
- * comments, etc. Developers should use this hook when they need to display or
- * modify any custom data pertaining to an order. For example, a store that uses
- * a custom checkout pane to find out a customer's desired delivery date would
- * then create a corresponding order pane to show the data on the order screens.
+ * This hook is used to add panes to the order viewing and administration
+ * screens. The default panes include areas to display and edit addresses,
+ * products, comments, etc. Developers should use this hook when they need to
+ * display or modify any custom data pertaining to an order. For example, a
+ * store that uses a custom checkout pane to find out a customer's desired
+ * delivery date would then create a corresponding order pane to show the data
+ * on the order screens.
  *
- * hook_order_pane() works by defining new order panes and providing a little bit
- * of information about them. View the return value section below for information
- * about what parts of an order pane are defined by the hook.
+ * hook_order_pane() works by defining new order panes and providing a little
+ * bit of information about them. View the return value section below for
+ * information about what parts of an order pane are defined by the hook.
  *
- * The real meat of an order pane is its callback function (which is specified in
- * the hook). The callback function handles what gets displayed on which screen
- * and what data can be manipulated. That is all somewhat out of the scope of
- * this API page, so you'll have to click here to read more about what a callback
- * function should contain.
+ * The real meat of an order pane is its callback function (which is specified
+ * in the hook). The callback function handles what gets displayed on which
+ * screen and what data can be manipulated. That is all somewhat out of the
+ * scope of this API page, so you'll have to click here to read more about what
+ * a callback function should contain.
 */
 function hook_order_pane() {
   $panes[] = array(
@@ -847,7 +871,7 @@ function hook_order_pane() {
 }
 
 /**
- * Alter order pane definitions.
+ * Alters order pane definitions.
  *
  * @param $panes
  *   Array with the panes information as defined in hook_order_pane(), passed
@@ -868,9 +892,10 @@ function hook_order_pane_alter(&$panes) {
  *   The product object as found in the $order object.
  * @param $order
  *   The order object to which the product belongs.
+ *
  * @return
  *   Nothing should be returned. Hook implementations should receive the
- *     $product object by reference and alter it directly.
+ *   $product object by reference and alter it directly.
  */
 function hook_order_product_alter(&$product, $order) {
   drupal_set_message('hook_order_product_alter(&$product, $order):');
@@ -879,7 +904,7 @@ function hook_order_product_alter(&$product, $order) {
 }
 
 /**
- * Register static order states.
+ * Registers static order states.
  *
  * Order states are module-defined categories for order statuses. Each state
  * will have a default status that is used when modules need to move orders to
@@ -923,16 +948,17 @@ function hook_order_state() {
 }
 
 /**
- * Register payment gateway callbacks.
+ * Registers payment gateway callbacks.
  *
  * @see @link http://www.ubercart.org/docs/api/hook_payment_gateway @endlink
  *
  * @return
- *   Returns an array of payment gateways, which are arrays with the following keys:
+ *   Returns an array of payment gateways, which are arrays with the following
+ *   keys:
  *   - "id"
  *     - type: string
  *     - value: The internal ID of the payment gateway, using a-z, 0-9, and - or
- *         _.
+ *       _.
  *   - "title"
  *     - type: string
  *     - value: The name of the payment gateway displayed to the user. Use t().
@@ -942,7 +968,7 @@ function hook_order_state() {
  *   - "settings"
  *     - type: string
  *     - value: The name of a function that returns an array of settings form
- *         elements for the gateway.
+ *       elements for the gateway.
  */
 function hook_payment_gateway() {
   $gateways[] = array(
@@ -955,7 +981,7 @@ function hook_payment_gateway() {
 }
 
 /**
- * Alter payment gateways.
+ * Alters payment gateways.
  *
  * @param $gateways
  *   Payment gateways passed by reference.
@@ -969,9 +995,9 @@ function hook_payment_gateway_alter(&$gateways) {
 }
 
 /**
- * Register callbacks for payment methods.
+ * Registers callbacks for payment methods.
  *
- * Payment methods are different ways to collect payment. By default, Übercart
+ * Payment methods are different ways to collect payment. By default, Ubercart
  * comes with support for check, credit card, and generic payments. Payment
  * methods show up at checkout or on the order administration screens, and they
  * collect different sorts of information from the user that is used to process
@@ -994,18 +1020,32 @@ function hook_payment_method() {
 }
 
 /**
- * Perform actions on product classes.
+ * Alter payment methods.
+ *
+ * @param $methods
+ *   Payment methods passed by reference.
+ */
+function hook_payment_method_alter(&$methods) {
+  // Change the title of all methods.
+  foreach ($methods as &$method) {
+    // $method was passed by reference.
+    $method['title'] = t('Altered method @original', array('@original' => $method['title']));
+  }
+}
+
+/**
+ * Performs actions on product classes.
  *
  * @param $type
  *   The node type of the product class.
  * @param $op
  *   The action being performed on the product class:
- *   - "insert": A new node type is created, or an existing node type is being
- *       converted into a product type.
- *   - "update": A product class has been updated.
- *   - "delete": A product class has been deleted. Modules that have attached
- *       additional information to the node type because it is a product type
- *       should delete this information.
+ *   - insert: A new node type is created, or an existing node type is being
+ *     converted into a product type.
+ *   - update: A product class has been updated.
+ *   - delete: A product class has been deleted. Modules that have attached
+ *     additional information to the node type because it is a product type
+ *     should delete this information.
  */
 function hook_product_class($type, $op) {
   switch ($op) {
@@ -1017,7 +1057,7 @@ function hook_product_class($type, $op) {
 }
 
 /**
- * Return a structured array representing the given product's description.
+ * Returns a structured array representing the given product's description.
  *
  * Modules that add data to cart items when they are selected should display it
  * with this hook. The return values from each implementation will be
@@ -1027,6 +1067,7 @@ function hook_product_class($type, $op) {
  * @param $product
  *   Product. Usually one of the values of the array returned by
  *   uc_cart_get_contents().
+ *
  * @return
  *   A structured array that can be fed into drupal_render().
  */
@@ -1085,11 +1126,11 @@ function hook_product_description_alter(&$description, $product) {
 }
 
 /**
- * List node types which should be considered products.
+ * Lists node types which should be considered products.
  *
  * Trusts the duck philosophy of object identification: if it walks like a duck,
  * quacks like a duck, and has feathers like a duck, it's probably a duck.
- * Products are nodes with prices, SKUs, and everything else Übercart expects
+ * Products are nodes with prices, SKUs, and everything else Ubercart expects
  * them to have.
  *
  * @return
@@ -1100,16 +1141,17 @@ function hook_product_types() {
 }
 
 /**
- * Handle additional data for shipments.
+ * Handles additional data for shipments.
  *
  * @param $op
  *   The action being taken on the shipment. One of the following values:
- *   - "load": The shipment and its packages are loaded from the database.
- *   - "save": Changes to the shipment have been written.
- *   - "delete": The shipment has been deleted and the packages are available
+ *   - load: The shipment and its packages are loaded from the database.
+ *   - save: Changes to the shipment have been written.
+ *   - delete: The shipment has been deleted and the packages are available
  *     for reshipment.
  * @param &$shipment
  *   The shipment object.
+ *
  * @return
  *   Only given when $op is "load". An array of extra data to be added to the
  *   shipment object.
@@ -1124,7 +1166,7 @@ function hook_shipment($op, &$shipment) {
           if ($package->tracking_number) {
             $tracking_number = $package->tracking_number;
           }
-          else if ($shipment->tracking_number) {
+          elseif ($shipment->tracking_number) {
             $tracking_number = $shipment->tracking_number;
           }
           if ($tracking_number) {
@@ -1181,7 +1223,7 @@ function hook_shipment($op, &$shipment) {
 }
 
 /**
- * Define callbacks and service options for shipping methods.
+ * Defines callbacks and service options for shipping methods.
  *
  * The shipping quote controller module, uc_quote, expects a very specific
  * structured array of methods from the implementations of this hook.
@@ -1193,33 +1235,33 @@ function hook_shipment($op, &$shipment) {
  *
  * @return
  *   An array of shipping methods which have the following keys.
- *   - "type": The quote and shipping types are ids of the product shipping type
- *       that these methods apply to. type may also be 'order' which indicates
- *       that the quote applies to the entire order, regardless of the shipping
- *       types of its products. This is used by quote methods that are base on
- *       the location of the customer rather than their purchase.
- *   - "callback": The function that is called by uc_quote when a shipping quote
- *       is requested. Its arguments are the array of products and an array of
- *       order details (the shipping address). The return value is an array
- *       representing the rates quoted and errors returned (if any) for each
- *       option in the accessorials array.
- *   - "accessorials": This array represents the different options the customer
- *       may choose for their shipment. The callback function should generate a
- *       quote for each option in accessorials and return them via an array.
- *       drupal_to_js() is very useful for this.
- *       @code
- *         return array(
- *           '03' => array('rate' => 15.75, 'format' => uc_price(15.75, $context) 'option_label' => t('UPS Ground'),
- *                         'error' => 'Additional handling charge automatically applied.'),
- *           '14' => array('error' => 'Invalid package type.'),
- *           '59' => array('rate' => 26.03, 'format' => uc_price(26.03, $context), 'option_label' => t('UPS 2nd Day Air A.M.'))
- *         );
- *       @endcode
- *   - "pkg_types": The list of package types that the shipping method can handle.
- *       This should be an associative array that can be used as the #options of
- *       a select form element. It is recommended that a function be written to
- *       output this array so the method doesn't need to be found just for the
- *       package types.
+ *   - type: The quote and shipping types are ids of the product shipping type
+ *     that these methods apply to. type may also be 'order' which indicates
+ *     that the quote applies to the entire order, regardless of the shipping
+ *     types of its products. This is used by quote methods that are base on
+ *     the location of the customer rather than their purchase.
+ *   - callback: The function that is called by uc_quote when a shipping quote
+ *     is requested. Its arguments are the array of products and an array of
+ *     order details (the shipping address). The return value is an array
+ *     representing the rates quoted and errors returned (if any) for each
+ *     option in the accessorials array.
+ *   - accessorials: This array represents the different options the customer
+ *     may choose for their shipment. The callback function should generate a
+ *     quote for each option in accessorials and return them via an array.
+ *     drupal_to_js() is very useful for this.
+ *     @code
+ *     return array(
+ *       '03' => array('rate' => 15.75, 'format' => uc_price(15.75, $context) 'option_label' => t('UPS Ground'),
+ *       'error' => 'Additional handling charge automatically applied.'),
+ *       '14' => array('error' => 'Invalid package type.'),
+ *       '59' => array('rate' => 26.03, 'format' => uc_price(26.03, $context), 'option_label' => t('UPS 2nd Day Air A.M.'))
+ *     );
+ *     @endcode
+ *   - pkg_types: The list of package types that the shipping method can handle.
+ *     This should be an associative array that can be used as the #options of
+ *     a select form element. It is recommended that a function be written to
+ *     output this array so the method doesn't need to be found just for the
+ *     package types.
  */
 function hook_shipping_method() {
   $methods = array();
@@ -1265,7 +1307,7 @@ function hook_shipping_method() {
 }
 
 /**
- * Define shipping types for shipping methods.
+ * Defines shipping types for shipping methods.
  *
  * This hook defines a shipping type that this module is designed to handle.
  * These types are specified by a machine- and human-readable name called 'id',
@@ -1284,7 +1326,7 @@ function hook_shipping_type() {
   $types = array();
   $types['small_package'] = array(
     'id' => 'small_package',
-    'title' => t('Small Packages'),
+    'title' => t('Small packages'),
     'weight' => $weight['small_package'],
   );
 
@@ -1292,25 +1334,26 @@ function hook_shipping_type() {
 }
 
 /**
- * Add status messages to the "Store administration" page.
+ * Adds status messages to the "Store administration" page.
  *
  * This hook is used to add items to the store status table on the main store
  * administration screen. Each item gets a row in the table that consists of a
  * status icon, title, and description. These items should be used to give
  * special instructions, notifications, or indicators for components of the cart
- * enabled by the modules. At a glance, a store owner should be able to look here
- * and see if a critical component of your module is not functioning properly.
+ * enabled by the modules. At a glance, a store owner should be able to look
+ * here and see if a critical component of your module is not functioning
+ * properly.
  *
- * For example, if the catalog module is installed and it cannot find the catalog
- * taxonomy vocabulary, it will show an error message here to alert the store
- * administrator.
+ * For example, if the catalog module is installed and it cannot find the
+ * catalog taxonomy vocabulary, it will show an error message here to alert the
+ * store administrator.
  *
  * @return
- *   An array of tore status items which are arrays with the following keys:
+ *   An array of store status items which are arrays with the following keys:
  *   - "status": "ok", "warning", or "error" depending on the message.
  *   - "title" The title of the status message or module that defines it.
  *   - "desc": The description; can be any message, including links to pages and
- *       forms that deal with the issue being reported.
+ *     forms that deal with the issue being reported.
  */
 function hook_store_status() {
   if ($key = uc_credit_encryption_key()) {
@@ -1324,15 +1367,16 @@ function hook_store_status() {
 }
 
 /**
- * Allow modules to alter the TAPIr table after the rows are populated.
+ * Allows modules to alter the TAPIr table after the rows are populated.
  *
  * The example below adds a value for the custom 'designer' column to the table
  * rows. Each table row has a numeric key in $table and these keys can be
  * accessed using element_children() from the Form API.
  *
- * @param $table Table declaration containing header and populated rows.
- * @param $table_id Table ID. Also the function called to build the table
- *   declaration.
+ * @param $table
+ *   Table declaration containing header and populated rows.
+ * @param $table_id
+ *   Table ID. Also the function called to build the table declaration.
  */
 function hook_tapir_table_alter(&$table, $table_id) {
   if ($table_id == 'uc_product_table') {
@@ -1340,17 +1384,15 @@ function hook_tapir_table_alter(&$table, $table_id) {
       $node = node_load($table['#parameters'][1][$key]);
 
       $table[$key]['designer'] = array(
-        '#value' => l($node->designer, 'collections/'.$node->designer_tid),
-        '#cell_attributes' => array(
-          'nowrap' => 'nowrap',
-        ),
+        '#value' => l($node->designer, 'collections/'. $node->designer_tid),
+        '#cell_attributes' => array('class' => 'designer'),
       );
     }
   }
 }
 
 /**
- * Allow modules to alter TAPIr table headers.
+ * Allows modules to alter TAPIr table headers.
  *
  * This is most often done when a developer wants to add a sortable field to
  * the table. A sortable field is one where the header can be clicked to sort
@@ -1362,15 +1404,15 @@ function hook_tapir_table_alter(&$table, $table_id) {
  * hook_db_rewrite_sql() in order for table 'td2' to be valid. The 'name' field
  * is displayed in the table and the header has the title 'Designer'.
  *
- * Also shown are changes made to the header titles for list_price and
- * price fields.
+ * Also shown are changes made to the header titles for list_price and price
+ * fields.
  *
  * @see hook_db_rewrite_sql()
  *
- * @param $header Reference to the array header declaration
- *   (i.e $table['#header']).
- * @param $table_id Table ID. Also the function called to build the table
- *   declaration.
+ * @param $header
+ *   Reference to the array header declaration (i.e $table['#header']).
+ * @param $table_id
+ *   Table ID. Also the function called to build the table declaration.
  */
 function hook_tapir_table_header_alter(&$header, $table_id) {
   if ($table_id == 'uc_product_table') {
@@ -1389,7 +1431,7 @@ function hook_tapir_table_header_alter(&$header, $table_id) {
 }
 
 /**
- * Take action when checkout is completed.
+ * Takes action when checkout is completed.
  *
  * @param $order
  *   The resulting order object from the completed checkout.
@@ -1421,7 +1463,7 @@ function hook_uc_checkout_complete($order, $account) {
 }
 
 /**
- * Allow modules to modify forms before Drupal invokes hook_form_alter().
+ * Allows modules to modify forms before Drupal invokes hook_form_alter().
  *
  * This hook will normally be used by core modules so any form modifications
  * they make can be further modified by contrib modules using a normal
@@ -1455,14 +1497,13 @@ function hook_uc_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * Add invoice templates to the list of suggested template files.
+ * Adds invoice templates to the list of suggested template files.
  *
  * Allows modules to declare new "types" of invoice templates (other than the
  * default 'admin' and 'customer').
  *
  * @return
- *   Array of template names that are available choices when mailing an
- *   invoice.
+ *   Array of template names that are available choices when mailing an invoice.
  */
 function hook_uc_invoice_templates() {
   return array('admin', 'customer');
@@ -1476,8 +1517,8 @@ function hook_uc_invoice_templates() {
  * orders. Because of the way default values are normally set, you're then stuck
  * having to copy and paste a large chunk of text in at least two different
  * places in the module (when you're wanting to use the variable or to display
- * the settings form with the default value). To cut down code clutter, this hook
- * was introduced. It lets you put your messages in one place and use the
+ * the settings form with the default value). To cut down code clutter, this
+ * hook was introduced. It lets you put your messages in one place and use the
  * function uc_get_message() to retrieve the default value at any time (and from
  * any module).
  *
@@ -1487,8 +1528,8 @@ function hook_uc_invoice_templates() {
  * here to refer to the message you want.
  *
  * Note: When using t(), you must not pass it a concatenated string! So our
- * example has no line breaks in the message even though it is much wider than 80
- * characters. Using concatenation breaks translation.
+ * example has no line breaks in the message even though it is much wider than
+ * 80 characters. Using concatenation breaks translation.
  *
  * @return
  *   An array of messages.
@@ -1500,7 +1541,7 @@ function hook_uc_message() {
 }
 
 /**
- * Take action when a payment is entered for an order.
+ * Takes action when a payment is entered for an order.
  *
  * @param $order
  *   The order object.
@@ -1529,9 +1570,11 @@ function hook_uc_payment_entered($order, $method, $amount, $account, $data, $com
 }
 
 /**
- * Use this hook to define price handlers for your module. You may define one
- * price alterer and one price formatter. You may also define options that are
- * merged into the options array in order of each price alterer's weight.
+ * Defines price handlers for your module.
+ *
+ * You may define one price alterer and one price formatter. You may also
+ * define options that are merged into the options array in order of each price
+ * alterer's weight.
  */
 function hook_uc_price_handler() {
   return array(
@@ -1558,12 +1601,12 @@ function hook_uc_price_handler() {
 }
 
 /**
- * Define default product classes.
+ * Defines default product classes.
  *
- * The results of this hook are eventually passed through hook_node_info(),
- * so you may include any keys that hook_node_info() uses. Defaults will
- * be provided where keys are not set. This hook can also be used to
- * override the default "product" product class name and description.
+ * The results of this hook are eventually passed through hook_node_info(), so
+ * you may include any keys that hook_node_info() uses. Defaults will be
+ * provided where keys are not set. This hook can also be used to override the
+ * default "product" product class name and description.
  */
 function hook_uc_product_default_classes() {
   return array(
@@ -1575,30 +1618,28 @@ function hook_uc_product_default_classes() {
 }
 
 /**
- * Notify core of any SKUs your module adds to a given node.
+ * Notifies core of any SKUs your module adds to a given node.
  *
- * NOTE: DO NOT map the array keys, as the possibility for numeric SKUs exists, and
- * this will conflict with the behavior of module_invoke_all(), specifically
+ * NOTE: DO NOT map the array keys, as the possibility for numeric SKUs exists,
+ * and this will conflict with the behavior of module_invoke_all(), specifically
  * array_merge_recursive().
  *
  * Code lifted from uc_attribute.module.
  */
-function hook_uc_product_models($node) {
+function hook_uc_product_models($nid) {
   $models = array();
 
   // Get all the SKUs for all the attributes on this node.
-  $adjustments = db_query("SELECT model FROM {uc_product_adjustments} WHERE nid = %d", $node->nid);
-  while ($adjustment = db_fetch_object($adjustments)) {
-    if (!in_array($adjustment->model, $models)) {
-      $models[] = $adjustment->model;
-    }
+  $adjustments = db_query("SELECT DISTINCT model FROM {uc_product_adjustments} WHERE nid = %d", $nid);
+  while ($adjustment = db_result($adjustments)) {
+    $models[] = $adjustment;
   }
 
   return $models;
 }
 
 /**
- * Allow modules to take action when a stock level is changed.
+ * Allows modules to take action when a stock level is changed.
  *
  * @param $sku
  *   The SKU whose stock level is being changed.
@@ -1618,8 +1659,8 @@ function hook_uc_stock_adjusted($sku, $stock, $qty) {
 }
 
 /**
- * Used to determine whether or not UC Google Analytics should add e-commerce
- *   tracking code to the bottom of the page.
+ * Determines whether or not UC Google Analytics should add e-commerce tracking
+ * code to the bottom of the page.
  *
  * The Google Analytics module takes care of adding the necessary .js file from
  * Google for tracking general statistics.  The UC Google Analytics module works
@@ -1651,7 +1692,7 @@ function hook_ucga_display() {
 
 /**
  * Allows modules to alter items before they're added to the UC Google Analytics
- *   e-commerce tracking code.
+ * e-commerce tracking code.
  *
  * The UC Google Analytics module constructs function calls that work through
  * the Google Analytics JS API to report purchased items for e-commerce tracking
@@ -1667,12 +1708,13 @@ function hook_ucga_display() {
  *   The product object as found in the $order object.
  * @param $trans
  *   The array of arguments that were passed to Google Analytics to represent
- *     the transaction.
+ *   the transaction.
  * @param $order
  *   The order object being reported to Google Analytics.
+ *
  * @return
  *   Nothing should be returned. Hook implementations should receive the $item
- *     array by reference and alter it directly.
+ *   array by reference and alter it directly.
  */
 function hook_ucga_item_alter(&$item, $product, $trans, $order) {
   // Example implementation: always set the category to "UBERCART".
@@ -1681,7 +1723,7 @@ function hook_ucga_item_alter(&$item, $product, $trans, $order) {
 
 /**
  * Allows modules to alter transaction info before it's added to the UC Google
- *   Analytics e-commerce tracking code.
+ * Analytics e-commerce tracking code.
  *
  * The UC Google Analytics module constructs function calls that work through
  * the Google Analytics JS API to report order information for e-commerce
@@ -1691,13 +1733,14 @@ function hook_ucga_item_alter(&$item, $product, $trans, $order) {
  *
  * @param $trans
  *   An array of arguments being passed to Google Analytics representing the
- *     transaction, including order_id, store, total, tax, shipping, city,
- *     state, and country.
+ *   transaction, including order_id, store, total, tax, shipping, city, state,
+ *   and country.
  * @param $order
  *   The order object being reported to Google Analytics.
+ *
  * @return
  *   Nothing should be returned. Hook implementations should receive the $trans
- *     array by reference and alter it directly.
+ *   array by reference and alter it directly.
  */
 function hook_ucga_trans_alter(&$trans, $order) {
   // Example implementation: prefix all orders with "UC-".
@@ -1705,7 +1748,7 @@ function hook_ucga_trans_alter(&$trans, $order) {
 }
 
 /**
- * Handle requests to update a cart item.
+ * Handles requests to update a cart item.
  *
  * @param $nid
  *   Node id of the cart item.

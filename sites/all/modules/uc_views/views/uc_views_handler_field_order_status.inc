@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_field_order_status.inc,v 1.1.2.2 2009/07/01 05:27:21 madsph Exp $
 
 /**
  * @file

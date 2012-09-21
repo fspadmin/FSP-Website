@@ -1,5 +1,4 @@
 <?php
-// $Id: image_attach.module,v 1.76.2.15 2010/10/03 08:35:51 joachim Exp $
 
 /**
  * @file image_attach.module
@@ -224,12 +223,33 @@ function image_attach_form_alter(&$form, $form_state, $form_id) {
         }
 
         if ($has_existing_images) {
+          $form['image_attach']['image_thumbnail']['#theme'] = 'image_attach_form_thumbnails';
+          $form['image_attach']['image_thumbnail']['#tree'] = TRUE;
+          $weight = 0;
           foreach ($node->iids as $iid) {
             $image = node_load($iid);
             $form['image_attach']['image_thumbnail'][$iid] = array(
-              '#type' => 'item',
-              '#title' => t('Thumbnail'),
-              '#value' => image_display($image, 'thumbnail'),
+              'id' => array(
+                '#type' => 'hidden',
+                '#value' => $iid,
+              ),
+              'image' => array(
+                '#type' => 'markup',
+                '#value' => image_display($image, 'thumbnail'),
+              ),
+              'delete' => array(
+                '#type' => 'checkbox',
+              ),
+              'title' => array(
+                '#type' => 'markup',
+                '#value' => check_plain($image->title),
+              ),
+              'weight' => array(
+                '#type' => 'weight',
+                '#title' => t('Weight'),
+                '#delta' => count($node->iids),
+                '#default_value' => isset($form_state['values']['image_thumbnail'][$iid]) ? $form_state['values']['image_thumbnail'][$iid]['weight'] : $weight++,
+              ),
             );
           }
         }
@@ -292,6 +312,42 @@ function image_attach_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
+ * Get image weights and return an iid array ordered by weight.
+ *
+ * This private function is called by submit handlers to discover how the user
+ * has ordered their images.
+ * It returns an array with identical keys and values (just like the ordinary
+ * iid array).
+ *
+ * @param $raw_weight_data
+ *   An array of iids and weights from the drag-to-reorder table, derived from
+ *   either the $form_state object or the $node object.
+ * @param $select_box_array
+ *   The array of existing images that the user wants to include. This may be
+ *   different to the iids passed in $raw_weight_data.
+ *
+ * @return
+ *   A weight-sorted (from lightest to heaviest) array of iids, with identical
+ *   keys and (integer) values.
+ */
+function _image_attach_set_image_weight($raw_weight_data, $select_box_array) {
+  // Build up an array of iids => weights.
+  $weights = array();
+  foreach ($select_box_array as $iid) {
+    // Check the delete box has not been ticked.
+    if ($raw_weight_data[$iid]['delete'] !== 1) {
+      // If the image exists in the drag-to-reorder array, get its weight, otherwise, assign it the heaviest weight possible.
+      $weights[$iid] = isset($raw_weight_data[$iid]['weight']) ? $raw_weight_data[$iid]['weight'] : count($select_box_array);
+    }
+  }
+  // Sort the iids array by weight.
+  asort($weights);
+  // Take the keys to make the return array.
+  $items = drupal_map_assoc(array_keys($weights));
+  return $items;
+}
+
+/**
  * Save attached image nids and rebuild form.
  *
  * This submit function adds the new images and returns to the
@@ -301,6 +357,10 @@ function image_attach_image_add_submit(&$form, &$form_state) {
   // Rebuild the attached image data.
   if (isset($form_state['values']['iids'])) {
     db_query("DELETE FROM {image_attach} WHERE nid = %d", $form['nid']['#value']);
+    // Sort the $form_state['values']['iids'] array by weight.
+    if (count($form_state['values']['image_thumbnail'])) {
+      $form_state['values']['iids'] = _image_attach_set_image_weight($form_state['values']['image_thumbnail'], $form_state['values']['iids']);
+    }
     if (count($form_state['values']['iids'])) {
       $weight = 0;
       foreach ($form_state['values']['iids'] as $iid) {
@@ -417,7 +477,10 @@ function image_attach_nodeapi(&$node, $op, $teaser, $page) {
     case 'update':
       db_query("DELETE FROM {image_attach} WHERE nid = %d", $node->nid);
       if (!empty($node->iids)) {
-        // Populate weight column with placeholder values.
+        if (!empty($node->image_thumbnail)) {
+          // Form submitted, order iids according to drag-to-reorder table.
+          $node->iids = _image_attach_set_image_weight($node->image_thumbnail, $node->iids);
+        }
         $weight = 0;
         foreach ($node->iids as $iid) {
           db_query("INSERT INTO {image_attach} (nid, iid, weight) VALUES (%d, %d, %d)", $node->nid, $iid, $weight++);
@@ -573,7 +636,34 @@ function image_attach_theme() {
         'image_nodes' => array(),
       ),
     ),
+    'image_attach_form_thumbnails' => array(
+      'arguments' => array('form' => NULL),
+    ),
   );
+}
+
+/**
+ * Theme image thumbnails in editing ui to a drag-to-reorder table
+ *
+ * @param $form
+ *  The $form object
+ */
+function theme_image_attach_form_thumbnails($form) {
+  drupal_add_tabledrag('image-attach-thumbnails-draggable-table', 'order', 'sibling', 'weight');
+  $header = array(t('Attached images'), t('Remove'), t('Title'), t('Weight'));
+  foreach (element_children($form) as $key) {
+    $element = &$form[$key];
+    $element['weight']['#attributes']['class'] = 'weight';
+    $row = array();
+    $row[] = drupal_render($element['image']);
+    $row[] = drupal_render($element['delete']);
+    $row[] = drupal_render($element['title']);
+    $row[] = drupal_render($element['weight']) . drupal_render($element['id']);
+    $rows[] = array('data' => $row, 'class' => 'draggable');
+  }
+  $output = theme('table', $header, $rows, array('id' => 'image-attach-thumbnails-draggable-table'));
+  $output .= drupal_render($form);
+  return $output;
 }
 
 /**
@@ -588,8 +678,10 @@ function image_attach_theme() {
  * @param $teaser
  *   Whether the $node is being shown as a teaser or not.
  *
- * Override this in template.php to include a case statement if you want different node types to appear differently.
- * If you have additional image sizes you defined in image.module, you can use them by theming this function as well.
+ * Override this in template.php to include a case statement if you want
+ * different node types to appear differently.
+ * If you have additional image sizes you defined in image.module, you can
+ * use them by theming this function as well.
  */
 function theme_image_attach_attached_images_node($nid, $image_nodes, $img_size, $teaser = FALSE) {
   drupal_add_css(drupal_get_path('module', 'image_attach') . '/image_attach.css');

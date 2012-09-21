@@ -510,8 +510,17 @@ function node_import_add_form_validate_next($form, &$form_state) {
 
   // ------------------------------------------------------------
   if ($page == 'file') {
+    // If a file is uploaded, select it.
+    $validators = array();
+    $dest = node_import_directory();
+    if (($file = file_save_upload('file_upload', $validators, $dest, FILE_EXISTS_RENAME))) {
+      file_set_status($file, FILE_STATUS_PERMANENT);
+      drupal_set_message(t('New file %name uploaded to %path.', array('%name' => $file->filename, '%path' => $file->filepath)));
+      $values['fid'] = $form_state['values']['fid'] = $file->fid;
+    }
+
     // Validate whether a file has been chosen and the file exists.
-    $files = node_import_list_files();
+    $files = node_import_list_files(TRUE);
     if (!isset($values['fid']) || !isset($files[$values['fid']])) {
       form_set_error('fid', t('%select-file field is required. Upload a file first if there are no files uploaded yet.', array('%select-file' => t('Select file'))));
     }
@@ -614,9 +623,20 @@ function node_import_add_form_submit_back($form, &$form_state) {
 }
 
 function node_import_add_form_submit_reset($form, &$form_state) {
+  drupal_set_message(t('The values have been reset to their default values.'), 'warning');
   $page = $form_state['storage']['page'];
-  unset($form_state['values'][$page]);
-  unset($form_state['storage'][$page]);
+
+  switch ($page) {
+    case 'file':
+      unset($form_state['values']['fid']);
+      unset($form_state['storage']['fid']);
+      break;
+    default:
+      unset($form_state['values'][$page]);
+      unset($form_state['storage'][$page]);
+      break;
+  }
+
   node_import_add_form_submit_reload($form, $form_state);
 }
 
@@ -634,16 +654,11 @@ function node_import_add_form_submit_reload($form, &$form_state) {
 
     if (!isset($form_state['storage']['file_options'])) {
       $form_state['storage']['file_options'] = node_import_autodetect($file->filepath);
-    }
-    if (!isset($form_state['storage']['has_headers'])) {
-      $form_state['storage']['has_headers'] = 1;
+      drupal_set_message(t('The file options have been autodetected. If this is incorrect, fill in the correct values below.'), 'warning');
     }
 
-    // If the user has chosen a predefined format, make sure
-    // all options are correct.
-    if ($form_state['storage']['file_options']['file_format'] != '') {
-      $file_formats = node_import_format_options('file formats');
-      $form_state['storage']['file_options'] = array_merge($form_state['storage']['file_options'], $file_formats[$form_state['storage']['file_options']['file_format']]);
+    if (!isset($form_state['storage']['has_headers'])) {
+      $form_state['storage']['has_headers'] = 1;
     }
 
     // Read some sample data with current settings.
@@ -1227,7 +1242,7 @@ function theme_node_import_field_table($form) {
   foreach (element_children($form) as $child) {
     if (!isset($form[$child]['#type']) || $form[$child]['#type'] != 'value') {
       $title = check_plain($form[$child]['#title']);
-      $description = $form[$child]['#description'];
+      $description = isset($form[$child]['#description']) ? $form[$child]['#description'] : '';
       $group = isset($form[$child]['#node_import-group']) ? $form[$child]['#node_import-group'] : '';
       unset($form[$child]['#title']);
       unset($form[$child]['#description']);

@@ -1,31 +1,30 @@
 <?php
-//$Id: date_api.views.inc,v 1.1.2.12 2010/08/12 14:13:59 karens Exp $
 
 /**
  * @file
  * Defines date-related Views data and plugins:
- * 
+ *
  * Date argument:
- *   A generic date argument that has an option to select one or more 
- *   Views date fields to filter on, automatically adds them to the view, 
- *   and then filters the view by the value of the selected field(s). 
+ *   A generic date argument that has an option to select one or more
+ *   Views date fields to filter on, automatically adds them to the view,
+ *   and then filters the view by the value of the selected field(s).
  *   The flexible argument will accept and evaluate most ISO date
- *   and period formats, like 2009-05-01, 2008-W25, P1W. 
- * 
+ *   and period formats, like 2009-05-01, 2008-W25, P1W.
+ *
  * Date filter:
- *   A generic date filter that has an option to select a 
+ *   A generic date filter that has an option to select a
  *   Views date field to filter on, with a choice of a widget to use
- *   for the filter form and an option to set the default value to 
- *   a set date or something like 'now +90 days'. If the operator is 
+ *   for the filter form and an option to set the default value to
+ *   a set date or something like 'now +90 days'. If the operator is
  *   set to 'between' or 'not between' you can set a default value for
- *   both the from and to dates. 
- * 
+ *   both the from and to dates.
+ *
  * Current date argument default
- *   Adds a default option to set the argument to the current date 
+ *   Adds a default option to set the argument to the current date
  *   when the argument is empty.
- * 
+ *
  * Date navigation attachment
- *   Navigation that can be attached to any display to create back/next 
+ *   Navigation that can be attached to any display to create back/next
  *   links by date, requires the date argument and uses the current
  *   date argument default to set a starting point for the view.
  */
@@ -50,7 +49,7 @@ function date_api_views_handlers() {
 }
 
 /**
- * Implementation of hook_views_plugins
+ * Implementation of hook_views_plugins().
  */
 function date_api_views_plugins() {
   $path = drupal_get_path('module', 'date_api');
@@ -109,7 +108,7 @@ function date_api_views_plugins() {
         'uses row plugin' => FALSE,
         'uses fields' => FALSE,
         'uses options' => TRUE,
-        'type' => 'date_nav', 
+        'type' => 'date_nav',
         'even empty' => TRUE,
       ),
     ),
@@ -117,13 +116,13 @@ function date_api_views_plugins() {
 }
 
 /**
- * Implementation of hook_views_data()
+ * Implementation of hook_views_data().
  */
 function date_api_views_data() {
   $data = array();
-  
+
   $tables = module_invoke_all('date_api_tables');
-  
+
   foreach ($tables as $base_table) {
     // The flexible date argument.
     $data[$base_table]['date_argument'] = array(
@@ -135,7 +134,7 @@ function date_api_views_data() {
         'empty field name' => t('Undated'),
         'base' => $base_table,
       ),
-    );  
+    );
     // The flexible date filter.
     $data[$base_table]['date_filter'] = array(
       'group' => t('Date'),
@@ -146,7 +145,7 @@ function date_api_views_data() {
         'empty field name' => t('Undated'),
         'base' => $base_table,
       ),
-    ); 
+    );
   }
   return $data;
 }
@@ -174,10 +173,10 @@ function date_api_fields($base = 'node', $reset = FALSE) {
 /**
  * Central function for setting up the right timezone values
  * in the SQL date handler.
- * 
+ *
  * The date handler will use this information to decide if the
  * database value needs a timezone conversion.
- * 
+ *
  * In Views, we will always be comparing to a local date value,
  * so the goal is to convert the database value to the right
  * value to compare to the local value.
@@ -253,7 +252,7 @@ function date_views_real_url($view, $args) {
   foreach ($parts as $delta => $part) {
     // If one of the args is buried in the url, add it here and adjust
     // the delta values we'll compare the calendar arg positions to.
-    if (substr($part, 0, 1) == '$') {
+    if (drupal_substr($part, 0, 1) == '$') {
       $parts[$delta] = array_shift($args);
       $bump++;
     }

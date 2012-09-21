@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_filter_cart_current.inc,v 1.1.2.1 2010/11/18 17:31:43 longwave Exp $
 
 /**
  * Filter handler for the current cart.

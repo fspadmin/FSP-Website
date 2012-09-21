@@ -96,6 +96,7 @@ function print_pdf_menu() {
   );
   $items['admin/settings/print/pdf'] = array(
     'title' => 'PDF',
+    'description' => 'Configure the settings of the PDF generation functionality.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('print_pdf_settings'),
     'access arguments'  => array('administer print'),
@@ -110,6 +111,7 @@ function print_pdf_menu() {
   );
   $items['admin/settings/print/pdf/strings'] = array(
     'title' => 'Text strings',
+    'description' => 'Override the user-facing strings used in the PDF version.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('print_pdf_strings_settings'),
     'access arguments'  => array('administer print'),
@@ -139,7 +141,7 @@ function print_pdf_block($op = 'list', $delta = 0, $edit = array()) {
       switch ($delta) {
       case 0:
         $block['subject'] = t('Most PDFd');
-        $result = db_query_range("SELECT path FROM {print_pdf_page_counter} ORDER BY totalcount DESC", 0, 3);
+        $result = db_query_range("SELECT path FROM {print_pdf_page_counter} LEFT JOIN {node} ON path = CONCAT('node/', node.nid) WHERE status <> 0 OR status IS NULL ORDER BY totalcount DESC", 0, 3);
         if (db_affected_rows()) {
           $block['content'] = '<div class="item-list"><ul>';
           while ($obj = db_fetch_object($result)) {
@@ -166,49 +168,27 @@ function print_pdf_requirements($phase) {
       $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', PRINT_PDF_PDF_TOOL_DEFAULT);
       if (empty($print_pdf_pdf_tool)) {
         $requirements['print_pdf_tool'] = array(
-          'title' => $t('PDF generation library'),
+          'title' => $t('Printer, email and PDF versions - PDF generation library'),
           'value' => $t('No PDF tool selected'),
-          'description' => $t('Please configure it in the <a href="@url">PDF settings page</a>.', array('@url' => url('admin/settings/print/pdf'))),
+          'description' => $t('Please configure it in the !url.', array('!url' => l($t('PDF settings page'), 'admin/settings/print/pdf'))),
           'severity' => REQUIREMENT_ERROR,
         );
       }
       else {
         if (!is_file($print_pdf_pdf_tool) || !is_readable($print_pdf_pdf_tool)) {
           $requirements['print_pdf_tool'] = array(
-            'title' => $t('PDF generation tool'),
+            'title' => $t('Printer, email and PDF versions - PDF generation library'),
             'value' => $t('File not found'),
             'description' => $t('The currently selected PDF generation library (%file) is no longer accessible.', array('%file' => $print_pdf_pdf_tool)),
             'severity' => REQUIREMENT_ERROR,
           );
         }
         elseif (basename($print_pdf_pdf_tool) == 'dompdf_config.inc.php') {
-          $directory = dirname($print_pdf_pdf_tool) .'/lib/fonts';
-          if (!is_dir($directory) || !is_writable($directory)) {
-            $requirements['print_pdf_tool'] = array(
-              'title' => $t('DOMPDF font cache directory'),
-              'value' => $t('Non-writable permissions'),
-              'description' => $t('You must change the %fontdir permissions to be writable, as dompdf requires write-access to that directory.', array('%fontdir' => $directory)),
-              'severity' => REQUIREMENT_ERROR,
-            );
-          }
-        }
-        elseif (basename($print_pdf_pdf_tool) == 'tcpdf.php') {
-          $version = _print_pdf_tcpdf_version();
-
-          if (version_compare($version, '5.9.012', '<')) {
-            $requirements['print_pdf_tool'] = array(
-              'title' => $t('TCPDF library'),
-              'value' => $t('Unsupported version'),
-              'description' => $t('The currently selected version of TCPDF (@version) is not supported. Please update to a <a href="@url">newer version</a>.', array('@version' => $version, '@url' => url('http://www.tcpdf.org'))),
-              'severity' => REQUIREMENT_ERROR,
-            );
-          }
-
-          foreach (array('cache', 'images') as $dir) {
-            $directory = dirname($print_pdf_pdf_tool) .'/'. $dir;
+          if (variable_get('print_pdf_autoconfig', PRINT_PDF_AUTOCONFIG_DEFAULT)) {
+            $directory = dirname($print_pdf_pdf_tool) .'/lib/fonts';
             if (!is_dir($directory) || !is_writable($directory)) {
-              $requirements['print_pdf_tool_'. $dir] = array(
-                'title' => $t('TCPDF directory'),
+              $requirements['print_pdf_tool'] = array(
+                'title' => $t('DOMPDF font cache directory'),
                 'value' => $t('Non-writable permissions'),
                 'description' => $t('You must change the %fontdir permissions to be writable, as dompdf requires write-access to that directory.', array('%fontdir' => $directory)),
                 'severity' => REQUIREMENT_ERROR,
@@ -216,7 +196,39 @@ function print_pdf_requirements($phase) {
             }
           }
         }
-        elseif (substr(basename($print_pdf_pdf_tool, '.exe'), 0, 11) == 'wkhtmltopdf') {
+        elseif (basename($print_pdf_pdf_tool) == 'tcpdf.php') {
+          $version = _print_pdf_tcpdf_version();
+
+          if (version_compare($version, '5.9.001', '<')) {
+            $requirements['print_pdf_tool'] = array(
+              'title' => $t('Printer, email and PDF versions - PDF generation library'),
+              'value' => $t('Unsupported TCPDF version'),
+              'description' => $t('The currently selected version of TCPDF (@version) is not supported. Please update to a !url.', array('@version' => $version, '!url' => l($t('newer version'), 'http://sourceforge.net/projects/tcpdf/files/latest'))),
+              'severity' => REQUIREMENT_ERROR,
+            );
+          }
+          else {
+            $requirements['print_pdf_tool'] = array(
+              'title' => $t('Printer, email and PDF versions - PDF generation library'),
+              'value' => $t('TCPDF') . ' ' . $version,
+            );
+          }
+
+          if (variable_get('print_pdf_autoconfig', PRINT_PDF_AUTOCONFIG_DEFAULT)) {
+            foreach (array('cache', 'images') as $dir) {
+              $directory = dirname($print_pdf_pdf_tool) .'/'. $dir;
+              if (!is_dir($directory) || !is_writable($directory)) {
+                $requirements['print_pdf_tool_'. $dir] = array(
+                  'title' => $t('TCPDF directory'),
+                  'value' => $t('Non-writable permissions'),
+                  'description' => $t('You must change the %fontdir permissions to be writable, as TCPDF requires write-access to that directory.', array('%fontdir' => $directory)),
+                  'severity' => REQUIREMENT_ERROR,
+                );
+              }
+            }
+          }
+        }
+        elseif (drupal_substr(basename($print_pdf_pdf_tool, '.exe'), 0, 11) == 'wkhtmltopdf') {
           if (function_exists('is_executable') && !is_executable($print_pdf_pdf_tool)) {
             $requirements['print_pdf_tool'] = array(
               'title' => $t('wkhtmltopdf library'),
@@ -229,10 +241,16 @@ function print_pdf_requirements($phase) {
             $version = _print_pdf_wkhtmltopdf_version();
             if (version_compare($version, '0.9.6', '<')) {
               $requirements['print_pdf_tool'] = array(
-                'title' => $t('wkhtmltopdf library'),
-                'value' => $t('Unsupported version'),
-                'description' => $t('The currently selected version of wkhtmltopdf (@version) is not supported. Please update to a <a href="@url">newer version</a>.', array('@version' => $version, '@url' => url('http://code.google.com/p/wkhtmltopdf/'))),
+                'title' => $t('Printer, email and PDF versions - PDF generation library'),
+                'value' => $t('Unsupported wkhtmltopdf version'),
+                'description' => $t('The currently selected version of wkhtmltopdf (@version) is not supported. Please update to a !url.', array('@version' => $version, '!url' => l($t('newer version'), 'http://code.google.com/p/wkhtmltopdf/'))),
                 'severity' => REQUIREMENT_ERROR,
+              );
+            }
+            else {
+              $requirements['print_pdf_tool'] = array(
+                'title' => $t('Printer, email and PDF versions - PDF generation library'),
+                'value' => $t('wkhtmltopdf') . ' ' . $version,
               );
             }
           }
@@ -273,8 +291,8 @@ function print_pdf_link($type, $node = NULL, $teaser = FALSE) {
       $query = print_query_string_encode($query_arr, array('q'));
       if (empty($query)) $query = NULL;
 
-      if ($print_pdf_link_use_alias) {
-        $path = drupal_get_path_alias('node/'. $node->nid);
+      if (($print_pdf_link_use_alias) && ($alias = drupal_lookup_path('alias', 'node/'. $node->nid))) {
+        $path = $alias;
       }
       else {
         $path = $node->nid;
@@ -328,14 +346,18 @@ function print_pdf_nodeapi(&$node, $op = 'view', $teaser, $page) {
       }
       break;
     case 'load':
-      _print_pdf_set_node_fields($node);
+      $res = db_fetch_object(db_query("SELECT link, comments, url_list FROM {print_pdf_node_conf} WHERE nid = %d", $node->nid));
+
+      $node->print_pdf_display = $res ? intval($res->link) : variable_get('print_pdf_display_'. $node->type, PRINT_TYPE_SHOW_LINK_DEFAULT);
+      $node->print_pdf_display_comment = $res ? intval($res->comments) : variable_get('print_pdf_display_comment_'. $node->type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
+      $node->print_pdf_display_urllist = $res ? intval($res->url_list) : variable_get('print_pdf_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
       break;
     case 'insert':
     case 'update':
       if (user_access('administer print') || user_access('node-specific print configuration')) {
-        if ($node->print_pdf_display === NULL) $node->print_pdf_display = variable_get('print_pdf_display_'. $node->type, PRINT_TYPE_SHOW_LINK_DEFAULT);
-        if ($node->print_pdf_display_comment === NULL) $node->print_pdf_display_comment = variable_get('print_pdf_display_comment_'. $node->type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
-        if ($node->print_pdf_display_urllist === NULL) $node->print_pdf_display_urllist = variable_get('print_pdf_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
+        if (!isset($node->print_pdf_display)) $node->print_pdf_display = variable_get('print_pdf_display_'. $node->type, PRINT_TYPE_SHOW_LINK_DEFAULT);
+        if (!isset($node->print_pdf_display_comment)) $node->print_pdf_display_comment = variable_get('print_pdf_display_comment_'. $node->type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
+        if (!isset($node->print_pdf_display_urllist)) $node->print_pdf_display_urllist = variable_get('print_pdf_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
 
         _print_pdf_node_conf_modify($node->nid, $node->print_pdf_display, $node->print_pdf_display_comment, $node->print_pdf_display_urllist);
       }
@@ -387,25 +409,8 @@ function print_pdf_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Auxiliary function to assign the per-node settings to the node object fields
- *
- * @param $node
- *   node to be modified
- */
-function _print_pdf_set_node_fields(&$node) {
-  if (isset($node->nid)) {
-    $res = db_fetch_object(db_query("SELECT link, comments, url_list FROM {print_pdf_node_conf} WHERE nid = %d", $node->nid));
-  }
-  else {
-    $res = FALSE;
-  }
-  $node->print_pdf_display = $res ? intval($res->link) : variable_get('print_pdf_display_'. $node->type, PRINT_TYPE_SHOW_LINK_DEFAULT);
-  $node->print_pdf_display_comment = $res ? intval($res->comments) : variable_get('print_pdf_display_comment_'. $node->type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
-  $node->print_pdf_display_urllist = $res ? intval($res->url_list) : variable_get('print_pdf_display_urllist_'. $node->type, PRINT_TYPE_URLLIST_DEFAULT);
-}
-
-/**
  * Update the print_pdf_node_conf table to reflect the given attributes
+ *
  * If updating to the default values, delete the record.
  *
  * @param $nid
@@ -472,7 +477,7 @@ function print_pdf_insert_link($path = NULL, $node = NULL) {
   }
   else {
     if ($path === NULL) {
-      $nid = preg_replace('!^node/!', '', $_GET['q']);
+      $nid = preg_replace('!^node/([\d]+)!', '$1', $_GET['q']);
       $path = $_GET['q'];
     }
     else {
@@ -487,8 +492,8 @@ function print_pdf_insert_link($path = NULL, $node = NULL) {
         $path = 'book/export/html/'. $nid;
       }
       else {
-        if (variable_get('print_pdf_link_use_alias', PRINT_PDF_LINK_USE_ALIAS_DEFAULT)) {
-          $path = drupal_get_path_alias($path);
+        if (variable_get('print_pdf_link_use_alias', PRINT_PDF_LINK_USE_ALIAS_DEFAULT) && ($alias = drupal_lookup_path('alias', $path))) {
+          $path = $alias;
         }
         else {
           $path = $nid;
@@ -513,7 +518,7 @@ function print_pdf_insert_link($path = NULL, $node = NULL) {
 }
 
 /**
- * Determine a the link to the PDF version is allowed depending on all possible settings
+ * Check if the link to the PDF version is allowed depending on the settings
  *
  * @param $args
  *   array containing the possible parameters:
@@ -565,7 +570,7 @@ function print_pdf_link_allowed($args) {
     }
     else {
       // Node link
-      if (!$node->print_pdf_display) {
+      if (isset($node->print_pdf_display) && !$node->print_pdf_display) {
         // Link for this node is disabled
         return FALSE;
       }
@@ -614,6 +619,11 @@ function _print_pdf_tcpdf_version() {
   if (method_exists($pdf, 'getTCPDFVersion')) {
     return $pdf->getTCPDFVersion();
   }
+  elseif (defined('PDF_PRODUCER')) {
+    sscanf(PDF_PRODUCER, "TCPDF %s", $version);
+
+    return $version;
+  }
   else {
     return 'unknown';
   }
@@ -626,7 +636,7 @@ function _print_pdf_wkhtmltopdf_version() {
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', PRINT_PDF_PDF_TOOL_DEFAULT);
   $descriptor = array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
 
-  $cmd = realpath($print_pdf_pdf_tool) .' --version';
+  $cmd = '"'. realpath($print_pdf_pdf_tool) .'" --version';
   $process = proc_open($cmd, $descriptor, $pipes, NULL, NULL);
   if (is_resource($process)) {
     $content = stream_get_contents($pipes[1]);
@@ -638,4 +648,14 @@ function _print_pdf_wkhtmltopdf_version() {
   }
 
   return ($matches[1]);
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function print_pdf_views_api() {
+  return array(
+    'api' => 2.0,
+    'path' => drupal_get_path('module', 'print_pdf'),
+  );
 }

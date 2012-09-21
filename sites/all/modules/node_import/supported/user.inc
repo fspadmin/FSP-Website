@@ -24,6 +24,8 @@ function user_node_import_types() {
 function node_import_create_user($type, $values, $preview) {
   $output = $preview ? '' : FALSE;
 
+  $fields = node_import_fields($type);
+
   if ($preview) {
     $form = array(); //Not needed - TODO: we should use $form['#validate']
     $form_state = array(
@@ -32,8 +34,33 @@ function node_import_create_user($type, $values, $preview) {
     user_register_validate($form, $form_state);
 
     $output = '<div class="preview">';
-    $output .= '<h3>'. check_plain($values['name']) .'</h3>';
-    $output .= '<p>'. check_plain($values['mail']) .'</p>';
+    $output .= '<h3>' . check_plain($values['name']) . "</h3>\n";
+    $output .= "<ul>\n";
+    $output .= '<li>' . t('Email') . ': ' . check_plain($values['mail']) . "</li>\n";
+
+    foreach ( $fields as $fname => $field ) {
+      // ignore the standard fields
+      switch ( $fname ) {
+        case 'name':
+        case 'mail':
+        case 'pass':
+        case 'status':
+        case 'notify':
+          continue(2);
+      }
+
+      $group = '';
+      if (isset($field['group'])) {
+        $group = check_plain($field['group']) . ' - ';
+      }
+
+      if (isset($values[$fname])) {
+        $output .= '<li>' . $group . check_plain($field['title']) . ': ' . check_plain($values[$fname]) . "</li>\n";
+      }
+
+    }
+
+    $output .= "</ul>\n";
     $output .= '</div>';
   }
   else {
@@ -46,6 +73,33 @@ function node_import_create_user($type, $values, $preview) {
 
     node_import_drupal_execute($form_id, $form_state);
     $output = $form_state['user']->uid;
+
+    // Save user profile.
+    $user = $form_state['user'];
+    $profile = array();
+
+    foreach ($fields as $fname => $field) {
+      switch ($fname) {
+        case 'name':
+        case 'mail':
+        case 'pass':
+        case 'status':
+        case 'notify':
+          continue(2);
+      }
+
+      if (!isset($profile[$field['group']])) {
+        $profile[$field['group']] = array();
+      }
+
+      $profile[$field['group']][$fname] = $values[$fname];
+    }
+
+    foreach ($profile as $group => $values) {
+      user_save($user, $values, $group);
+    }
+
+    $output = $uid;
   }
 
   return $output;

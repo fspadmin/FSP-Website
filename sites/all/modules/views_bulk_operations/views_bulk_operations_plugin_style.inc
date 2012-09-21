@@ -182,6 +182,19 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         call_user_func($form_function, $form, array('values' => $options['settings']));
       }
     }
+
+    // Reset runtime settings for this view.
+    unset($_SESSION['vbo_values'][$this->view->name]);
+  }
+
+  /**
+   * Implementation of views_plugin::query().
+   */
+  function query() {
+    // Add base field if not present in the query.
+    if (!isset($this->view->query->fields[$this->view->base_field])) {
+      $this->view->query->add_field($this->view->base_table, $this->view->base_field);
+    }
   }
 
   /**

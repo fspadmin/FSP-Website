@@ -1,0 +1,9 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ */
+function bcc_uninstall() {
+  variable_del('bcc_mail');
+  variable_del('bcc_mail_address');
+}

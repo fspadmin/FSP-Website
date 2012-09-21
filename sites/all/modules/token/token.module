@@ -250,6 +250,27 @@ function token_replace($text, $type = 'global', $object = NULL, $leading = TOKEN
  *   Text with tokens replaced.
  */
 function token_replace_multiple($text, $types = array('global' => NULL), $leading = TOKEN_PREFIX, $trailing = TOKEN_SUFFIX, $options = array(), $flush = FALSE) {
+  // Ensure that the $text parameter is a string and not an array which is an
+  // invalid input.
+  if (is_array($text)) {
+    $backtrace = debug_backtrace();
+    foreach ($backtrace as $caller) {
+      switch ($caller['function']) {
+        case 'token_replace':
+        case 'token_replace_multiple':
+          continue;
+        default:
+          trigger_error(t('The @function() function called token replacement with an array rather than a string for $text', array('@function' => $caller['function'])), E_USER_NOTICE);
+          break 2;
+      }
+    }
+
+    foreach ($text as $key => $value) {
+      $text[$key] = token_replace_multiple($value, $types, $leading, $trailing, $options, $flush);
+    }
+    return $text;
+  }
+
   // If there are no tokens to replace, just return the text.
   $text_tokens = token_scan($text, $leading, $trailing);
   if (empty($text_tokens)) {
@@ -695,10 +716,22 @@ function token_get_invalid_tokens_by_context($value, $valid_types = array(), $le
  *   An array of discovered tokens.
  */
 function token_scan($text, $leading = TOKEN_PREFIX, $trailing = TOKEN_SUFFIX) {
-  // Matches tokens with the following pattern: [$token]
-  $leading = preg_quote($leading, '/');
-  $trailing = preg_quote($trailing, '/');
-  preg_match_all("/{$leading}([^\s{$leading}{$trailing}]+){$trailing}/x", $text, $matches);
+  $leadingregex = preg_quote($leading, '/');
+  $trailingregex = preg_quote($trailing, '/');
+
+  $regex = '/' . $leadingregex;
+  $regex .= '([^\s';
+  if (drupal_strlen($leading) == 1) {
+    // Only add the leading string as a non-match if it is a single character.
+    $regex .= $leadingregex;
+  }
+  if (drupal_strlen($trailing) == 1) {
+    // Only add the trailing string as a non-match if it is a single character.
+    $regex .= $trailingregex;
+  }
+  $regex .= ']+)' . $trailingregex . '/x';
+
+  preg_match_all($regex, $text, $matches);
   return $matches[1];
 }
 

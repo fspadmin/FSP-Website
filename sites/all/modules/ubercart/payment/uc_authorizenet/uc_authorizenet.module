@@ -229,7 +229,7 @@ function uc_authorizenet_payment_gateway_settings_submit($form, &$form_state) {
   // If CC encryption has been configured properly.
   if ($key = uc_credit_encryption_key()) {
     // Setup our encryption object.
-    $crypt = new uc_encryption_class;
+    $crypt = new uc_encryption_class();
 
     // Encrypt the Login ID, Transaction key, and MD5 Hash.
     if (!empty($form_state['values']['uc_authnet_md5_hash'])) {
@@ -1221,7 +1221,7 @@ function _uc_authorizenet_login_data() {
   // If CC encryption has been configured properly.
   if ($key = uc_credit_encryption_key()) {
     // Setup our encryption object.
-    $crypt = new uc_encryption_class;
+    $crypt = new uc_encryption_class();
 
     // Decrypt the MD5 Hash.
     if (!empty($md5_hash)) {

@@ -20,7 +20,7 @@ $_print_urls = PRINT_URLS_DEFAULT;
  */
 function print_controller_html() {
   $args = func_get_args();
-  $path = implode('/', $args);
+  $path = filter_xss(implode('/', $args));
   $cid = isset($_GET['comment']) ? (int)$_GET['comment'] : NULL;
 
   $print = print_controller($path, $cid, PRINT_HTML_FORMAT);
@@ -31,7 +31,7 @@ function print_controller_html() {
     $html = drupal_final_markup($html);
     print $html;
 
-    $nodepath = (isset($node->path)) ? drupal_get_normal_path($node->path) : 'node/'. $path;
+    $nodepath = (isset($node->path) && is_string($node->path)) ? drupal_get_normal_path($node->path) : 'node/'. $path;
     db_query("UPDATE {print_page_counter} SET totalcount = totalcount + 1, timestamp = %d WHERE path = '%s'", time(), $nodepath);
     // If we affected 0 rows, this is the first time viewing the node.
     if (!db_affected_rows()) {
@@ -56,7 +56,7 @@ function print_controller_html() {
  * @param $teaser
  *   if set to TRUE, outputs only the node's teaser
  * @param $message
- *   optional sender's message (used by the send e-mail module)
+ *   optional sender's message (used by the send email module)
  * @return
  *   array with the fields to be used in the template
  * @see _print_generate_node()
@@ -70,19 +70,20 @@ function print_controller($path, $cid = NULL, $format = PRINT_HTML_FORMAT, $teas
 
     $ref = referer_uri();
     $path = preg_replace("!^$base_url/!", '', $ref);
-    if ($path === $ref) {
-      $path = '';
+    if (($path === $ref) || empty($path)) {
+      $path = variable_get('site_frontpage', 'node');
     }
   }
   if ($alias = drupal_lookup_path('source', $path)) {
     // Indirect call with print/alias
     // If there is a path alias with these arguments, generate a printer-friendly version for it
-    $ret = preg_match('!^node/(.*)!i', $alias, $matches);
-    if ($ret == 1) {
-      $path = $matches[1];
-    }
+    $path = $alias;
   }
   $parts = explode('/', $path);
+  if (($parts[0] == 'node') && (count($parts) > 1) && ctype_digit($parts[1])) {
+    array_shift($parts);
+    $path = implode('/', $parts);
+  }
   if (ctype_digit($parts[0]) && (count($parts) == 1)) {
     $print = _print_generate_node($path, $cid, $format, $teaser, $message);
   }
@@ -140,7 +141,7 @@ function _print_robots_meta_generator() {
  * @param $node
  *   generated node with a printer-friendly node body
  * @param $message
- *   optional sender's message (used by the send e-mail module)
+ *   optional sender's message (used by the send email module)
  * @param $cid
  *   id of current comment being generated (NULL when not generating
  *   an individual comment)
@@ -157,6 +158,7 @@ function _print_var_generator($node, $message = NULL, $cid = NULL) {
 
   // print module settings
   $print_css = variable_get('print_css', PRINT_CSS_DEFAULT);
+  $print_keep_theme_css = variable_get('print_keep_theme_css', PRINT_KEEP_THEME_CSS_DEFAULT);
   $print_logo_options = variable_get('print_logo_options', PRINT_LOGO_OPTIONS_DEFAULT);
   $print_logo_url = variable_get('print_logo_url', PRINT_LOGO_URL_DEFAULT);
   $print_html_new_window = variable_get('print_html_new_window', PRINT_HTML_NEW_WINDOW_DEFAULT);
@@ -175,6 +177,7 @@ function _print_var_generator($node, $message = NULL, $cid = NULL) {
     drupal_add_js('misc/drupal.js', 'core');
   }
   $print['scripts'] = drupal_get_js();
+  $print['footer_scripts'] = drupal_get_js('footer');
   $print['robots_meta'] = _print_robots_meta_generator();
   $print['url'] = url($path, array('absolute' => TRUE));
   $print['base_href'] = "<base href='". $print['url'] ."' />\n";
@@ -187,12 +190,14 @@ function _print_var_generator($node, $message = NULL, $cid = NULL) {
     drupal_add_css(drupal_get_path('module', 'print') .'/css/print.css');
   }
   $drupal_css = drupal_add_css();
-  foreach ($drupal_css as $key => $types) {
-    // Unset the theme's CSS
-    $drupal_css[$key]['theme'] = array();
+  if (!$print_keep_theme_css) {
+    foreach ($drupal_css as $key => $types) {
+      // Unset the theme's CSS
+      $drupal_css[$key]['theme'] = array();
+    }
   }
 
-  // If we are sending a message via e-mail, the CSS must be embedded
+  // If we are sending a message via email, the CSS must be embedded
   if (!empty($message)) {
     $style = '';
     $css_files = array();
@@ -214,7 +219,7 @@ function _print_var_generator($node, $message = NULL, $cid = NULL) {
   }
 
   $window_close = ($print_html_new_window && $print_html_windowclose) ? 'window.close();' : '';
-  $print['sendtoprinter'] = $print_html_sendtoprinter ? "<script type='text/javascript'>Drupal.behaviors.print = function(context) {window.print();$window_close}</script>" : '';
+  $print['sendtoprinter'] = $print_html_sendtoprinter ? '<script type="text/javascript">Drupal.behaviors.print = function(context) {$(window).load(function() {window.print();' . $window_close . '})};</script>' : '';
 
   switch ($print_logo_options) {
     case 0: // none
@@ -227,8 +232,9 @@ function _print_var_generator($node, $message = NULL, $cid = NULL) {
       $logo_url = strip_tags($print_logo_url);
       break;
   }
+  $logo_url = preg_replace('!^'. base_path() .'!', '/', $logo_url);
   $site_name = variable_get('site_name', 'Drupal');
-  $print['logo'] = $logo_url ? "<img class='print-logo' src='". check_url($logo_url) ."' alt='$site_name' id='logo' />\n" : '';
+  $print['logo'] = $logo_url ? theme('image', $logo_url, $site_name, '', array('class' => 'print-logo', 'id' => 'logo'), FALSE) : '';
 
   switch ($print_footer_options) {
     case 0: // none
@@ -262,7 +268,7 @@ function _print_var_generator($node, $message = NULL, $cid = NULL) {
       $url = $base_url .'/'. (((bool)variable_get('clean_url', '0')) ? '' : '?q=') . $path;
     }
     if (is_int($cid)) {
-      $url .= '#comment-$cid';
+      $url .= "#comment-$cid";
     }
     $retrieved_date = format_date(time(), 'small');
     $print_text_retrieved = filter_xss(variable_get('print_text_retrieved', t('retrieved on %date')));
@@ -339,9 +345,25 @@ function _print_rewrite_urls($matches) {
     if (preg_match('!^(?:href|src)\s*?=(.*)!i', $attribs[$i], $urls) > 0) {
       $url = trim($urls[1], " \t\n\r\0\x0B\"'");
 
-      if (strpos(html_entity_decode($url), '://') || preg_match('!^mailto:.*?@.*?\..*?$!iu', html_entity_decode($url))) {
+      if (empty($url)) {
+        // If URL is empty, use current_url
+        $path = explode('/', $_GET['q']);
+        unset($path[0]);
+        $path = implode('/', $path);
+        if (ctype_digit($path)) {
+          $path = "node/$path";
+        }
+        // Printer-friendly URLs is on, so we need to make it absolute
+        $newurl = url($path, array('fragment' => drupal_substr($url, 1), 'absolute' => TRUE));
+      }
+      elseif (strpos(html_entity_decode($url), '://') || preg_match('!^mailto:.*?@.*?\..*?$!iu', html_entity_decode($url))) {
         // URL is absolute, do nothing
         $newurl = $url;
+      }
+      elseif (strpos(html_entity_decode($url), '//') === 0) {
+        // URL is 'almost absolute', but it does not contain protocol; replace with base_path protocol
+        $newurl = (empty($_SERVER['HTTPS']) ? 'http' : 'https') . ":" . $url;
+        $matches[1] = str_replace($url, $newurl, $matches[1]);
       }
       else {
         if ($url[0] == '#') {
@@ -354,7 +376,7 @@ function _print_rewrite_urls($matches) {
               $path = "node/$path";
             }
             // Printer-friendly URLs is on, so we need to make it absolute
-            $newurl = url($path, array('fragment' => substr($url, 1), 'absolute' => TRUE));
+            $newurl = url($path, array('fragment' => drupal_substr($url, 1), 'absolute' => TRUE));
           }
           // Because base href is the original page, change the link to
           // still be usable inside the print page
@@ -401,7 +423,7 @@ function _print_rewrite_urls($matches) {
  */
 function _print_friendly_urls($url = 0) {
   static $urls = array();
-  if ($url) {
+  if ($url !== 0) {
     $url_idx = array_search($url, $urls);
     if ($url_idx !== FALSE) {
       return ($url_idx + 1);
@@ -474,7 +496,7 @@ function _print_url_list_enabled($node, $format = PRINT_HTML_FORMAT) {
  * @param $teaser
  *   if set to TRUE, outputs only the node's teaser
  * @param $message
- *   optional sender's message (used by the send e-mail module)
+ *   optional sender's message (used by the send email module)
  * @return
  *   filled array ready to be used in the template
  */
@@ -495,10 +517,10 @@ function _print_generate_node($nid, $cid = NULL, $format = PRINT_HTML_FORMAT, $t
   }
   drupal_set_title(check_plain($node->title));
 
-  //alert other modules that we are generating a printer-friendly page, so they can choose to show/hide info
+  // alert other modules that we are generating a printer-friendly page, so they can choose to show/hide info
   $node->printing = TRUE;
 
-  //use the proper build_mode
+  // use the proper build_mode
   $node->build_mode = NODE_BUILD_PRINT;
 
   // Turn off Pagination by the Paging module
@@ -512,7 +534,7 @@ function _print_generate_node($nid, $cid = NULL, $format = PRINT_HTML_FORMAT, $t
 
   if ($cid === NULL) {
     // Adapted (simplified) version of node_view
-    //Render the node content
+    // Render the node content
     $node = node_build_content($node, $teaser, TRUE);
     // Disable fivestar widget output
     unset($node->content['fivestar_widget']);
@@ -537,21 +559,21 @@ function _print_generate_node($nid, $cid = NULL, $format = PRINT_HTML_FORMAT, $t
   $print_comments = variable_get('print_comments', PRINT_COMMENTS_DEFAULT);
 
   if (function_exists('comment_render') && (($cid != NULL) || ($print_comments))) {
-    //Print only the requested comment (or if $cid is NULL, all of them)
+    // Print only the requested comment (or if $cid is NULL, all of them)
     $comments = comment_render($node, $cid);
 
-    //Remove the comment forms
+    // Remove the comment forms
     $comments = preg_replace('!<form.*?id="comment-.*?">.*?</form>!sim', '', $comments);
-    //Remove the 'Post new comment' title
+    // Remove the 'Post new comment' title
     $comments = preg_replace('!<h2.*?>'. t('Post new comment') .'</h2>!', '', $comments);
-    //Remove the comment title hyperlink
+    // Remove the comment title hyperlink
     $comments = preg_replace('!(<h3.*?>.*?)<a.*?>(.*?)</a>(.*?</h3>)!i', '$1$2$3', $comments);
-    //Remove the comment author link
+    // Remove the comment author link
     $pattern = '!(<(?:span|div) class="submitted">.*?)<a.*?>(.*?)</a>(.*?</(?:span|div)>)!sim';
     if (preg_match($pattern, $comments)) {
       $comments = preg_replace($pattern , '$1$2$3', $comments);
     }
-    //Remove the comment links
+    // Remove the comment links
     $comments = preg_replace('!\s*<ul class="links">.*?</ul>!sim', '', $comments);
     if ($cid != NULL) {
       // Single comment requested, output only the comment
@@ -568,7 +590,7 @@ function _print_generate_node($nid, $cid = NULL, $format = PRINT_HTML_FORMAT, $t
     $content = $node->teaser;
   }
 
-  //Check URL list settings
+  // Check URL list settings
   $_print_urls = _print_url_list_enabled($node, $format);
 
   // Convert the a href elements
@@ -591,7 +613,7 @@ function _print_generate_node($nid, $cid = NULL, $format = PRINT_HTML_FORMAT, $t
  * @param $teaser
  *   if set to TRUE, outputs only the node's teaser
  * @param $message
- *   optional sender's message (used by the send e-mail module)
+ *   optional sender's message (used by the send email module)
  * @return
  *   filled array ready to be used in the template
  */
@@ -635,7 +657,7 @@ function _print_generate_path($path, $format = PRINT_HTML_FORMAT, $teaser = FALS
   // Delete any links area
   $node->body = preg_replace('!\s*<div class="links">.*?</div>!sim', '', $node->body);
 
-  //Check URL list settings
+  // Check URL list settings
   $_print_urls = _print_url_list_enabled($node, $format);
 
   // Convert the a href elements
@@ -659,7 +681,7 @@ function _print_generate_path($path, $format = PRINT_HTML_FORMAT, $teaser = FALS
  * @param $teaser
  *   if set to TRUE, outputs only the node's teaser
  * @param $message
- *   optional sender's message (used by the send e-mail module)
+ *   optional sender's message (used by the send email module)
  * @return
  *   filled array ready to be used in the template
  */
@@ -681,7 +703,7 @@ function _print_generate_book($nid, $format = PRINT_HTML_FORMAT, $teaser = FALSE
   $tree = book_menu_subtree_data($node->book);
   $node->body = book_export_traverse($tree, 'book_node_export');
 
-  //Check URL list settings
+  // Check URL list settings
   $_print_urls = _print_url_list_enabled($node, $format);
 
   // Convert the a href elements

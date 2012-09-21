@@ -1,5 +1,4 @@
 <?php
-// $Id: image_import.pages.inc,v 1.7.2.2 2010/08/03 17:43:00 sun Exp $
 
 /**
  * Verify a candidate file for import.

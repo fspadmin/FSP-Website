@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_marketing.module,v 1.1.2.1.2.2 2010/11/18 20:56:15 longwave Exp $
 
 /**
  * Implementation of hook_views_api().

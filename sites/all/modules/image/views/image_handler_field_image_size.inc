@@ -1,5 +1,4 @@
 <?php
-// $Id: image_handler_field_image_size.inc,v 1.1 2009/05/01 22:29:47 sun Exp $
 
 /**
  * @file

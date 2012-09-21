@@ -363,7 +363,7 @@ function uc_cart_checkout_review() {
   drupal_add_js(drupal_get_path('module', 'uc_cart') .'/uc_cart.js');
   $form = drupal_get_form('uc_cart_checkout_review_form');
 
-  if ($_SESSION['do_review'] !== TRUE && !uc_referer_check('cart/checkout')) {
+  if ($_SESSION['do_review'] !== TRUE && !uc_referer_check(array('cart/checkout'))) {
     drupal_goto('cart/checkout');
   }
   unset($_SESSION['do_review']);
@@ -422,33 +422,38 @@ function theme_uc_cart_checkout_review($panes, $form) {
            .'<table class="order-review-table">';
 
   foreach ($panes as $title => $data) {
-    $output .= '<tr class="pane-title-row"><td colspan="2">'. $title
-              .'</td></tr>';
+    $output .= '<tr class="pane-title-row">';
+    $output .= '<td colspan="2">' . $title . '</td>';
+    $output .= '</tr>';
     if (is_array($data)) {
       foreach ($data as $row) {
         if (is_array($row)) {
           if (isset($row['border'])) {
-            $border = ' class="row-border-'. $row['border'] .'"';
+            $border = ' class="row-border-'. $row['border'] . '"';
           }
           else {
             $border = '';
           }
-          $output .= '<tr valign="top"'. $border .'><td class="title-col" '
-                    .'nowrap>'. $row['title'] .':</td><td class="data-col">'
-                   . $row['data'] .'</td></tr>';
+          $output .= '<tr valign="top"' . $border . '>';
+          $output .= '<td class="title-col">' . $row['title'] . ':</td>';
+          $output .= '<td class="data-col">' . $row['data'] . '</td>';
+          $output .= '</tr>';
         }
         else {
-          $output .= '<tr valign="top"><td colspan="2">'. $row .'</td></tr>';
+          $output .= '<tr valign="top"><td colspan="2">' . $row . '</td></tr>';
         }
       }
     }
     else {
-      $output .= '<tr valign="top"><td colspan="2">'. $data .'</td></tr>';
+      $output .= '<tr valign="top"><td colspan="2">' . $data . '</td></tr>';
     }
   }
 
-  $output .= '<tr class="review-button-row"><td colspan="2">'. $form
-            .'</td></tr></table>';
+  $output .= '<tr class="review-button-row">';
+  $output .= '<td colspan="2">' . $form . '</td>';
+  $output .= '</tr>';
+
+  $output .= '</table>';
 
   return $output;
 }

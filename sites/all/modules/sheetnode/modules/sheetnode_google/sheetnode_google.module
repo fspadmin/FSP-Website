@@ -1,21 +1,23 @@
 <?php
-// $Id: sheetnode_google.module,v 1.1.2.1 2010/11/22 09:29:36 kratib Exp $
 
 /**
- * Implementation of hook_link().
+ * API function to batch import several files using Batch API.
  */
-/* 
-function sheetnode_google_link($type, $node = NULL, $teaser = FALSE) {
-  if ($type != 'node' || $node->type != 'sheetnode') return array();
-
-  $links['google'] = array(
-    'title' => t('Export to Google Spreadsheets'),
-    'href' => 'sheetnode/google/'. $node->nid,
+function sheetnode_google_batch_import($username, $password, $keys, $destination = NULL, $callback = NULL, $params = array(), $batch = array()) {
+  $batch += array(
+    'finished' => '_sheetnode_google_batch_import_finished',
+    'title' => t('Importing spreadsheets'),
+    'init_message' => t('Import process is starting.'),
+    'progress_message' => t('Imported @current out of @total spreadsheets.'),
+    'error_message' => t('Import process has encountered an error.'),
+    'file' => drupal_get_path('module', 'sheetnode_google') . '/sheetnode_google.import.inc',
   );
-  
-  return $links;
+  foreach ($keys as $key) {
+    $batch['operations'][] = array('_sheetnode_google_batch_import', array($username, $password, $key, $callback, $params));
+  }
+  batch_set($batch);
+  batch_process($destination);
 }
-*/
 
 /**
  * Implementation of hook_menu().
@@ -47,11 +49,12 @@ function sheetnode_google_menu() {
     'file' => 'sheetnode_google.import.inc',
   );
   $items['admin/settings/sheetnode/google'] = array(
-    'title' => 'Sheetnode Google Spreadsheets',
+    'title' => 'Google Spreadsheets',
     'access arguments' => array('administer site configuration'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('_sheetnode_google_settings'),
     'description' => 'Administer settings for Sheetnode Google Spreadsheets.',
+    'type' => MENU_LOCAL_TASK,
   );
 
   return $items;
@@ -107,11 +110,30 @@ function _sheetnode_google_settings_validate($form, $form_state) {
  * Implementation of hook_init().
  */
 function sheetnode_google_init() {
+  // Set PHP include_path to find Zend files.
   $path = variable_get('sheetnode_zend_gdata_path', '');
   if (empty($path)) return;
   $include_path = ini_get('include_path');
   if (FALSE === strpos($include_path, $path)) {
     ini_set('include_path', $include_path . PATH_SEPARATOR . $path);
+  }
+
+  // Register the autoload function for Batch API.
+  spl_autoload_register('_sheetnode_google_autoload');
+}
+
+/**
+ * Autoload callback.
+ */
+function _sheetnode_google_autoload($classname) {
+  if (strpos($classname, 'Zend_') === 0) {
+    include_once('Zend/Loader.php');
+    try {
+      Zend_Loader::loadClass($classname);
+    }
+    catch (Zend_Exception $e) {
+      // do nothing.
+    }
   }
 }
 

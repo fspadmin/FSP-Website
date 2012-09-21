@@ -60,7 +60,7 @@ Drupal.behaviors.ucAjaxCart = function (context) {
     if (_checkAjaxify($elem)) {
       $elem.bind('click', function () {
         ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.ADD_TITLE,
-                        '<div class="messages status">' + Drupal.settings.uc_ajax_cart.ADD_MESSAGE + '</div>');
+                        '<div class="messages status">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.ADD_MESSAGES) + '</div>');
         jQuery.get(Drupal.settings.uc_ajax_cart.CART_LINK_CALLBACK,
                   { href: this.href },
                   ajaxCartFormSubmitted);
@@ -80,9 +80,10 @@ Drupal.behaviors.ucAjaxCart = function (context) {
           url : Drupal.settings.uc_ajax_cart.CALLBACK,
           beforeSubmit : function () {
             ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.ADD_TITLE,
-                            '<div class="messages status">' + Drupal.settings.uc_ajax_cart.ADD_MESSAGE + '</div>')},
+                            '<div class="messages status">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.ADD_MESSAGES) + '</div>')},
           success : ajaxCartFormSubmitted,
-          type : 'post'
+          type : 'post',
+          data: { 'op': $elem.val() }
         });
         return false;
       });
@@ -111,20 +112,22 @@ Drupal.behaviors.ucAjaxCart = function (context) {
 
 // Submits product changes using AJAX and updates cart and cart block accordingly.
 function ajaxCartSubmit() {
+  var button = jQuery(this);
   jQuery(this).parents('form').ajaxSubmit({
     url: Drupal.settings.uc_ajax_cart.UPDATE_CALLBACK,
     success: ajaxCartFormSubmitted,
     beforeSubmit: function () {
       jQuery('#uc-cart-view-form input').attr('disabled', 'disabled');
-      ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.ADD_TITLE, '<div class="messages status">' + Drupal.settings.uc_ajax_cart.UPDATE_MESSAGE + '</div>');
-    }
+      ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.UPDATE_TITLE, '<div class="messages status">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.UPDATE_MESSAGES) + '</div>');
+    },
+    data: { 'op': button.val() }
   });
   return false;
 }
 
 // Triggers cart submit button.
 function triggerCartSubmit() {
-  jQuery('#uc-cart-view-form #edit-update').trigger('click');
+  jQuery('#uc-cart-view-form #edit-update:first').trigger('click');
 }
 
 
@@ -153,7 +156,7 @@ function ajaxCartCartPageBehaviors(context) {
       }
       elem.click(function (e) {
         if (is_button) {
-          $(this).parents('tr').eq(0).find('td.qty input.form-text').val('0');
+          $(this).parents('tr').eq(0).find('td.qty input').val('0');
         }
         triggerCartSubmit();
         return false;
@@ -337,8 +340,8 @@ function ajaxCartFormSubmitted(e) {
   // Update cart block.
   ajaxCartUpdateBlockCart();
 
-
-  ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.CART_OPERATION, e);
+  if (e)
+    ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.CART_OPERATION, e);
   ajaxCartReloadCartView();
 }
 
@@ -350,7 +353,7 @@ function ajaxCartBlockUI(title, message) {
 
 function ajaxCartBlockUIRemove(url) {
   jQuery('#uc-cart-view-form input').attr('disabled', 'disabled');
-  ajaxCartShowMessageProxy(Drupal.settings.uc_ajax_cart.REMOVE_TITLE, Drupal.settings.uc_ajax_cart.REMOVE_MESSAGE);
+  ajaxCartShowMessageProxy(Drupal.settings.uc_ajax_cart.REMOVE_TITLE, ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.REMOVE_MESSAGES));
   jQuery.post(url, ajaxCartFormSubmitted);
   return false;
 }
@@ -366,10 +369,18 @@ function ajaxCartUpdateBlockCart() {
 // Reloads standard Ubercart cart form from cart page.
 function ajaxCartReloadCartView() {
   if (jQuery('#cart-form-pane').length) {
-    jQuery('#cart-form-pane').parent().load(Drupal.settings.uc_ajax_cart.SHOW_VIEW_CALLBACK, ajaxCartInitCartView);
+    jQuery('#cart-form-pane').parent().load(Drupal.settings.uc_ajax_cart.SHOW_VIEW_CALLBACK, ajaxCartReloadCartViewSuccess);
   }
 }
 
+
+// Notify other modules of the DOM change, then run our own init code.
+function ajaxCartReloadCartViewSuccess() {
+  var context = jQuery('#cart-form-pane').parent();
+  Drupal.attachBehaviors(context);
+  
+  ajaxCartInitCartBlock();
+}
 
 function ajaxCartUpdateCartViewUpdated(e) {
   ajaxCartUpdateBlockCart();
@@ -397,3 +408,6 @@ function _checkAjaxify($elem) {
   return rc;
 }
 
+function ajaxCartPickMessage(messages) {
+  return messages[Math.floor(Math.random() * messages.length)];
+}

@@ -1,5 +1,4 @@
 <?php
-// $Id: dblog_user_filter.module,v 1.1.2.3.2.2 2009/12/29 18:31:59 nancyw Exp $
 
 /**
  * Implementation of hook_log_filters_settings().
@@ -28,6 +27,9 @@ function dblog_user_filter_log_filters() {
   while ($row = db_fetch_object($result)) {
     $user_list[$row->uid] = ($row->uid == 0 || $use_realname) ? theme('username', $row, array('plain' => TRUE)) : $row->name;
   }
+  
+  // Sort the list by user name.
+  asort($user_list);
 
   $filters['username'] = array(
     'title' => t('Username'),

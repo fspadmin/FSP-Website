@@ -171,6 +171,16 @@ function uc_order_menu() {
     'weight' => -5,
     'file' => 'uc_order.admin.inc',
   );
+  $items['admin/store/orders/create/%user'] = array(
+    'title' => 'Create order',
+    'description' => 'Create an empty new order.',
+    'page callback' => 'uc_order_create',
+    'page arguments' => array(4),
+    'access arguments' => array('create orders'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => -5,
+    'file' => 'uc_order.admin.inc',
+  );
 
   $items['admin/store/orders/search'] = array(
     'title' => 'Search orders',
@@ -361,26 +371,6 @@ function uc_order_init() {
 }
 
 /**
- * Implements hook_cron().
- */
-function uc_order_cron() {
-  // Ensure that passwords are not stored in plaintext longer than 15 minutes.
-  $first = variable_get('uc_order_cron_last', 0);
-  $last = time() - (15 * 60);
-
-  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE created >= %d AND created <= %d", $first, $last);
-  while ($row = db_fetch_object($result)) {
-    $data = unserialize($row->data);
-    if (isset($data['new_user']['pass'])) {
-      unset($data['new_user']['pass']);
-      db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $row->order_id);
-    }
-  }
-
-  variable_set('uc_order_cron_last', $last);
-}
-
-/**
  * Implements hook_theme().
  */
 function uc_order_theme() {
@@ -434,14 +424,8 @@ function uc_order_token_values($type, $object = NULL) {
     case 'order':
       $order = $object;
 
-      if (isset($order->data['new_user']['name'])) {
-        $values['new-username'] = check_plain($order->data['new_user']['name']);
-        $values['new-password'] = check_plain($order->data['new_user']['pass']);
-      }
-      else {
-        $values['new-username'] = '';
-        $values['new-password'] = '';
-      }
+      $values['new-username'] = isset($order->data['new_user']['name']) ? check_plain($order->data['new_user']['name']) : '';
+      $values['new-password'] = isset($order->password) ? $order->password : t('Your password');
       $values['order-id'] = $order->order_id;
       $values['order-uid'] = $order->uid;
       $values['order-url'] = url('user/'. $order->uid .'/order/'. $order->order_id, array('absolute' => TRUE));
@@ -1248,6 +1232,7 @@ function uc_order_delete($order_id) {
 
   // Perform the operations if we're deleting a valid order.
   if ($order !== FALSE) {
+    ca_pull_trigger('uc_order_delete', $order);
     uc_order_module_invoke('delete', $order, NULL);
 
     // Delete data from the appropriate Ubercart order tables.
@@ -1889,6 +1874,8 @@ function uc_order_status_data($status_id, $key) {
  *   Valid actions for an order; returned according to the $icon_html parameter.
  */
 function uc_order_actions($order, $icon_html = FALSE) {
+  global $user;
+
   $state = uc_order_status_data($order->order_status, 'state');
   $order_id = array('@order_id' => $order->order_id);
   $actions = array();
@@ -1901,6 +1888,33 @@ function uc_order_actions($order, $icon_html = FALSE) {
       'icon' => '<img src="'. base_path() . drupal_get_path('module', 'uc_store') .'/images/order_view.gif" alt="'. $alt .'" />',
       'title' => $alt,
     );
+
+    $alt = t('Print order @order_id.', $order_id);
+    $actions[] = array(
+      'name' => t('Print'),
+      'url' => 'admin/store/orders/'. $order->order_id .'/invoice/print',
+      'icon' => '<img src="'. base_path() . drupal_get_path('module', 'uc_store') .'/images/print.gif" alt="'. $alt .'" />',
+      'title' => $alt,
+    );
+  }
+  elseif (user_access('view own orders') && $order->uid == $user->uid) {
+    $alt = t('View order @order_id.', $order_id);
+    $actions[] = array(
+      'name' => t('View'),
+      'url' => 'user/'. $user->uid .'/orders/'. $order->order_id,
+      'icon' => '<img src="'. base_path() . drupal_get_path('module', 'uc_store') .'/images/order_view.gif" alt="'. $alt .'" />',
+      'title' => $alt,
+    );
+
+    if (variable_get('uc_cust_view_order_invoices', TRUE)) {
+      $alt = t('Print order @order_id.', $order_id);
+      $actions[] = array(
+        'name' => t('Print'),
+        'url' => 'user/'. $user->uid .'/orders/'. $order->order_id .'/print',
+        'icon' => '<img src="'. base_path() . drupal_get_path('module', 'uc_store') .'/images/print.gif" alt="'. $alt .'" />',
+        'title' => $alt,
+      );
+    }
   }
 
   if (user_access('edit orders')) {
@@ -1955,7 +1969,13 @@ function uc_order_actions($order, $icon_html = FALSE) {
   if ($icon_html) {
     $output = '';
     foreach ($actions as $action) {
-      $output .= l($action['icon'], $action['url'], array('attributes' => array('title' => $action['title']), 'html' => TRUE));
+      $output .= l($action['icon'], $action['url'], array(
+        'attributes' => array(
+          'class' => 'uc-order-action',
+          'title' => $action['title'],
+        ),
+        'html' => TRUE,
+      ));
     }
     return $output;
   }

@@ -227,7 +227,7 @@ function uc_product_feature_access($node) {
 }
 
 /**
- * Menu access callback for 'admin/store/products/classes/%uc_product_class/delete'.
+ * Menu access callback for deleting product classes.
  */
 function uc_product_class_delete_access($class) {
   return user_access('administer product classes') && !$class->locked;
@@ -569,7 +569,7 @@ function uc_product_form(&$node) {
     '#type' => 'textfield',
     '#title' => t('Default quantity to add to cart'),
     '#default_value' => isset($node->default_qty) ? $node->default_qty : 1,
-    '#description' => t('Leave blank or zero to disable the quantity field next to the add to cart button, if it is enabled <a href="!settings_url">in general</a>. If it is disabled, this field is ignored.', array('!settings_url' => url('admin/store/settings/products/edit'))),
+    '#description' => t('Use 0 to disable the quantity field next to the add to cart button.'),
     '#weight' => 27,
     '#size' => 5,
     '#maxlength' => 6,
@@ -861,69 +861,6 @@ function uc_product_preprocess_node(&$variables) {
  * @see uc_product_save_continue_submit()
  */
 function uc_product_form_alter(&$form, $form_state, $form_id) {
-  if ($form_id == 'search_form' && arg(0) == 'admin' && arg(1) == 'store' && arg(2) == 'products' && user_access('use advanced search')) {
-    // Keyword boxes:
-    $form['advanced'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Advanced search'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#attributes' => array('class' => 'search-advanced'),
-    );
-    $form['advanced']['keywords'] = array(
-      '#prefix' => '<div class="criterion">',
-      '#suffix' => '</div>',
-    );
-    $form['advanced']['keywords']['or'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Containing any of the words'),
-      '#size' => 30,
-      '#maxlength' => 255,
-    );
-    $form['advanced']['keywords']['phrase'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Containing the phrase'),
-      '#size' => 30,
-      '#maxlength' => 255,
-    );
-    $form['advanced']['keywords']['negative'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Containing none of the words'),
-      '#size' => 30,
-      '#maxlength' => 255,
-    );
-
-    // Taxonomy box:
-    if ($taxonomy = module_invoke('taxonomy', 'form_all', 1)) {
-      $form['advanced']['category'] = array(
-        '#type' => 'select',
-        '#title' => t('Only in the category(s)'),
-        '#prefix' => '<div class="criterion">',
-        '#size' => 10,
-        '#suffix' => '</div>',
-        '#options' => $taxonomy,
-        '#multiple' => TRUE,
-      );
-    }
-
-    // Node types:
-    $form['advanced']['type'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('Only of the type(s)'),
-      '#prefix' => '<div class="criterion">',
-      '#suffix' => '</div>',
-      '#options' => uc_product_type_names(),
-    );
-    $form['advanced']['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Advanced search'),
-      '#prefix' => '<div class="action clear-block">',
-      '#suffix' => '</div>',
-    );
-
-    $form['#validate'][] = 'node_search_validate';
-  }
-
   // Add a button to product node forms to continue editing after saving.
   if (uc_product_is_product_form($form)) {
     $form['buttons']['save_continue'] = array(
@@ -1006,7 +943,7 @@ function uc_product_form_node_type_form_alter(&$form, &$form_state) {
 function uc_product_i18nsync_fields_alter($fields, $type) {
   if (uc_product_is_product($type)) {
     $fields['uc_products']['#title'] = t('Product fields');
-    $fields['uc_products']['#options'] = array (
+    $fields['uc_products']['#options'] = array(
       'model' => t('SKU'),
       'list_price' => t('List price'),
       'cost' => t('Cost'),
@@ -1652,8 +1589,7 @@ function theme_uc_product_dimensions($length, $width, $height, $units = NULL, $t
 }
 
 /**
- * Formats a product's images with imagecache and an image widget
- * (Colorbox, Thickbox, or Lightbox2).
+ * Formats a product's images.
  *
  * @ingroup themeable
  */
@@ -1782,11 +1718,16 @@ function uc_product_is_product_form($form) {
  *   An associative array of model numbers. The key for '- Any -' is the empty
  *   string.
  */
-function uc_product_get_models($node, $add_blank = TRUE) {
+function uc_product_get_models($nid, $add_blank = TRUE) {
+  // Keep backward compatibility with previous versions of 6.x-2.x, where
+  // first argument was a product object.
+  if (is_object($nid)) {
+    $nid = $nid->nid;
+  }
   // Get any modules' SKUs on this node.
-  $models = module_invoke_all('uc_product_models', $node);
+  $models = module_invoke_all('uc_product_models', $nid);
   // Add the base SKU of the node.
-  $models[] = $node->model;
+  $models[] = db_result(db_query("SELECT model FROM {uc_products} WHERE nid = %d", $nid));
 
   // Now we map the SKUs to the keys, for form handling, etc.
   $models = drupal_map_assoc($models);
@@ -1975,8 +1916,7 @@ function uc_product_class_load($class_id = NULL, $reset = FALSE) {
 }
 
 /**
- * Returns a bit of data from a product feature array based on the feature ID
- * and array key.
+ * Returns data for a product feature, based on the feature ID and array key.
  *
  * @param $fid
  *   The string ID of the product feature you want to get data from.
@@ -2041,10 +1981,11 @@ function uc_product_feature_form($form) {
  *
  * @param $data
  *   An array consisting of the following keys:
- *   - pfid: the numeric ID of the product feature when editing an existing one
- *   - nid: the numeric ID of the product node
- *   - fid: the string ID of the feature type
- *   - description: the string description of the feature for the overview table.
+ *   - pfid: (optional) When editing an existing product feature, the numeric
+ *     ID of the feature.
+ *   - nid: The numeric ID of the product node.
+ *   - fid: The string ID of the feature type.
+ *   - description: The string describing the feature for the overview table.
  */
 function uc_product_feature_save($data) {
   if (empty($data['nid']) && arg(0) == 'node' && intval(arg(1)) > 0) {
@@ -2056,7 +1997,7 @@ function uc_product_feature_save($data) {
     }
   }
 
-  if(!empty($data['pfid']) && db_result(db_query("SELECT COUNT(*) FROM {uc_product_features} WHERE pfid = %d", intval($data['pfid'])))) {
+  if (!empty($data['pfid']) && db_result(db_query("SELECT COUNT(*) FROM {uc_product_features} WHERE pfid = %d", intval($data['pfid'])))) {
     // First attempt to update an existing row.
     db_query("UPDATE {uc_product_features} SET description = '%s' WHERE pfid = %d", $data['description'], intval($data['pfid']));
     drupal_set_message(t('The product feature has been updated.'));

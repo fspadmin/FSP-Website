@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_handler_field_money_amount.inc,v 1.1.2.3 2009/12/17 21:01:15 hanoii Exp $
 
 /**
  * @file

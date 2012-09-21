@@ -32,7 +32,7 @@
 }
 
 /* CKEditor padding in IE */
-table.cke_editor fieldset { 
+table.cke_editor fieldset {
   padding:0 !important;
 }
 /* hack with ie and garland editing area size fix - [#733512] */
@@ -53,10 +53,10 @@ tbody {
 }
 
 /*toolbar wizzard*/
-#edit-toolbar {
+form#ckeditor-admin-profile-form textarea#edit-toolbar, form#ckeditor-admin-global-profile-form textarea#edit-toolbar {
     display: none;
 }
-#edit-toolbar + .grippie {
+form#ckeditor-admin-profile-form #edit-toolbar + .grippie, form#ckeditor-admin-global-profile-form #edit-toolbar + .grippie {
     display: none;
 }
 div.sortableList {
@@ -116,7 +116,6 @@ li.sortableItem {
     margin: 3px 1px 1px 0px;
     border: 1px solid #CCC;
     background-color: #F0F0EE;
-    disc-type: none;
     z-index: 99;
 }
 
@@ -126,4 +125,11 @@ fieldset#edit-appearance div#groupLayout, div#allButtons  {
   padding: 0 0 0 0;
   margin: 1em 0;
   overflow: auto;
+}
+
+/**
+ * Fix for double scrollbar on ckeditor menu dropdowns in IE - [#1361894]
+ */
+.cke_browser_ie .cke_panel_block {
+    overflow: hidden !important;
 }

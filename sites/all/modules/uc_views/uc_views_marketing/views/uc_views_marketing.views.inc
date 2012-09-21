@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_views_marketing.views.inc,v 1.1.4.3 2010/02/27 00:14:24 hanoii Exp $
 /**
  * @file
  * Views 2 hooks and callback registries.

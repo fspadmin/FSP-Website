@@ -6,6 +6,33 @@
  */
 
 /**
+ * Implements hook_requirements().
+ */
+function uc_store_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $severities = array(
+      'ok' => REQUIREMENT_OK,
+      'warning' => REQUIREMENT_WARNING,
+      'error' => REQUIREMENT_ERROR,
+    );
+
+    module_load_include('inc', 'uc_store', 'uc_store.admin');
+    $results = module_invoke_all('store_status');
+    foreach ($results as $status) {
+      $requirements[] = array(
+        'severity' => isset($severities[$status['status']]) ? $severities[$status['status']] : REQUIREMENT_INFO,
+        'title' => $status['title'],
+        'value' => $status['desc'],
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+/**
  * Implements hook_schema().
  */
 function uc_store_schema() {
@@ -47,6 +74,13 @@ function uc_store_schema() {
         'size' => 'small',
         'not null' => TRUE,
         'default' => 0,
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The list order for this country.',
       ),
     ),
     'indexes' => array(
@@ -172,6 +206,7 @@ function uc_store_update_6000() {
 
 /**
  * Obsolete due to removal of price caching.
+ *
  * @see uc_store_update_6006()
  */
 function uc_store_update_6001() {
@@ -252,6 +287,25 @@ function uc_store_update_6006() {
   }
 
   variable_del('uc_price_caching');
+
+  return $ret;
+}
+
+/**
+ * Add weight column to uc_countries table.
+ */
+function uc_store_update_6007() {
+  $ret = array();
+
+  $weight_schema = array(
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The list order for this country.',
+  );
+
+  db_add_field($ret, 'uc_countries', 'weight', $weight_schema);
 
   return $ret;
 }

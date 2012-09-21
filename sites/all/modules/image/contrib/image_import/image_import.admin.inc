@@ -1,5 +1,4 @@
 <?php
-// $Id: image_import.admin.inc,v 1.3.2.1 2010/08/03 17:43:00 sun Exp $
 
 /**
  * Form builder function for Image Import settings form.
@@ -11,6 +10,15 @@ function image_import_admin_settings() {
     '#default_value' => variable_get('image_import_path', file_directory_temp() . '/image'),
     '#description' => t("The directory to import image nodes from. Drupal will need to have write access to this directory so we can move the file.") .'<br />'
       . t("<strong>Note:</strong> a path begining with a <kbd>/</kbd> indicates the path is relative to the server's root, one starting without specifies a path relative to Drupal's root. I.e. <kbd>/tmp/image</kbd> would be the temp directory off the root while <kbd>tmp/image</kbd> would be inside Drupal's directory."),
+    '#required' => TRUE,
+  );
+  $form['image_import_page_size'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of images to list per page'),
+    '#default_value' => variable_get('image_import_page_size', 50),
+    // To set a value longer than 3 digits (i.e., > 999) use settings.php.
+    '#size' => 3,
+    '#maxlength' => 3,
     '#required' => TRUE,
   );
   $form = system_settings_form($form);

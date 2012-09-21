@@ -1,7 +1,7 @@
 <?php
 /**
  * CKEditor - The text editor for the Internet - http://ckeditor.com
- * Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+ * Copyright (c) 2003-2012, CKSource - Frederico Knabben. All rights reserved.
  *
  * == BEGIN LICENSE ==
  *
@@ -37,15 +37,21 @@
  * Hook to register the CKEditor plugin - it would appear in the plugins list on the profile setting page.
  */
 function hook_ckeditor_plugin() {
-    return array(
-        'plugin_name' => array(
-            // Name of the plugin used to write it.
-            'name' => 'plugin_name',
-            // Description of the plugin - it would be displayed in the plugins management section of profile settings.
-            'desc' => t('Plugin description'),
-            // The full path to the CKEditor plugins directory, with the trailing slash.
-            'path' => drupal_get_path('module', 'my_module') . '/plugin_dir/',
+  return array(
+    'plugin_name' => array(
+      // Name of the plugin used to write it.
+      'name' => 'plugin_name',
+      // Description of the plugin - it would be displayed in the plugins management section of profile settings.
+      'desc' => t('Plugin description'),
+      // The full path to the CKEditor plugins directory, with the trailing slash.
+      'path' => drupal_get_path('module', 'my_module') . '/plugin_dir/',
+      'buttons' => array(
+        'button_name' => array(
+          'icon' => 'path to button icon',
+          'label' => 'Button Label',
         )
-    );
+      )
+    )
+  );
 }
 ?>

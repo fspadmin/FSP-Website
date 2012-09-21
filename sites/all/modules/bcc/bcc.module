@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function bcc_menu() {
+  $items = array();
+  $items['admin/settings/bcc'] = array(
+    'title' => 'Blind Carbon Copy settings',
+    'description' => 'Blind Carbon Copy configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bcc_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Module configuration settings.
+ */
+function bcc_admin_settings() {
+  $form['bcc_mail'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Send Blind Carbon Copy'),
+    '#description' => t('Choose whether you want Drupal to add a blind carbon copy to all e-mail its sends.'),
+    '#default_value' => variable_get('bcc_mail', 0),
+  );
+  $form['bcc_mail_address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('E-mail address'),
+    '#description' => t('Enter the e-mail address that should receive copies of all site e-mails.'),
+    '#default_value' => variable_get('bcc_mail_address', variable_get('site_mail', '')),
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Validate handler for the bcc settings form.
+ */
+function bcc_admin_settings_validate(&$form, $form_state) {
+  if ($form_state['values']['bcc_mail']) {
+    if (!valid_email_address($form_state['values']['bcc_mail_address'])) {
+      form_set_error('bcc_mail_address', t('Please enter a valid e-mail address'));
+    }
+  }
+}
+
+/**
+ * Implements hook_mail_alter()
+ */
+function bcc_mail_alter(&$message) {
+  if (variable_get('bcc_mail', 0)) {
+    $message['headers']['Bcc'] = variable_get('bcc_mail_address', variable_get('site_mail', ''));
+  }
+}

@@ -1,5 +1,4 @@
 <?php
-// $Id: image_gallery_handler_field_gallery_cover_thumbnail.inc,v 1.1.2.2 2010/08/03 17:43:00 sun Exp $
 
 /**
  * Field handler for gallery cover node image.

@@ -1,5 +1,4 @@
 <?php
-// $Id: sheetnode_phpexcel_plugin_style.inc,v 1.1.2.1 2010/11/21 03:11:27 kratib Exp $
 
 class sheetnode_phpexcel_plugin_style extends sheetnode_feed_plugin_style {
   function init(&$view, &$display, $options = NULL) {
@@ -8,7 +7,7 @@ class sheetnode_phpexcel_plugin_style extends sheetnode_feed_plugin_style {
 
   function option_definition() {
     $options = parent::option_definition();
-    $options['format'] = '';
+    $options['format'] = array('default' => '');
     return $options;
   }
 
@@ -35,7 +34,7 @@ class sheetnode_phpexcel_plugin_style extends sheetnode_feed_plugin_style {
   }
 
   function render() {
-    if (strpos($_REQUEST['q'], 'admin/build/views/ajax') === 0) {
+    if (!empty($this->view->live_preview)) {
       drupal_set_message(t('Spreadsheet file preview is not supported.'), 'warning');
       return;
     }
@@ -43,7 +42,7 @@ class sheetnode_phpexcel_plugin_style extends sheetnode_feed_plugin_style {
     $title = $this->display->handler->get_option('title');
     if (empty($title)) $title = $this->view->name;
     $this->inherit_options();
-    _sheetnode_phpexcel_export_do($this->options['format'], $title, parent::render_sheet());
+    sheetnode_phpexcel_batch_export(array($title => parent::render_sheet()), $title, $this->options['format']);
   }
 };
 

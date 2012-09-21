@@ -2,7 +2,7 @@
 
 /**
  * CKEditor - The text editor for the Internet - http://ckeditor.com
- * Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+ * Copyright (c) 2003-2012, CKSource - Frederico Knabben. All rights reserved.
  *
  * == BEGIN LICENSE ==
  *
@@ -90,4 +90,5 @@ else {
   $baseUrl = strtr(base_path(), array(
     '/modules/ckeditor/ckfinder/core/connector/php' => '',
   )) . file_directory_path() .'/';
+  $baseDir = resolveUrl($baseUrl);
 }

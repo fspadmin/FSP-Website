@@ -1,12 +1,15 @@
 <?php
-// $Id: date_api_fields.inc,v 1.1.2.10 2010/12/24 13:03:56 karens Exp $
+/**
+ * @file
+ * Identification for fields the Date handlers can use.
+ */
+
 /**
  *  Identify all potential date/timestamp fields.
  *
  *  @return
  *    array with fieldname, type, and table.
- *  @see 
- *    date_api_date_api_fields() which implements 
+ *  @see date_api_date_api_fields() which implements
  *    the hook_date_api_fields() for the core date fields.
  */
 function _date_api_fields($base = 'node') {
@@ -16,7 +19,7 @@ function _date_api_fields($base = 'node') {
   }
   $cid = 'date_api_fields_'. $base;
   cache_clear_all($cid, 'cache_views');
-  
+
   $all_fields = date_api_views_fetch_fields($base, 'field');
   $fields = array();
   foreach ((array) $all_fields as $name => $val) {
@@ -25,14 +28,14 @@ function _date_api_fields($base = 'node') {
     $field_name = $tmp[1];
     $table_name = $tmp[0];
     $alias = str_replace('.', '_', $name);
-      
+
     if (!$handler = views_get_handler($table_name, $field_name, 'field')) {
-      continue; 
+      continue;
     }
-    
+
     $handler_name = $handler->definition['handler'];
     $type = '';
-    
+
     // For cck fields, get the date type.
     $custom = array();
     if (isset($handler->content_field)) {
@@ -46,7 +49,7 @@ function _date_api_fields($base = 'node') {
         $type = 'cck_datetime';
       }
     }
-    
+
     // Allow custom modules to provide date fields.
     // The is_a() function makes this work for any handler
     // that was derived from 'views_handler_field_date'.
@@ -74,7 +77,7 @@ function _date_api_fields($base = 'node') {
       $rrule_field = '';
       $delta_field = '';
       $granularity = array('year', 'month', 'day', 'hour', 'minute');
-       
+
       // Handling for content field dates
       if (isset($handler->content_field['tz_handling'])) {
         $tz_handling = $handler->content_field['tz_handling'];
@@ -118,7 +121,7 @@ function _date_api_fields($base = 'node') {
         }
         $granularity = !empty($handler->content_field['granularity']) ? $handler->content_field['granularity'] : array('year', 'month', 'day', 'hour', 'minute');
       }
-      
+
       // CCK fields append a column name to the field, others do not
       // need a real field_name with no column name appended for cck date formatters
       switch ($type) {
@@ -149,7 +152,7 @@ function _date_api_fields($base = 'node') {
         'related_fields' => $related_fields,
         'delta_field' => $delta_field,
       );
-      
+
       // Allow the custom fields to over-write values.
       if (!empty($custom)) {
         foreach ($custom as $key => $val) {
@@ -157,13 +160,13 @@ function _date_api_fields($base = 'node') {
         }
       }
       if (isset($handler->content_field)) {
-        if (substr($field_name, -1) == '2') {
-          $len = (strlen($field_name) - 7);
+        if (drupal_substr($field_name, -1) == '2') {
+          $len = (drupal_strlen($field_name) - 7);
         }
         else {
-          $len = (strlen($field_name) - 6);
+          $len = (drupal_strlen($field_name) - 6);
         }
-        $fields['name'][$name]['real_field_name'] = substr($field_name, 0, $len);
+        $fields['name'][$name]['real_field_name'] = drupal_substr($field_name, 0, $len);
       }
       else {
         $fields['name'][$name]['real_field_name'] = $field_name;

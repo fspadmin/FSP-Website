@@ -1,5 +1,4 @@
 <?php
-// $Id: date.views_convert.inc,v 1.1.2.1 2009/04/30 11:44:52 karens Exp $
 
 /**
  * Implementation of hook_views_convert().
@@ -30,42 +29,42 @@ function date_views_convert($display, $type, &$view, $field, $id = NULL) {
         $item = $view->get_item($display, 'filter', $id);
         switch ($date_fields[$field['field']]) {
           case 'default':
-            $field_name = substr($field['field'], 0, -14);
+            $field_name = drupal_substr($field['field'], 0, -14);
             $item['date_fields'] = array('node_data_'. $field_name .'.'. $field_name .'_value');
             $item['granularity'] = 'second';
             break;
           case 'year':
-            $field_name = substr($field['field'], 0, -11);
+            $field_name = drupal_substr($field['field'], 0, -11);
             $item['date_fields'] = array('node_data_'. $field_name .'.'. $field_name .'_value');
             $item['granularity'] = 'year';
             break;
           case 'month':
-            $field_name = substr($field['field'], 0, -12);
+            $field_name = drupal_substr($field['field'], 0, -12);
             $item['date_fields'] = array('node_data_'. $field_name .'.'. $field_name .'_value');
             $item['granularity'] = 'month';
             break;
           case 'day':
-            $field_name = substr($field['field'], 0, -10);
+            $field_name = drupal_substr($field['field'], 0, -10);
             $item['date_fields'] = array('node_data_'. $field_name .'.'. $field_name .'_value');
             $item['granularity'] = 'day';
             break;
           case 'to|default':
-            $field_name = substr($field['field'], 0, -17);
+            $field_name = drupal_substr($field['field'], 0, -17);
             $item['date_fields'] = array('node_data_'. $field_name .'.'. $field_name .'_value2');
             $item['granularity'] = 'second';
             break;
           case 'to|year':
-            $field_name = substr($field['field'], 0, -14);
+            $field_name = drupal_substr($field['field'], 0, -14);
             $item['date_fields'] = array('node_data_'. $field_name .'.'. $field_name .'_value2');
             $item['granularity'] = 'year';
             break;
           case 'to|month':
-            $field_name = substr($field['field'], 0, -15);
+            $field_name = drupal_substr($field['field'], 0, -15);
             $item['date_fields'] = array('node_data_'. $field_name .'.'. $field_name .'_value2');
             $item['granularity'] = 'month';
             break;
           case 'to|day':
-            $field_name = substr($field['field'], 0, -13);
+            $field_name = drupal_substr($field['field'], 0, -13);
             $item['date_fields'] = array('node_data_'. $field_name .'.'. $field_name .'_value2');
             $item['granularity'] = 'day';
             break;

@@ -2,7 +2,7 @@
 // These are timezones that exist in the date_timezone_names() array
 // that do not exist in the timezone_abbreviations_list(), so we have
 // to remove them.
-$missing_timezone_data = array (
+$missing_timezone_data = array(
   1 => 'Africa/Asmara',
   2 => 'Africa/Bujumbura',
   3 => 'Africa/Kinshasa',

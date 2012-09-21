@@ -320,6 +320,7 @@ function uc_paypal_ec_review_form($form_state, $order) {
       '#type' => 'textarea',
       '#title' => t('Order comments'),
       '#description' => t('Special instructions or notes regarding your order.'),
+      '#wysiwyg' => FALSE,
     );
   }
 

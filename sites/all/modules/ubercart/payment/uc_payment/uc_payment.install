@@ -54,7 +54,6 @@ function uc_payment_schema() {
       'comment' => array(
         'description' => 'A comment made on the payment.',
         'type' => 'text',
-        'size' => 'tiny',
       ),
       'received' => array(
         'description' => 'The Unix timestamp indicating when the payment was received.',
@@ -111,6 +110,17 @@ function uc_payment_update_6002() {
   $ret = array();
 
   db_change_field($ret, 'uc_payment_receipts', 'amount', 'amount', array('type' => 'numeric', 'precision' => 16, 'scale' => 5, 'not null' => TRUE, 'default' => 0));
+
+  return $ret;
+}
+
+/**
+ * Increase maximum length of comment field.
+ */
+function uc_payment_update_6003() {
+  $ret = array();
+
+  db_change_field($ret, 'uc_payment_receipts', 'comment', 'comment', array('type' => 'text'));
 
   return $ret;
 }

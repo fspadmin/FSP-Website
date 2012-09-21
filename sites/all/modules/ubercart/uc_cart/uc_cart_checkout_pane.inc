@@ -2,8 +2,7 @@
 
 /**
  * @file
- * This file contains the callbacks for the default checkout panes supplied with
- * Ubercart and their corresponding helper functions.
+ * Callbacks for the default Ubercart checkout panes and their corresponding helper functions.
  *
  * Checkout panes are defined using hook_checkout_pane() and use a callback to
  * handle the different processes involved in completing the checkout form.  The
@@ -12,7 +11,7 @@
  */
 
 /**
- * Display the cart contents for review during checkout.
+ * Displays the cart contents for review during checkout.
  */
 function uc_checkout_pane_cart($op) {
   switch ($op) {
@@ -31,7 +30,7 @@ function uc_checkout_pane_cart($op) {
 }
 
 /**
- * Get the user's email address for login.
+ * Gets the user's email address for login.
  */
 function uc_checkout_pane_customer($op, &$arg1, $arg2) {
   global $user;
@@ -166,7 +165,7 @@ function uc_checkout_pane_customer($op, &$arg1, $arg2) {
               form_set_error('panes][customer][new_account][pass_confirm', t('The passwords you entered did not match. Please try again.'));
             }
             if (!empty($arg2['new_account']['pass'])) {
-              $arg1->data['new_user']['pass'] = $arg2['new_account']['pass'];
+              $arg1->data['new_user']['hash'] = md5(trim($arg2['new_account']['pass']));
             }
           }
         }
@@ -214,7 +213,7 @@ function uc_checkout_pane_customer($op, &$arg1, $arg2) {
 }
 
 /**
- * Get the delivery information.
+ * Gets the delivery information.
  */
 function uc_checkout_pane_delivery($op, &$arg1, $arg2) {
   global $user;
@@ -315,7 +314,7 @@ function uc_checkout_pane_delivery($op, &$arg1, $arg2) {
 }
 
 /**
- * Get the billing information.
+ * Gets the billing information.
  */
 function uc_checkout_pane_billing($op, &$arg1, $arg2) {
   global $user;
@@ -415,7 +414,7 @@ function uc_checkout_pane_billing($op, &$arg1, $arg2) {
 }
 
 /**
- * Allow a customer to make comments on the order.
+ * Allows a customer to make comments on the order.
  */
 function uc_checkout_pane_comments($op, &$arg1, $arg2) {
   switch ($op) {
@@ -432,6 +431,7 @@ function uc_checkout_pane_comments($op, &$arg1, $arg2) {
         '#type' => 'textarea',
         '#title' => t('Order comments'),
         '#default_value' => $default,
+        '#wysiwyg' => FALSE,
       );
 
       return array('description' => $description, 'contents' => $contents);
@@ -454,12 +454,11 @@ function uc_checkout_pane_comments($op, &$arg1, $arg2) {
 }
 
 /**
- * Theme the delivery/billing address forms in tables.
+ * Themes the delivery/billing address forms in tables.
  *
+ * @see uc_checkout_pane_delivery()
+ * @see uc_checkout_pane_billing()
  * @ingroup themeable
- * @see
- *   uc_checkout_pane_delivery()
- *   uc_checkout_pane_billing()
  */
 function theme_address_pane($form) {
   $output = '';
@@ -498,7 +497,7 @@ function theme_address_pane($form) {
 }
 
 /**
- * Find the collapsible pane displayed above the pane with an ID of $pane_id.
+ * Finds the collapsible pane displayed above the pane with an ID of $pane_id.
  */
 function _uc_cart_checkout_prev_pane($panes, $pane_id = NULL) {
   if (is_null($pane_id)) {
@@ -519,7 +518,7 @@ function _uc_cart_checkout_prev_pane($panes, $pane_id = NULL) {
 }
 
 /**
- * Find the pane that displays below the pane with an ID of $pane_id.
+ * Finds the pane that displays below the pane with an ID of $pane_id.
  */
 function _uc_cart_checkout_next_pane($panes, $pane_id = NULL) {
   if (is_null($pane_id)) {
@@ -542,7 +541,7 @@ function _uc_cart_checkout_next_pane($panes, $pane_id = NULL) {
 }
 
 /**
- * Build a list of checkout panes defined in the enabled modules.
+ * Builds a list of checkout panes defined in the enabled modules.
  */
 function _checkout_pane_list($action = NULL) {
   static $panes;
@@ -576,7 +575,7 @@ function _checkout_pane_list($action = NULL) {
 }
 
 /**
- * Return data from a checkout pane by pane ID and the array key.
+ * Returns data from a checkout pane by pane ID and the array key.
  */
 function _checkout_pane_data($pane_id, $key) {
   $panes = _checkout_pane_list();
@@ -588,10 +587,11 @@ function _checkout_pane_data($pane_id, $key) {
 }
 
 /**
- * Format the cart contents table on the checkout page.
+ * Formats the cart contents table on the checkout page.
  *
  * @param $show_subtotal
  *   TRUE or FALSE indicating if you want a subtotal row displayed in the table.
+ *
  * @return
  *   The HTML output for the cart review table.
  *
@@ -657,12 +657,18 @@ function theme_cart_review_table($show_subtotal = TRUE) {
 }
 
 /**
- * Theme cart items on the checkout review order page.
+ * Themes cart items on the checkout review order page.
  *
  * @param $items
- *   Cart items.
+ *   An associative array containing cart items, with keys:
+ *   - qty: Quantity in cart.
+ *   - title: Item title.
+ *   - price: Item price.
+ *   - desc: Item description.
+ *
  * @return
  *   A string of HTML for the page contents.
+ *
  * @ingroup themeable
  */
 function theme_uc_checkout_pane_cart_review($items) {
@@ -672,10 +678,9 @@ function theme_uc_checkout_pane_cart_review($items) {
     'subject' => array(),
   );
 
-  $output = '<table>';
-  foreach ($items as $item) {
-    $desc = check_plain($item->title) . uc_product_get_description($item);
+  $rows = array();
 
+  foreach ($items as $item) {
     $price_info = array(
       'price' => $item->price,
       'qty' => $item->qty,
@@ -687,10 +692,12 @@ function theme_uc_checkout_pane_cart_review($items) {
       'node' => node_load($item->nid),
     );
 
-    $output .= '<tr valign="top"><td>'. $item->qty .'&times;</td><td width="100%">'. $desc
-              .'</td><td nowrap="nowrap">'. uc_price($price_info, $context) .'</td></tr>';
+    $rows[] = array(
+      array('data' => $item->qty . '&times;', 'class' => 'qty'),
+      array('data' => check_plain($item->title) . uc_product_get_description($item), 'class' => 'products'),
+      array('data' => uc_price($price_info, $context), 'class' => 'price'),
+    );
   }
-  $output .= '</table>';
 
-  return $output;
+  return theme('table', NULL, $rows, array('class' => 'cart-review'));
 }

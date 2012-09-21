@@ -330,17 +330,6 @@ function webform_results_download_form(&$form_state, $node) {
     ),
   );
 
-  $form['compress'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Include files'),
-    '#description' => t('All files in the webform results will be bundled in a .zip archive along with the exported results.'),
-  );
-
-  if (!class_exists('ZipArchive')) {
-    $form['compress']['#description'] = t('Unable to load ZipArchive class. This usually happens because the PHP interpreter is not compiled with zlib.');
-    $form['compress']['#disabled'] = TRUE;
-  }
-
   $form['select_options'] = array(
     '#type' => 'fieldset',
     '#title' => t('Select list options'),
@@ -398,43 +387,48 @@ function webform_results_download_form(&$form_state, $node) {
     '#type' => 'fieldset',
     '#title' => t('Download range options'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-    '#tree' => FALSE,
-    '#theme' => 'webform_results_download_form',
+    '#collapsed' => TRUE,
+    '#tree' => TRUE,
+    '#theme' => 'webform_results_download_range',
+    '#element_validate' => array('webform_results_download_range_validate'),
+    '#after_build' => array('webform_results_download_range_after_build'),
   );
 
   $form['range']['range_type'] = array(
     '#type' => 'radios',
     '#options' => array(
-      0 => t('All submissions'),
-      1 => t('Only new submissions since your last download'),
-      2 => t('Only the latest'),
-      3 => t('All submissions starting from'),
+      'all' => t('All submissions'),
+      'new' => t('Only new submissions since your last download'),
+      'latest' => t('Only the latest'),
+      'range' => t('All submissions starting from'),
     ),
-    '#default_value' => isset($form_state['values']['range_type']) ? $form_state['values']['range_type'] : 0,
-    '#description' => t('Select or specify a range of submissions to download.'),
-    '#after_build' => array('webform_download_get_totals'),
+    '#default_value' => 'all',
   );
   $form['range']['latest'] = array(
     '#type' => 'textfield',
     '#size' => 5,
     '#maxlength' => 8,
-    '#default_value' => isset($form_state['values']['latest']) ? $form_state['values']['latest'] : '',
-    '#description' => t('submissions'),
+    '#default_value' => '',
   );
   $form['range']['start'] = array(
     '#type' => 'textfield',
     '#size' => 5,
     '#maxlength' => 8,
-    '#description' => t(' to (optional) end:'),
-    '#default_value' => isset($form_state['values']['start']) ? $form_state['values']['start'] : '',
+    '#default_value' => '',
   );
   $form['range']['end'] = array(
     '#type' => 'textfield',
     '#size' => 5,
     '#maxlength' => 8,
-    '#default_value' => isset($form_state['values']['end']) ? $form_state['values']['end'] : '',
+    '#default_value' => '',
     '#description' => '',
+  );
+
+  // By default results are downloaded. User can override this value if
+  // programmatically submitting this form.
+  $form['download'] = array(
+    '#type' => 'value',
+    '#default_value' => TRUE
   );
 
   $form['submit'] = array(
@@ -445,92 +439,158 @@ function webform_results_download_form(&$form_state, $node) {
   return $form;
 }
 
-function webform_results_download_form_validate(&$form, &$form_state) {
-  switch ($form['range']['range_type']['#value']) {
-    case 2:
+/**
+ * FormAPI element validate function for the range fieldset.
+ */
+function webform_results_download_range_validate($element, $form_state) {
+  switch ($element['range_type']['#value']) {
+    case 'latest':
       // Download latest x submissions.
-      if ($form['range']['latest']['#value'] == '') {
-        form_error($form['range']['latest'], t('Latest number of submissions field is required'));
+      if ($element['latest']['#value'] == '') {
+        form_error($element['latest'], t('Latest number of submissions field is required.'));
       }
       else{
-        if (!is_numeric($form['range']['latest']['#value'])) {
-          form_error($form['range']['latest'], t('Latest number of submissions must be numeric'));
+        if (!is_numeric($element['latest']['#value'])) {
+          form_error($element['latest'], t('Latest number of submissions must be numeric.'));
         }
         else{
-          if ($form['range']['latest']['#value'] <= 0) {
-            form_error($form['range']['latest'], t('Latest number of submissions must be greater than 0'));
+          if ($element['latest']['#value'] <= 0) {
+            form_error($element['latest'], t('Latest number of submissions must be greater than 0.'));
           }
         }
       }
-    break;
-    case 3:
+      break;
+    case 'range':
       // Download Start-End range of submissions.
       // Start submission number.
-      if ($form['range']['start']['#value'] == '') {
-        form_error($form['range']['start'], t('Start submission number is required'));
+      if ($element['start']['#value'] == '') {
+        form_error($element['start'], t('Start submission number is required.'));
       }
       else{
-        if (!is_numeric($form['range']['start']['#value'])) {
-          form_error($form['range']['start'], t('Start submission number must be numeric'));
+        if (!is_numeric($element['start']['#value'])) {
+          form_error($element['start'], t('Start submission number must be numeric.'));
         }
         else{
-          if ($form['range']['start']['#value'] <= 0) {
-            form_error($form['range']['start'], t('Start submission number must be greater than 0'));
+          if ($element['start']['#value'] <= 0) {
+            form_error($element['start'], t('Start submission number must be greater than 0.'));
           }
         }
       }
       // End submission number.
-      if ($form['range']['end']['#value'] != '') {
-        if (!is_numeric($form['range']['end']['#value'])) {
-          form_error($form['range']['end'], t('End submission number must be numeric'));
+      if ($element['end']['#value'] != '') {
+        if (!is_numeric($element['end']['#value'])) {
+          form_error($element['end'], t('End submission number must be numeric.'));
         }
         else{
-          if ($form['range']['end']['#value'] <= 0) {
-            form_error($form['range']['end'], t('End submission number must be greater than 0'));
+          if ($element['end']['#value'] <= 0) {
+            form_error($element['end'], t('End submission number must be greater than 0.'));
           }
           else{
-            if ($form['range']['end']['#value'] < $form['range']['start']['#value']) {
-              form_error($form['range']['end'], t('End submission number may not be smaller than Start submission number'));
+            if ($element['end']['#value'] < $element['start']['#value']) {
+              form_error($element['end'], t('End submission number may not be less than Start submission number.'));
             }
           }
         }
       }
-    break;
+      break;
   }
+
 }
 
+/**
+ * Validate handler for webform_results_download_form().
+ */
 function webform_results_download_form_submit(&$form, &$form_state) {
-  // Retrieve the list of required sid's.
-  $sids = webform_download_sids($form_state);
   $options = array(
     'delimiter' => $form_state['values']['delimiter'],
     'components' => array_keys(array_filter($form_state['values']['components'])),
     'select_keys' => $form_state['values']['select_keys'],
     'select_format' => $form_state['values']['select_format'],
-    'compress' => $form_state['values']['compress'],
-    'range_type' => $form_state['values']['range_type'],
-    'sids' => $sids,
+    'range_type' => $form_state['values']['range']['range_type'],
+    'download' => $form_state['values']['download'],
   );
-  webform_results_download($form_state['values']['node'], $form_state['values']['format'], $options);
+
+  // Retrieve the list of required SIDs.
+  if ($options['range_type'] != 'all') {
+    $options['sids'] = webform_download_sids($form_state['values']['node']->nid, $form_state['values']['range']);
+  }
+
+  $export_info = webform_results_export($form_state['values']['node'], $form_state['values']['format'], $options);
+
+  // If webform result file should be downloaded, send the file to the browser,
+  // otherwise save information about the created file in $form_state.
+  if ($options['download']) {
+    webform_results_download($form_state['values']['node'], $export_info);
+  }
+  else {
+    $form_state['export_info'] = $export_info;
+  }
 }
 
 /**
- * Theme the output of the export form.
+ * FormAPI after build function for the download range fieldset.
  */
-function theme_webform_results_download_form($form) {
+function webform_results_download_range_after_build($element, &$form_state) {
+  $node = $form_state['values']['node'];
+
+  // Build a list of counts of new and total submissions.
+  $count = webform_get_submission_count($node->nid);
+  $sids = webform_download_sids($node->nid, array('range_type' => 'new'));
+
+  $last_download = webform_download_last_download_info($node->nid);
+
+  $element['#webform_download_info']['sid'] = $last_download ? $last_download['sid'] : 0;
+  $element['#webform_download_info']['requested'] = $last_download ? $last_download['requested'] : $node->created;
+  $element['#webform_download_info']['total'] = $count;
+  $element['#webform_download_info']['new'] = count($sids);
+
+  return $element;
+}
+
+/**
+ * Theme the output of the export range fieldset.
+ */
+function theme_webform_results_download_range($element) {
   drupal_add_css(drupal_get_path('module', 'webform') . '/css/webform-admin.css', 'theme', 'all', FALSE);
+  drupal_add_js(drupal_get_path('module', 'webform') . '/js/webform-admin.js', 'module', 'header', FALSE, TRUE, FALSE);
 
-  // Add inline elements.
-  $form['range_type']['2']['#title'] = $form['range_type']['2']['#title'] . ': ' . drupal_render($form['latest']);
-  $form['range_type']['3']['#title'] = $form['range_type']['3']['#title'] . ': ' . drupal_render($form['start']) . drupal_render($form['end']);
+  $download_info = $element['#webform_download_info'];
 
-  // For spacing consistency, every option is wrapped in webform-container-inline.
-  foreach (element_children($form['range_type']) as $option) {
-    $form['range_type'][$option]['#prefix'] = '<div class="webform-container-inline">';
-    $form['range_type'][$option]['#suffix'] = '</div>';
+  // Set description for total of all submissions.
+  $element['range_type']['all']['#description'] = '(' . t('@count total', array('@count' => $download_info['total'])) . ')';
+  $element['range_type']['all']['#prefix'] = '<div class="webform-container-inline">';
+  $element['range_type']['all']['#suffix'] = '</div>';
+
+  // Set description for "New submissions since last download".
+  $format = webform_date_format('short');
+  $requested_date = format_date($download_info['requested'], 'custom', $format);
+  $element['range_type']['new']['#description'] = '(' . t('@count new since @date', array('@count' => $download_info['new'], '@date' => $requested_date)) . ')';
+  $element['range_type']['new']['#prefix'] = '<div class="webform-container-inline">';
+  $element['range_type']['new']['#suffix'] = '</div>';
+
+  // Disable option if there are no new submissions.
+  if ($download_info['new'] == 0) {
+    $element['range_type']['new']['#attributes']['disabled'] = 'disabled';
   }
 
-  return drupal_render($form);
+  // Render latest x submissions option.
+  $element['latest']['#attributes']['class'] = 'webform-set-active';
+  $element['range_type']['latest']['#title'] = t('Only the latest !number submissions', array('!number' => drupal_render($element['latest'])));
+  $element['range_type']['latest']['#prefix'] = '<div class="webform-container-inline">';
+  $element['range_type']['latest']['#suffix'] = '</div>';
+
+  // Render Start-End submissions option.
+  $element['start']['#attributes']['class'] = 'webform-set-active';
+  $element['end']['#attributes']['class'] = 'webform-set-active';
+  $element['range_type']['range']['#title'] = t('All submissions starting from: !start and optionally to: !end', array('!start' => drupal_render($element['start']), '!end' => drupal_render($element['end'])));
+  $element['range_type']['range']['#prefix'] = '<div class="webform-container-inline">';
+  $element['range_type']['range']['#suffix'] = '</div>';
+
+
+  $last_sid = $download_info['sid'] ? $download_info['sid'] : theme('placeholder', t('none'));
+  $element['range_type']['range']['#description'] = '(' . t('Use submission IDs for the range. Last downloaded end SID: !sid.', array('!sid' => $last_sid)) . ')';
+
+  return drupal_render($element);
 }
 
 /**
@@ -602,7 +662,7 @@ function theme_webform_results_download_select_format($element) {
  *   27 Feb 2005       ,1035,56 ,212   ,X         ,        ,        ,..,       ,X          ,X       ,X       ,..,X       ,How is this?
  *
  */
-function webform_results_download($node, $format = 'delimited', $options = array()) {
+function webform_results_export($node, $format = 'delimited', $options = array()) {
   global $user;
   module_load_include('inc', 'webform', 'includes/webform.export');
   module_load_include('inc', 'webform', 'includes/webform.components');
@@ -624,11 +684,8 @@ function webform_results_download($node, $format = 'delimited', $options = array
       'components' => array_merge(array_keys($submission_information), array_keys(webform_component_list($node, 'csv', TRUE))),
       'select_display' => 'value',
       'select_format' => 'separate',
-      'compress' => 0,
-      'range_type' => 0,
+      'range_type' => 'all',
     );
-    $fake_state = array('values' => array('node' => $node->nid, 'range_type' => 1));
-    $options['sids'] = webform_download_sids($fake_state);
   }
   else {
     foreach ($submission_information as $key => $label) {
@@ -681,7 +738,6 @@ function webform_results_download($node, $format = 'delimited', $options = array
     $filters['sid'] = $options['sids'];
   }
   $submissions = webform_get_submissions($filters);
-  $attached_files = array();
 
   // Generate a row for each submission.
   $row_count = 0;
@@ -718,14 +774,11 @@ function webform_results_download($node, $format = 'delimited', $options = array
         $raw_data = isset($submission->data[$cid]['value']) ? $submission->data[$cid]['value'] : NULL;
         if (webform_component_feature($component['type'], 'csv')) {
           $data = webform_component_invoke($component['type'], 'csv_data', $component, $options, $raw_data);
-          if ($component['type'] == 'file') {
-            $attached_files[] = webform_get_file($raw_data[0])->filepath;
-          }
           if (is_array($data)) {
             $row = array_merge($row, array_values($data));
           }
           else {
-            $row[] = empty($data) ? '' : $data;
+            $row[] = isset($data) ? $data : '';
           }
         }
       }
@@ -741,38 +794,38 @@ function webform_results_download($node, $format = 'delimited', $options = array
   // Close the file.
   @fclose($handle);
 
-  $export_name = _webform_safe_name($node->title);
-  $exporter->set_headers($export_name);
+  $export_info['options'] = $options;
+  $export_info['file_name'] = $file_name;
+  $export_info['exporter'] = $exporter;
+  $export_info['row_count'] = $row_count;
+  $export_info['last_sid'] = $sid;
 
-  if ($options['compress'] == 1) {
-    $zh = new ZipArchive();
-    $zipfile = variable_get('file_directory_temp', file_directory_temp()) . '/webform' . time() . '.zip';
-    $zh->open($zipfile, ZIPARCHIVE::CREATE);
-    foreach ($attached_files as $file) {
-      if (!empty($file)) {
-        $zh->addFile(realpath($base_path . $file), basename($file));
-      }
-    }
-    $extension = '.csv';
-    if ($exporter->delimiter == "\t") {
-      $extension = '.tsv';
-    }
-    $zh->addFile(realpath($file_name), $export_name . $extension);
-    $zh->close();
-    @readfile($zipfile);
-    @unlink($zipfile);
-  }
-  else {
-    @readfile($file_name);  // The @ makes it silent.
-  }
-  @unlink($file_name);  // Clean up, the @ makes it silent.
+  return $export_info;
+}
+
+/**
+ * Send a generated webform results file to the user's browser.
+ *
+ * @param $node
+ *   The webform node.
+ * @param $export_info
+ *   Export information array retrieved from webform_results_export().
+ */
+function webform_results_download($node, $export_info) {
+  global $user;
+
+  // $exporter, $file_name, $row_count
+  $export_name = _webform_safe_name($node->title);
+  $export_info['exporter']->set_headers($export_name);
+  @readfile($export_info['file_name']);  // The @ makes it silent.
+  @unlink($export_info['file_name']);  // Clean up, the @ makes it silent.
 
   // Update user last downloaded sid if required.
-  if ($options['range_type'] < 2 && $row_count > 0) {
+  if ($export_info['options']['range_type'] != 'range' && $export_info['row_count'] > 0) {
     // Delete existing record.
     db_query('DELETE FROM {webform_last_download} WHERE nid = %d AND uid = %d', $node->nid, $user->uid);
     // Write new record.
-    db_query('INSERT INTO {webform_last_download} (nid, uid, sid, requested) VALUES (%d, %d, %d, %d)', $node->nid, $user->uid, $sid, time());
+    db_query('INSERT INTO {webform_last_download} (nid, uid, sid, requested) VALUES (%d, %d, %d, %d)', $node->nid, $user->uid, $export_info['last_sid'], time());
   }
 
   exit();
@@ -851,97 +904,76 @@ function theme_webform_results_analysis($node, $data, $sids = array(), $analysis
   return theme('table', $header, $rows, array('class' => 'webform-results-analysis'));
 }
 
-// Obtain list of required sid's.
-function webform_download_sids(&$form_state) {
+/**
+ * Given a set of range options, retrieve a set of SIDs for a webform node.
+ */
+function webform_download_sids($nid, $range_options, $uid = NULL) {
+  $query = 'SELECT sid FROM {webform_submissions} WHERE nid = %d';
+  $args = array($nid);
 
-  $query = sprintf('SELECT sid FROM {webform_submissions} WHERE nid = %d', $form_state['values']['node']->nid);
-
-  switch ($form_state['values']['range_type']) {
-    case 0:
-      // All Submissions
+  switch ($range_options['range_type']) {
+    case 'all':
+      // All Submissions.
       $query .= ' ORDER BY sid ASC';
-    break;
-    case 1:
-      // All Since Last Download
-      $last = webform_download_last_downloaded_sid($form_state['values']['node']->nid, 'sid');
-      $query .= sprintf(' AND sid > %d ORDER BY sid ASC', $last);
-    break;
-    case 2:
-      // Last x Submissions
-      $query .= sprintf(' ORDER BY sid DESC LIMIT 0, %d', $form_state['values']['latest']);
-    break;
-    case 3:
-      // Submissions Start-End
-      if (!is_numeric($form_state['values']['end'])){
-        // Set End to maximum integer value (assumed 32-bit).
-        $form_state['values']['end'] = 2147483647;
+      break;
+    case 'new':
+      // All Since Last Download.
+      $download_info = webform_download_last_download_info($nid, $uid);
+      $last_sid = $download_info ? $download_info['sid'] : 0;
+      $query .= ' AND sid > %d ORDER BY sid ASC';
+      $args[] = $last_sid;
+      break;
+    case 'latest':
+      // Last x Submissions.
+      $query .= ' ORDER BY sid DESC LIMIT 0, %d';
+      $args[] = $range_options['latest'];
+      break;
+    case 'range':
+      // Submissions Start-End.
+      $query .=' AND sid >= %d';
+      $args[] = $range_options['start'];
+      if ($range_options['end']) {
+        $query .= ' AND sid <= %d';
+        $args[] = $range_options['end'];
       }
-      $query .= sprintf(' AND (sid >= %d AND sid <= %d) ORDER BY sid ASC', $form_state['values']['start'], $form_state['values']['end']);
-    break;
+      $query .= ' ORDER BY sid ASC';
+      break;
   }
-  $results = db_query($query);
+  $result = db_query($query, $args);
   $sids = array();
-  while ($row = db_fetch_object($results)) {
+  while ($row = db_fetch_object($result)) {
     $sids[] = $row->sid;
   }
 
-  // Resequence the DESCending query if neccessary.
-  if ($form_state['values']['range_type'] == 2) {
+  // The last x submissions option has SIDs that are in reverse order.
+  if ($range_options['range_type'] == 'latest') {
     $sids = array_reverse($sids);
   }
 
   return $sids;
 }
 
-// Get this user's last downloaded sid.
-function webform_download_last_downloaded_sid($nid, $field = 'sid') {
-  global $user;
+/**
+ * Get this user's last download information, including the SID and timestamp.
+ *
+ * This function provides an array of information about the last download that
+ * a user had for a particular Webform node. Currently it only returns an array
+ * with two keys:
+ *  - sid: The last submission ID that was downloaded.
+ *  - requested: The timestamp of the last download request.
+ *
+ * @param $nid
+ *   The Webform NID.
+ * @param $uid
+ *   The user account ID for which to retrieve download information.
+ * @return
+ *   An array of download information or FALSE if this user has never downloaded
+ *   results for this particular node.
+ */
+function webform_download_last_download_info($nid, $uid = NULL) {
+  $uid = isset($uid) ? $uid : $GLOBALS['user']->uid;
+  $result = db_query("SELECT * FROM {webform_last_download} WHERE nid = %d AND uid = %d", $nid, $uid);
+  $info = db_fetch_array($result);
 
-  // Last downloaded sid.
-  if ($field == 'sid') {
-    $result = db_query('SELECT sid FROM  {webform_last_download} WHERE nid = %d AND uid = %d', $nid, $user->uid);
-    $lastsid = db_fetch_object($result);
-    $last = $lastsid->sid;
-    if (!$last) {
-      $last = 0;
-    }
-    return $last;
-  }
-
-  if ($field == 'requested') {
-    $result = db_query('SELECT requested FROM  {webform_last_download} WHERE nid = %d AND uid = %d', $nid, $user->uid);
-    $lastrequest = db_fetch_object($result);
-    $last = $lastrequest->requested;
-    if (!$last) {
-      // Use node creation timestamp instead.
-      $result = db_query('SELECT created FROM  {node} WHERE nid = %d', $nid);
-      $lastcreated = db_fetch_object($result);
-      $last = $lastcreated->created;
-    }
-    return $last;
-  }
-}
-
-function webform_download_get_totals($element, $form_state) {
-  // All submissions.
-  $count = webform_get_submission_count($form_state['values']['node']->nid);
-  $element['0']['#description'] = t('(' . $count . ' total)');
-
-  // Since last download.
-  // Requested timestamp.
-  $format = webform_date_format('short');
-  $requested = webform_download_last_downloaded_sid($form_state['values']['node']->nid, 'requested');
-  $requested = format_date($requested, 'user', $format, 'UTC');
-  // Number of new submissions.
-  $fake_state = array('values' => array('node' => $form_state['values']['node'], 'range_type' => 1));
-  $sids = webform_download_sids($fake_state);
-  $count = count($sids);
-  // Set description.
-  $element['1']['#description'] = t('(') . $count . t(' new since ') . $requested . t(')');
-  if(!$count) {
-    // Disable 'Only new submissions since...' if there are no new submissions.
-    $element['1']['#attributes']['disabled'] = NULL;
-  }
-
-  return $element;
+  return $info;
 }

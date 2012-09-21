@@ -570,7 +570,6 @@ function uc_payment_method_paypal_wps($op, &$arg1) {
       $form['uc_paypal_wps_submit_method'] = array(
         '#type' => 'radios',
         '#title' => t('PayPal cart submission method'),
-        '#description' => t('You must use a single line item on your site if you have any fees or discounts besides shipping and tax.'),
         '#options' => array(
           'single' => t('Submit the whole order as a single line item.'),
           'itemized' => t('Submit an itemized order showing each product and description.'),
@@ -630,11 +629,10 @@ function uc_payment_method_paypal_ec($op, &$arg1) {
       );
       $form['uc_paypal_ec_landingpage_style'] = array(
         '#type' => 'radios',
-        '#title' => t('PayPal landing page style'),
-        '#description' => t('PayPal Express Checkout landing page may show a credit card submission form (allowing credit card payments without a PayPal account) or may show only a PayPal login form, thereby restricting payment to PayPal users.'),
+        '#title' => t('Default PayPal landing page'),
         '#options' => array(
-          'Billing' => t('Show credit card submission form.'),
-          'Login' => t('Do not show credit card submission form.'),
+          'Billing' => t('Credit card submission form.'),
+          'Login' => t('Account login form.'),
         ),
         '#default_value' => variable_get('uc_paypal_ec_landingpage_style', 'Billing'),
       );
@@ -1107,7 +1105,7 @@ function _uc_paypal_product_details($items) {
       if (!empty($desc)) {
         $desc .= ' / ';
       }
-      $desc .= $item->qty .'× '. $item->title;
+      $desc .= $item->qty .'x '. $item->title;
       $subtotal += $item->qty * $item->price;
     }
   }
@@ -1253,6 +1251,7 @@ function _uc_paypal_pending_message($reason) {
     case 'intl':
       return t('You must manually accept or deny this international payment from your Account Overview.');
     case 'multi-currency':
+    case 'multi_currency':
       return t('You must manually accept or deny a payment of this currency from your Account Overview.');
     case 'unilateral':
       return t('Your e-mail address is not yet registered or confirmed.');
@@ -1262,7 +1261,7 @@ function _uc_paypal_pending_message($reason) {
       return t('You must verify your account before you can accept this payment.');
     case 'other':
     default:
-      return t('Reason unknown; contact PayPal Customer Service for more information.');
+      return t('Reason "@reason" unknown; contact PayPal Customer Service for more information.', array('@reason' => $reason));
   }
 }
 
@@ -1281,7 +1280,7 @@ function _uc_paypal_reversal_message($reason) {
       return t('You gave the customer a refund.');
     case 'other':
     default:
-      return t('Reason unknown; contact PayPal Customer Service for more information.');
+      return t('Reason "@reason" unknown; contact PayPal Customer Service for more information.', array('@reason' => $reason));
   }
 }
 

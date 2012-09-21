@@ -44,6 +44,13 @@ function indonesia_install() {
     db_query("INSERT INTO {uc_zones} (zone_country_id, zone_code, zone_name) VALUES (%d, '%s', '%s')", $zone);
   }
 
-  variable_set('uc_address_format_360',
-               "!company\n!first_name !last_name\n!street1\n!street2\n!city !postal_code \n!country_name_if");
+  uc_set_address_format(
+    360,
+    "!company\n".
+    "!first_name !last_name\n".
+    "!street1\n".
+    "!street2\n".
+    "!city !postal_code \n".
+    "!country_name_if"
+  );
 }

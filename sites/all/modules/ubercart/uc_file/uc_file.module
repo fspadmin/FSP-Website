@@ -118,9 +118,6 @@ function uc_file_theme() {
       'arguments' => array('form' => NULL),
       'file' => 'uc_file.admin.inc',
     ),
-    'uc_file_hook_user_file' => array(
-      'arguments' => array('form' => NULL),
-    ),
     'uc_file_hook_user_file_downloads' => array(
       'arguments' => array('form' => NULL),
     ),
@@ -141,51 +138,30 @@ function uc_file_user_delete(&$account) {
 }
 
 /**
- * Implements hook_user_form().
+ * Form builder for per-user file download administration.
  */
-function uc_file_user_form(&$account, $category = NULL) {
-
-  // We only want the account edit form.
-  if (!user_access('administer users') || (is_null($category) || $category != 'account')) {
-    return;
-  }
-
-  // Rebuild the file list.
-  uc_file_refresh();
-
+function uc_file_user_form($form_state, $account) {
   $form['file'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Ubercart file downloads'),
+    '#title' => t('Administration'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-    '#weight' => 10,
-    '#theme' => 'uc_file_hook_user_file',
   );
 
   // Drop out early if we don't even have any files uploaded.
   if (!db_result(db_query("SELECT COUNT(*) FROM {uc_files}"))) {
     $form['file']['file_message'] = array(
-      '#value' => t(
+      '#value' => '<p>'. t(
         'You must add files at the !url in order to attach them to a user.',
         array('!url' => l(t('Ubercart file download administration page'), 'admin/store/products/files', array('query' => 'destination=user/'. $account->uid .'/edit')))
-      ),
+      ) .'</p>',
     );
 
     return $form;
   }
 
   // Table displaying current downloadable files and limits.
-  $form['file']['download'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Accessible downloads'),
-
-    '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
-    '#weight' => 10,
-    '#theme' => 'uc_file_hook_user_file_downloads',
-  );
-
-  // Neatness.
+  $form['file']['download']['#theme'] ='uc_file_hook_user_file_downloads';
   $form['file']['download']['file_download']['#tree'] = TRUE;
 
   $downloadable_files = array();
@@ -283,13 +259,19 @@ function uc_file_user_form(&$account, $category = NULL) {
     );
   }
 
+  $form['file']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
   return $form;
 }
 
 /**
- * Implements hook_user_validate().
+ * Validation handler for per-user file download administration.
  */
-function uc_file_user_validate(&$edit) {
+function uc_file_user_form_validate($form, &$form_state) {
+  $edit = $form_state['values'];
 
   // Determine if any downloads were modified.
   if (isset($edit['file_download'])) {
@@ -330,9 +312,12 @@ function uc_file_user_validate(&$edit) {
 }
 
 /**
- * Implements hook_user_submit().
+ * Submit handler for per-user file download administration.
  */
-function uc_file_user_submit(&$edit, &$account) {
+function uc_file_user_form_submit($form, &$form_state) {
+  $account = $form['#parameters'][2];
+  $edit = $form_state['values'];
+
   // Check out if any downloads were modified.
   if (isset($edit['file_download'])) {
     foreach ((array)$edit['file_download'] as $fid => $download_modification) {
@@ -414,26 +399,12 @@ function uc_file_user_view(&$account) {
  * Implements hook_user().
  */
 function uc_file_user($op, &$edit, &$account, $category = NULL) {
-
   switch ($op) {
-
     case 'delete':
       return uc_file_user_delete($account);
 
-    case 'form':
-      return uc_file_user_form($account, $category);
-
-    case 'validate':
-      return uc_file_user_validate($edit);
-
-    case 'submit':
-      return uc_file_user_submit($edit, $account);
-
     case 'view':
       return uc_file_user_view($account);
-
-    default:
-      break;
   }
 }
 
@@ -518,26 +489,7 @@ function theme_uc_file_hook_user_file_downloads($form) {
     $rows[] = array(array('data' => t('No files can be downloaded by this user.'), 'colspan' => 5));
   }
 
-  $output  = theme('table', $header, $rows, array('id' => 'download-table'), t('Below is a list of downloads this user can access.'));
-  $output .= drupal_render($form);
-
-  return $output;
-}
-
-/**
- * Themes the file dialog at the user account page.
- *
- * @ingroup themeable
- */
-function theme_uc_file_hook_user_file($form) {
-
-  // Enclose this in <p> so it won't fall out of the fieldset
-  // if there are no downloads.
-  $output = '<p>'. drupal_render($form['file_message']) .'</p>';
-
-  // Ensure the current files are above the new file dialog.
-  $output .= drupal_render($form['download']);
-
+  $output  = theme('table', $header, $rows, array('id' => 'download-table'));
   $output .= drupal_render($form);
 
   return $output;
@@ -775,7 +727,7 @@ function uc_file_feature_form($form_state, $node, $feature) {
   uc_file_refresh();
 
   // Grab all the models on this product.
-  $models = uc_product_get_models($node);
+  $models = uc_product_get_models($node->nid);
 
   // Use the feature's values to fill the form, if they exist.
   if (!empty($feature)) {

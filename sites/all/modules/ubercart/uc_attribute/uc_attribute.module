@@ -37,11 +37,15 @@ function uc_attribute_help($path, $arg) {
     // Help message for adjusting the options on a product or class.
     case 'node/%/edit/options':
     case 'admin/store/products/classes/%/options':
-      return t('Use the checkboxes to enable options for attributes and the radio buttons to specify defaults for the enabled options. Use the other fields to override the default settings for each option. Attributes with no enabled options will be displayed as text fields.');
+      return '<p>' . t('Use the checkboxes to enable options for attributes and the radio buttons to specify the default option. Attributes with no enabled options will be displayed as text fields. Drag and drop the options to reorder them.') . '</p><p>' . t('The cost, price and weight fields will make adjustments against the original product, so you may enter positive or negative amounts here, or enter 0 if the option should make no adjustment.') . '</p>';
 
     // Help message for the product Adjustments tab.
     case 'node/%/edit/adjustments':
       return t('Enter an alternate SKU to be used when the specified set of options are chosen and the product is added to the cart. <b>Warning:</b> Adding or removing attributes from this product will reset all the SKUs on this page to the default product SKU.');
+
+    // Help message for bulk updates tab.
+    case 'admin/store/products/classes/%/attributes_bulk':
+      return t('Bulk updates performed here will reset all attributes and options on the selected products to the current defaults for this product class.<p><em><strong>Warning:</strong> any product level customizations will be lost!</em></p>To perform bulk updates on specific option values without resetting attributes to the class defaults, go to <a href="!url">Store administration->Attributes</a> and edit the option, selecting the checkbox to update existing products.', array('!url' => url('admin/store/attributes')));
   }
 }
 
@@ -155,6 +159,15 @@ function uc_attribute_menu() {
     'weight' => 2,
     'file' => 'uc_attribute.admin.inc',
   );
+  $items['admin/store/products/classes/%uc_product_class/attributes_bulk'] = array(
+    'title' => 'Bulk',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_attribute_bulk_update_form', 4, 'class'),
+    'access callback' => 'uc_attribute_product_class_access',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+    'file' => 'uc_attribute.admin.inc',
+  );
 
   // Insert subitems into the edit node page for product types.
   $items['node/%node/edit/attributes'] = array(
@@ -175,6 +188,15 @@ function uc_attribute_menu() {
     'access arguments' => array(1),
     'type' => MENU_LOCAL_TASK,
     'weight' => 1,
+    'file' => 'uc_attribute.admin.inc',
+  );
+  $items['node/%node/edit/attributes/reset'] = array(
+    'title' => 'Reset to defaults',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_attribute_node_reset_confirm', 1),
+    'access callback' => 'uc_attribute_product_access',
+    'access arguments' => array(1),
+    'type' => MENU_CALLBACK,
     'file' => 'uc_attribute.admin.inc',
   );
   $items['node/%node/edit/options'] = array(
@@ -249,6 +271,9 @@ function uc_attribute_init() {
  */
 function uc_attribute_theme() {
   return array(
+    'uc_attribute_option' => array(
+      'arguments' => array('option' => '', 'price' => ''),
+    ),
     'uc_attribute_add_to_cart' => array(
       'arguments' => array('form' => NULL),
     ),
@@ -266,6 +291,10 @@ function uc_attribute_theme() {
     ),
     'uc_product_attributes' => array(
       'arguments' => array('product' => NULL),
+      'file' => 'uc_attribute.admin.inc',
+    ),
+    'uc_attribute_bulk_update_form' => array(
+      'arguments' => array('form' => NULL),
       'file' => 'uc_attribute.admin.inc',
     ),
   );
@@ -346,23 +375,10 @@ function uc_attribute_nodeapi(&$node, $op, $arg3 = NULL, $arg4 = NULL) {
         }
         break;
       case 'insert':
-        switch ($GLOBALS['db_type']) {
-          case 'mysqli':
-          case 'mysql':
-            db_query("INSERT IGNORE INTO {uc_product_attributes} (nid, aid, label, ordering, required, display, default_option) SELECT %d, aid, label, ordering, required, display, default_option FROM {uc_class_attributes} WHERE pcid = '%s'", $node->nid, $node->type);
-            db_query("INSERT IGNORE INTO {uc_product_options} (nid, oid, cost, price, weight, ordering) SELECT %d, oid, cost, price, weight, ordering FROM {uc_class_attribute_options} WHERE pcid = '%s'", $node->nid, $node->type);
-            break;
-          case 'pgsql':
-            db_query("INSERT INTO {uc_product_attributes} (nid, aid, label, ordering, required, display, default_option) SELECT %d, aid, label, ordering, required, display, default_option FROM {uc_class_attributes} WHERE pcid = '%s'", $node->nid, $node->type);
-            db_query("INSERT INTO {uc_product_options} (nid, oid, cost, price, weight, ordering) SELECT %d, oid, cost, price, weight, ordering FROM {uc_class_attribute_options} WHERE pcid = '%s'", $node->nid, $node->type);
-            break;
-        }
-
+        uc_attribute_node_insert($node);
         break;
       case 'delete':
-        db_query("DELETE FROM {uc_product_options} WHERE nid = %d", $node->nid);
-        db_query("DELETE FROM {uc_product_adjustments} WHERE nid = %d", $node->nid);
-        db_query("DELETE FROM {uc_product_attributes} WHERE nid = %d", $node->nid);
+        uc_attribute_node_delete($node);
         break;
       case 'update index':
         $output = '';
@@ -383,6 +399,40 @@ function uc_attribute_nodeapi(&$node, $op, $arg3 = NULL, $arg4 = NULL) {
   }
 }
 
+/**
+ * Add default attributes to a product node.
+ */
+function uc_attribute_node_insert($node) {
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      db_query("INSERT IGNORE INTO {uc_product_attributes} (nid, aid, label, ordering, required, display, default_option) SELECT %d, aid, label, ordering, required, display, default_option FROM {uc_class_attributes} WHERE pcid = '%s'", $node->nid, $node->type);
+      db_query("INSERT IGNORE INTO {uc_product_options} (nid, oid, cost, price, weight, ordering) SELECT %d, oid, cost, price, weight, ordering FROM {uc_class_attribute_options} WHERE pcid = '%s'", $node->nid, $node->type);
+      break;
+    case 'pgsql':
+      db_query("INSERT INTO {uc_product_attributes} (nid, aid, label, ordering, required, display, default_option) SELECT %d, aid, label, ordering, required, display, default_option FROM {uc_class_attributes} WHERE pcid = '%s'", $node->nid, $node->type);
+      db_query("INSERT INTO {uc_product_options} (nid, oid, cost, price, weight, ordering) SELECT %d, oid, cost, price, weight, ordering FROM {uc_class_attribute_options} WHERE pcid = '%s'", $node->nid, $node->type);
+      break;
+  }
+}
+
+/**
+ * Remove all attributes from a product node.
+ */
+function uc_attribute_node_delete($node) {
+  db_query("DELETE FROM {uc_product_options} WHERE nid = %d", $node->nid);
+  db_query("DELETE FROM {uc_product_adjustments} WHERE nid = %d", $node->nid);
+  db_query("DELETE FROM {uc_product_attributes} WHERE nid = %d", $node->nid);
+}
+
+/**
+ * Reset attributes to class defaults for a product node.
+ */
+function uc_attribute_node_reset($node) {
+  uc_attribute_node_delete($node);
+  uc_attribute_node_insert($node);
+}
+
 /******************************************************************************
  * Ubercart Hooks                                                             *
  ******************************************************************************/
@@ -390,15 +440,13 @@ function uc_attribute_nodeapi(&$node, $op, $arg3 = NULL, $arg4 = NULL) {
 /**
  * Implements hook_uc_product_models().
  */
-function uc_attribute_uc_product_models($node) {
+function uc_attribute_uc_product_models($nid) {
   $models = array();
 
   // Get all the SKUs for all the attributes on this node.
-  $adjustments = db_query("SELECT model FROM {uc_product_adjustments} WHERE nid = %d", $node->nid);
-  while ($adjustment = db_fetch_object($adjustments)) {
-    if (!in_array($adjustment->model, $models)) {
-      $models[] = $adjustment->model;
-    }
+  $adjustments = db_query("SELECT DISTINCT model FROM {uc_product_adjustments} WHERE nid = %d", $nid);
+  while ($adjustment = db_result($adjustments)) {
+    $models[] = $adjustment;
   }
 
   return $models;
@@ -423,11 +471,12 @@ function uc_attribute_order_product_alter(&$product, $order) {
   // Convert the attribute and option ids to their current names. This
   // preserves the important data in case the attributes or options are
   // changed later.
-  if (is_array($product->data['attributes']) && is_numeric(key($product->data['attributes']))) {
+  $first_key = array_shift(array_keys($product->data['attributes']));
+  if (is_array($product->data['attributes']) && is_numeric($first_key)) {
     $attributes = array();
     $options = _uc_cart_product_get_options($product);
     foreach ($options as $aid => $option) {
-      $attributes[$option['attribute']][] = $option['name'];
+      $attributes[$option['attribute']][$option['oid']] = $option['name'];
     }
     $product->data['attributes'] = $attributes;
   }
@@ -552,7 +601,7 @@ function uc_attribute_product_description($product) {
  *   The ID of the product/class this attribute belongs to.
  *
  * @return
- *   The array of loaded attributes.
+ *   An array of loaded attributes.
  */
 function uc_attribute_load_multiple($aids = array(), $type = '', $id = NULL) {
   $sql = uc_attribute_type_info($type);
@@ -680,8 +729,7 @@ function uc_attribute_load($aid, $id = NULL, $type = '') {
 }
 
 /**
- * Fetches an array of attribute objects from the database who belong to a
- * product.
+ * Fetches an array of attribute objects that belong to a product.
  *
  * @param $nid
  *   Product whose attributes to load.
@@ -831,8 +879,7 @@ function uc_attribute_subject_save(&$attribute, $type, $id, $save_options = FALS
 }
 
 /**
- * Deletes all the options associated with this product/class attribute, and
- * then the attribute itself.
+ * Deletes an attribute and all options associated with it.
  *
  * @param $aid
  *   The base attribute ID.
@@ -1047,8 +1094,7 @@ function uc_attribute_subject_option_exists($oid, $type, $id) {
 }
 
 /**
- * Returns a list of db helpers to abstract the queries between
- * products/classes.
+ * Returns a list of names to abstract queries between products and classes.
  *
  * @param $type
  *   Is this a product or a class?
@@ -1194,29 +1240,31 @@ function _uc_attribute_alter_form($product) {
     $options = array();
     foreach ($attribute->options as $option) {
       $context['subject']['option'] = $option;
-      switch (variable_get('uc_attribute_option_price_format', 'adjustment')) {
-        case 'total':
-          $context['type'] = 'product';
-          $context['subject']['node'] = $product;
-          $display_price = in_array($attribute->aid, $priced_attributes) ? ', '. uc_price($product->sell_price + $option->price, $context) : '';
-          if (count($priced_attributes) == 1 && $attribute->display != 3) {
+      $display_price = '';
+      if (in_array($attribute->aid, $priced_attributes)) {
+        switch (variable_get('uc_attribute_option_price_format', 'adjustment')) {
+          case 'total':
+            $context['type'] = 'product';
+            $context['subject']['node'] = $product;
+            if (count($priced_attributes) == 1 && $attribute->display != 3) {
+              $display_price = uc_price($product->sell_price + $option->price, $context);
+              break;
+            }
+          case 'adjustment':
+            $context['type'] = 'attribute_option';
+            if ($option->price != 0) {
+              $display_price = $option->price > 0 ? '+' : '-';
+              $display_price .= uc_price(abs($option->price), $context);
+            }
             break;
-          }
-        case 'adjustment':
-          $context['type'] = 'attribute_option';
-          $display_price = ($option->price != 0 ? ', '. ($option->price > 0 ? '+' : '') . uc_price($option->price, $context) : '');
-          break;
-        case 'none':
-        default:
-          $display_price = '';
-          break;
+        }
       }
-      $options[$option->oid] = $option->name;
-      if ($attribute->display == 2) {
-        // Select options are check_plain()ed, but radio button labels are not.
-        $options[$option->oid] = check_plain($options[$option->oid]);
-      }
-      $options[$option->oid] .= $display_price;
+
+      // Select options are check_plain()ed, but radio button labels are not.
+      $options[$option->oid] = theme('uc_attribute_option',
+        $attribute->display == 2 ? check_plain($option->name) : $option->name,
+        $display_price
+      );
     }
 
     if (count($attribute->options) && $attribute->display > 0) {
@@ -1226,6 +1274,7 @@ function _uc_attribute_alter_form($product) {
         }
         $attribute->default_option = '';
       }
+      $attr_type = '';
       switch ($attribute->display) {
         case 1:
           $attr_type = 'select';
@@ -1298,10 +1347,29 @@ function uc_attribute_priced_attributes($nid) {
 }
 
 /**
+ * Displays an attribute option with an optional total or adjustment price.
+ *
+ * @param $option
+ *   The option name.
+ * @param $price
+ *   The price total or adjustment, if any.
+ *
+ * @see _uc_attribute_alter_form()
+ * @ingroup themeable
+ */
+function theme_uc_attribute_option($option, $price) {
+  $output = $option;
+  if ($price) {
+    $output .= ', ' . $price;
+  }
+  return $output;
+}
+
+/**
  * Displays the attribute selection form elements.
  *
- * @ingroup themeable
  * @see _uc_attribute_alter_form()
+ * @ingroup themeable
  */
 function theme_uc_attribute_add_to_cart($form) {
   $output = '<div class="attributes">';

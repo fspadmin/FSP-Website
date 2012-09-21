@@ -129,27 +129,27 @@ span.date-display-separator {
   clear:both;
 }
 
-/* 	 
- ** Markup free clearing that fixes unwanted scrollbars 	 
- ** @see http://drupal.org/node/232959 	 
- */ 	 
- .date-clear-block:after { 	 
-   content: " "; 	 
-   display: block; 	 
-   height: 0; 	 
-   clear: both; 	 
-   visibility: hidden; 	 
- } 	 
- .date-clear-block { 	 
-   display: inline-block; 	 
- } 	 
- /* Hides from IE-mac \*/ 	 
- * html .date-clear-block { 	 
-   height: 1%; 	 
- } 	 
- .date-clear-block { 	 
-   display: block; 	 
- } 	 
+/*
+ ** Markup free clearing that fixes unwanted scrollbars
+ ** @see http://drupal.org/node/232959
+ */
+ .date-clear-block:after {
+   content: " ";
+   display: block;
+   height: 0;
+   clear: both;
+   visibility: hidden;
+ }
+ .date-clear-block {
+   display: inline-block;
+ }
+ /* Hides from IE-mac \*/
+ * html .date-clear-block {
+   height: 1%;
+ }
+ .date-clear-block {
+   display: block;
+ }
  /* End hide from IE-mac */
 
 .date-container .date-format-delete {
@@ -186,7 +186,7 @@ div.date-calendar-day {
   font-family: Georgia, Arial, Verdana, sans;
 }
 div.date-calendar-day span {
-  display: block;  
+  display: block;
   text-align: center;
 }
 div.date-calendar-day span.month {

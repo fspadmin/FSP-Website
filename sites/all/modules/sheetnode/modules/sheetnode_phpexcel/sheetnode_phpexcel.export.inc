@@ -1,171 +1,318 @@
 <?php
-// $Id: sheetnode_phpexcel.export.inc,v 1.1.2.4 2010/12/14 03:20:39 kratib Exp $
 
+/**
+ * Helper function to export a node using PHPExcel.
+ */
 function _sheetnode_phpexcel_export($format, $node) {
   require_once(drupal_get_path('module', 'sheetnode') . '/socialcalc.inc');
-  if (!$node || $node->type != 'sheetnode') return drupal_not_found();
-  return _sheetnode_phpexcel_export_do($format, $node->title, socialcalc_parse(_sheetnode_load($node->nid, $node->vid)));
+  if (empty($node)) return drupal_not_found();
+
+  $sheets = array(); 
+  if ($node->type == 'sheetnode') {
+    $sheets[$node->title] = socialcalc_parse($node->sheetnode['value']);
+  }
+  $sheetfields = sheetnode_get_sheetfields($node->type);
+  if (!empty($sheetfields)) foreach ($sheetfields as $sheetfield) {
+    foreach ($node->{$sheetfield['field_name']} as $delta => $item) {
+      $sheets[$sheetfield['widget']['label'] .' '. ($delta+1)] = socialcalc_parse($item['value']);
+    }
+  }
+  if (empty($sheets)) return drupal_not_found();
+
+  sheetnode_phpexcel_batch_export($sheets, $node->title, $format);
+  /* DEBUGGING
+   * Simulate Batch API with sequential processing for easier debugging.
+   */
+  /*
+  $context = array();
+  $operations = array();
+  foreach ($sheets as $title => $socialcalc) {
+    _sheetnode_phpexcel_batch_export_sheet($title, $socialcalc, 'test', 'xls', '', $context);
+  }
+  return '';
+  */
 }
 
-function _sheetnode_phpexcel_export_do($format, $title, $socialcalc) {
+/**
+ * Batch API callback to export a single sheet to PHPExcel.
+ */
+function _sheetnode_phpexcel_batch_export_sheet($title, $socialcalc, $filename, $format, $destination, &$context) {
   require_once(variable_get('sheetnode_phpexcel_library_path', '') . '/Classes/PHPExcel.php');
 
-  // Create new PHPExcel object
+  if (empty($context['results']['workbook'])) {
+    $workbook = $context['results']['workbook'] = new PHPExcel();
+    $worksheet = $workbook->getActiveSheet();
+    $context['results'] += array(
+      'filename' => $filename,
+      'format' => $format,
+      'destination' => $destination,
+    );
+  }
+  else {
+    $workbook = $context['results']['workbook'];
+    $worksheet = $workbook->createSheet($workbook->getSheetCount());
+  }
+
+  _sheetnode_phpexcel_export_sheet($worksheet, $title, $socialcalc);
+
+  $context['message'] = t('Processed sheet %sheet.', array('%sheet' => $worksheet->getTitle()));
+}
+
+/**
+ * Batch API callback upon export completion.
+ */
+function _sheetnode_phpexcel_batch_export_finished($success, $results, $operations) {
+  require_once(variable_get('sheetnode_phpexcel_library_path', '') . '/Classes/PHPExcel.php');
+  @set_time_limit(0);
+
+  if ($success) {
+    // Save to temporary file.
+    $plugins = sheetnode_phpexcel_get_plugins();
+    $plugin = $plugins[$results['format']];
+    $writer = PHPExcel_IOFactory::createWriter($results['workbook'], $plugin['php-excel-type']);
+    $tempname = tempnam(file_directory_temp(), 'sheetnode_phpexcel_');
+    $writer->save($tempname);
+
+    // Save information for download link.
+    $_SESSION['sheetnode_phpexcel_download'] = array(
+      'tempname' => $tempname,
+      'filename' => _sheetnode_phpexcel_sanitize_filename($results['filename']) . '.' . $results['format'],
+      'format' => $results['format'],
+      'destination' => $results['destination'],
+    );
+  }
+}
+
+/**
+ * Template preprocessor for theme('sheetnode_phpexcel_export_ready').
+ */
+function sheetnode_phpexcel_preprocess_sheetnode_phpexcel_export_ready(&$vars) {
+  if (empty($_SESSION['sheetnode_phpexcel_download'])) drupal_not_found();
+  $download = $_SESSION['sheetnode_phpexcel_download'];
+
+  $vars['download'] = url('sheetnode/export/download');
+  $vars['filename'] = $download['filename'];
+  $vars['destination'] = $download['destination'];
+
+  // Set the page to automatically redirect to download file after 3 seconds.
+  drupal_set_html_head('<meta http-equiv="refresh" content="3;url=' . check_plain($vars['download']) . '" />');
+}
+
+/**
+ * Page callback for 'sheetnode/export/download'.
+ */
+function _sheetnode_phpexcel_export_download() {
+  if (empty($_SESSION['sheetnode_phpexcel_download'])) drupal_not_found();
+  $download = $_SESSION['sheetnode_phpexcel_download'];
+
+  $plugins = sheetnode_phpexcel_get_plugins();
+  $plugin = $plugins[$download['format']];
+  $headers = array(
+    'Content-Type: ' . $plugin['content-type'],
+    'Content-Disposition: attachment; filename="' . $download['filename'] . '"',
+    'Cache-Control: max-age=0',
+  );
+  file_transfer($download['tempname'], $headers);
+}
+ 
+/**
+ * Helper function to export a single spreadsheet.
+ */
+function _sheetnode_phpexcel_export_sheet($worksheet, $title, $socialcalc) {
+  require_once(drupal_get_path('module', 'sheetnode') . '/socialcalc.inc');
+  @set_time_limit(0);
+
   $sc = $socialcalc['sheet'];
-  $workbook = new PHPExcel();
+  $workbook = $worksheet->getParent();
 
   // Title
   try {
-    // TODO: Split titles with format "Spreadsheet > Workbook" and sanitize.
-    $workbook->getActiveSheet()->SetTitle($title);
+    $worksheet->SetTitle($title);
   }
   catch (Exception $e) {
     watchdog('sheetnode_phpexcel', 'Error setting worksheet title to "!title": @error', array('!title' => $title, '@error' => $e->getMessage()), WATCHDOG_WARNING);
   }
 
-/*
-  // TODO: Properties
-  $workbook->getProperties()->setCreator("Maarten Balliauw")
-                 ->setLastModifiedBy("Maarten Balliauw")
-                 ->setTitle("Office 2007 XLSX Test Document")
-                 ->setSubject("Office 2007 XLSX Test Document")
-                 ->setDescription("Test document for Office 2007 XLSX, generated using PHP classes.")
-                 ->setKeywords("office 2007 openxml php")
-                 ->setCategory("Test result file");
-*/
   // Names
-  // TODO: Not supported in Excel5.
-  if (!empty($sc['names'])) foreach ($sc['names'] as $n => $info) {
-    // TODO: Support external references.
-    $workbook->addNamedRange(new PHPExcel_NamedRange($n, $workbook->getActiveSheet(), $info['definition']));
+  if (!empty($sc['names'])) foreach ($sc['names'] as $name => $info) {
+    $definition = ltrim($info['definition'], '=');
+    @list($sheetname, $reference) = explode('!', $definition, 2);
+    if (empty($reference)) {
+      $reference = $definition;
+      $external = $worksheet;
+    }
+    else {
+      $sheetname = trim($sheetname, '"\'');
+      list($value, $title2) = sheetnode_find_sheet($sheetname);
+      if ($value) {
+        $external = $workbook->getSheetByName($title2);
+        if (!$external) {
+          $external = $workbook->createSheet($workbook->getSheetCount());
+          $socialcalc2 = socialcalc_parse($value);
+          _sheetnode_phpexcel_export_sheet($external, $title2, $socialcalc2);
+        }
+      }
+    }
+    // TODO: PHPExcel does not support non-range names.
+    try {
+      $range = PHPExcel_Cell::rangeBoundaries($reference);
+    }
+    catch (Exception $e) {
+      watchdog('sheetnode_phpexcel', 'Could not export name %name with value %definition because non-range names are not yet supported.', array(
+        '%name' => $name,
+        '%definition' => $definition,
+      ));
+      continue;
+    }
+    if (!empty($external)) {
+      $workbook->addNamedRange(new PHPExcel_NamedRange($name, $external, $reference));
+    }
+    else {
+      watchdog('sheetnode_phpexcel', 'Could not export name %name with value %definition because %sheetname was not found.', array(
+        '%name' => $name,
+        '%definition' => $definition,
+        '%sheetname' => $sheetname,
+      ));
+    }
   }
 
   // Cells
   if ($sc['cells']) foreach ($sc['cells'] as $coord => $c) {
-    // Value and format
-    _sheetnode_phpexcel_export_cell_value_and_format($c, $coord, $sc, $workbook->getActiveSheet()); 
-
-    // Comment
-    // TODO: Not supported in Excel5.
-    if (!empty($c['comment'])) {
-      $workbook->getActiveSheet()->getComment($coord)->getText()->createTextRun($c['comment']);
+    // Get cached style if any.
+    static $styles = array();
+    $hash = _sheetnode_phpexcel_export_get_style_hash($c);
+    if (empty($styles[$hash])) {
+      $styles[$hash] = $style = new PHPExcel_Style();
+    }
+    else {
+      $style = NULL; // mark that we don't need a new style.
     }
 
-    // Font
-    $style = $workbook->getActiveSheet()->getStyle($coord);
-    if (!empty($c['font'])) {
-      $scf = socialcalc_cellformat_parsefont($c, $sc);
+    // Value and format
+    _sheetnode_phpexcel_export_cell_value_and_format($c, $coord, $sc, $worksheet, $style); 
+
+    // Comment
+    if (!empty($c['comment'])) {
+      $worksheet->getComment($coord)->getText()->createTextRun($c['comment']);
+    }
+    
+    if (!empty($style)) {
+      // Font
       $font = $style->getFont();
-      if (!empty($scf['family'])) $font->setName($scf['family']);
-      if (!empty($scf['size'])) $font->setSize(floatval($scf['size']));
-      if (!empty($scf['bold'])) $font->setBold(true);
-      if (!empty($scf['italic'])) $font->setItalic(true);
+      if (!empty($c['font'])) {
+        $scf = socialcalc_cellformat_parsefont($c, $sc);
+        if (!empty($scf['family'])) $font->setName($scf['family']);
+        if (!empty($scf['size'])) $font->setSize(floatval($scf['size']));
+        if (!empty($scf['bold'])) $font->setBold(true);
+        if (!empty($scf['italic'])) $font->setItalic(true);
+      }
       if (!empty($c['color'])) {
         $scc = socialcalc_cellformat_parsecolor($c, $sc, 'color');
         $rgb = sprintf('%02X%02X%02X', $scc['r'], $scc['g'], $scc['b']);
         $font->getColor()->setRGB($rgb);
       }
-    }
-
-    // Borders
-    foreach (array(
-      'br' => 'getRight', 
-      'bl' => 'getLeft', 
-      'bt' => 'getTop', 
-      'bb' => 'getBottom',
-    ) as $pos => $method) {
-      $border = socialcalc_cellformat_parseborder($c, $sc, $pos);
-      if (empty($border)) continue;
-      $borderobj = $style->getBorders()->$method();
-      $thickness = str_replace('px', '', $border['thickness']); // TODO: what about other units?
-      if ($thickness > 0 && $thickness < 7) {
-        $thickness = 'thin';
+  
+      // Borders
+      foreach (array(
+        'br' => 'getRight', 
+        'bl' => 'getLeft', 
+        'bt' => 'getTop', 
+        'bb' => 'getBottom',
+      ) as $pos => $method) {
+        $border = socialcalc_cellformat_parseborder($c, $sc, $pos);
+        if (empty($border)) continue;
+        $borderobj = $style->getBorders()->$method();
+        $thickness = str_replace('px', '', $border['thickness']); // TODO: what about other units?
+        if ($thickness > 0 && $thickness < 7) {
+          $thickness = 'thin';
+        }
+        else if ($thickness > 7 && $thickness < 15) {
+          $thickness = 'medium';
+        }
+        else if ($thickness > 15) {
+          $thickness = 'thick';
+        }
+        $borderstyles = array(
+          'thin' => array(
+            'solid' => PHPExcel_Style_Border::BORDER_THIN,
+            'dashed' => PHPExcel_Style_Border::BORDER_DASHED,
+            'dotted' => PHPExcel_Style_Border::BORDER_DOTTED,
+            'double' => PHPExcel_Style_Border::BORDER_DOUBLE,
+          ),
+          'medium' => array(
+            'solid' => PHPExcel_Style_Border::BORDER_MEDIUM,
+            'dashed' => PHPExcel_Style_Border::BORDER_MEDIUMDASHED,
+          ),
+          'thick' => array(
+            'solid' => PHPExcel_Style_Border::BORDER_THICK,
+          ),
+        );
+        // TODO: what about other combinations?
+        $borderstyle = isset($borderstyles[$thickness][$border['style']]) ? $borderstyles[$thickness][$border['style']] : PHPExcel_Style_Border::BORDER_THIN;
+        $borderobj->setBorderStyle($borderstyle);
+        $scc = $border['color'];
+        $rgb = sprintf('%02X%02X%02X', $scc['r'], $scc['g'], $scc['b']);
+        $borderobj->getColor()->setRGB($rgb);
       }
-      else if ($thickness > 7 && $thickness < 15) {
-        $thickness = 'medium';
-      }
-      else if ($thickness > 15) {
-        $thickness = 'thick';
-      }
-      $borderstyles = array(
-        'thin' => array(
-          'solid' => PHPExcel_Style_Border::BORDER_THIN,
-          'dashed' => PHPExcel_Style_Border::BORDER_DASHED,
-          'dotted' => PHPExcel_Style_Border::BORDER_DOTTED,
-          'double' => PHPExcel_Style_Border::BORDER_DOUBLE,
-        ),
-        'medium' => array(
-          'solid' => PHPExcel_Style_Border::BORDER_MEDIUM,
-          'dashed' => PHPExcel_Style_Border::BORDER_MEDIUMDASHED,
-        ),
-        'thick' => array(
-          'solid' => PHPExcel_Style_Border::BORDER_THICK,
-        ),
-      );
-      // TODO: what about other combinations?
-      $borderstyle = isset($borderstyles[$thickness][$border['style']]) ? $borderstyles[$thickness][$border['style']] : PHPExcel_Style_Border::BORDER_THIN;
-      $borderobj->setBorderStyle($borderstyle);
-      $scc = $border['color'];
-      $rgb = sprintf('%02X%02X%02X', $scc['r'], $scc['g'], $scc['b']);
-      $borderobj->getColor()->setRGB($rgb);
-    }
 
-    // Background color
-    if (!empty($c['bgcolor'])) {
-      $scc = socialcalc_cellformat_parsecolor($c, $sc, 'bgcolor');
-      $rgb = sprintf('%02X%02X%02X', $scc['r'], $scc['g'], $scc['b']);
-      $style->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
-      $style->getFill()->getStartColor()->setRGB($rgb);
-    }
+      // Background color
+      if (!empty($c['bgcolor'])) {
+        $scc = socialcalc_cellformat_parsecolor($c, $sc, 'bgcolor');
+        $rgb = sprintf('%02X%02X%02X', $scc['r'], $scc['g'], $scc['b']);
+        $style->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
+        $style->getFill()->getStartColor()->setRGB($rgb);
+      }
 
-    // Alignment
-    if (!empty($c['cellformat'])) {
-      $alignments = array(
-        'left' => PHPExcel_Style_Alignment::HORIZONTAL_LEFT,
-        'right' => PHPExcel_Style_Alignment::HORIZONTAL_RIGHT,
-        'center' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
-      );
-      $alignment = isset($alignments[$sc['cellformats'][$c['cellformat']]]) ? $alignments[$sc['cellformats'][$c['cellformat']]] : NULL;
-      if ($alignment) {
-        $style->getAlignment()->setHorizontal($alignment);
+      // Alignment
+      if (!empty($c['cellformat'])) {
+        $alignments = array(
+          'left' => PHPExcel_Style_Alignment::HORIZONTAL_LEFT,
+          'right' => PHPExcel_Style_Alignment::HORIZONTAL_RIGHT,
+          'center' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+        );
+        $alignment = isset($alignments[$sc['cellformats'][$c['cellformat']]]) ? $alignments[$sc['cellformats'][$c['cellformat']]] : NULL;
+        if ($alignment) {
+          $style->getAlignment()->setHorizontal($alignment);
+        }
+      }
+
+      // Vertical Alignment
+      $layout = socialcalc_cellformat_parselayout($c, $sc);
+      if (!empty($layout['alignvert'])) {
+        $valignments = array(
+          'top' => PHPExcel_Style_Alignment::VERTICAL_TOP,
+          'bottom' => PHPExcel_Style_Alignment::VERTICAL_BOTTOM,
+          'middle' => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+        );
+        $valignment = isset($valignments[$layout['alignvert']]) ? $valignments[$layout['alignvert']] : NULL;
+        if ($valignment) {
+          $style->getAlignment()->setVertical($valignment);
+        }
       }
     }
-
-    // Vertical Alignment
-    $layout = socialcalc_cellformat_parselayout($c, $sc);
-    if (!empty($layout['alignvert'])) {
-      $valignments = array(
-        'top' => PHPExcel_Style_Alignment::VERTICAL_TOP,
-        'bottom' => PHPExcel_Style_Alignment::VERTICAL_BOTTOM,
-        'middle' => PHPExcel_Style_Alignment::VERTICAL_CENTER,
-      );
-      $valignment = isset($valignments[$layout['alignvert']]) ? $valignments[$layout['alignvert']] : NULL;
-      if ($valignment) {
-        $style->getAlignment()->setVertical($valignment);
-      }
-    }
-
+    $worksheet->duplicateStyle($styles[$hash], $coord);
+ 
     // Merged regions
-    if ($c['colspan'] > 1 || $c['rowspan'] > 1) {
-      $coord2 = socialcalc_cr_to_coord($c['pos'][0]+max($c['colspan']-1, 0), $c['pos'][1]+max($c['rowspan']-1, 0));
-      $workbook->getActiveSheet()->mergeCells($coord .':'. $coord2);
+    if (@$c['colspan'] > 1 || @$c['rowspan'] > 1) {
+      $coord2 = socialcalc_cr_to_coord($c['pos'][0]+max(@$c['colspan']-1, 0), $c['pos'][1]+max(@$c['rowspan']-1, 0));
+      $worksheet->mergeCells($coord .':'. $coord2);
     }
   }
 
   // Columns
-  $font = $workbook->getActiveSheet()->getDefaultStyle()->getFont();
+  $font = $worksheet->getDefaultStyle()->getFont();
   if (!empty($sc['colattribs']['width'])) foreach($sc['colattribs']['width'] as $c => $width) {
-    $workbook->getActiveSheet()->getColumnDimension(PHPExcel_Cell::stringFromColumnIndex($c-1))->setWidth(PHPExcel_Shared_Drawing::pixelsToCellDimension($width, $font));
+    $worksheet->getColumnDimension(PHPExcel_Cell::stringFromColumnIndex($c-1))->setWidth(PHPExcel_Shared_Drawing::pixelsToCellDimension($width, $font));
   }
 
   // Rows
   if (!empty($sc['rowattribs']['height'])) foreach($sc['rowattribs']['height'] as $r => $height) {
-    $workbook->getActiveSheet()->getRowDimension($r)->setRowHeight($height);
+    $worksheet->getRowDimension($r)->setRowHeight($height);
   }
 
   // Test formulas and replace with calculated value upon failure.
-  foreach ($workbook->getActiveSheet()->getCellCollection() as $cellID) {
-    $cell = $workbook->getActiveSheet()->getCell($cellID);
+  foreach ($worksheet->getCellCollection() as $cellID) {
+    $cell = $worksheet->getCell($cellID);
     if ($cell->getDatatype() == PHPExcel_Cell_DataType::TYPE_FORMULA) {
       try {
         $cell->getCalculatedValue(); // don't care about return value
@@ -174,32 +321,38 @@ function _sheetnode_phpexcel_export_do($format, $title, $socialcalc) {
         $coord = $cell->getCoordinate();
         $cell->setValue($sc['cells'][$coord]['datavalue']);
         $comment = t(variable_get('sheetnode_phpexcel_bad_formula', 'Could not export formula !formula.'), array('!formula' => $sc['cells'][$coord]['formula']));
-        $workbook->getActiveSheet()->getComment($coord)->getText()->createTextRun($comment);
+        $worksheet->getComment($coord)->getText()->createTextRun($comment);
       }
     }
   }
-  //return '';
 
-  // Redirect output to a client’s web browser.
-  $plugins = sheetnode_phpexcel_get_plugins();
-  $plugin = $plugins[$format];
-  header('Content-Type: ' . $plugin['content-type']);
-  header('Content-Disposition: attachment;filename="' . _sheetnode_sanitize_filename($title, $format) . '"');
-  header('Cache-Control: max-age=0');
-
-  $writer = PHPExcel_IOFactory::createWriter($workbook, $plugin['php-excel-type']);
-  $writer->save('php://output');
-  exit;
+  // Reset style cache.
+  unset($styles);
 }
 
-function _sheetnode_phpexcel_export_cell_value_and_format($c, $coord, $sc, $worksheet) {
+/**
+ * Helper function to get a style's hash.
+ */
+function _sheetnode_phpexcel_export_get_style_hash($c) {
+  $styles = array();
+  foreach (array('font', 'color', 'bgcolor', 'cellformat', 'alignvert', 'bt', 'bb', 'bl', 'br', 'nontextvalueformat') as $attrib) {
+    if (!empty($c[$attrib])) {
+      $styles[] = $attrib . ':' . $c[$attrib];
+    }
+  }
+  return md5(implode(',', $styles));
+}
+
+/**
+ * Helper function to export a cell.
+ */
+function _sheetnode_phpexcel_export_cell_value_and_format($c, $coord, $sc, $worksheet, $style) {
   // Taken from socialcalc-3.js:SocialCalc.FormatValueForDisplay().
   $cell = $worksheet->getCell($coord);
-  $style = $worksheet->getStyle($coord);
 
-  $valuetype = substr($c['valuetype'], 0, 1);
-  $valuesubtype = substr($c['valuetype'], 1);
-  $displayvalue = $c['datavalue'];
+  $valuetype = empty($c['valuetype']) ? NULL : substr($c['valuetype'], 0, 1);
+  $valuesubtype = empty($c['valuetype']) ? NULL : substr($c['valuetype'], 1);
+  $displayvalue = @$c['datavalue'];
   $valueformat = NULL;
   
   // Error.
@@ -235,15 +388,27 @@ function _sheetnode_phpexcel_export_cell_value_and_format($c, $coord, $sc, $work
 
     // Set the value.
     if ($c['datatype'] == 'f') {
-      $cell->setValue('='. $c['formula']);
+      if (strpos($c['formula'], '!') !== FALSE) {
+        _sheetnode_phpexcel_export_reference($c, $cell, $worksheet);
+      }
+      else {
+        $cell->setValue('='. $c['formula']);
+      }
     }
     else switch ($valueformat) {
     case 'text-plain':
       $cell->setValueExplicit($displayvalue, PHPExcel_Cell_DataType::TYPE_STRING);
       break;
     case 'text-html':
-      // TODO: Parse HTML into rich text.
-      $cell->setValueExplicit(strip_tags($displayvalue), PHPExcel_Cell_DataType::TYPE_STRING);
+      $html2rtf = new Sheetnode_PHPExcel_HTML2RichText($displayvalue);
+      $rtf = $html2rtf->convert($cell);
+      if ($rtf) {
+        $cell->setValue($rtf);
+      }
+      else {
+        $stripped = preg_replace('/^\s+|\s+$/', '', strip_tags($displayvalue));
+        $cell->setValueExplicit($stripped, PHPExcel_Cell_DataType::TYPE_STRING);
+      }
       break;
     case 'text-url':
     case 'text-link':
@@ -343,7 +508,12 @@ function _sheetnode_phpexcel_export_cell_value_and_format($c, $coord, $sc, $work
 
     // Set the value.
     if ($c['datatype'] == 'f') {
-      $cell->setValue('='. $c['formula']);
+      if (strpos($c['formula'], '!') !== FALSE) {
+        _sheetnode_phpexcel_export_reference($c, $cell, $worksheet);
+      }
+      else {
+        $cell->setValue('='. $c['formula']);
+      }
     }
     else if ($valueformat == 'logical') {
       $displayvalue = empty($displayvalue) ? SocialCalc_Constants::$defaultDisplayFALSE : SocialCalc_Constants::$defaultDisplayTRUE;
@@ -364,13 +534,149 @@ function _sheetnode_phpexcel_export_cell_value_and_format($c, $coord, $sc, $work
     if ($valueformat == 'hidden') {
       // TODO
     }
-    else if (!empty($valueformat)) {
+    else if (!empty($valueformat) && !empty($style)) {
       $style->getNumberFormat()->setFormatCode($valueformat);
     }
   }
   // Unknown.
   else {
     $cell->setValueExplicit('', PHPExcel_Cell_DataType::TYPE_NULL);
+  }
+}
+
+/**
+ * Helper to export referenced sheet.
+ */
+function _sheetnode_phpexcel_export_reference($c, $cell, $worksheet) {
+  list($sheetname, $reference) = explode('!', $c['formula'], 2);
+  $sheetname = trim($sheetname, '"\'');
+  list($value, $title) = sheetnode_find_sheet($sheetname);
+  if ($value) {
+    $workbook = $worksheet->getParent();
+    $external = $workbook->getSheetByName($title);
+    if (!$external) {
+      $external = $workbook->createSheet($workbook->getSheetCount());
+      $socialcalc = socialcalc_parse($value);
+      _sheetnode_phpexcel_export_sheet($external, $title, $socialcalc);
+    }
+    $cell->setValue('=\'' . $title . '\'!' . $reference);
+  }
+  else {
+    $cell->setValue($c['datavalue']);
+    $comment = t(variable_get('sheetnode_phpexcel_bad_formula', 'Could not export formula !formula.'), array('!formula' => $c['formula']));
+    $worksheet->getComment($cell->getCoordinate())->getText()->createTextRun($comment);
+  }
+}
+
+/**
+ * Class to convert an HTML fragment to a fully-parsed array of styles.
+ * Uses TCDPF which is included in PHPExcel.
+ */
+if (class_exists('TCPDF')) {
+  class Sheetnode_PHPExcel_HTML2RichText extends TCPDF {
+    var $html;
+    public function Sheetnode_PHPExcel_HTML2RichText($html) {
+      $this->html = $html;
+      $this->setPageUnit('px');
+    }
+    public function convert($cell) {
+      $dom = $this->getHtmlDomArray($this->html);
+      if (empty($dom)) return FALSE;
+      $rtf = new PHPExcel_RichText();
+      $run = $rtf->createTextRun();
+      foreach ($dom as $entry) {
+        if ($entry['tag']) { // HTML tag
+          if (!$entry['opening']) continue;
+          // Defer the work to third-party implementations.
+          module_invoke_all('sheetnode_phpexcel_html2richtext', $run, $cell, $entry, $this);
+        }
+        else { // text
+          if (empty($entry['value'])) continue;
+          $run->setText($entry['value']);
+          $run = $rtf->createTextRun();
+        }
+        drupal_alter('sheetnode_phpexcel_html2richtext', $run, $cell, $entry, $this);
+      }
+      return $rtf;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_sheetnode_phpexcel_html2richtext.
+ *
+ * Handles standard HTML tags and converts them to styling commands on the current rich-text run.
+ *
+ * @param $run PHPExcel_RichText_Run instance
+ * @param $cell PHPExcel_Cell instance
+ * @param $entry array entry of DOM as returned by TCPDF::getHtmlDomArray()
+ * @param $converter Sheetnode_PHPExcel_HTML2RichText instance
+ */
+function sheetnode_phpexcel_sheetnode_phpexcel_html2richtext($run, $cell, $entry, $converter) {
+  // Set style based on tag.
+  switch ($entry['value']) {
+  case 'strong':
+  case 'b':
+    $run->getFont()->setBold(TRUE);
+    break;
+  case 'em':
+  case 'i':
+    $run->getFont()->setItalic(TRUE);
+    break;
+  case 'u':
+    $run->getFont()->setUnderline(PHPExcel_Style_Font::UNDERLINE_SINGLE);
+    break;
+  case 'strike':
+    $run->getFont()->setStrikethrough(TRUE);
+    break;
+  case 'sub':
+    $run->getFont()->setSubScript(TRUE);
+    break;
+  case 'sup':
+    $run->getFont()->setSuperScript(TRUE);
+    break;
+  case 'a':
+    if (!empty($entry['attribute']['href'])) {
+      $cell->getHyperlink()->setUrl($entry['attribute']['href']);
+    }
+    break;
+  }
+  // Set style based on tag attributes if any.
+  // Set style base on CSS style if any.
+  if (!empty($entry['style'])) foreach ($entry['style'] as $key => $value) switch ($key) {
+  case 'color':
+    $color = $converter->convertHTMLColorToDec($value);
+    $rgb = sprintf('%02X%02X%02X', $color['R'], $color['G'], $color['B']);
+    $run->getFont()->getColor()->setRGB($rgb);
+    break;
+  case 'font-family':
+    $run->getFont()->setName($value);
+    break;
+  case 'font-size':
+    $run->getFont()->setSize($converter->getHTMLUnitToUnits($value, 1, 'pt', TRUE));
+    break;
+  case 'font-style':
+    switch ($value) {
+    case 'italic':
+      $run->getFont()->setItalic(TRUE);
+      break;
+    }
+    break;
+  case 'text-decoration':
+    switch ($value) {
+    case 'underline':
+      $run->getFont()->setUnderline(PHPExcel_Style_Font::UNDERLINE_SINGLE);
+      break;
+    }
+    break;
+  case 'font-weight':
+    if ($value == 'bold' || $value == 'bolder' || $value >= 700) {
+      $run->getFont()->setBold(TRUE);
+    }
+    break;
+  case 'background-color':
+    // TODO: Text runs don't support background colors.
+    break; 
   }
 }
 

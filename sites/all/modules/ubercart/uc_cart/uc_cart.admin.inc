@@ -234,19 +234,19 @@ function uc_cart_cart_panes_form() {
     '#pane_prefix' => 'uc_cap',
     '#summary callback' => '_uc_cart_panes_summarize',
     '#summary arguments' => array($panes),
+    '#draggable' => 'uc-cart-pane-weight',
   );
   foreach ($panes as $pane) {
     $form['panes'][$pane['id']]['uc_cap_'. $pane['id'] .'_enabled'] = array(
       '#type' => 'checkbox',
+      '#title' => $pane['title'],
       '#default_value' => $pane['enabled'],
-    );
-    $form['panes'][$pane['id']]['title'] = array(
-      '#value' => $pane['title'],
     );
     $form['panes'][$pane['id']]['uc_cap_'. $pane['id'] .'_weight'] = array(
       '#type' => 'weight',
       '#delta' => 10,
       '#default_value' => $pane['weight'],
+      '#attributes' => array('class' => 'uc-cart-pane-weight'),
     );
   }
 
@@ -421,20 +421,20 @@ function uc_cart_checkout_panes_form() {
     '#pane_prefix' => 'uc_pane',
     '#summary callback' => '_uc_cart_panes_summarize',
     '#summary arguments' => array($panes),
+    '#draggable' => 'uc-checkout-pane-weight',
   );
   foreach ($panes as $pane) {
     $form['panes'][$pane['id']]['uc_pane_'. $pane['id'] .'_enabled'] = array(
       '#type' => 'checkbox',
+      '#title' => $pane['title'],
       '#default_value' => variable_get('uc_pane_'. $pane['id'] .'_enabled', TRUE),
-    );
-    $form['panes'][$pane['id']]['title'] = array(
-      '#value' => $pane['title'],
     );
     $form['panes'][$pane['id']]['uc_pane_'. $pane['id'] .'_weight'] = array(
       '#type' => 'weight',
-      '#default_value' => variable_get('uc_pane_'. $pane['id'] .'_weight', 0),
+      '#default_value' => variable_get('uc_pane_'. $pane['id'] .'_weight', $pane['weight']),
+      '#attributes' => array('class' => 'uc-checkout-pane-weight'),
     );
-    $form['panes'][$pane['id']]['#weight'] = variable_get('uc_pane_'. $pane['id'] .'_weight', 0);
+    $form['panes'][$pane['id']]['#weight'] = variable_get('uc_pane_'. $pane['id'] .'_weight', $pane['weight']);
 
     $null = NULL;
     $pane_settings = $pane['callback']('settings', $null, NULL);

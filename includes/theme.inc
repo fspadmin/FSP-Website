@@ -523,7 +523,7 @@ function list_themes($refresh = FALSE) {
 }
 
 /**
- * Generate the themed output.
+ * Generates the themed output.
  *
  * All requests for theme hooks must go through this function. It examines
  * the request and routes it to the appropriate theme function. The theme
@@ -539,14 +539,14 @@ function list_themes($refresh = FALSE) {
  * functions may be used to modify the $variables array. They are processed in
  * this order when available:
  *
- * - template_preprocess(&$variables)
+ * - template_preprocess(&$variables, $hook)
  *   This sets a default set of variables for all template implementations.
  *
  * - template_preprocess_HOOK(&$variables)
  *   This is the first preprocessor called specific to the hook; it should be
  *   implemented by the module that registers it.
  *
- * - MODULE_preprocess(&$variables)
+ * - MODULE_preprocess(&$variables, $hook)
  *   This will be called for all templates; it should only be used if there
  *   is a real need. It's purpose is similar to template_preprocess().
  *
@@ -557,7 +557,7 @@ function list_themes($refresh = FALSE) {
  *   preprocess function of foo_preprocess_node() can be created to intercept
  *   and alter the variable.
  *
- * - ENGINE_engine_preprocess(&$variables)
+ * - ENGINE_engine_preprocess(&$variables, $hook)
  *   This function should only be implemented by theme engines and exists
  *   so that it can set necessary variables for all hooks.
  *
@@ -565,7 +565,7 @@ function list_themes($refresh = FALSE) {
  *   This is the same as the previous function, but it is called for a single
  *   theming hook.
  *
- * - ENGINE_preprocess(&$variables)
+ * - ENGINE_preprocess(&$variables, $hook)
  *   This is meant to be used by themes that utilize a theme engine. It is
  *   provided so that the preprocessor is not locked into a specific theme.
  *   This makes it easy to share and transport code but theme authors must be
@@ -581,7 +581,7 @@ function list_themes($refresh = FALSE) {
  *   The same applies from the previous function, but it is called for a
  *   specific hook.
  *
- * - THEME_preprocess(&$variables)
+ * - THEME_preprocess(&$variables, $hook)
  *   These functions are based upon the raw theme; they should primarily be
  *   used by themes that do not use an engine or by sub-themes. It serves the
  *   same purpose as ENGINE_preprocess().
@@ -606,6 +606,7 @@ function list_themes($refresh = FALSE) {
  *   implementations for named objects.
  * @param ...
  *   Additional arguments to pass along to the theme function.
+ * 
  * @return
  *   An HTML string that generates the themed output.
  */
@@ -1032,24 +1033,24 @@ function theme_get_setting($setting_name, $refresh = FALSE) {
 
     if ($settings['toggle_logo']) {
       if ($settings['default_logo']) {
-        $settings['logo'] = file_create_url(dirname($theme_object->filename) .'/logo.png');
+        $settings['logo'] = base_path() . dirname($theme_object->filename) .'/logo.png';
       }
       elseif ($settings['logo_path']) {
-        $settings['logo'] = file_create_url($settings['logo_path']);
+        $settings['logo'] = base_path() . $settings['logo_path'];
       }
     }
 
     if ($settings['toggle_favicon']) {
       if ($settings['default_favicon']) {
         if (file_exists($favicon = dirname($theme_object->filename) .'/favicon.ico')) {
-          $settings['favicon'] = file_create_url($favicon);
+          $settings['favicon'] = base_path() . $favicon;
         }
         else {
-          $settings['favicon'] = file_create_url('misc/favicon.ico');
+          $settings['favicon'] = base_path() .'misc/favicon.ico';
         }
       }
       elseif ($settings['favicon_path']) {
-        $settings['favicon'] = file_create_url($settings['favicon_path']);
+        $settings['favicon'] = base_path() . $settings['favicon_path'];
       }
       else {
         $settings['toggle_favicon'] = FALSE;
@@ -1190,12 +1191,24 @@ function theme_status_messages($display = NULL) {
 }
 
 /**
- * Return a themed set of links.
+ * Returns HTML for a set of links.
  *
  * @param $links
- *   A keyed array of links to be themed.
+ *   An associative array of links to be themed. The key for each link
+ *   is used as its CSS class. Each link should be itself an array, with the
+ *   following elements:
+ *   - title: The link text.
+ *   - href: The link URL. If omitted, the 'title' is shown as a plain text
+ *     item in the links list.
+ *   - html: (optional) Whether or not 'title' is HTML. If set, the title
+ *     will not be passed through check_plain().
+ *   - attributes: (optional) Attributes for the anchor, or for the <span> tag
+ *     used in its place if no 'href' is supplied.
+ *   If the 'href' element is supplied, the entire link array is passed to l()
+ *   as its $options parameter.
  * @param $attributes
- *   A keyed array of attributes
+ *   An associative array of attributes for the UL containing the list of links.
+ *
  * @return
  *   A string containing an unordered list of links.
  */
@@ -1273,7 +1286,7 @@ function theme_links($links, $attributes = array('class' => 'links')) {
 function theme_image($path, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
   if (!$getsize || (is_file($path) && (list($width, $height, $type, $image_attributes) = @getimagesize($path)))) {
     $attributes = drupal_attributes($attributes);
-    $url = (url($path) == $path) ? $path : file_create_url($path);
+    $url = (url($path) == $path) ? $path : (base_path() . $path);
     return '<img src="'. check_url($url) .'" alt="'. check_plain($alt) .'" title="'. check_plain($title) .'" '. (isset($image_attributes) ? $image_attributes : '') . $attributes .' />';
   }
 }
@@ -1857,10 +1870,10 @@ function template_preprocess_page(&$variables) {
 
   // Construct page title
   if (drupal_get_title()) {
-    $head_title = array(strip_tags(drupal_get_title()), variable_get('site_name', 'Pressflow'));
+    $head_title = array(strip_tags(drupal_get_title()), variable_get('site_name', 'Drupal'));
   }
   else {
-    $head_title = array(variable_get('site_name', 'Pressflow'));
+    $head_title = array(variable_get('site_name', 'Drupal'));
     if (variable_get('site_slogan', '')) {
       $head_title[] = variable_get('site_slogan', '');
     }
@@ -1881,7 +1894,7 @@ function template_preprocess_page(&$variables) {
   $variables['primary_links']     = theme_get_setting('toggle_primary_links') ? menu_primary_links() : array();
   $variables['secondary_links']   = theme_get_setting('toggle_secondary_links') ? menu_secondary_links() : array();
   $variables['search_box']        = (theme_get_setting('toggle_search') ? drupal_get_form('search_theme_form') : '');
-  $variables['site_name']         = (theme_get_setting('toggle_name') ? filter_xss_admin(variable_get('site_name', 'Pressflow')) : '');
+  $variables['site_name']         = (theme_get_setting('toggle_name') ? filter_xss_admin(variable_get('site_name', 'Drupal')) : '');
   $variables['site_slogan']       = (theme_get_setting('toggle_slogan') ? filter_xss_admin(variable_get('site_slogan', '')) : '');
   $variables['css']               = drupal_add_css();
   $variables['styles']            = drupal_get_css();

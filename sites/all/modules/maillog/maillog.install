@@ -1,0 +1,149 @@
+<?php
+
+/**
+ * @file
+ * Provides the installation routines for the maillog module
+ */
+
+/**
+ * Implementation of hook_requirements().
+ */
+function maillog_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    if (variable_get('smtp_library', '') != drupal_get_path('module', 'maillog') . '/includes/maillog.inc') {
+      $requirements[] = array(
+        'title' => 'Maillog: SMTP Library',
+        'description' => t('SMTP library is not set to use Maillog. To fix the situation, re-enable Maillog in order to reset the SMTP library.'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+    else {
+      $requirements[] = array(
+        'title' => 'Maillog: SMTP Library',
+        'description' => t('SMTP library is set to use Maillog.'),
+        'severity' => 'REQUIREMENT_OK',
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function maillog_install() {
+  drupal_install_schema('maillog');
+  variable_set('smtp_library', drupal_get_path('module', 'maillog') . '/includes/maillog.inc');
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function maillog_enable() {
+  variable_set('smtp_library', drupal_get_path('module', 'maillog') . '/includes/maillog.inc');
+  variable_set('mimemail_engine', 'maillog');
+  variable_set('maillog_engine', 'maillog');
+}
+
+/**
+ * Implementation of hook_disable().
+ *
+ * Removing smtp_libraries settings.
+ *
+ * If the smptp_library variable refers to the maillog_smtp_library the variable will be resetted. It does not make sense to backup the smtp_library
+ * when enabling the maillog module, because before restoring when the maillog module gets disabled another module could changed the smtp variable.
+ */
+function maillog_disable() {
+  $maillog_smtp_library = drupal_get_path('module', 'maillog') . '/includes/maillog.inc';
+  $smtp_library = variable_get('smtp_library', '');
+  // reset smtp_library settings.
+  if ($smtp_library == $maillog_smtp_library) {
+    variable_set('smtp_library', '');
+  }
+  // reset settings from devel.module
+  $devel_old_smtp_library = variable_get('devel_old_smtp_library', '');
+  if ($devel_old_smtp_library == $maillog_smtp_library) {
+    variable_set('devel_old_smtp_library', '');
+  }
+  variable_del('maillog_engine');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function maillog_uninstall() {
+  drupal_uninstall_schema('maillog');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function maillog_schema() {
+  $schema['maillog'] = array(
+    'description' => t("Stores outgoing e-mail details for nodes of type 'maillog'."),
+    'fields' => array(
+      'idmaillog' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t("The mail_log {node}.nid"),
+      ),
+      'header_message_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t("The 'message-id' field of the e-mail."),
+      ),
+      'header_from' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t("The 'From' field of the e-mail."),
+      ),
+      'header_to' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t("The 'To' field of the e-mail."),
+      ),
+      'header_reply_to' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t("The 'Reply-To' field of the e-mail."),
+      ),
+      'header_all' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t("The 'Header' field of the e-mail."),
+      ),
+      'subject' => array(
+        'description' => t("The 'Subject' fieldof the e-mail."),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'body' => array(
+        'description' => 'The body of this version.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big'
+      ),
+      'sent_date' => array(
+        'description' => 'The Unix timestamp when the mail was sent.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('idmaillog'),
+  );
+
+  return $schema;
+}

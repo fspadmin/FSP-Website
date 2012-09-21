@@ -1,5 +1,4 @@
 <?php
-// $Id: date_php4.inc,v 1.27.4.41 2010/08/13 10:50:52 karens Exp $
 
 /**
  * @file
@@ -65,9 +64,9 @@ if (!function_exists('date_create')) {
       // Create a current date for an empty value or 'now'.
       $date_out = date_date('Y-m-d H:i:s', (time()), $timezone);
     }
-    elseif (substr($date_in, 0, 1) == '@' && is_numeric(substr($date_in, 1))) {
+    elseif (drupal_substr($date_in, 0, 1) == '@' && is_numeric(drupal_substr($date_in, 1))) {
       // An number prefixed with '@' is interpreted as a timestamp.
-      $date_out = date_date('Y-m-d H:i', substr($date_in, 1), $timezone);
+      $date_out = date_date('Y-m-d H:i', drupal_substr($date_in, 1), $timezone);
     }
     elseif (preg_match(DATE_REGEX_LOOSE, $date_in, $regs)) {
       $year = date_pad(isset($regs[1]) ? $regs[1] : 0, 4);
@@ -90,7 +89,7 @@ if (!function_exists('date_create')) {
     if (empty($date_out)) {
       return NULL;
     }
-    $date = new StdClass();
+    $date = new stdClass();
     $date->value = $date_out;
     $date->timestamp = date_datetime2timestamp($date->value, $timezone);
     $date->timezone = $timezone;
@@ -142,10 +141,10 @@ if (!function_exists('date_format')) {
               $date_string .= $days[$dow];
             }
             elseif ($c == 'D') {
-              // There is no date_week_days_abbr_untranslated(). 
+              // There is no date_week_days_abbr_untranslated().
               // This rule works for English, untranslated day names.
               $days = date_week_days_abbr();
-              $date_string .= substr($days[$dow], 0, 3);
+              $date_string .= drupal_substr($days[$dow], 0, 3);
             }
             break;
           case 'L':
@@ -190,8 +189,8 @@ if (!function_exists('date_format')) {
             $result = date_calc_gregorian_to_ISO(date_part_extract($date->value, 'day'),
               date_part_extract($date->value, 'month'),
               date_part_extract($date->value, 'year'));
-            $result = explode('-', $result);  
-            $date_string .= $result[1];  
+            $result = explode('-', $result);
+            $date_string .= $result[1];
           default:
             if (strpos('AaeDFlMTBcdGgHhIijLmNnOoPrSstUuwYyZz', $c) !== FALSE) {
               $date_string .= date_date($c, $timestamp, $date->timezone);
@@ -393,20 +392,20 @@ if (!function_exists('date_modify')) {
  *   the date that matches the phrase.
  *
  */
-  function date_modify(&$date, $change) { 
+  function date_modify(&$date, $change) {
     $cdate = $date->value;
-    $time = substr($date->value, 11, 8);
-   
+    $time = drupal_substr($date->value, 11, 8);
+
     // We have to use strings like 'First Sunday' instead of
     // +1 Sunday to overcome a PHP5 bug (see #369020).
     // Swap those values out here and go back to '+1 Sunday',
     // the code that works in PHP4.
     $replace = array_flip(date_order());
     $change = strtr($change, $replace);
-    
-    $change = trim($change);   
+
+    $change = trim($change);
     //Date is too old for strtotime(), or looking for custom +/- values, use date_calc instead.
-    if (substr($change, 0, 1) != '+' && substr($change, 0, 1) != '-'
+    if (drupal_substr($change, 0, 1) != '+' && drupal_substr($change, 0, 1) != '-'
     && 1971 < date_part_extract($cdate, 'year')
     && date_part_extract($cdate, 'year') < 2038) {
       $cdate = strtotime($change, strtotime($cdate .' UTC'));
@@ -424,8 +423,8 @@ if (!function_exists('date_modify')) {
       if (empty($results) || empty($item)) {
         return;
       }
-      if (substr($item, -1) == 's') {
-        $item = substr($item, 0, strlen($item) - 1);
+      if (drupal_substr($item, -1) == 's') {
+        $item = drupal_substr($item, 0, strlen($item) - 1);
       }
       // Process +/- Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday
       if (in_array($item, $days)) {
@@ -564,13 +563,13 @@ if (!function_exists('timezone_abbreviations_list')) {
  *
  * Expanded array looks like:
  * array(
- *   'cdt' => array (
- *     0 => array (
+ *   'cdt' => array(
+ *     0 => array(
  *      'dst' => true,
  *      'offset' => -18000,
  *      'timezone_id' => 'America/Chicago',
  *     ),
- *     1 => array (
+ *     1 => array(
  *      'dst' => true,
  *      'offset' => -14400,
  *      'timezone_id' => 'America/Havana',
@@ -614,13 +613,13 @@ function date_is_dst($timestamp, $timezone = NULL) {
   if (empty($timezone)) {
     $timezone = date_default_timezone_name();
   }
-  
+
   static $timezone_map = array();
   if (empty($timezone_map)) {
     include(drupal_get_path('module', 'date_php4') .'/date_php4_tz_map.inc');
   }
   $region = array_key_exists($timezone, $timezone_map) ? $timezone_map[$timezone]['dst_region'] : 0;
-           
+
   // This should really be done with date_date() to get the right timezone
   // adjustment for the year, but that leads to circular code that won't
   // work, so we're stuck with date(), which hopefully will create the right
@@ -692,7 +691,7 @@ function date_is_dst($timestamp, $timezone = NULL) {
           $dstend = strtotime("-1 sunday GMT", strtotime("12 october $year GMT"))+ 7200;
           break;
         default:
-          return false;
+          return FALSE;
       }
       break;
     case 6: // Lebanon, Kirgizstan
@@ -869,14 +868,14 @@ require_once('./'. drupal_get_path('module', 'date_php4') .'/date_php4_lib.inc')
  * @param $timezone name
  *   Use 'UTC' to avoid timezone conversion.
  */
-function date_getdate($timestamp = false, $timezone = false) {
+function date_getdate($timestamp = FALSE, $timezone = FALSE) {
   return _date_getdate($timestamp, $timezone);
 }
 
 /**
  * Like date_getdate with no GMT conversion.
  */
-function date_gmgetdate($timestamp = false) {
+function date_gmgetdate($timestamp = FALSE) {
   if (!$timestamp) return array();
   $array    = date_getdate($timestamp, 'UTC');
   $array[0] = $timestamp;
@@ -893,12 +892,12 @@ function date_gmgetdate($timestamp = false) {
  * @param $timezone name
  *   Use 'UTC' to avoid timezone conversion.
  */
-function date_date($format, $timestamp = false, $timezone = false) {
+function date_date($format, $timestamp = FALSE, $timezone = FALSE) {
   // date($format) will adjust to the server timezone, which may
-  // not be right, but we don't use it in this module anywhere and 
-  // there is no easy way to get it working right without creating 
+  // not be right, but we don't use it in this module anywhere and
+  // there is no easy way to get it working right without creating
   // circular code.
-  if ($timestamp === false) return ($is_gmt)? @gmdate($format): @date($format);
+  if ($timestamp === FALSE) return ($is_gmt)? @gmdate($format): @date($format);
   if ($timezone === FALSE) {
     $timezone = date_default_timezone_name();
   }
@@ -920,13 +919,13 @@ function date_date($format, $timestamp = false, $timezone = false) {
 /**
  * Like date_date with no GMT conversion.
  */
-function date_gmdate($format, $timestamp = false, $test = false) {
+function date_gmdate($format, $timestamp = FALSE, $test = FALSE) {
   return date_date($format, $timestamp, 'UTC', $test);
 }
 
 /**
  * Return a timestamp given a local time.
- * 
+ *
  * @param $timezone name
  *   Use 'UTC' to avoid timezone conversion.
  *
@@ -934,7 +933,7 @@ function date_gmdate($format, $timestamp = false, $test = false) {
  * lower level functions to make sure we adjust to the right timezone
  * (native 'date' functions use the server timezone).
  */
-function date_mktime($hr, $min, $sec, $mon = false, $day = false, $year = false, $timezone = false) {
+function date_mktime($hr, $min, $sec, $mon = FALSE, $day = FALSE, $year = FALSE, $timezone = FALSE) {
   if ($timezone === FALSE) {
     $timezone = date_default_timezone_name();
   }
@@ -942,16 +941,16 @@ function date_mktime($hr, $min, $sec, $mon = false, $day = false, $year = false,
   $hr = intval($hr);
   $min = intval($min);
   $sec = intval($sec);
-  if ($mon === false && $is_gmt) {
+  if ($mon === FALSE && $is_gmt) {
     return @gmmktime($hr, $min, $sec);
   }
   $mon = intval($mon) > 0 ? intval($mon) : date('n');
   $day = intval($day) > 0 ? intval($day) : date('j');
   $year = intval($year) > 0 ? intval($year) : date('Y');
-  
+
   // Don't use native handling for any values that could create negative
   // timestamp, Windows does not support them at all in PHP 4, and
-  // the adodb date library notes that since RedHat 7.3, negative 
+  // the adodb date library notes that since RedHat 7.3, negative
   // timestamps are not supported in glibc either.
   // Step in one year on either side of allowable 1970-2038 window
   // to be sure timezone adjustments and month and day additions
@@ -959,20 +958,20 @@ function date_mktime($hr, $min, $sec, $mon = false, $day = false, $year = false,
   if (1971 < $year && $year < 2037 && $is_gmt) {
     return @gmmktime($hr, $min, $sec, $mon, $day, $year);
   }
-  
+
   return _date_mktime($hr, $min, $sec, $mon, $day, $year, $timezone);
 }
 
 /**
  * Like date_mktime with no GMT conversion.
 */
-function date_gmmktime($hr, $min, $sec, $mon = false, $day = false, $year = false) {
+function date_gmmktime($hr, $min, $sec, $mon = FALSE, $day = FALSE, $year = FALSE) {
   return date_mktime($hr, $min, $sec, $mon, $day, $year, 'UTC');
 }
 
 /**
  * Get local time zone offset from GMT.
- * 
+ *
  * @return timezone offset in seconds
  */
 function date_get_gmt_diff_ts($timestamp, $timezone = NULL) {
@@ -982,12 +981,11 @@ function date_get_gmt_diff_ts($timestamp, $timezone = NULL) {
   elseif (empty($timezone)) {
     $timezone = date_default_timezone_name();
   }
-  $date = new StdClass();
+  $date = new stdClass();
   $date->timestamp = $timestamp;
   $date->timezone = $timezone;
   return date_offset_get($date);
 }
-
 
 /**
  * Fix 2-digit years. Works for any century. Assumes that if 2-digit is
@@ -1035,7 +1033,7 @@ function date_dow($day, $month, $year) {
       $greg_correction = 0;
   } else
     $greg_correction = 0;
-  if($month > 2)
+  if ($month > 2)
       $month -= 2;
   else {
       $month += 10;
@@ -1051,14 +1049,14 @@ function date_dow($day, $month, $year) {
 }
 
 /**
- * Returns true for a leap year, else false. Works outside normal date range.
+ * Returns true for a leap year, else FALSE. Works outside normal date range.
  *
  * @param int  $year
  * @return boolean
  */
 function date_is_leap_year($year) {
   if ($year < 1000) {
-    return false;
+    return FALSE;
   }
   if ($year < 1582) { // pre Gregorio XIII - 1582
     return ($year % 4 == 0);

@@ -1,5 +1,4 @@
 <?php
-// $Id: dblog_filters.host.admin.inc,v 1.1.2.1 2009/10/09 19:45:26 nancyw Exp $
 
 function dblog_host_filter_settings() {
   $form['dblog_host_filter:comparison'] = array(

@@ -1,5 +1,4 @@
 <?php
-// $Id: dblog_filters.recent_aged.admin.inc,v 1.1.2.1 2009/10/09 19:45:26 nancyw Exp $
 
 function dblog_filters_recent_aged_settings() {
   $form['time_thresholds'] = array(
