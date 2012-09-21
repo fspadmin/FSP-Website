@@ -1,6 +1,7 @@
 <?php
 /**
- * Implementation of hoot_init()
+ *  Implementation of hoot_init()
+ *  Disables caching for the join wizard
  **/
 function fsp_join_init() {
   if (drupal_match_path($_GET['q'], 'fsp_join_wizard/*')) {
@@ -13,7 +14,7 @@ function fsp_join_init() {
  **/
 function fsp_join_menu() {
   $items['fsp_join_wizard'] = array(
-      'title' => 'Joining the FSP',
+      'title' => 'Join the FSP',
       'page callback' => 'fsp_join_wizard',
       'access arguments' => array('access content'),
   );
