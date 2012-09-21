@@ -2,30 +2,29 @@
 
 function fsp_join_step_start(&$form, &$form_state) {
   $data = $form_state['data_obj'];
-  $form['set'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Create your account'), 
-      '#description' => t(
-        'Thank you for registering with the Free State Project.  Because this is a project to track the number of individuals that pledge to move we require accurate address information.  In return we pledge to never share, sell, lend, or expose your private information with any third party.'.
+  $form['info'] = array(
+      '#type' => 'markup',
+      '#value' => t(
+        '<div class="info">Thank you for registering with the Free State Project.  Because this is a project to track the number of individuals that pledge to move we require accurate address information.  In return we pledge to never share, sell, lend, or expose your private information with any third party.'.
         '<br/><br/>'.
-        'Please register one individual at a time.  This ensures we have an accurate count and moves the counter up there on the wbsite.'
+        'Please register one individual at a time.  This ensures we have an accurate count and moves the counter up there on the wbsite. </div>'
         ),
       );
-  $form['set']['firstname'] = array(
+  $form['firstname'] = array(
       '#type' => 'textfield',
       '#title' => t('First Name'),
       '#default_value' => $data->firstname,
       '#maxlength' => 80,
       '#required' => true,
       );
-  $form['set']['lastname'] = array(
+  $form['lastname'] = array(
       '#type' => 'textfield',
       '#title' => t('Last Name'),
       '#default_value' => $data->lastname,
       '#maxlength' => 80,
       '#required' => true,
       );
-  $form['set']['mail'] = array(
+  $form['mail'] = array(
       '#type' => 'textfield',
       '#title' => t('E-mail address'),
       '#default_value' => $data->mail,
@@ -52,7 +51,7 @@ function fsp_join_step_start_validate(&$form, &$form_state) {
   $nowhitespace_values = array('firstname', 'lastname');
   foreach($nowhitespace_values as  $value) {
     if (FALSE !== strpos($submitted[$value], ' ')) {
-      form_set_error($value, "{$form['set'][$value]['#title']} must not contain spaces.");
+      form_set_error($value, "{$form[$value]['#title']} must not contain spaces.");
     }
   }
 }
