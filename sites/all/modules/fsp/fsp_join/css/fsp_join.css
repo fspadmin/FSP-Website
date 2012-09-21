@@ -2,9 +2,9 @@
   padding-left: 1.5em;
 }
 
-.page-fsp-join-wizard fieldset > .description {
+.page-fsp-join-wizard .info {
   border: 1px solid silver;
   padding: 4px 5px;
   background: #fafafa;
-  font-size: smaller;
+  font-size: larger;
 }
