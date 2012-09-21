@@ -5,9 +5,10 @@ function fsp_join_step_start(&$form, &$form_state) {
   $form['info'] = array(
       '#type' => 'markup',
       '#value' => t(
-        '<div class="info">Thank you for registering with the Free State Project.  Because this is a project to track the number of individuals that pledge to move we require accurate address information.  In return we pledge to never share, sell, lend, or expose your private information with any third party.'.
-        '<br/><br/>'.
-        'Please register one individual at a time.  This ensures we have an accurate count and moves the counter up there on the wbsite. </div>'
+        '<div class="info">
+        <p><strong>Thank you for joining the Free State Project!</strong></p>
+        <p>Accurate personal and address information is appreciated, and keeps the count trustworthy.  We will never share your private information with any third party.</p><p>Please register each adult member of your family separately.  This ensures an accurate count, and helps us reach our goal faster.</p>
+        </div>'
         ),
       );
   $form['firstname'] = array(
