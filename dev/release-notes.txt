@@ -1,4 +1,11 @@
-Release #641
+Release #643 9/25/2012, by lcalitz
+- Added journal module to document changes to config & edits to participants
+- Edited social network links, removing defunct ones, updating links of others
+
+Release #642 9/20/2012, by lcalitz
+- Disabled twitter module & removed call to it in fsp module. Broke cron.php.
+
+Release #641 9/20/2012, by lcalitz
 - Tweaks to stats graphs
 
 Release #640 9/19/2012, by lcalitz
