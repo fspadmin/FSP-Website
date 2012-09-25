@@ -1,0 +1,137 @@
+<?php
+// $Id: journal.install,v 1.2.2.7 2009/11/21 15:24:28 smk Exp $
+
+/**
+ * @file
+ * Installation functions for Journal module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function journal_schema() {
+  $schema['journal'] = array(
+    'description' => 'Stores all journal entries.',
+    'fields' => array(
+      'jid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE,
+        'description' => 'The primary identifier for a journal entry.',
+      ),
+      'uid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0,
+        'description' => 'The user id of the author of a journal entry.',
+      ),
+      'message' => array('type' => 'text', 'size' => 'big', 'not null' => TRUE,
+        'description' => 'The actual message of a journal entry.',
+      ),
+      'location' => array('type' => 'text', 'not null' => TRUE,
+        'description' => 'The internal Drupal path to the form a journal entry was entered in.',
+      ),
+      'timestamp' => array('type' => 'int', 'not null' => TRUE, 'default' => 0,
+        'description' => 'The UNIX timestamp when the journal entry was created.',
+      ),
+    ),
+    'primary key' => array('jid'),
+    'indexes' => array(
+      'location' => array(array('location', 32)),
+    ),
+  );
+  $schema['journal_patch'] = array(
+    'description' => 'Stores all journal patch records.',
+    'fields' => array(
+      'pid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE,
+        'description' => 'The primary identifier for a journal patch record.',
+      ),
+      'uid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0,
+        'description' => 'The user id of the author of a journal patch record.',
+      ),
+      'module' => array('type' => 'text', 'not null' => TRUE,
+        'description' => 'Affected module(s) of a journal patch record.',
+      ),
+      'description' => array('type' => 'text', 'size' => 'big', 'not null' => TRUE,
+        'description' => 'Description of a journal patch record.',
+      ),
+      'url' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '',
+        'description' => 'URL of a related issue for a journal patch record.',
+      ),
+      'status' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '',
+        'description' => 'Status of a journal patch record.',
+      ),
+      'timestamp' => array('type' => 'int', 'not null' => TRUE, 'default' => 0,
+        'description' => 'The UNIX timestamp when the journal patch record was created.',
+      ),
+    ),
+    'primary key' => array('pid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function journal_install() {
+  drupal_install_schema('journal');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function journal_uninstall() {
+  drupal_uninstall_schema('journal');
+}
+
+/**
+ * Add index for location.
+ */
+function journal_update_6100() {
+  $ret = array();
+  db_add_index($ret, 'journal', 'location', array(array('location', 32)));
+  return $ret;
+}
+
+/**
+ * Fix location of journal entries for path admin/build/modules.
+ */
+function journal_update_6101() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+    case 'pgsql':
+      $ret[] = update_sql("UPDATE {journal} SET location = 'admin/build/modules' WHERE location LIKE 'admin/build/modules/list%'");
+      $ret[] = update_sql("UPDATE {journal} SET location = 'admin/build/modules/uninstall' WHERE location LIKE 'admin/build/modules/uninstall%'");
+      break;
+  }
+  return $ret;
+}
+
+/**
+ * Add {journal_patch} table.
+ */
+function journal_update_6102() {
+  $ret = array();
+  if (!db_table_exists('journal_patch')) {
+    db_create_table($ret, 'journal_patch', array(
+      'fields' => array(
+        'pid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+        'uid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+        'module' => array('type' => 'text', 'not null' => TRUE),
+        'description' => array('type' => 'text', 'size' => 'big', 'not null' => TRUE),
+        'url' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+        'status' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+        'timestamp' => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+      ),
+      'primary key' => array('pid'),
+    ));
+  }
+  return $ret;
+}
+
+/**
+ * Change jid into type serial field.
+ */
+function journal_update_6103() {
+  $ret = array();
+  db_drop_primary_key($ret, 'journal');
+  db_change_field($ret, 'journal', 'jid', 'jid', array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE), array('primary key' => array('jid')));
+  return $ret;
+}
+

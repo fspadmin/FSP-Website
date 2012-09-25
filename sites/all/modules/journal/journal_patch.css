@@ -1,0 +1,13 @@
+/* $Id: journal_patch.css,v 1.1.2.2 2008/10/18 20:29:40 sun Exp $ */
+
+#journal-patch-form fieldset, #journal-patch-form fieldset .form-item {
+  overflow: hidden;
+  zoom: 1;
+}
+.journal-patch-module-select, .journal-patch-issue .form-item {
+  float: left;
+  margin-right: 1em;
+}
+.patch-description {
+  overflow: hidden;
+}

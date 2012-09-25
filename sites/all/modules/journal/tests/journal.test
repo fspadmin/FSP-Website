@@ -1,0 +1,67 @@
+<?php
+// $Id: journal.test,v 1.1.2.2 2009/06/21 00:02:24 sun Exp $
+
+/**
+ * @file
+ * Simpletest integration for Journal module.
+ */
+
+/**
+ * Test basic Journal functionality.
+ */
+class JournalTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+     'name' => t('Journal functionality'),
+     'description' => t('Test Journal module functionality.'),
+     'group' => t('Journal'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp('journal');
+
+    $user = $this->drupalCreateUser(array('administer blocks', 'access journal'));
+    $this->drupalLogin($user);
+  }
+
+  /**
+   * Test a basic journal entry.
+   */
+  function testJournalAddEntry() {
+    // Add a new block.
+    $title = $this->randomName(8);
+    $description = $this->randomName(8);
+    $journal_entry = $this->randomName(8);
+    $edit = array(
+      'info' => $description,
+      'title' => $title,
+      'body' => $this->randomName(8),
+      'pages' => '',
+      'journal_entry' => $journal_entry,
+    );
+    $this->drupalPost('admin/build/block/add', $edit, 'Save block');
+
+    // Verify the journal entry was recorded.
+    $this->drupalGet('admin/reports/journal');
+    $this->assertText($journal_entry, t('New entry appears in journal.'));
+    $this->assertText('admin/build/block/add', t('Location of new entry appears in journal.'));
+  }
+
+  /**
+   * Test a journal entry for forms using '#tree = TRUE' on root level.
+   *
+   * @todo Rewrite to use internal FAPI functions.
+   */
+  function testJournalAddEntryWhereTreeTrue() {
+    $journal_entry = $this->randomName(8);
+    $edit = array(
+      'journal_entry' => $journal_entry,
+    );
+    $this->drupalPost('admin/build/block', $edit, 'Save blocks');
+
+    // Verify the journal entry was recorded.
+    $this->drupalGet('admin/reports/journal');
+    $this->assertText($journal_entry, t('Entry submitted in form using #tree appears in journal.'));
+  }
+}

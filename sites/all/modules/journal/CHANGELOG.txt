@@ -1,0 +1,62 @@
+// $Id: CHANGELOG.txt,v 1.4.2.23 2010/03/18 23:05:45 sun Exp $
+
+Journal x.x-x.x, xxxx-xx-xx
+---------------------------
+
+
+Journal 6.x-1.x, xxxx-xx-xx
+---------------------------
+
+
+Journal 6.x-1.3, 2010-03-18
+---------------------------
+by sun: Merge (instead of replace) default form ids with those specified in
+  settings.php.
+by smk-ka: Removed t() from hook_schema() descriptions.
+#636410 by smk-ka: Moved out admin functions to an include file.
+by sun: Added comment_form to default list of forms.
+#474422 by evoltech: Fixed journal entry not logged in forms using #tree = TRUE.
+by sun: Added some more forms to default list of forms.
+#483026 by pwolanin: Added search and dblog filter forms to excluded forms.
+by sun: Added checkbox to skip journal entry for privileged users.
+#322731 by sun: Fixed improper use of t() in module install file.
+#221498 by sun: Fixed upgrade path to Drupal 6.
+#254303 by sun, smk-ka: Added log of d.o patch issues and module modifications.
+
+
+Journal 6.x-1.2, 2008-10-15
+---------------------------
+#228244 by sun: Added ids of Views forms to default journal_form_ids variable.
+#228244 by sun: Added journal_form_ids variable to allow customized formids.
+#252964 by sun: Fixed PHP notices.
+#219234 by smk-ka, sun: Fixed wrong datatype for journal log using MySQLi.
+
+
+Journal 6.x-1.1, 2008-04-30
+---------------------------
+#247650 by sun: Changed output of form location in journal log to be truncated.
+#250882 by sun: Added FAPI #action / confirm form support.
+#247517 by smk-ka, sun: Added a block displaying all journal entries of current
+  page.
+#200660 by sun: Changed order of journal entries to be reverse-chronical by
+  default.
+#224657 by sun: Fixed PHP warning if $form['#submit'] isn't set.
+
+
+Journal 6.x-1.0, 2008-02-14
+---------------------------
+#221498 by sun: Initial port of Journal to Drupal 6.
+
+
+Journal 5.x-1.1, 2008-01-05
+---------------------------
+by smk-ka: Added search_theme_form to the list of excluded form ids.
+by sun: Added 'user_filter_form' to skipped form ids.
+#193269 by sun: Fixed needless menu entry for module settings.
+
+
+Journal 5.x-1.0, 2007-11-17
+---------------------------
+Initial release of journal module.
+
+

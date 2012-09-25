@@ -1,0 +1,83 @@
+# $Id: de.po,v 1.1.2.2 2009/05/17 00:48:53 sun Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  journal.module,v 1.1.2.15 2008/08/16 20:19:55 sun
+#  journal.info,v 1.1.2.1 2008/04/16 21:13:09 sun
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: journal 5.x-1.4\n"
+"POT-Creation-Date: 2009-04-24 14:50+0200\n"
+"PO-Revision-Date: 2009-04-24 15:32+0100\n"
+"Last-Translator: Thomas Zahreddin <thomas@voicehero.com>\n"
+"Language-Team: Thomas Zahreddin <thomas@voicehero.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n>1);\n"
+"X-Poedit-Language: German\n"
+"X-Poedit-Country: GERMANY\n"
+
+#: journal.module:26
+msgid "Allows to maintain a custom log of performed setup and configuration actions."
+msgstr "Ein eigenes Logbuch über durchgeführte Einstellungen und Konfigurationen führen."
+
+#: journal.module:45;184;199
+msgid "Journal entries"
+msgstr "Journaleinträge"
+
+#: journal.module:46
+msgid "View journal entries."
+msgstr "Journaleinträge anzeigen."
+
+#: journal.module:112
+msgid "Journal entry"
+msgstr "Journaleintrag"
+
+#: journal.module:113
+msgid "If not empty, contents of this field will be logged to the system journal."
+msgstr "Einträge in diesem Feld werden im System Journal gespeichert."
+
+#: journal.module:216
+msgid "Date"
+msgstr "Datum"
+
+#: journal.module:217
+msgid "User"
+msgstr "Benutzer"
+
+#: journal.module:218
+msgid "Message"
+msgstr "Nachricht"
+
+#: journal.module:219
+#, fuzzy
+msgid "Location"
+msgstr "Ort"
+
+#: journal.module:290
+msgid "No journal entries available."
+msgstr "Es sind keine Journaleinträge verfügbar."
+
+#: journal.module:34
+msgid "access journal"
+msgstr "Zugriff auf das Journal"
+
+#: journal.module:0
+msgid "journal"
+msgstr "Journal"
+
+#: journal.info:0
+msgid "Journal"
+msgstr "Journal"
+
+#: journal.info:0
+msgid "Maintain a custom log of performed setup and configuration actions."
+msgstr "Ein eigenes Logbuch über durchgeführte Einstellungen und Konfigurationen führen."
+
+#: journal.info:0
+msgid "Development"
+msgstr "Entwicklung"
+
