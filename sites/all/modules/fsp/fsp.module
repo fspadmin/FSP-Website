@@ -1604,7 +1604,7 @@ function fsp_block($op = 'list', $delta = 0, $edit = array()) {
 
 function fsp_social_media_block(){
     $links = '<ul>
-    <li><a href="http://www.facebook.com/pages/FreeStateProject.org" target="_blank"><img src="/images/facebook_0.jpg">&nbsp;Facebook</a></li>
+    <li><a href="http://www.facebook.com/FreeStateProject.org" target="_blank"><img src="/images/facebook_0.jpg">&nbsp;Facebook</a></li>
     <li><a href="http://www.youtube.com/freestateprojectnh" target="_blank"><img src="/images/youtube.jpg">&nbsp;YouTube</a></li>
     <li><a href="http://twitter.com/FreeStateNH" target="_blank"><img src="/images/twitter_0.jpg">&nbsp;Twitter</a></li>
     <li><a href="http://www.linkedin.com/groups?home=&gid=1835717" target="_blank"><img src="/images/linkedin_0.jpg">&nbsp;LinkedIn</a></li>

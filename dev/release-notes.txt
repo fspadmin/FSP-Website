@@ -1,3 +1,6 @@
+Release #644 10/5/2012, by Louis Calitz
+- Fixed home page Facebook link
+
 Release #643 9/25/2012, by Louis Calitz
 - Added journal module to document changes to config & edits to participants
 - Edited social network links, removing defunct ones, updating links of others
