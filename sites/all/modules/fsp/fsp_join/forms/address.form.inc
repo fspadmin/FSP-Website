@@ -11,7 +11,7 @@ function fsp_join_step_address(&$form, &$form_state) {
       );
   $form['address2'] = array(
       '#type' => 'textfield',
-      '#title' => 'Addl. Address',
+      '#title' => 'Additional Address',
       '#default_value' => $data->address2,
       '#required' => FALSE,
       '#maxlength' => 80,
@@ -39,18 +39,16 @@ function fsp_join_step_address(&$form, &$form_state) {
       );
   $form['postal_code'] = array(
       '#type' => 'textfield',
-      '#title' => 'Postal Code',
+      '#title' => 'ZIP / Postal Code',
       '#default_value' => $data->postal_code,
       '#required' => TRUE,
       '#maxlength' => 80,
       );
   $form['phone'] = array(
       '#type' => 'textfield',
-      '#title' => 'Prefered Phone Number',
+      '#title' => 'Phone Number',
       '#default_value' => $data->phone,
       '#required' => FALSE,
-      '#maxlength' => 80,
-      '#description' => 'Optional phone number in case we can\'t contact you by phone or email.',
       );
 }
 
