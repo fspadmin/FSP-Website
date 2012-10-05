@@ -1604,13 +1604,10 @@ function fsp_block($op = 'list', $delta = 0, $edit = array()) {
 
 function fsp_social_media_block(){
     $links = '<ul>
-    <li><a href="http://www.facebook.com/pages/Free-State-Project/147390698637518" target="_blank"><img src="/images/facebook_0.jpg">&nbsp;Facebook</a></li>
+    <li><a href="http://www.facebook.com/FreeStateProject.org" target="_blank"><img src="/images/facebook_0.jpg">&nbsp;Facebook</a></li>
     <li><a href="http://www.youtube.com/freestateprojectnh" target="_blank"><img src="/images/youtube.jpg">&nbsp;YouTube</a></li>
     <li><a href="http://twitter.com/FreeStateNH" target="_blank"><img src="/images/twitter_0.jpg">&nbsp;Twitter</a></li>
-    <li><a href="http://www.myspace.com/freestateproject" target="_blank"><img src="/images/myspace_0.jpg">&nbsp;MySpace</a></li>
     <li><a href="http://www.linkedin.com/groups?home=&gid=1835717" target="_blank"><img src="/images/linkedin_0.jpg">&nbsp;LinkedIn</a></li>
-    <!--li><a href="http://bureaucrashsocial.ning.com/group/FreeStateProject" target="_blank"><img src="/images/bureaucrash_0.jpg">&nbsp;Bureaucrash</a></li-->
-    <li><a href="http://fr33agents.net/groups" target="_blank"><img src="/images/fr33agentsicon.jpg">&nbsp;Fr33 Agents</a></li>
     </ul>';
     return $links;
 }

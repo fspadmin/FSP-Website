@@ -1,0 +1,387 @@
+<?php
+// $Id: journal.module,v 1.5.2.19 2010/01/15 20:39:00 sun Exp $
+
+/**
+ * @file
+ * Allows to maintain a custom log of performed setup and configuration actions.
+ * 
+ * Journal module adds additional fields to all forms in a Drupal site.
+ * Only users granted the 'access journal' permission are able to add entries
+ * to the journal.
+ *
+ * Journal form fields may be disabled for certain forms, for example forms that
+ * are displayed in blocks.
+ * 
+ * @todo Describe Demo module implementation.
+ * @todo Are we able to track enabling/disabling of modules automatically?
+ * @todo Allow to include all form field values in a journal entry.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function journal_help($path, $arg) {
+  switch ($path) {
+    case 'admin/modules#description':
+      return t('Allows to maintain a custom log of performed setup and configuration actions.');
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function journal_perm() {
+  return array('access journal');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function journal_menu() {
+  $items = array();
+  $items['admin/reports/journal'] = array(
+    'title' => 'Journal entries',
+    'description' => 'View journal entries.',
+    'page callback' => 'journal_view',
+    'access arguments' => array('access journal'),
+    'file' => 'journal.admin.inc',
+  );
+  $items['admin/reports/journal/list'] = array(
+    'title' => 'List',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/reports/journal/patches'] = array(
+    'title' => 'Patches',
+    'description' => 'View list of applied patches and hacks on this Drupal site.',
+    'page callback' => 'journal_patch_view',
+    'access arguments' => array('access journal'),
+    'file' => 'journal.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/reports/journal/patches/edit'] = array(
+    'title' => 'Edit patch',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('journal_patch_form'),
+    'access arguments' => array('access journal'),
+    'file' => 'journal.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/reports/journal/patches/delete'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('journal_patch_delete_confirm'),
+    'access arguments' => array('access journal'),
+    'file' => 'journal.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Add Journal fields to all forms.
+ * 
+ * Any form, except user-defined form_ids, will be extended by a fieldset
+ * to enter a journal entry.  All journal form ids are stored in one variable
+ * array; having form_ids as keys and a boolean value whether to skip a form id
+ * (0) or force/require a journal entry for it (1).
+ *
+ * @see journal_form_ids_default()
+ */
+function journal_form_alter(&$form, &$form_state, $form_id) {
+  if (!user_access('access journal')) {
+    return;
+  }
+  $entry_required = FALSE;
+  if (!isset($form['#submit'])) {
+    $form['#submit'] = array();
+  }
+  // Check whether form has to/must not be extended.
+  $journal_ids = array_merge(journal_form_ids_default(), variable_get('journal_form_ids', array()));
+  if (isset($journal_ids[$form_id]) || in_array('system_settings_form_submit', $form['#submit'])) {
+    if (isset($journal_ids[$form_id]) && !$journal_ids[$form_id]) {
+      // No journal entry for 'form_id' => 0.
+      return;
+    }
+    else {
+      // Require journal entry for 'form_id' => 1 or system settings forms.
+      $entry_required = TRUE;
+    }
+  }
+
+  // Shift system_settings_form buttons.
+  if (in_array('system_settings_form_submit', $form['#submit'])) {
+    $weight = isset($form['buttons']['#weight']) ? $form['buttons']['#weight'] : 0;
+    $form['buttons']['#weight'] = $weight + 2;
+    $journal_weight = $weight + 1;
+    $entry_required = TRUE;
+  }
+  else {
+    $journal_weight = 100;
+  }
+  
+  // Prepend our journal submit handler, so we can eliminate the form value of
+  // journal_entry, which would be saved as a variable in system_settings_form()
+  // otherwise.
+  array_unshift($form['#submit'], 'journal_form_submit');
+
+  $form['journal'] = array(
+    '#weight' => $journal_weight,
+    '#tree' => FALSE,
+  );
+
+  // Store the path on which this form was initially displayed.
+  // We need to store this in a hidden field, since forms with custom '#action's
+  // (like admin/build/modules) will reset our value to $_GET['q'] otherwise.
+  $form['journal']['journal_location'] = array(
+    '#type' => 'hidden',
+    '#value' => (!empty($_REQUEST['journal_location']) ? $_REQUEST['journal_location'] : $_GET['q']),
+  );
+
+  // Add journal entry field.
+  $form['journal']['journal_entry'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Journal entry'),
+    '#description' => t('If not empty, contents of this field will be logged to the system journal.'),
+    '#required' => $entry_required,
+    '#wysiwyg' => FALSE,
+  );
+  if ($entry_required && user_access('access devel information')) {
+    $form['journal']['journal_entry']['#required'] = FALSE;
+    $form['journal']['journal_omit'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Skip journal entry'),
+      '#return_value' => 1,
+      '#default_value' => 0,
+      '#description' => t('The journal entry for this form is required. If enabled, the form can be submitted without a journal entry.'),
+    );
+    $form['#validate'][] = 'journal_form_validate';
+  }
+}
+
+/**
+ * Validate optional journal entry for privileged users.
+ */
+function journal_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['journal_omit']) && empty($form_state['values']['journal_entry'])) {
+    form_set_error('journal', t('!name field is required.', array('!name' => t('Journal entry'))));
+  }
+}
+
+/**
+ * Save a new journal entry and clean out form values.
+ */
+function journal_form_submit($form, &$form_state) {
+  if (!empty($form_state['values']['journal_entry'])) {
+    journal_add_entry($form_state['values']['journal_entry'], $form_state['values']['journal_location']);
+  }
+  unset($form_state['values']['journal_entry'], $form_state['values']['journal_location']);
+}
+
+/**
+ * Indicate if a form must not extended.
+ * 
+ * @param string $form_id
+ *   A form_id to check against.
+ *
+ * @return bool
+ *   True if form should be skipped, false if form can be extended.
+ *
+ * @todo Introduce a new FAPI attribute #journal = TRUE to require a journal
+ *   entry if Journal module is enabled - OR - introduce a new hook_journal?
+ */
+function journal_form_ids_default() {
+  return array(
+    'comment_form' => 0,
+    'dblog_filter_form' => 0,
+    'devel_admin_settings' => 0,
+    'devel_execute_form' => 0,
+    'devel_switch_user_form' => 0,
+    'journal_patch_form' => 0,
+    'node_filter_form' => 0,
+    'poll_view_voting' => 0,
+    'search_block_form' => 0,
+    'search_box' => 0,
+    'search_form' => 0,
+    'search_theme_form' => 0,
+    'system_modules' => 1,
+    'user_admin_perm' => 1,
+    'user_filter_form' => 0,
+    'user_login_block' => 0,
+    'views_exposed_form' => 0,
+    'views_filters' => 0,
+    'views_ui_add_display_form' => 0,
+    'views_ui_add_item_form' => 0,
+    'views_ui_analyze_view_button' => 0,
+    'views_ui_config_item_form' => 0,
+    'views_ui_config_type_form' => 0,
+    'views_ui_edit_details_form' => 0,
+    'views_ui_edit_display_form' => 0,
+    'views_ui_export_page' => 0,
+    'views_ui_list_views_form' => 0,
+    'views_ui_preview_form' => 0,
+    'views_ui_rearrange_form' => 0,
+    'views_ui_remove_display_form' => 0,
+  );
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function journal_user($op, &$edit, &$user) {
+  if ($op == 'delete') {
+    db_query('UPDATE {journal} SET uid = 0 WHERE uid = %d', $user->uid);
+  }
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function journal_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks = array();
+    $blocks['backlog'] = array(
+      'info' => t('Journal entries'),
+      'weight' => -10,
+      'enabled' => 1,
+      'region' => 'right',
+    );
+    return $blocks;
+  }
+  else if ($op == 'view' && user_access('access journal')) {
+    $block = array();
+    switch ($delta) {
+      case 'backlog':
+        $result = db_query("SELECT j.*, u.name FROM {journal} j INNER JOIN {users} u ON j.uid = u.uid WHERE j.location = '%s' ORDER BY j.timestamp DESC", $_GET['q']);
+        if ($output = journal_output($result, 'list')) {
+          drupal_add_css(drupal_get_path('module', 'journal') .'/journal.css', 'module', 'all', FALSE);
+          $block = array(
+            'subject' => t('Journal entries'),
+            'content' => $output,
+          );
+        }
+        break;
+    }
+    return $block;
+  }
+}
+
+/**
+ * Render journal entries.
+ * 
+ * Use this function to render and return
+ * - a journal provided as a database query result resource or
+ * - a custom journal provided as an array containing journal entry objects.
+ *
+ * This function may look insane to some, but it ensures that implementation of
+ * journal module into other modules is as easy as possible.
+ * 
+ * @param array $journal
+ *   A database query result resource or an array containing journal entry
+ *   objects to output.
+ * @param string $format
+ *   Whether to output all log entries as 'table', 'list' or plain 'text'.
+ * @param array $header
+ *   An array containing header data for 'table' output.
+ *
+ * @todo Add XML output format.
+ */
+function journal_output($journal, $format = 'table', $header = array()) {
+  switch ($format) {
+    case 'text':
+      // Output delimiter in first line, since this may change.
+      $output = '\t' . "\n";
+
+      while ($entry = (is_array($journal) ? array_shift($journal) : db_fetch_object($journal))) {
+        $row = array(
+          $entry->timestamp,
+          $entry->uid,
+          $entry->message,
+          $entry->location,
+        );
+        $output .= implode("\t", $row) ."\n";
+      }
+      break;
+      
+    case 'list':
+      $output = '';
+      while ($entry = (is_array($journal) ? array_shift($journal) : db_fetch_object($journal))) {
+        $output .= '<li>';
+        $output .= '<span class="journal-info">'. theme('username', $entry) .' '. format_date($entry->timestamp, 'small') .':</span>';
+        $output .= '<span class="journal-entry">'. filter_xss_admin($entry->message) .'</span>';
+        $output .= '</li>';
+      }
+      if ($output) {
+        $output = '<ul id="journal-backlog">'. $output .'</ul>';
+      }
+      break;
+
+    case 'table':
+    default:
+      $rows = array();
+      while ($entry = (is_array($journal) ? array_shift($journal) : db_fetch_object($journal))) {
+        $rows[] = array(
+          format_date($entry->timestamp, 'small'),
+          theme('username', $entry),
+          filter_xss_admin($entry->message),
+          l(truncate_utf8($entry->location, 32, FALSE, TRUE), $entry->location),
+        );
+      }
+
+      if (empty($rows)) {
+        $rows[] = array(array('data' => t('No journal entries available.'), 'colspan' => 4));
+      }
+
+      $output = theme('table', $header, $rows);
+      $output .= theme('pager', NULL, 50, 0);
+      break;
+  }
+
+  return $output;
+}
+
+/**
+ * Convert a journal into an array.
+ * 
+ * @param mixed $data
+ *   Journal data.
+ * @param string $type
+ *   The type of passed-in journal data.
+ *
+ * @return array $journal
+ *   An array containing one or more journal entry objects.
+ */
+function journal_convert($data, $type = 'text') {
+  $journal = array();
+  
+  switch ($type) {
+    case 'text':
+    default:
+      $data = explode('\n', $data);
+      
+      // Determine delimiter string.
+      $delimiter = array_shift($data);
+      
+      while ($row = array_shift($data)) {
+        $row = explode($delimiter, $row);
+        $journal[] = (object)$row;
+      }
+      break;
+  }
+  
+  return $journal;
+}
+
+/**
+ * Store a new journal entry in the database.
+ *
+ * @param string $description
+ *   A journal entry text entered by an user.
+ * @param string $location
+ *   The path on which the journal entry has been entered.
+ */
+function journal_add_entry($description, $location) {
+  global $user;
+  
+  db_query("INSERT INTO {journal} (uid, message, location, timestamp) VALUES (%d, '%s', '%s', %d)", $user->uid, $description, $location, time());
+}
+

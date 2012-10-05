@@ -1,0 +1,81 @@
+# $Id: journal.pot,v 1.1.2.2 2009/05/17 00:48:53 sun Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  journal.module,v 1.1.2.15 2008/08/16 20:19:55 sun
+#  journal.info,v 1.1.2.1 2008/04/16 21:13:09 sun
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2009-04-24 14:50+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: journal.module:26
+msgid "Allows to maintain a custom log of performed setup and configuration actions."
+msgstr ""
+
+#: journal.module:45;184;199
+msgid "Journal entries"
+msgstr ""
+
+#: journal.module:46
+msgid "View journal entries."
+msgstr ""
+
+#: journal.module:112
+msgid "Journal entry"
+msgstr ""
+
+#: journal.module:113
+msgid "If not empty, contents of this field will be logged to the system journal."
+msgstr ""
+
+#: journal.module:216
+msgid "Date"
+msgstr ""
+
+#: journal.module:217
+msgid "User"
+msgstr ""
+
+#: journal.module:218
+msgid "Message"
+msgstr ""
+
+#: journal.module:219
+msgid "Location"
+msgstr ""
+
+#: journal.module:290
+msgid "No journal entries available."
+msgstr ""
+
+#: journal.module:34
+msgid "access journal"
+msgstr ""
+
+#: journal.module:0
+msgid "journal"
+msgstr ""
+
+#: journal.info:0
+msgid "Journal"
+msgstr ""
+
+#: journal.info:0
+msgid "Maintain a custom log of performed setup and configuration actions."
+msgstr ""
+
+#: journal.info:0
+msgid "Development"
+msgstr ""
+

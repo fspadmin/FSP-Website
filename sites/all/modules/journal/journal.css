@@ -1,0 +1,14 @@
+/* $Id: journal.css,v 1.1.4.2 2008/04/19 16:42:27 sun Exp $ */
+
+#journal-backlog {
+  list-style-type: none;
+}
+#journal-backlog li {
+  margin: 0;
+  padding: 0 0 0.3em;
+  background: transparent none;
+}
+#journal-backlog .journal-info {
+  font-size: 85%;
+  display: block;
+}
