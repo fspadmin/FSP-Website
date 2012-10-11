@@ -265,22 +265,11 @@ function print_mail_form_validate($form, &$form_state) {
  */
 function print_mail_form_submit($form, &$form_state) {
   if (!array_key_exists('cancel', $form_state['values'])) {
-    if (!empty($form_state['values']['fld_from_name'])) {
-      $from = '"'. mime_header_encode($form_state['values']['fld_from_name']) .'" <'. $form_state['values']['fld_from_addr'] .'>';
-    }
-    else {
-      $from = $form_state['values']['fld_from_addr'];
-    }
     $cid = isset($form_state['values']['cid']) ? $form_state['values']['cid'] : NULL;
-
     $print_mail_text_message = filter_xss_admin(variable_get('print_mail_text_message', t('Message from sender')));
     $sender_message = $print_mail_text_message .':<br /><br /><em>'. nl2br(check_plain($form_state['values']['txt_message'])) .'</em>';
 
     $print = print_controller($form_state['values']['path'], $cid, PRINT_MAIL_FORMAT, $form_state['values']['chk_teaser'], $sender_message);
-
-    // Spaces in img URLs must be replaced with %20
-    $pattern = '!<(img\s[^>]*?)>!is';
-    $print['content'] = preg_replace_callback($pattern, '_print_replace_spaces', $print['content']);
 
     if ($print !== FALSE) {
       $print_mail_send_option_default = variable_get('print_mail_send_option_default', PRINT_MAIL_SEND_OPTION_DEFAULT);
@@ -290,6 +279,24 @@ function print_mail_form_submit($form, &$form_state) {
       $params['message'] = $sender_message;
       $params['link'] = $print['url'];
       $params['title'] = $form_state['values']['title'];
+
+      // If a name is provided, make From: in the format Common Name <address>
+      if (!empty($form_state['values']['fld_from_name'])) {
+        $from = '"' . mime_header_encode($form_state['values']['fld_from_name']) . '" <' . $form_state['values']['fld_from_addr'] . '>';
+      }
+      else {
+        $from = $form_state['values']['fld_from_addr'];
+      }
+
+      // If using reply-to, move the From: info to the params array, so that it is passed to hook_mail later
+      if (variable_get('print_mail_use_reply_to', PRINT_MAIL_USE_REPLY_TO)) {
+        $params['from'] = $from;
+        $from = NULL;
+      }
+
+      // Spaces in img URLs must be replaced with %20
+      $pattern = '!<(img\s[^>]*?)>!is';
+      $print['content'] = preg_replace_callback($pattern, '_print_replace_spaces', $print['content']);
 
       $node = $print['node'];
       $params['body'] = theme('print_page', $print, PRINT_MAIL_FORMAT, $node);
@@ -356,6 +363,10 @@ function print_mail_form_submit($form, &$form_state) {
  */
 function print_mail_mail($key, &$message, $params) {
   $message['subject'] = $params['subject'];
+
+  if (isset($params['from'])) {
+    $message['headers']['Reply-To'] = $params['from'];
+  }
 
   switch ($key) {
     case 'sendpage':

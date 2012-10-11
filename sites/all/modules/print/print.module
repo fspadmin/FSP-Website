@@ -51,7 +51,7 @@ define('PRINT_URLS_ANCHORS_DEFAULT', 0);
 define('PRINT_COMMENTS_DEFAULT', 0);
 define('PRINT_NEWWINDOW_DEFAULT', 1);
 
-define('PRINT_HTML_LINK_POS_DEFAULT', 'link');
+define('PRINT_HTML_LINK_POS_DEFAULT', '{ "link": "link", "block": "block", "help": "help" }');
 define('PRINT_HTML_LINK_TEASER_DEFAULT', 0);
 define('PRINT_HTML_SHOW_LINK_DEFAULT', 1);
 define('PRINT_HTML_NODE_LINK_VISIBILITY_DEFAULT', 0);
@@ -287,27 +287,32 @@ function print_block($op = 'list', $delta = 0, $edit = array()) {
             $node = node_load($nid);
             if (!node_access('view', $node)) {
               // If the user doesn't have access to the node, don't show any links
-              $block['content'] == '';
+              $block['content'] = '';
               return;
             }
           }
           else {
             $node = NULL;
           }
-          $funcs = get_defined_functions();
           $block['content'] = '';
-          foreach ($funcs['user'] as $func) {
-            if (preg_match('!^print.*?_insert_link$!', $func)) {
-              $link = $func(NULL, $node);
-              if (!empty($link)) {
-                $block['content'] .= $link;
+          foreach (array('html' => 'print', 'mail' => 'print_mail', 'pdf' => 'print_pdf') as $format => $module) {
+            $link_pos = variable_get('print_' . $format . '_link_pos', json_decode(PRINT_HTML_LINK_POS_DEFAULT, TRUE));
+
+            if (!(empty($link_pos['block']))) {
+              $func = $module . '_insert_link';
+
+              if (function_exists($func)) {
+                $links = $func(NULL, $node);
+                  if (!empty($links)) {
+                    $block['content'] .= $links;
+                }
               }
             }
           }
           break;
         case 1:
           $block['subject'] = t('Most printed');
-          $result = db_query_range("SELECT path FROM {print_page_counter} LEFT JOIN {node} ON path = CONCAT('node/', node.nid) WHERE status <> 0 OR status IS NULL ORDER BY totalcount DESC", 0, 3);
+          $result = db_query_range("SELECT path FROM {print_page_counter} LEFT JOIN {node} n ON path = CONCAT('node/', n.nid) WHERE status <> 0 OR status IS NULL ORDER BY totalcount DESC", 0, 3);
           if (db_affected_rows()) {
             $block['content'] = '<div class="item-list"><ul>';
             while ($obj = db_fetch_object($result)) {
@@ -326,7 +331,7 @@ function print_block($op = 'list', $delta = 0, $edit = array()) {
  * Implementation of hook_link().
  */
 function print_link($type, $node = NULL, $teaser = FALSE) {
-  $print_html_link_pos = variable_get('print_html_link_pos', array(PRINT_HTML_LINK_POS_DEFAULT => PRINT_HTML_LINK_POS_DEFAULT));
+  $print_html_link_pos = variable_get('print_html_link_pos', json_decode(PRINT_HTML_LINK_POS_DEFAULT, TRUE));
   $print_html_link_use_alias = variable_get('print_html_link_use_alias', PRINT_HTML_LINK_USE_ALIAS_DEFAULT);
   $allowed_type = print_link_allowed(array('type' => $type, 'node' => $node, 'teaser' => $teaser));
   if (($allowed_type === PRINT_ALLOW_NORMAL_LINK) && !isset($node->book) && !empty($print_html_link_pos['link'])) {
@@ -372,7 +377,7 @@ function print_link_alter(&$links, $node) {
       $print_html_book_link = variable_get('print_html_book_link', PRINT_HTML_BOOK_LINK_DEFAULT);
 
       if ($print_html_book_link) {
-        $print_html_link_pos = variable_get('print_html_link_pos', array(PRINT_HTML_LINK_POS_DEFAULT => PRINT_HTML_LINK_POS_DEFAULT));
+        $print_html_link_pos = variable_get('print_html_link_pos', json_decode(PRINT_HTML_LINK_POS_DEFAULT, TRUE));
 
         if (!empty($print_html_link_pos['link'])) {
         $format = theme('print_format_link');
@@ -412,8 +417,8 @@ function print_help($path, $arg) {
       return filter_filter('process', 1, NULL, file_get_contents(drupal_get_path('module', 'print') .'/README.txt') );
   }
 
-  $print_html_link_pos = variable_get('print_html_link_pos', array(PRINT_HTML_LINK_POS_DEFAULT => PRINT_HTML_LINK_POS_DEFAULT));
-  if (($path !== 'node/%') && !(empty($print_html_link_pos['link']) && empty($print_html_link_pos['corner']))) {
+  $print_html_link_pos = variable_get('print_html_link_pos', json_decode(PRINT_HTML_LINK_POS_DEFAULT, TRUE));
+  if (($path !== 'node/%') && !(empty($print_html_link_pos['help']))) {
     static $output = FALSE;
 
     if ($output === FALSE) {
@@ -441,7 +446,7 @@ function print_nodeapi(&$node, $op = 'view', $teaser, $page) {
         '#suffix' => '</span>',
         '#weight' => -101,
       );
-      $print_html_link_pos = variable_get('print_html_link_pos', array(PRINT_HTML_LINK_POS_DEFAULT => PRINT_HTML_LINK_POS_DEFAULT));
+      $print_html_link_pos = variable_get('print_html_link_pos', json_decode(PRINT_HTML_LINK_POS_DEFAULT, TRUE));
       if (!empty($print_html_link_pos['corner'])) {
         $node->content['print_links']['#value'] .= print_insert_link(NULL, $node);
       }
@@ -564,9 +569,15 @@ function _print_get_title($path) {
     return $res->title;
   }
   else {
-    $res = db_fetch_object(db_query("SELECT link_title FROM {menu_links} WHERE link_path = '%s'", $path));
-    if ($res) {
-      return $res->link_title;
+    // Not a node, try to get title from the menu system
+    $menu_item = menu_get_item($path);
+    if (!empty($menu_item['title'])) {
+      return $menu_item['title'];
+    }
+    elseif (drupal_substr($menu_item['page_callback'], 0, 6) == 'views_') {
+      // It's a view, load the view to have access to the title
+      $view = views_get_view($menu_item['page_arguments']['0']);
+      return $view->get_title();
     }
     else {
       return NULL;
@@ -831,7 +842,7 @@ function print_link_allowed($args) {
       if (!isset($res[$node->nid])) {
         $res[$node->nid] = db_fetch_object(db_query("SELECT comments FROM {print_node_conf} WHERE nid = %d", $node->nid));
       }
-      $print_display_comment = $res ? intval($res[$node->nid]->comments) : variable_get('print_display_comment_'. $node_type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
+      $print_display_comment = ($res && ($res[$node->nid] !== FALSE)) ? intval($res[$node->nid]->comments) : variable_get('print_display_comment_'. $node_type, PRINT_TYPE_COMMENT_LINK_DEFAULT);
       if ($print_display_comment) {
         return PRINT_ALLOW_NORMAL_LINK;
       }
@@ -890,7 +901,7 @@ function print_query_string_encode($query, $exclude = array(), $parent = '') {
       $key = $parent .'['. $key .']';
     }
 
-    if (in_array($key, $exclude)) {
+    if (in_array($key, $exclude, TRUE)) {
       continue;
     }
 

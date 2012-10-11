@@ -232,7 +232,7 @@ function _print_var_generator($node, $message = NULL, $cid = NULL) {
       $logo_url = strip_tags($print_logo_url);
       break;
   }
-  $logo_url = preg_replace('!^'. base_path() .'!', '/', $logo_url);
+  $logo_url = preg_replace('!^'. base_path() .'!', '', $logo_url);
   $site_name = variable_get('site_name', 'Drupal');
   $print['logo'] = $logo_url ? theme('image', $logo_url, $site_name, '', array('class' => 'print-logo', 'id' => 'logo'), FALSE) : '';
 

@@ -1,6 +1,13 @@
 <?php
 
 /**
+ * @file
+ * PDF Version Views integration
+ *
+ * @ingroup print
+ */
+
+/**
  * Implements hook_views_data().
  */
 function print_pdf_views_data() {

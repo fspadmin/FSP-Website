@@ -34,6 +34,7 @@ function print_mail_uninstall() {
   variable_del('print_mail_sys_link_pages');
   variable_del('print_mail_book_link');
   variable_del('print_mail_hourly_threshold');
+  variable_del('print_mail_use_reply_to');
   variable_del('print_mail_teaser_default');
   variable_del('print_mail_teaser_choice');
   variable_del('print_mail_link_text');
@@ -322,5 +323,19 @@ function print_mail_update_6100() {
       $ret[] = update_sql("UPDATE {permission} SET perm = '$renamed_permission' WHERE rid = $role->rid");
     }
   }
+  return $ret;
+}
+
+/**
+ * Enable block and help area links
+ */
+function print_mail_update_6118() {
+  $ret = array();
+
+  $link_pos = variable_get('print_mail_link_pos', json_decode('{ "link": "link", "block": "block", "help": "help" }', TRUE));
+  $link_pos['block'] = 'block';
+  $link_pos['help'] = 'help';
+  variable_set('print_mail_link_pos', $link_pos);
+
   return $ret;
 }

@@ -1,6 +1,13 @@
 <?php
 
 /**
+ * @file
+ * Send by email Views integration
+ *
+ * @ingroup print
+ */
+
+/**
  * Implements hook_views_data().
  */
 function print_mail_views_data() {

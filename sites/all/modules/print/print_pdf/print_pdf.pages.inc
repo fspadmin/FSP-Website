@@ -39,14 +39,16 @@ function print_pdf_controller() {
     }
 
     $pdf_filename = variable_get('print_pdf_filename', PRINT_PDF_FILENAME_DEFAULT);
-    if (function_exists('token_replace') && !empty($pdf_filename) && !empty($node)) {
-      $pdf_filename = token_replace($pdf_filename, 'node', $node);
-    }
-    else {
-      $pdf_filename = token_replace($pdf_filename, 'global');
-      if (empty($pdf_filename) || count(token_scan($pdf_filename))) {
-        // If there are still tokens, use a fallback solution
-        $pdf_filename = str_replace('/', '_', $path);
+    if (module_exists('token')) {
+      if (!empty($pdf_filename) && !empty($node)) {
+        $pdf_filename = token_replace($pdf_filename, 'node', $node);
+      }
+      else {
+        $pdf_filename = token_replace($pdf_filename, 'global');
+        if (empty($pdf_filename) || count(token_scan($pdf_filename))) {
+          // If there are still tokens, use a fallback solution
+          $pdf_filename = str_replace('/', '_', $path);
+        }
       }
     }
   }
@@ -186,6 +188,7 @@ function _print_pdf_dompdf($print, $html, $filename = NULL) {
     define("DOMPDF_ENABLE_REMOTE", TRUE);
     define("DOMPDF_TEMP_DIR", file_directory_temp());
     define("DOMPDF_UNICODE_ENABLED", variable_get('print_pdf_dompdf_unicode', PRINT_PDF_DOMPDF_UNICODE_DEFAULT));
+    define("DOMPDF_FONT_CACHE", file_directory_path() . '/' . PRINT_PDF_DOMPDF_CACHE_DIR_DEFAULT . '/fonts/');
   }
 
   require_once($print_pdf_pdf_tool);
@@ -281,7 +284,7 @@ function _print_pdf_tcpdf($print, $html, $filename = NULL) {
     define('K_PATH_MAIN', dirname($_SERVER['SCRIPT_FILENAME']));
     define('K_PATH_URL', $base_url);
     define('K_PATH_FONTS', $pdf_tool_path .'/fonts/');
-    define('K_PATH_CACHE', $pdf_tool_path .'/cache/');
+    define('K_PATH_CACHE', file_directory_path() . '/' . PRINT_PDF_TCPDF_CACHE_DIR_DEFAULT . '/cache/');
     define('K_PATH_IMAGES', '');
     define('K_BLANK_IMAGE', $pdf_tool_path .'/images/_blank.png');
     define('K_CELL_HEIGHT_RATIO', 1.25);
@@ -299,11 +302,11 @@ function _print_pdf_tcpdf($print, $html, $filename = NULL) {
   $html = preg_replace($pattern, '$1$2', $html);
 
   require_once($print_pdf_pdf_tool);
-  if (strpos(PDF_PRODUCER, 'PHP4') === FALSE) {
-    module_load_include('inc', 'print_pdf', 'print_pdf.class');
+  if (defined('PDF_PRODUCER') && (strpos(PDF_PRODUCER, 'PHP4') !== FALSE)) {
+    module_load_include('inc', 'print_pdf', 'print_pdf.class_php4');
   }
   else {
-    module_load_include('inc', 'print_pdf', 'print_pdf.class_php4');
+    module_load_include('inc', 'print_pdf', 'print_pdf.class');
   }
 
   $font = Array(
@@ -317,13 +320,17 @@ function _print_pdf_tcpdf($print, $html, $filename = NULL) {
   $pdf = new PrintTCPDF($orientation , 'mm', $print_pdf_paper_size, TRUE);
 
   // set document information
-  $pdf->SetAuthor(strip_tags($print['submitted']));
+  if (isset($print['submitted'])) {
+    $pdf->SetAuthor(strip_tags($print['submitted']));
+  }
   $pdf->SetCreator(variable_get('site_name', 'Drupal'));
   $pdf->SetTitle(html_entity_decode($print['title'], ENT_QUOTES, 'UTF-8'));
-  $keys = implode(' ', explode("\n", trim(strip_tags($print['taxonomy']))));
-  $pdf->SetKeywords($keys);
+  if (isset($print['taxonomy'])) {
+    $keys = implode(' ', explode("\n", trim(strip_tags($print['taxonomy']))));
+    $pdf->SetKeywords($keys);
+  }
   $pdf->setPDFVersion('1.6');
-  $pdf->setFontSubsetting(variable_get('print_pdf_font_subsetting', FALSE));
+  $pdf->setFontSubsetting(variable_get('print_pdf_font_subsetting', PRINT_PDF_FONT_SUBSETTING_DEFAULT));
 
   if ($language->direction == LANGUAGE_RTL) {
     $pdf->setRTL(TRUE);
@@ -393,7 +400,7 @@ function _print_pdf_wkhtmltopdf($print, $html, $filename = NULL) {
     exit;
   }
 
-  $descriptor = array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
+  $descriptor = array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'a'));
   $cmd = '"'. realpath($print_pdf_pdf_tool) ."\" --page-size $print_pdf_paper_size --orientation $print_pdf_page_orientation --dpi $dpi $print_pdf_wkhtmltopdf_options - -";
 
   $process = proc_open($cmd, $descriptor, $pipes, NULL, NULL);
@@ -407,12 +414,15 @@ function _print_pdf_wkhtmltopdf($print, $html, $filename = NULL) {
 
     stream_set_blocking($pipes[2], 0);
     $error = stream_get_contents($pipes[2]);
-    if (!empty($error)) {
-      watchdog('print_pdf', 'wkhtmltopdf: '. $error);
-    }
     fclose($pipes[2]);
 
-    $retval = proc_terminate($process);
+    $retval = proc_close($process);
+    if (!empty($error) || ($retval != 0)) {
+      if (empty($error)) {
+        $error = 'No stderr output available.';
+      }
+      watchdog('print_pdf', "wkhtmltopdf (returned $retval): $error");
+    }
   }
 
   if (!empty($pdf)) {
@@ -436,6 +446,8 @@ function _print_pdf_wkhtmltopdf($print, $html, $filename = NULL) {
     }
   }
   else {
+    drupal_set_message('Unable to generate PDF file.', 'error');
+    drupal_goto($meta['url']);
     return NULL;
   }
 }
