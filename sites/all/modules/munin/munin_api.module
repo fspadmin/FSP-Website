@@ -1,5 +1,4 @@
 <?php
-// $Id: munin_api.module,v 1.1 2009/10/02 08:36:25 mcgo Exp $
 
 /**
  * @file
@@ -85,7 +84,7 @@ function _munin_api_render_mapielement() {
   // Call the API Hooks
   $plugins = module_invoke_all('muninplugin');
   // Let other modules alter the definition.
-  module_invoke_all('muninplugin_alter', &$plugins);
+  drupal_alter('muninplugin', $plugins);
 
   if (count($plugins) == 0) {
     $form['message'] = array(

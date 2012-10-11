@@ -240,12 +240,12 @@ function uc_cart_cart_panes_form() {
     $form['panes'][$pane['id']]['uc_cap_'. $pane['id'] .'_enabled'] = array(
       '#type' => 'checkbox',
       '#title' => $pane['title'],
-      '#default_value' => $pane['enabled'],
+      '#default_value' => variable_get('uc_cap_'. $pane['id'] .'_enabled', $pane['enabled']),
     );
     $form['panes'][$pane['id']]['uc_cap_'. $pane['id'] .'_weight'] = array(
       '#type' => 'weight',
       '#delta' => 10,
-      '#default_value' => $pane['weight'],
+      '#default_value' => variable_get('uc_cap_'. $pane['id'] .'_weight', $pane['weight']),
       '#attributes' => array('class' => 'uc-cart-pane-weight'),
     );
   }

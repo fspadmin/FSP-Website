@@ -1663,9 +1663,6 @@ function uc_cart_cart_pane_list($items, $action = NULL) {
 
   $panes = module_invoke_all('cart_pane', $items);
 
-  // Allow other modules to alter the panes.
-  drupal_alter('cart_pane', $panes, $items);
-
   if (!is_array($panes) || count($panes) == 0) {
     return array();
   }
@@ -1673,6 +1670,10 @@ function uc_cart_cart_pane_list($items, $action = NULL) {
     $panes[$i]['enabled'] = variable_get('uc_cap_'. $panes[$i]['id'] .'_enabled', (!isset($panes[$i]['enabled']) ? TRUE : $panes[$i]['enabled']));
     $panes[$i]['weight'] = variable_get('uc_cap_'. $panes[$i]['id'] .'_weight', (!isset($panes[$i]['weight']) ? 0 : $panes[$i]['weight']));
   }
+
+  // Allow other modules to alter the panes.
+  drupal_alter('cart_pane', $panes, $items);
+
   usort($panes, 'uc_weight_sort');
 
   return $panes;

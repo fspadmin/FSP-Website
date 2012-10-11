@@ -50,17 +50,16 @@ function test_gateway_charge($order_id, $amount, $data) {
   global $user;
   $order = uc_order_load($order_id);
 
-  // cc_exp_month and cc_exp_year really should be validated in uc_credit.
+  // cc_exp_month and cc_exp_year are also validated by
+  // _uc_credit_valid_card_expiration() on the checkout form.
   $month = $order->payment_details['cc_exp_month'];
-  $month = $month % 12;
-
   $year  = $order->payment_details['cc_exp_year'];
   if ($year < 100) {
     $year = $year + 2000;
   }
 
-  // Expires on last day of month.
-  $expiration_date = mktime(0, 0, 0, $month + 1, -1, $year);
+  // Card is expired at 0:00 on the first day of the next month.
+  $expiration_date = mktime(0, 0, 0, $month + 1, 1, $year);
 
   // Conditions for failure are described in file documentation block above.
   // All other transactions will succeed.

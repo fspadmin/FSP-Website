@@ -347,7 +347,6 @@ function uc_store_init() {
   $conf['i18n_variables'][] = 'uc_store_name';
   $conf['i18n_variables'][] = 'uc_field_first_name';
   $conf['i18n_variables'][] = 'uc_field_last_name';
-  $conf['i18n_variables'][] = 'uc_field_email';
   $conf['i18n_variables'][] = 'uc_field_phone';
   $conf['i18n_variables'][] = 'uc_field_company';
   $conf['i18n_variables'][] = 'uc_field_address';
@@ -375,7 +374,32 @@ function uc_store_elements() {
     '#process' => 'form_expand_ahah',
   );
 
+  $types['uc_quantity'] = array(
+    '#input' => TRUE,
+    '#size' => 5,
+    '#maxlength' => 6,
+    '#required' => TRUE,
+    '#autocomplete_path' => FALSE,
+    '#process' => array('form_expand_ahah'),
+    '#element_validate' => array('uc_store_validate_uc_quantity'),
+    '#theme' => 'textfield',
+    '#theme_wrappers' => array('form_element'),
+    '#allow_zero' => FALSE,
+  );
+
   return $types;
+}
+
+/**
+ * Form element validation handler for #type 'uc_quantity'.
+ */
+function uc_store_validate_uc_quantity(&$element, &$form_state) {
+  if (!preg_match('/^\d+$/', $element['#value'])) {
+    form_error($element, t('The quantity must be a number.'));
+  }
+  elseif (empty($element['#allow_zero']) && !$element['#value']) {
+    form_error($element, t('The quantity cannot be zero.'));
+  }
 }
 
 /**
@@ -414,7 +438,6 @@ function uc_store_theme() {
  * Implements hook_token_values(). (token.module)
  */
 function uc_store_token_values($type, $object = NULL) {
-  global $base_url;
   $values = array();
 
   switch ($type) {
@@ -437,15 +460,15 @@ function uc_store_token_values($type, $object = NULL) {
 
       // Use a logo; but only if we have one to use.
       if (isset($settings['logo']) && $settings['logo']) {
-        $values['site-logo'] = '<img src="'. url($base_url .'/'. $settings['logo'], array('absolute' => TRUE)) .'" />';
+        $values['site-logo'] = theme('image', url($settings['logo'], array('absolute' => TRUE)), '', '', NULL, FALSE);
       }
       else {
         $values['site-logo'] = '';
       }
 
       $values['store-name'] = variable_get('uc_store_name', t('Our store'));
-      $values['store-url'] = $base_url;
-      $values['store-link'] = l(variable_get('uc_store_name', t('Our store')), $base_url);
+      $values['store-url'] = url('<front>', array('absolute' => TRUE));
+      $values['store-link'] = l(variable_get('uc_store_name', t('Our store')), '<front>', array('absolute' => TRUE));
       $values['store-owner'] = variable_get('uc_store_owner', '');
       $values['store-email'] = uc_store_email();
       $values['store-phone'] = variable_get('uc_store_phone', '');
@@ -707,14 +730,14 @@ function theme_uc_store_footer($message) {
  *
  * @see theme_uc_store_address_fields_form()
  * @see uc_store_address_fields_form_submit()
- * @see uc_store_address_fields_form_reset()
  * @ingroup forms
  */
 function uc_store_address_fields_form() {
-  $form['fields'] = array(
+  $form['uc_address_fields'] = array(
     '#tree' => TRUE,
     '#summary callback' => 'summarize_form',
   );
+  $form['uc_address_fields_required']['#tree'] = TRUE;
 
   $fields = array(
     'first_name' => array(t('First name'), TRUE),
@@ -734,8 +757,7 @@ function uc_store_address_fields_form() {
   $required = variable_get('uc_address_fields_required', drupal_map_assoc(array('first_name', 'last_name', 'street1', 'city', 'zone', 'postal_code', 'country')));
   foreach ($fields as $field => $data) {
     if ($data[1]) {
-      $form['fields'][$field]['#summary callback'] = 'summarize_form';
-      $form['fields'][$field]['enabled'] = array(
+      $form['uc_address_fields'][$field] = array(
         '#type' => 'checkbox',
         '#summary callback' => 'summarize_checkbox',
         '#summary arguments' => array(
@@ -744,20 +766,20 @@ function uc_store_address_fields_form() {
         ),
         '#default_value' => isset($current[$field]) ? TRUE : FALSE,
       );
-      $form['fields'][$field]['required'] = array(
+      $form['uc_address_fields_required'][$field] = array(
         '#type' => 'checkbox',
         '#default_value' => isset($required[$field]) ? TRUE : FALSE,
       );
     }
     else {
-      $form['fields'][$field]['enabled'] = array(
+      $form['uc_address_fields'][$field] = array(
         '#value' => '-',
       );
     }
     $form['fields'][$field]['default'] = array(
       '#value' => $data[0],
     );
-    $form['fields'][$field]['title'] = array(
+    $form['fields'][$field]['uc_field_' . $field] = array(
       '#type' => 'textfield',
       '#summary callback' => 'summarize_null',
       '#default_value' => uc_get_field_name($field),
@@ -765,15 +787,12 @@ function uc_store_address_fields_form() {
     );
   }
 
-  $form['save'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save configuration'),
-  );
-  $form['reset'] = array(
-    '#type' => 'submit',
-    '#value' => t('Reset to defaults'),
-    '#submit' => array('uc_store_address_fields_form_reset'),
-  );
+  $form['#submit'][] = 'uc_store_address_fields_form_submit';
+  if (function_exists('i18n_variable_form_submit')) {
+    $form['#submit'][] = 'i18n_variable_form_submit';
+  }
+  $form = system_settings_form($form);
+  unset($form['#theme']);
 
   return $form;
 }
@@ -783,14 +802,18 @@ function uc_store_address_fields_form() {
  * @see uc_store_address_fields_form()
  */
 function theme_uc_store_address_fields_form($form) {
-  $header = array(t('Enabled'), t('Field'), t('Title'), t('Required'));
+  $title = t('Title');
+  if (function_exists('i18n_variable_form_submit')) {
+    $title .= ' - '. t('This is a multilingual variable.');
+  }
+  $header = array(t('Enabled'), t('Field'), $title, t('Required'));
 
   foreach (element_children($form['fields']) as $field) {
     $rows[] = array(
-      array('data' => drupal_render($form['fields'][$field]['enabled']), 'align' => 'center'),
+      array('data' => drupal_render($form['uc_address_fields'][$field]), 'align' => 'center'),
       drupal_render($form['fields'][$field]['default']),
-      drupal_render($form['fields'][$field]['title']),
-      drupal_render($form['fields'][$field]['required']),
+      drupal_render($form['fields'][$field]['uc_field_' . $field]),
+      drupal_render($form['uc_address_fields_required'][$field]),
     );
   }
 
@@ -805,33 +828,8 @@ function theme_uc_store_address_fields_form($form) {
  * @see uc_store_address_fields_form()
  */
 function uc_store_address_fields_form_submit($form, &$form_state) {
-  $fields = array();
-  $required = array();
-  foreach ($form_state['values']['fields'] as $field => $data) {
-    variable_set('uc_field_'. $field, $data['title']);
-    if ($data['enabled'] == TRUE) {
-      $fields[] = $field;
-    }
-    if ($data['required'] == TRUE) {
-      $required[] = $field;
-    }
-  }
-  variable_set('uc_address_fields', drupal_map_assoc($fields));
-  variable_set('uc_address_fields_required', drupal_map_assoc($required));
-  drupal_set_message(t('The configuration options have been saved.'));
-}
-
-/**
- * Resets the address fields settings to their default values.
- *
- * @see uc_store_address_fields_form()
- */
-function uc_store_address_fields_form_reset($form_id, &$form_state) {
-  foreach ($form_state['values']['fields'] as $field => $data) {
-    variable_del('uc_field_'. $field);
-  }
-  variable_del('uc_address_fields');
-  drupal_set_message(t('The configuration options have been reset to their default values.'));
+  $form_state['values']['uc_address_fields'] = array_filter($form_state['values']['uc_address_fields']);
+  $form_state['values']['uc_address_fields_required'] = array_filter($form_state['values']['uc_address_fields_required']);
 }
 
 /**

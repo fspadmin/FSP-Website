@@ -45,10 +45,9 @@ function uc_weightquote_admin_methods() {
  * Configure the store default product shipping rates.
  *
  * @ingroup forms
- * @see
- *   uc_weightquote_admin_method_edit_form_validate()
- *   uc_weightquote_admin_method_edit_form_delete()
- *   uc_weightquote_admin_method_edit_form_submit()
+ * @see uc_weightquote_admin_method_edit_form_validate()
+ * @see uc_weightquote_admin_method_edit_form_delete()
+ * @see uc_weightquote_admin_method_edit_form_submit()
  */
 function uc_weightquote_admin_method_edit_form($form_state, $mid = 0) {
   $form = array();

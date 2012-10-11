@@ -109,7 +109,7 @@ function uc_order_ca_predicate() {
         ),
         '#settings' => array(
           'from' => uc_store_email_from(),
-          'addresses' => '[order-email]',
+          'addresses' => '[order-email-raw]',
           'subject' => t('Order #[order-id] Update'),
           'message' => uc_get_message('order_update_email'),
           'format' => 1,
@@ -1256,7 +1256,7 @@ function uc_order_action_email_form($form_state, $settings = array()) {
   $form['addresses'] = array(
     '#type' => 'textarea',
     '#title' => t('Recipients'),
-    '#default_value' => isset($settings['addresses']) ? $settings['addresses'] : '[order-email]',
+    '#default_value' => isset($settings['addresses']) ? $settings['addresses'] : '[order-email-raw]',
     '#description' => t('Enter the email addresses to receive the notifications, one on each line. You may use order tokens for dynamic email addresses.'),
     '#required' => TRUE,
     '#wysiwyg' => FALSE,
@@ -1350,7 +1350,7 @@ function uc_order_action_email_invoice_form($form_state, $settings = array()) {
   $form['addresses'] = array(
     '#type' => 'textarea',
     '#title' => t('Recipients'),
-    '#default_value' => isset($settings['addresses']) ? $settings['addresses'] : '[order-email]',
+    '#default_value' => isset($settings['addresses']) ? $settings['addresses'] : '[order-email-raw]',
     '#description' => t('Enter the email addresses to receive the notifications, one on each line. You may use order tokens for dynamic email addresses.'),
     '#required' => TRUE,
     '#wysiwyg' => FALSE,

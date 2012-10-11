@@ -84,7 +84,7 @@ function uc_file_ca_predicate() {
         '#argument_map' => $order_args,
         '#settings' => array(
           'from' => uc_store_email_from(),
-          'addresses' => '[order-email]',
+          'addresses' => '[order-email-raw]',
           'subject' => t("File Downloads for Order# [order-id]"),
           'message' => t("Your order (order# [order-link]) at [store-name] included file download(s). You may access them with the following link(s):\n\n[file-downloads]\n\nAfter downloading these files these links will have expired. If you need to download the files again, you can login at [site-login] and visit the \"My Account\" section of the site.\n\nThanks again, \n\n[store-name]\n[site-slogan]"),
           'format' => 1,

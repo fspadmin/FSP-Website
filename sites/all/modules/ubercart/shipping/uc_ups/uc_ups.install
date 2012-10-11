@@ -204,6 +204,8 @@ function uc_ups_update_6000() {
  * Updates UPS Production URL.
  */
 function uc_ups_update_6201() {
+  $ret = array();
+
   $current = variable_get('uc_ups_connection_address', '');
 
   // If currently using production URL, update variable to new value.
@@ -211,4 +213,6 @@ function uc_ups_update_6201() {
     variable_set('uc_ups_connection_address',
                  'https://onlinetools.ups.com/ups.app/xml/');
   }
+
+  return $ret;
 }

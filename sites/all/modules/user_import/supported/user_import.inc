@@ -1,5 +1,4 @@
 <?php
-// $Id: user_import.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt Exp $
 
 /**
  * Implementation of hook_user_import_form_fieldsets().
@@ -20,14 +19,18 @@ function user_import_user_import_form_fieldset($import, $collapsed) {
  */
 function user_import_user_import_after_save($settings, $account, $password, $fields, $updated, $update_setting_per_module) {
   if (!empty($settings['send_email']) && !$updated) {
+
+		$subscribed = isset($settings['subscribed']) ? $settings['subscribed'] : NULL;
+
 		_user_import_send_email($account, 
 														$password, 
 														$fields, 
-														$settings['options']['subject'], 
-														$settings['options']['message'], 
-														$settings['options']['message_format'], 
-														$settings['options']['message_css'], 
-														$settings['options']['subscribed']);
+														$settings['subject'], 
+														$settings['message'], 
+														$settings['message_format'], 
+														$settings['message_css'], 
+														$subscribed
+														);
 	} 
 }
 
@@ -35,7 +38,16 @@ function user_import_user_import_after_save($settings, $account, $password, $fie
 function _user_import_send_email($account, $password, $profile, $subject, $body, $format, $css, $subscribed) {
 
     global $base_url;
-   
+
+	  // All system mails need to specify the module and template key (mirrored from
+	  // hook_mail()) that the message they want to send comes from.
+	  $module = 'user_import';
+	  $key = 'welcome';
+	
+	  // Specify 'to' and 'from' addresses.
+	  $to = $account->mail;
+	  $from = variable_get('site_mail', NULL);
+	  
     $params = array(
       '!username' => $account->name, 
       '!uid' => $account->uid, 
@@ -48,10 +60,10 @@ function _user_import_send_email($account, $password, $profile, $subject, $body,
       '!date' => format_date(time()), 
       '!login_uri' => url('user', array('absolute' => TRUE)), 
       '!edit_uri' => url('user/'. $account->uid .'/edit', array('absolute' => TRUE)),
-      '!subject' => $subject,
-      '!body' => $body,
-      '!email_format' => $format,
- 			'!css' => $css,
+      'subject' => $subject,
+      'body' => $body,
+      'email_format' => $format,
+ 			'css' => $css,
     );
     
     _user_import_publication_email($params, $account, $subscribed, $format);
@@ -66,7 +78,14 @@ function _user_import_send_email($account, $password, $profile, $subject, $body,
       }
     }
 
-    $sent = drupal_mail('user_import', 'welcome', $account->mail, user_preferred_language($account), $params, variable_get('site_mail', NULL), TRUE);
+		$language = user_preferred_language($account);
+		
+	  // Whether or not to automatically send the mail when drupal_mail() is
+	  // called. This defaults to TRUE, and is normally what you want unless you
+	  // need to do additional processing before drupal_mail_send() is called.
+	  $send = TRUE;
+
+    $sent = drupal_mail($module, $key, $to, $language, $params, $from, $send);
     return;
 }
 
@@ -77,10 +96,10 @@ function user_import_mail($key, &$message, $params) {
 
 	switch($key) {
   	case 'welcome':
-		$message['subject'] = (empty($params['!subject'])) ? _user_mail_text('register_admin_created_subject', NULL, $params) : strtr($params['!subject'], $params);
-		$message['body'] = (empty($params['!body'])) ? _user_mail_text('register_admin_created_body', NULL, $params) : strtr($params['!body'], $params);
+		$message['subject'] = (empty($params['subject'])) ? _user_mail_text('register_admin_created_subject', $message['language'], $params) : strtr($params['subject'], $params);
+		$body = (empty($params['body'])) ? _user_mail_text('register_admin_created_body', $message['language'], $params) : strtr($params['body'], $params);
 
-		if ($params['!email_format'] == 1) {
+		if ($params['email_format'] == 1) {
 			$message['headers']['Content-Type'] = 'text/html; charset=UTF-8'; 
      
 	    $body_head = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -88,8 +107,11 @@ function user_import_mail($key, &$message, $params) {
 	            <head>
 	            <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />';
             
-	    if (!empty($params['!css'])) $body_head .= '<style type="text/css">' . check_plain($params['!css']) . '</style>';
-	    $message['body'] = $body_head . '</head><body>' . $message['body'] . '<body></html>'; 
+	    if (!empty($params['css'])) $body_head .= '<style type="text/css">' . check_plain($params['css']) . '</style>';
+	    $message['body'][] = $body_head . '</head><body>' . $body . '</body></html>'; 
+		}
+		else {
+      $message['body'][] = $body;
 		}
 		
 		break; 
@@ -109,7 +131,7 @@ function _user_import_edit_settings_fields(&$form, $import, $collapsed) {
   $form['optional']['first_line_skip'] = array(
       '#type' => 'checkbox',
       '#title' => t('Ignore First Line'),
-      '#default_value' => $import['first_line_skip'],
+      '#default_value' => isset($import['first_line_skip']) ? $import['first_line_skip'] : 0,
       '#description' => t('If the first line is the names of the data columns, set to ignore first line.'),
   );
   /**
@@ -118,30 +140,38 @@ function _user_import_edit_settings_fields(&$form, $import, $collapsed) {
   $form['optional']['contact'] = array(
       '#type' => 'checkbox',
       '#title' => t('Contact'),
-      '#default_value' => $import['contact'],
+      '#default_value' => isset($import['contact']) ? $import['contact'] : 0,
       '#description' => t("Set each user's personal contact form to 'allowed'."),
   );
   
   $form['optional']['send_email'] = array(
       '#type' => 'checkbox',
       '#title' => t('Send Email'),
-      '#default_value' => $import['send_email'],
+      '#default_value' => isset($import['send_email']) ? $import['send_email'] : 0,
       '#description' => t('Send email to users when their account is created.'),
   );
   
   $form['optional']['username_space'] = array(
       '#type' => 'checkbox',
       '#title' => t('Username Space'),
-      '#default_value' => $import['username_space'],
+      '#default_value' => isset($import['username_space']) ? $import['username_space'] : 0,
       '#description' => t("Include spaces in usernames, e.g. 'John' + 'Smith' => 'John Smith'."),
   );
   
   $form['optional']['activate'] = array(
       '#type' => 'checkbox',
       '#title' => t('Activate Accounts'),
-      '#default_value' => $import['options']['activate'],
+      '#default_value' => isset($import['activate']) ? $import['activate'] : 0,
       '#description' => t("User accounts will not be visible to other users until their owner logs in. Select this option to make all imported user accounts visible. <strong>Note - one time login links in welcome emails will no longer work if this option is enabled.</strong>"),
   );
+
+	$form['optional']['delimiter'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('File Delimiter'),
+	    '#size' => 4,
+	    '#default_value' => isset($import['delimiter']) ? $import['delimiter'] : ',',
+	    '#description' => t("The column delimiter for the file. Use '/t' for Tab."),
+	);
   
   return;
 }

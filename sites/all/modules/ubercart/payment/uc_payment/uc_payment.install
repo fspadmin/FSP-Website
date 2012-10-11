@@ -124,3 +124,14 @@ function uc_payment_update_6003() {
 
   return $ret;
 }
+
+/**
+ * Fix non-null payment receipts data field for Drupal 5 upgrades.
+ */
+function uc_payment_update_6004() {
+  $ret = array();
+
+  db_change_field($ret, 'uc_payment_receipts', 'data', 'data', array('type' => 'text'));
+
+  return $ret;
+}

@@ -856,7 +856,7 @@ function hook_order_actions($order) {
  * screen and what data can be manipulated. That is all somewhat out of the
  * scope of this API page, so you'll have to click here to read more about what
  * a callback function should contain.
-*/
+ */
 function hook_order_pane() {
   $panes[] = array(
     'id' => 'payment',
@@ -950,7 +950,7 @@ function hook_order_state() {
 /**
  * Registers payment gateway callbacks.
  *
- * @see @link http://www.ubercart.org/docs/api/hook_payment_gateway @endlink
+ * @see http://www.ubercart.org/docs/api/hook_payment_gateway
  *
  * @return
  *   Returns an array of payment gateways, which are arrays with the following

@@ -212,28 +212,33 @@ function uc_product_kit_update(&$node) {
   }
   $product_count = count($node->products);
 
+  // Usually, $node is $form_state['values'] cast as an object.
+  // However, there could be times where node_save() is called with an
+  // actual product kit node. $node->products is an array of objects and
+  // $node->items doesn't exist then, so we create it.
+  foreach ($node->products as $nid) {
+    if (is_numeric($nid)) {
+      // For an actual form submission, ensure that the qty is numeric.
+      $product = node_load($nid, NULL, TRUE);
+      if (is_null($node->items[$nid]['qty']) || $node->items[$nid]['qty'] === '') {
+        $node->items[$nid]['qty'] = 1;
+      }
+    }
+    else {
+      // When $product is an object, populate the items array.
+      $product = $nid;
+      $nid = $product->nid;
+      $node->items[$nid] = (array)$product;
+    }
+  }
+
   // Get the price of all the products without any discounts. This number is
   // used if a total kit price was specified to calculate the individual
   // product discounts.
   if ($override_discounts) {
     $base_price = 0;
-    foreach ($node->products as $nid) {
-      // Usually, $node is $form_state['values'] cast as an object.
-      // However, there could be times where node_save() is called with an
-      // actual product kit node. $node->products is an array of objects and
-      // $node->items doesn't exist then.
-      if (is_numeric($nid)) {
-        $product = node_load($nid, NULL, TRUE);
-        if (is_null($node->items[$nid]['qty']) || $node->items[$nid]['qty'] === '') {
-          $node->items[$nid]['qty'] = 1;
-        }
-      }
-      else {
-        $product = $nid;
-        $nid = $product->nid;
-        $node->items[$nid] = (array)$product;
-      }
-      $base_price += $product->sell_price * $node->items[$nid]['qty'];
+    foreach ($node->items as $item) {
+      $base_price += $product->sell_price * $item['qty'];
     }
   }
 
@@ -521,10 +526,9 @@ function uc_product_kit_form(&$node) {
         '#value' => l($product->title, 'node/'. $i),
       );
       $form['base']['items'][$i]['qty'] = array(
-        '#type' => 'textfield',
+        '#type' => 'uc_quantity',
         '#title' => t('Quantity'),
         '#default_value' => $product->qty,
-        '#size' => 5,
       );
       $form['base']['items'][$i]['ordering'] = array(
         '#type' => 'weight',
@@ -577,13 +581,12 @@ function uc_product_kit_form(&$node) {
     );
   }
   $form['base']['default_qty'] = array(
-    '#type' => 'textfield',
+    '#type' => 'uc_quantity',
     '#title' => t('Default quantity to add to cart'),
     '#default_value' => !is_null($node->default_qty) ? $node->default_qty : 1,
     '#description' => t('Use 0 to disable the quantity field next to the add to cart button.'),
     '#weight' => 27,
-    '#size' => 5,
-    '#maxlength' => 6,
+    '#allow_zero' => TRUE,
   );
   $form['base']['ordering'] = array(
     '#type' => 'weight',
@@ -766,11 +769,9 @@ function uc_product_kit_add_to_cart_form($form_state, $node) {
   }
   if ($node->default_qty > 0 && variable_get('uc_product_add_to_cart_qty', FALSE)) {
     $form['qty'] = array(
-      '#type' => 'textfield',
+      '#type' => 'uc_quantity',
       '#title' => t('Quantity'),
       '#default_value' => $node->default_qty,
-      '#size' => 5,
-      '#maxlength' => 6,
     );
   }
   else {
@@ -801,8 +802,10 @@ function uc_product_kit_add_to_cart_form($form_state, $node) {
  * @see uc_product_kit_add_to_cart_form()
  */
 function uc_product_kit_add_to_cart_form_submit($form, &$form_state) {
-  $node = node_load($form_state['values']['nid']);
-  drupal_set_message(t('<strong>@product-title</strong> added to <a href="!url">your shopping cart</a>.', array('@product-title' => $node->title, '!url' => url('cart'))));
+  if (variable_get('uc_cart_add_item_msg', TRUE)) {
+    $node = node_load($form_state['values']['nid']);
+    drupal_set_message(t('<strong>@product-title</strong> added to <a href="!url">your shopping cart</a>.', array('@product-title' => $node->title, '!url' => url('cart'))));
+  }
   $form_state['redirect'] = uc_cart_add_item($form_state['values']['nid'], $form_state['values']['qty'], $form_state['values']);
 }
 
@@ -941,9 +944,6 @@ function uc_product_kit_add_to_cart($nid, $qty, $kit_data) {
         if ($item->nid == $product->nid && isset($item->data['kit_id']) && $item->data['kit_id'] == $node->nid) {
           // There is something in the cart like the product kit. Update
           // by default, but check that it's possible.
-          if (is_null($add_new)) {
-            $add_new = FALSE;
-          }
           $data['unique_id'] = $item->data['unique_id'];
           if ($item->data == $data) {
             // This product is a candidate for updating the cart quantity.
@@ -1088,11 +1088,10 @@ function uc_product_kit_cart_display($item) {
       $element['remove'] = array('#type' => 'submit', '#value' => t('Remove'));
       $element['title'] = array('#value' => l($kit->title, 'node/'. $kit->nid));
       $element['qty'] = array(
-        '#type' => 'textfield',
+        '#type' => 'uc_quantity',
         '#default_value' => $item->qty / $kit->products[$item->nid]->qty,
-        '#size' => 5,
-        '#maxlength' => 6,
       );
+      $element['description'] = array('#value' => '');
       $element['#total'] = 0;
       $element['#extra'] = array();
 

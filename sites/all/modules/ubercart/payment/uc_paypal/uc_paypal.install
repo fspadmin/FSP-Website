@@ -117,6 +117,7 @@ function uc_paypal_install() {
 function uc_paypal_uninstall() {
   drupal_uninstall_schema('uc_paypal');
   db_query("DELETE FROM {variable} WHERE name LIKE 'uc_paypal_%%'");
+  db_query("UPDATE {uc_order_statuses} SET locked = 0 WHERE order_status_id = 'paypal_pending'");
 }
 
 /**

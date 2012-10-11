@@ -1,11 +1,9 @@
 <?php
-// $Id: user_import.install,v 1.12 2009/09/20 01:59:29 MegaGrunt Exp $
 
 /**
  * @file 
  * Import and update users from a comma separated file (csv).
  */
-
 
 /**
  * Implementation of hook_install()
@@ -85,34 +83,6 @@ function user_import_schema() {
         'default' => 0,
         'disp-width' => '10'
       ),
-      'first_line_skip' => array( 
-        'description' => t("Ignore the first line of the CSV file, which are usually field headings."), 
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '1'
-      ),
-      'contact' => array( 
-        'description' => t("Enable the Contact preference of user accounts."), 
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '1'
-      ),
-      'username_space' => array( 
-        'description' => t("Add a space between elements of a user name."), 
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '1'
-      ),
-      'send_email' => array( 
-        'description' => t("Send welcome email to imported users."), 
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '1'
-      ),
       'field_match' => array( 
         'description' => t("Settings for how data matches to Drupal fields."), 
         'type' => 'text',
@@ -122,10 +92,9 @@ function user_import_schema() {
       ),
       'roles' => array(      
         'description' => t("Roles to give imported users."), 
-        'type' => 'varchar',
-        'length' => '255',
+        'type' => 'text',
+        'size' => 'big',
         'not null' => TRUE,
-        'default' => '',
         'serialize' => TRUE
       ),
       'options' => array(   
@@ -224,6 +193,41 @@ function user_import_update_6001() {
 }
 
 /**
+ * Move settings into the 'options' column.
+ */
+function user_import_update_6002() {
+  $ret = array();
+  $result = db_query("SELECT * FROM {user_import}");
+
+  // Update each import.
+  while ($import = db_fetch_array($result)) { 
+		$options = unserialize($import['options']);
+		$options['first_line_skip'] = $import['first_line_skip'];
+		$options['contact'] = $import['contact'];
+		$options['username_space'] = $import['username_space'];
+		$options['send_email'] = $import['send_email']; 
+		//Avoid using update_sql() as it has issues with serialized data.
+    db_query("UPDATE {user_import} SET options = '%s' WHERE import_id = %d", serialize($options), $import['import_id']);
+	}
+	
+	$ret[] = update_sql('ALTER TABLE {user_import} DROP COLUMN first_line_skip');
+	$ret[] = update_sql('ALTER TABLE {user_import} DROP COLUMN contact');
+	$ret[] = update_sql('ALTER TABLE {user_import} DROP COLUMN username_space');
+	$ret[] = update_sql('ALTER TABLE {user_import} DROP COLUMN send_email');
+	
+  return $ret;
+}
+
+/**
+ * Change the Roles column to LOMGTEXT.
+ */
+function user_import_update_6003() {
+  $ret = array();
+  db_change_field($ret, 'user_import', 'roles', 'roles', array('type' => 'text', 'size' => 'big', 'not null' => TRUE, 'serialize' => TRUE)); 
+  return $ret;
+}
+
+/**
 * Implementation of hook_uninstall().
 */
 function user_import_uninstall() {
@@ -232,5 +236,6 @@ function user_import_uninstall() {
   variable_del('user_import_max');
   variable_del('user_import_line_max');
   variable_del('user_export_checked_usernames');
+  variable_del('user_import_profile_date_format');
 }
 

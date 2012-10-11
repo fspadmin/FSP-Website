@@ -1759,7 +1759,7 @@ function uc_order_mail_invoice_form($form_state, $order) {
  * @see uc_order_mail_invoice_form()
  */
 function uc_order_mail_invoice_form_validate($form, &$form_state) {
-  $recipient = check_plain($form_state['values']['email']);
+  $recipient = $form_state['values']['email'];
   if (empty($recipient) || !valid_email_address($recipient)) {
     form_set_error('email', t('Invalid e-mail address.'));
   }
@@ -1778,7 +1778,7 @@ function uc_order_mail_invoice_form_submit($form, &$form_state) {
     drupal_goto('admin/store/orders');
   }
 
-  $recipient = check_plain($form_state['values']['email']);
+  $recipient = $form_state['values']['email'];
 
   $params = array('order' => $order);
   $sent = drupal_mail('uc_order', 'invoice', $recipient, uc_store_mail_recipient_language($recipient), $params, uc_store_email_from());

@@ -32,20 +32,31 @@ Features include:
 * Use CSV file already uploaded through FTP (useful for large imports)
 * Designed to be massively scalable
 
-Supported CSV File Formats:
+** Supported CSV File Formats **
 
-Make sure csv file has been saved with 'Windows' line endings.
+The following settings are necessary when saving a csv file which will be used for the import.
+
+File needs to be saved as "Character Set: Unicode (UTF-8)".
+
+Field delimiter: ,
+- can be configured as something else, a comma is the default though.
+
+Text delimiter: "
+- if there's an option to quote all text cells, enable it.
+
+The 'Windows line endings' setting complies with all of the above.
+
 If file import fails with "File copy failed: source file does not exist." try
 setting the file extension to .txt.
 
 
 ** IMPORTANT **
 
-Note that Date fields are not yet supported.
+- Note that Date fields are not yet supported.
 
-Note that passwords can only be imported as plain text, and will be converted to MD5 by Drupal. 
+- Note that passwords can only be imported as plain text, and will be converted to MD5 by Drupal. 
 
-Note that if your data contains a backslash before the column separator it may not get imported as expected:
+- Note that if your data contains a backslash before the column separator it may not get imported as expected:
 
   "123","abc\","def"
   The second field will be imported as: abc","def
@@ -80,12 +91,14 @@ check the Drupal web site if you need assistance.
 ADDITIONAL OPTIONS 
 
 * Content Profile Import
+Content Profile module
+http://drupal.org/project/content_profile
 
 If data is to be imported into Content Profile nodes the following module
 needs to be installed and enabled:
  
   Node Import
-  http://drupal.org/project/content_profile
+  http://drupal.org/project/node_import
 
 Note that Date fields are not yet supported.
 

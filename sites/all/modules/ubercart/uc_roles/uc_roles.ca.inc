@@ -92,7 +92,7 @@ function uc_roles_ca_predicate() {
         '#argument_map' => $order_args,
         '#settings' => array(
           'from' => uc_store_email_from(),
-          'addresses' => '[order-email]',
+          'addresses' => '[order-email-raw]',
           'subject' => uc_get_message('uc_roles_grant_subject'),
           'message' => uc_get_message('uc_roles_grant_message'),
           'format' => 1,
@@ -138,7 +138,7 @@ function uc_roles_ca_predicate() {
         '#argument_map' => $order_args,
         '#settings' => array(
           'from' => uc_store_email_from(),
-          'addresses' => '[order-email]',
+          'addresses' => '[order-email-raw]',
           'subject' => uc_get_message('uc_roles_renew_subject'),
           'message' => uc_get_message('uc_roles_renew_message'),
           'format' => 1,

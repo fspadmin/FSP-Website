@@ -42,20 +42,15 @@ function uc_roles_cron() {
   while ($expiration = db_fetch_object($result)) {
     $account = user_load($expiration->uid);
 
-    // User has to contain roles to manage.
-    if (!is_array($account->roles) || !count($account->roles)) {
-      continue;
-    }
-
-    // Cleanup if this role was deleted off the user already.
-    if (!in_array($expiration->rid, array_keys($account->roles))) {
-      uc_roles_delete($account, $expiration->rid);
+    // Cleanup if user or role was deleted already.
+    if (!$account || !in_array($expiration->rid, array_keys($account->roles))) {
+      uc_roles_delete($expiration, $expiration->rid, TRUE);
     }
 
     // Role expired.
     elseif ($expiration->expiration <= time()) {
-      uc_roles_revoke($account, $expiration->rid);
       ca_pull_trigger('uc_roles_notify_revoke', $account, $expiration);
+      uc_roles_revoke($account, $expiration->rid);
     }
 
     // Remind the user about an upcoming expiration.
@@ -169,7 +164,7 @@ function uc_roles_nodeapi(&$node, $op, $arg3 = NULL, $arg4 = NULL) {
  * Implements hook_user_delete().
  */
 function uc_roles_user_delete(&$account) {
-  uc_roles_delete($account);
+  uc_roles_delete($account, NULL, TRUE);
 }
 
 /**
@@ -273,7 +268,7 @@ function uc_roles_user_form(&$edit, &$account, $category = NULL) {
   }
 
   return $form;
- }
+}
 
 /**
  * Themes the roles dialog on the account edit page.
@@ -1189,7 +1184,7 @@ function uc_roles_delete($account, $rid = NULL, $silent = FALSE) {
  * @param $silent
  *   When set to TRUE will suppress any Drupal messages from this function.
  */
-function uc_roles_revoke($account, $rid, $silent = FALSE) {
+function uc_roles_revoke(&$account, $rid, $silent = FALSE) {
   global $user;
 
   // Remove this role from the user's list.
@@ -1302,8 +1297,8 @@ function uc_roles_renew($account, $rid, $timestamp, $silent = FALSE) {
     return;
   }
 
-  // Update the expiration date.
-  db_query("UPDATE {uc_roles_expirations} SET expiration = %d WHERE uid = %d AND rid = %d", $timestamp, $account->uid, $rid);
+  // Update the expiration date and reset the notified flag.
+  db_query("UPDATE {uc_roles_expirations} SET expiration = %d, notified = NULL WHERE uid = %d AND rid = %d", $timestamp, $account->uid, $rid);
 
   if (!$silent) {
     $role_name = db_result(db_query('SELECT name FROM {role} WHERE rid = %d', $rid));

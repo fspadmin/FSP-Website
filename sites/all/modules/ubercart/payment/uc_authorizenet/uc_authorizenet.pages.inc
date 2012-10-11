@@ -17,7 +17,7 @@ function uc_authorizenet_silent_post() {
     $args = array(
       '!arb' => $arb ? 'ARB ' : '',
       '@order_id' => $_POST['x_invoice_num'],
-      '@post' => print_r($_POST, true),
+      '@post' => print_r($_POST, TRUE),
     );
     watchdog('uc_authorizenet', '!arbSilent POST received for order @order_id: <pre>@post</pre>', $args);
   }

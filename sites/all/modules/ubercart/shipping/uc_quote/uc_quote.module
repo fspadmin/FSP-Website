@@ -599,7 +599,7 @@ function uc_quote_shipping_type() {
  * This function stores the shipping type of a product or a manufacturer.
  *
  * @param $id_type
- *   product | manufacturer
+ *   Type can be 'product' or 'manufacturer'.
  * @param $id
  *   Either the node id or term id of the object receiving the shipping type.
  * @param $shipping_type
@@ -614,10 +614,10 @@ function uc_quote_set_shipping_type($id_type, $id, $shipping_type) {
 }
 
 /**
- * Retrieves a product's shipping type from the database.
+ * Retrieves shipping type information from the database.
  *
  * @param $id_type
- *   product | manufacturer
+ *   Type can be 'product' or 'manufacturer'.
  * @param $id
  *   Either the node id or term id of the object that was assigned
  *   the shipping type.
@@ -636,14 +636,14 @@ function uc_quote_get_shipping_type($id_type, $id) {
 }
 
 /**
- * Gets a product's shipping type, defaulting to the store's if it
- * doesn't exist.
+ * Gets a product's shipping type.
  *
  * @param $product
- *   The product object.
+ *   A product object.
  *
  * @return
- *   The shipping type.
+ *   The product's shipping type, or the store's default shipping type if
+ *   the product's is not set.
  */
 function uc_product_get_shipping_type($product) {
   $shipping_type = variable_get('uc_store_shipping_type', 'small_package');
@@ -657,20 +657,20 @@ function uc_product_get_shipping_type($product) {
 /**
  * Gets a product's default shipping address.
  *
- * Load the default shipping address of a product, or the store's if
- * the product shipping address is not set.
- *
  * @param $nid
  *   A product node id.
  *
  * @return
- *   An address object.
+ *   An address object containing the product's default shipping address, or
+ *   the store's shipping address if the product's is not set.
  */
 function uc_quote_get_default_shipping_address($nid) {
   $address = db_fetch_object(db_query("SELECT first_name, last_name, company, street1, street2, city, zone, postal_code, country, phone FROM {uc_quote_product_locations} WHERE nid = %d", $nid));
+
   if (empty($address)) {
     $address = variable_get('uc_quote_store_default_address', new stdClass());
   }
+
   return $address;
 }
 
@@ -826,7 +826,10 @@ function uc_checkout_pane_quotes($op, &$order, $arg2) {
       ), 'setting');
       drupal_add_js('misc/progress.js');
       drupal_add_js(drupal_get_path('module', 'uc_quote') .'/uc_quote.js');
-      $default = $order->quote['method'] .'---'. ($order->quote['accessorials'] ? $order->quote['accessorials'] : 0);
+      $default = NULL;
+      if (!empty($order->quote['method'])) {
+        $default = $order->quote['method'] .'---'. (!empty($order->quote['accessorials']) ? $order->quote['accessorials'] : 0);
+      }
       $prod_string = '';
       foreach (uc_cart_get_contents() as $item) {
         $prod_string .= '|'. $item->nid;

@@ -78,6 +78,10 @@ function uc_credit_perm() {
  */
 function uc_credit_theme() {
   return array(
+    'uc_credit_cvv_help' => array(
+      'arguments' => array(),
+      'file' => 'uc_credit.theme',
+    ),
     'uc_payment_method_credit_form' => array(
       'arguments' => array('form' => NULL),
     ),
@@ -213,13 +217,13 @@ function uc_credit_form_alter(&$form, $form_state, $form_id) {
  * Implements hook_cron().
  */
 function uc_credit_cron() {
-  // Truncate stored data when in debug per the credt card method settings.
+  // Truncate stored data when in debug per the credit card method settings.
   if (variable_get('uc_credit_debug', FALSE)) {
     $time = strtotime(variable_get('uc_credit_number_duration', '1') .' '. variable_get('uc_credit_number_unit', 'years') .' ago');
     $key = uc_credit_encryption_key();
     $crypt = new uc_encryption_class();
 
-    $result = db_query("SELECT order_id FROM {uc_orders} WHERE modified <= %d AND order_status = '%s'", $time, variable_get('uc_credit_clear_status', uc_order_state_default('completed')));
+    $result = db_query("SELECT order_id FROM {uc_orders} WHERE payment_method = 'credit' AND modified <= %d AND order_status = '%s'", $time, variable_get('uc_credit_clear_status', uc_order_state_default('completed')));
     while ($order = db_fetch_array($result)) {
       // Load up the existing data array.
       $data = db_result(db_query("SELECT data FROM {uc_orders} WHERE order_id = %d", $order['order_id']));
@@ -228,10 +232,10 @@ function uc_credit_cron() {
       $cache = uc_credit_cache('save', $data['cc_data']);
 
       // Save only some limited, PCI compliant data.
-      $data['cc_data']['cc_number'] = substr($data['cc_data']['cc_number'], -4);
-      unset($data['cc_data']['cc_cvv']);
+      $cache['cc_number'] = substr($cache['cc_number'], -4);
+      unset($cache['cc_cvv']);
 
-      $data['cc_data'] = $crypt->encrypt(uc_credit_encryption_key(), base64_encode(serialize($cc_data)));
+      $data['cc_data'] = $crypt->encrypt(uc_credit_encryption_key(), base64_encode(serialize($cache)));
       uc_store_encryption_errors($crypt, 'uc_credit');
 
       // Save it again.
@@ -390,7 +394,7 @@ function uc_credit_payment_method() {
   $cc_types = array('visa', 'mastercard', 'discover', 'amex');
   foreach ($cc_types as $type) {
     if (variable_get('uc_credit_'. $type, TRUE)) {
-      $title .= ' <img class="uc-credit-cctype uc-credit-cctype-' . $type . '" src="'. $path .'/images/'. $type .'.gif" style="position: relative; top: 5px;" />';
+      $title .= ' ' . theme('image', drupal_get_path('module', 'uc_credit') . '/images/' . $type . '.gif', '',  '', array('class' => 'uc-credit-cctype uc-credit-cctype-' . $type));
     }
   }
   $methods[] = array(
@@ -1036,36 +1040,41 @@ function uc_payment_method_credit_form($form_state, $order) {
   }
 
   // Set up the default CC number on the credit card form.
-  if (variable_get('uc_credit_validate_numbers', TRUE) && (strlen($order->payment_details['cc_number']) > 4 && !_valid_card_number($order->payment_details['cc_number']))) {
+  if (isset($_SESSION['clear_cc']) || !isset($order->payment_details['cc_number'])) {
+    $default_num = NULL;
+  }
+  elseif (variable_get('uc_credit_validate_numbers', TRUE) && !_valid_card_number($order->payment_details['cc_number'])) {
     // Display the number as is if it does not validate so it can be corrected.
     $default_num = $order->payment_details['cc_number'];
   }
-  elseif (!empty($order->payment_details['cc_number'])) {
-    if (user_access('view cc numbers') && strlen($order->payment_details['cc_number']) > 4) {
-      // Display the full number to those with access.
-      $default_num = $order->payment_details['cc_number'];
-    }
-    else {
-      // Otherwise default to the last 4 digits.
-      $default_num = t('(Last 4) ') . substr($order->payment_details['cc_number'], -4);
-    }
+  elseif (user_access('view cc numbers') && strlen($order->payment_details['cc_number']) > 4) {
+    // Display the full number to those with access.
+    $default_num = $order->payment_details['cc_number'];
+  }
+  else {
+    // Otherwise default to the last 4 digits.
+    $default_num = t('(Last 4) ') . substr($order->payment_details['cc_number'], -4);
   }
   $form['cc_number'] = array(
     '#type' => 'textfield',
     '#title' => t('Card number'),
-    '#default_value' => $_SESSION['clear_cc'] ? '' : $default_num,
+    '#default_value' => $default_num,
     '#attributes' => array('autocomplete' => 'off'),
     '#size' => 20,
     '#maxlength' => 19,
   );
 
   if (variable_get('uc_credit_start_enabled', FALSE)) {
-    $form['cc_start_month'] = uc_select_month(t('Start Month'), $order->payment_details['cc_start_month'], TRUE);
-    $form['cc_start_year'] = uc_select_year(t('Start Year'), $order->payment_details['cc_start_year'], date('Y') - 10, date('Y'), TRUE);
+    $month = isset($order->payment_details['cc_start_month']) ? $order->payment_details['cc_start_month'] : NULL;
+    $year = isset($order->payment_details['cc_start_year']) ? $order->payment_details['cc_start_year'] : NULL;
+    $form['cc_start_month'] = uc_select_month(t('Start Month'), $month, TRUE);
+    $form['cc_start_year'] = uc_select_year(t('Start Year'), $year, date('Y') - 10, date('Y'), TRUE);
   }
 
-  $form['cc_exp_month'] = uc_select_month(t('Expiration Month'), $order->payment_details['cc_exp_month']);
-  $form['cc_exp_year'] = uc_select_year(t('Expiration Year'), $order->payment_details['cc_exp_year']);
+  $month = isset($order->payment_details['cc_exp_month']) ? $order->payment_details['cc_exp_month'] : 1;
+  $year = isset($order->payment_details['cc_exp_year']) ? $order->payment_details['cc_exp_year'] : date('Y');
+  $form['cc_exp_month'] = uc_select_month(t('Expiration Month'), $month);
+  $form['cc_exp_year'] = uc_select_year(t('Expiration Year'), $year);
 
   if (variable_get('uc_credit_issue_enabled', FALSE)) {
     // Set up the default Issue Number on the credit card form.
@@ -1095,24 +1104,25 @@ function uc_payment_method_credit_form($form_state, $order) {
 
   if (variable_get('uc_credit_cvv_enabled', TRUE)) {
     // Set up the default CVV  on the credit card form.
-    if (!_valid_cvv($order->payment_details['cc_cvv'])) {
+    if (isset($_SESSION['clear_cc']) || empty($order->payment_details['cc_cvv'])) {
+      $default_cvv = NULL;
+    }
+    elseif (!_valid_cvv($order->payment_details['cc_cvv'])) {
       // Display the CVV as is if it does not validate so it can be corrected.
       $default_cvv = $order->payment_details['cc_cvv'];
     }
-    elseif (!empty($order->payment_details['cc_cvv'])) {
-      if (user_access('view cc numbers')) {
-        // Display the full number to those with access.
-        $default_cvv = $order->payment_details['cc_cvv'];
-      }
-      else {
-        // Otherwise mask it with dashes.
-        $default_cvv = str_repeat('-', strlen($order->payment_details['cc_cvv']));
-      }
+    elseif (user_access('view cc numbers')) {
+      // Display the full number to those with access.
+      $default_cvv = $order->payment_details['cc_cvv'];
+    }
+    else {
+      // Otherwise mask it with dashes.
+      $default_cvv = str_repeat('-', strlen($order->payment_details['cc_cvv']));
     }
     $form['cc_cvv'] = array(
       '#type' => 'textfield',
       '#title' => t('CVV'),
-      '#default_value' => $_SESSION['clear_cc'] ? '' : $default_cvv,
+      '#default_value' => $default_cvv,
       '#attributes' => array('autocomplete' => 'off'),
       '#size' => variable_get('uc_credit_amex', TRUE) ? 4 : 3,
       '#maxlength' => variable_get('uc_credit_amex', TRUE) ? 4 : 3,
@@ -1156,38 +1166,70 @@ function theme_uc_payment_method_credit_form($form) {
     }
     if (variable_get('uc_credit_type_enabled', FALSE)) {
       $form['cc_type']['#title'] = '';
-      $output .= '<tr><td class="field-label">'. t('Card Type:') .'</td><td>'
-               . drupal_render($form['cc_type']) .'</td></tr>';
+      $output .= '<tr><td class="field-label">'
+               . '<label for="' . $form['cc_type']['#id'] . '">'
+               . t('Card Type:')
+               . '</label></td><td>'
+               . drupal_render($form['cc_type'])
+               . '</td></tr>';
     }
     if (variable_get('uc_credit_owner_enabled', FALSE)) {
       $form['cc_owner']['#title'] = '';
-      $output .= '<tr><td class="field-label">'. t('Card Owner:') .'</td><td>'
-               . drupal_render($form['cc_owner']) .'</td></tr>';
+      $output .= '<tr><td class="field-label">'
+               . '<label for="' . $form['cc_owner']['#id'] . '">'
+               . t('Card Owner:')
+               . '</label></td><td>'
+               . drupal_render($form['cc_owner'])
+               . '</td></tr>';
     }
-    $output .= '<tr><td class="field-label">'. t('Card Number:') .'</td><td>'
-             . drupal_render($form['cc_number']) .'</td></tr>';
+    $output .= '<tr><td class="field-label">'
+             . '<label for="' . $form['cc_number']['#id'] . '">'
+             . t('Card Number:')
+             . '</label></td><td>'
+             . drupal_render($form['cc_number'])
+             . '</td></tr>';
     if (variable_get('uc_credit_start_enabled', FALSE)) {
-      $output .= '<tr><td class="field-label">'. t('Start Date:') .'</td><td>'
-               . drupal_render($form['cc_start_month']) .' '. drupal_render($form['cc_start_year'])
-                .' '. t('(if present)') .'</td></tr>';
+      $output .= '<tr><td class="field-label">'
+               . '<label for="' . $form['cc_start_month']['#id'] . '">'
+               . t('Start Date:')
+               . '</label></td><td>'
+               . drupal_render($form['cc_start_month']) . ' ' . drupal_render($form['cc_start_year'])
+               . ' ' . t('(if present)')
+               . '</td></tr>';
     }
-    $output .= '<tr><td class="field-label">'. t('Expiration Date:') .'</td><td>'
-             . drupal_render($form['cc_exp_month']) .' '
-             . drupal_render($form['cc_exp_year']) .'</td></tr>';
+    $output .= '<tr><td class="field-label">'
+             . '<label for="' . $form['cc_exp_month']['#id'] . '">'
+             . t('Expiration Date:')
+             . '</label></td><td>'
+             . drupal_render($form['cc_exp_month']) . ' ' . drupal_render($form['cc_exp_year'])
+             . '</td></tr>';
     if (variable_get('uc_credit_issue_enabled', FALSE)) {
-      $output .= '<tr><td class="field-label">'. t('Issue Number:') .'</td><td>'
-               . drupal_render($form['cc_issue']) .' '. t('(if present)') .'</td></tr>';
+      $output .= '<tr><td class="field-label">'
+               . '<label for="' . $form['cc_issue']['#id'] . '">'
+               . t('Issue Number:')
+               . '</label></td><td>'
+               . drupal_render($form['cc_issue'])
+               . ' ' . t('(if present)')
+               . '</td></tr>';
     }
     if (variable_get('uc_credit_cvv_enabled', TRUE)) {
       $form['cc_cvv']['#title'] = '';
-      $output .= '<tr><td class="field-label">'. t('CVV:') .'</td><td>'. drupal_render($form['cc_cvv'])
-                .' <img src="'. $path .'/images/info.png" onclick="cvv_info_popup();" style="cursor: pointer; position: relative; top: 3px;" /> <a style="cursor: pointer; font-weight: normal;" onclick="cvv_info_popup();">'
-                . t("What's the CVV?") .'</a></td></tr>';
+      $output .= '<tr><td class="field-label">'
+               . '<label for="' . $form['cc_cvv']['#id'] . '">'
+               . t('CVV:')
+               . '</label></td><td>'
+               . drupal_render($form['cc_cvv'])
+               . theme('uc_credit_cvv_help')
+               . '</td></tr>';
     }
     if (variable_get('uc_credit_bank_enabled', FALSE)) {
       $form['cc_bank']['#title'] = '';
-      $output .= '<tr><td class="field-label">'. t('Issuing Bank:') .'</td><td>'
-               . drupal_render($form['cc_bank']) .'</td></tr>';
+      $output .= '<tr><td class="field-label">'
+               . '<label for="' . $form['cc_bank']['#id'] . '">'
+               . t('Issuing Bank:')
+               . '</label></td><td>'
+               . drupal_render($form['cc_bank'])
+               . '</td></tr>';
     }
     $output .= '</table>';
   }
@@ -1340,7 +1382,7 @@ function uc_credit_cart_review_pre_form_submit($form, &$form_state) {
  * Clears the temporary CC data if the review order form submits.
  */
 function uc_credit_cart_review_post_form_submit($form, &$form_state) {
-  if ($_SESSION['do_complete']) {
+  if (!empty($_SESSION['do_complete'])) {
     // Otherwise stuff it back in the session for the next pageload.
     unset($_SESSION['sescrd']);
   }

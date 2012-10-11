@@ -73,7 +73,7 @@ function uc_cart_ca_predicate() {
         ),
         '#settings' => array(
           'from' => uc_store_email_from(),
-          'addresses' => '[order-email]',
+          'addresses' => '[order-email-raw]',
           'subject' => t('Your Order at [store-name]'),
           'template' => 'customer',
           'view' => 'checkout-mail',

@@ -49,7 +49,7 @@ function uc_tax_report_report_page($start_date = NULL, $end_date = NULL, $status
 
   // Query to get the tax line items in this date range
 
-  $result = db_query("SELECT ucoli.amount, ucoli.title, ucoli.data FROM {uc_orders} ucord LEFT JOIN {uc_order_statuses} ON order_status_id = order_status LEFT JOIN {uc_order_line_items} ucoli ON ucord.order_id = ucoli.order_id WHERE %d <= created AND created <= %d AND order_status IN '%s' AND ucoli.type = 'tax'", $args['start_date'], $args['end_date'], $order_statuses);
+  $result = db_query("SELECT ucoli.amount, ucoli.title, ucoli.data FROM {uc_orders} ucord LEFT JOIN {uc_order_statuses} ON order_status_id = order_status LEFT JOIN {uc_order_line_items} ucoli ON ucord.order_id = ucoli.order_id WHERE %d <= created AND created <= %d AND order_status IN $order_statuses AND ucoli.type = 'tax'", $args['start_date'], $args['end_date']);
 
   // add up the amounts by jurisdiction
   $totals = array();

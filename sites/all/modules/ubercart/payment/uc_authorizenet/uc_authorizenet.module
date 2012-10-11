@@ -259,7 +259,7 @@ function uc_authorizenet_charge($order_id, $amount, $data) {
         return array('success' => FALSE, 'message' => $message);
       }
       else {
-        return array('success' => TRUE, 'message' => t('New customer profile created successfully at Authorize.Net.'));
+        return array('success' => TRUE, 'log_payment' => FALSE, 'message' => t('New customer profile created successfully at Authorize.Net.'));
       }
 
     // Accommodate all other transaction types.
@@ -395,9 +395,10 @@ function _uc_authorizenet_cim_profile_charge_request($order, $amount, $data) {
       'refId' => substr($order->order_id .'-'. time(), 0, 20),
       'transaction' => array(
         'profileTransAuthCapture' => array(
-          'amount' => $amount,
+          'amount' => _uc_authorizenet_format_amount($amount),
           'customerProfileId' => $profile['customerProfileId'],
           'customerPaymentProfileId' => $profile['customerPaymentProfileId'],
+          'customerShippingAddressId' => $profile['customerAddressId'],
           'order' => array(
             'invoiceNumber' => $order->order_id,
           ),
@@ -456,16 +457,6 @@ function _uc_authorizenet_charge($order, $amount, $data) {
   $billing_country = uc_get_country_data(array('country_id' => $order->billing_country));
   $delivery_country = uc_get_country_data(array('country_id' => $order->delivery_country));
 
-  $context = array(
-    'revision' => 'formatted-original',
-    'type' => 'amount',
-  );
-  $options = array(
-    'sign' => FALSE,
-    'thou' => FALSE,
-    'dec' => '.',
-  );
-
   // Build the POST data for the transaction.
   $submit_data = array(
     // Merchant Information
@@ -478,7 +469,7 @@ function _uc_authorizenet_charge($order, $amount, $data) {
     // 'x_method' => $order->payment_method == 'credit' ? 'CC' : 'ECHECK',
     'x_method' => 'CC',
     // 'x_recurring_billing' => 'FALSE',
-    'x_amount' => uc_price($amount, $context, $options),
+    'x_amount' => _uc_authorizenet_format_amount($amount),
     'x_card_num' => $order->payment_details['cc_number'],
     'x_exp_date' => $order->payment_details['cc_exp_month'] .'/'. $order->payment_details['cc_exp_year'],
     'x_card_code' => $order->payment_details['cc_cvv'],
@@ -1237,4 +1228,26 @@ function _uc_authorizenet_login_data() {
   );
 
   return $data;
+}
+
+/**
+ * Formats an amount for submission to Authorize.net.
+ *
+ * @param $amount
+ * The raw amount being submitted.
+ *
+ * @return mixed
+ * The amount formatted and rounded for use with Authorize.net.
+ */
+function _uc_authorizenet_format_amount($amount) {
+  $context = array(
+    'revision' => 'formatted-original',
+    'type' => 'amount',
+  );
+  $options = array(
+    'sign' => FALSE,
+    'thou' => FALSE,
+    'dec' => '.',
+  );
+  return uc_price($amount, $context, $options);
 }

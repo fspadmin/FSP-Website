@@ -1,4 +1,3 @@
-; $Id: README.txt,v 1.1.2.1 2009/10/02 08:58:49 mcgo Exp $
 Munin Drupal plugin
 Author:   McGo (Mirko Haaser)
 Website:  http://drupalist.de

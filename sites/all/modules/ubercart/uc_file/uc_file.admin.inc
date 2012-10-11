@@ -418,7 +418,7 @@ function uc_file_admin_files_form_action_submit($form, &$form_state) {
       $status = TRUE;
 
       // Delete the selected file(s), with recursion if selected.
-      $status = uc_file_remove_by_id($form_state['values']['file_ids'], $form_state['values']['recurse_directories']) && $status;
+      $status = uc_file_remove_by_id($form_state['values']['file_ids'], !empty($form_state['values']['recurse_directories'])) && $status;
 
       if ($status) {
         drupal_set_message(t('The selected file(s) have been deleted.'));

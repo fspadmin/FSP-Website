@@ -103,7 +103,7 @@
                   <b><?php echo t('Payment Method:'); ?></b>
                 </td>
                 <td width="98%">
-                  <?php echo $order_payment_method; ?>
+                  <?php if (isset($order_payment_method)) { echo $order_payment_method; } ?>
                 </td>
               </tr>
 

@@ -142,14 +142,48 @@ class UbercartTestHelper extends DrupalWebTestCase {
     // Complete the review page.
     $this->drupalPost(NULL, array(), t('Submit order'));
 
-    if ($order_id = db_result(db_query("SELECT order_id FROM {uc_orders} WHERE delivery_first_name = '%s'", $edit['panes[delivery][delivery_first_name]']))) {
-      $this->pass(t('Order %order_id has been created', array('%order_id' => $order_id)));
+    $order_id = db_result(db_query("SELECT order_id FROM {uc_orders} WHERE delivery_first_name = '%s'", $edit['panes[delivery][delivery_first_name]']));
+    if ($order_id) {
+      $this->pass(
+        t('Order %order_id has been created', array('%order_id' => $order_id))
+      );
+      $order = uc_order_load($order_id);
     }
     else {
       $this->fail(t('No order was created.'));
+      $order = FALSE;
     }
 
-    return $order_id;
+    return $order;
+  }
+
+  /**
+   * Assert that an email was sent with a specific subject line.
+   *
+   * @param $pattern
+   *   A regular expression to match the subject against.
+   *
+   * @return
+   *   An array containing the most recently sent matching email,
+   *   or FALSE if the subject line did not match anything.
+   */
+  function findMail($pattern) {
+    foreach (array_reverse($this->drupalGetMails()) as $mail) {
+      if (preg_match($pattern, $mail['subject'])) {
+        $this->pass(t('E-mail found with subject matching %pattern.', array('%pattern' => $pattern)));
+        return $mail;
+      }
+    }
+
+    $this->fail(t('E-mail not found with subject matching %pattern.', array('%pattern' => $pattern)));
+    return FALSE;
+  }
+
+  /**
+   * Runs cron in the Drupal installed by Simpletest.
+   */
+  protected function cronRun() {
+    $this->drupalGet($GLOBALS['base_url'] . '/cron.php', array('external' => TRUE));
   }
 }
 

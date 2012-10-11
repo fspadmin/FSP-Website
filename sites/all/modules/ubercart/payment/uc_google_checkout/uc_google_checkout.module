@@ -791,7 +791,25 @@ function uc_google_checkout_new_order($new_order) {
     //uc_order_line_item_add($order_id, 'tax', t('Total tax'), $new_order->{'order-adjustment'}->{'total-tax'});
     if (isset($new_order->{'order-adjustment'}->shipping)) {
       $shipping_line = $new_order->{'order-adjustment'}->shipping[0];
-      uc_order_line_item_add($order_id, 'shipping', check_plain((string) $shipping_line->{'shipping-name'}), (string) $shipping_line->{'shipping-cost'});
+      if ($shipping_line->{'shipping-cost'}) {
+        $shipping = array(
+          'name' => check_plain($shipping_line->{'shipping-name'}),
+          'cost' => $shipping_line->{'shipping-cost'},
+        );
+      }
+      elseif ($shipping_line->{'carrier-calculated-shipping-adjustment'}->{'shipping-cost'}) {
+        $shipping = array(
+          'name' => check_plain($shipping_line->{'carrier-calculated-shipping-adjustment'}->{'shipping-name'}),
+          'cost' => $shipping_line->{'carrier-calculated-shipping-adjustment'}->{'shipping-cost'},
+        );
+      }
+      elseif ($shipping_line->{'merchant-calculated-shipping-adjustment'}->{'shipping-cost'}) {
+        $shipping = array(
+          'name' => check_plain($shipping_line->{'merchant-calculated-shipping-adjustment'}->{'shipping-name'}),
+          'cost' => $shipping_line->{'merchant-calculated-shipping-adjustment'}->{'shipping-cost'},
+        );
+      }
+      uc_order_line_item_add($order_id, 'shipping', $shipping['name'], $shipping['cost']);
     }
     if (isset($new_order->{'order-adjustment'}->{'merchant-codes'})) {
       foreach ($new_order->{'order-adjustment'}->{'merchant-codes'}->children() as $adjustment) {

@@ -1,5 +1,4 @@
 <?php
-// $Id: watchdog.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt Exp $ 
 
 /**
  * @todo add option to not record watchdog messages for each user created

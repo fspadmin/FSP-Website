@@ -118,8 +118,8 @@ function ca_ca_action() {
  * @see ca_condition_date_form()
  */
 function ca_condition_date($settings) {
-  $set_date_start = gmmktime(0, 0, 0, $settings['date']['month'], $settings['date']['day'], $settings['date']['year']);
-  $set_date_end = gmmktime(23, 59, 59, $settings['date']['month'], $settings['date']['day'], $settings['date']['year']);
+  $set_date_start = mktime(0, 0, 0, $settings['date']['month'], $settings['date']['day'], $settings['date']['year']);
+  $set_date_end = mktime(23, 59, 59, $settings['date']['month'], $settings['date']['day'], $settings['date']['year']);
 
   $curr_time = time();
 

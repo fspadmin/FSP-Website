@@ -119,9 +119,11 @@ function uc_credit_terminal_form($form_state, $order, $lock_amount = FALSE) {
   // Find any uncaptured authorizations.
   $options = array();
 
-  foreach ((array) $order->data['cc_txns']['authorizations'] as $auth_id => $data) {
-    if (empty($data['captured'])) {
-      $options[$auth_id] = t('@auth_id - @date - @amount authorized', array('@auth_id' => strtoupper($auth_id), '@date' => format_date($data['authorized'], 'small'), '@amount' => uc_price($data['amount'], $context)));
+  if (isset($order->data['cc_txns']['authorizations'])) {
+    foreach ($order->data['cc_txns']['authorizations'] as $auth_id => $data) {
+      if (empty($data['captured'])) {
+        $options[$auth_id] = t('@auth_id - @date - @amount authorized', array('@auth_id' => strtoupper($auth_id), '@date' => format_date($data['authorized'], 'small'), '@amount' => uc_price($data['amount'], $context)));
+      }
     }
   }
 
@@ -169,8 +171,10 @@ function uc_credit_terminal_form($form_state, $order, $lock_amount = FALSE) {
   // Log a reference to the order for testing.
   // $order->data = uc_credit_log_reference($order->order_id, substr(md5(time()), 0, 16), '4111111111111111');
 
-  foreach ((array) $order->data['cc_txns']['references'] as $ref_id => $data) {
-    $options[$ref_id] = t('@ref_id - @date - (Last 4) @card', array('@ref_id' => strtoupper($ref_id), '@date' => format_date($data['created'], 'small'), '@card' => $data['card']));
+  if (isset($order->data['cc_txns']['references'])) {
+    foreach ($order->data['cc_txns']['references'] as $ref_id => $data) {
+      $options[$ref_id] = t('@ref_id - @date - (Last 4) @card', array('@ref_id' => strtoupper($ref_id), '@date' => format_date($data['created'], 'small'), '@card' => $data['card']));
+    }
   }
 
   // If any references existed...
@@ -328,9 +332,9 @@ function uc_credit_terminal_form_submit($form, &$form_state) {
       $cc_data = $cache;
     }
     else {
-      $cc_data = array(
-        'cc_number' => substr($cache['cc_number'], -4),
-      );
+      $cc_data = $cache;
+      $cc_data['cc_number'] = substr($cc_data['cc_number'], -4);
+      unset($cc_data['cc_cvv']);
     }
 
     // Stuff the serialized and encrypted CC details into the array.

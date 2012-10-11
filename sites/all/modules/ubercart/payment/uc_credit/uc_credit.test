@@ -59,7 +59,7 @@ class UbercartCreditCardTestCase extends UbercartTestHelper {
    */
   public function setUp() {
     $modules = array('uc_payment', 'uc_credit', 'test_gateway');
-    $permissions = array('administer permissions', 'administer credit cards');
+    $permissions = array('administer credit cards', 'process credit cards');
     parent::setUp($modules, $permissions);
 
     // Need admin permissions in order to change credit card settings.
@@ -284,75 +284,9 @@ class UbercartCreditCardTestCase extends UbercartTestHelper {
   }
 
   /**
-   * Expected-to-fail payment test cases.
-   *
-   * Most gateways provide test cases which will trigger payment acceptance,
-   * failure, or specific error messages.  Usually, these test cases only work
-   * on the gateway's testing server.
-   */
-  public function testGatewayFails() {
-
-// Amex's card security code (CSC) # is 4 digits, MC and V are 3
-// Expiration must be in the future
-
-    // Fails for Test Gateway
-    $fail_data = array(
-      'panes[billing][billing_first_name]' => 'Fictitious',
-      'panes[billing][billing_phone]' => '8675309',
-      'cc_number' => '0000000000000000',
-      'cc_cvv' => '000',
-      'cc_exp_month' => mt_rand(1, 12),
-//    ($expiration_date - time()) <= 0
-//    $amount == 12.34
-    );
-  }
-
-  /**
    * Tests that an order can be placed using the test gateway.
    */
   public function brokentestCheckout() {
-    // Allow customer to specify username and password, and log in new users
-    // after checkout.
-    $settings = array(
-      'uc_cart_new_account_name' => TRUE,
-      'uc_cart_new_account_password' => TRUE,
-    );
-    $this->drupalLogin($this->adminUser);
-    $this->drupalPost('admin/store/settings/checkout/edit', array('uc_new_customer_login' => TRUE), t('Save configuration'));
-    $this->drupalPost('admin/store/settings/checkout/edit/panes', $settings, t('Save configuration'));
-    $this->drupalLogout();
-
-    $new_user = new stdClass();
-    $new_user->name = $this->randomName(20);
-    $new_user->pass_raw = $this->randomString(20);
-
-    // Test as anonymous user.
-    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
-    $this->checkout(array(
-      'panes[customer][new_account][name]' => $new_user->name,
-      'panes[customer][new_account][pass]' => $new_user->pass_raw,
-
-      'cc_number' => array_rand(array_flip(self::$test_cards)),
-      'cc_cvv' => mt_rand(100, 999),
-      'cc_exp_month' => mt_rand(1, 12),
-      'cc_exp_year' => mt_rand(2012, 2022),
-    ));
-    $this->assertText('Your order is complete!');
-    $this->assertText('you are already logged in');
-
-    // Confirm login.
-    $this->drupalGet('<front>');
-    $this->assertText('My account', 'User is logged in.');
-
-    // Check that cart is now empty.
-    $this->drupalGet('cart');
-    $this->assertText('There are no products in your shopping cart.');
-
-    // Check that the password works.
-    $this->drupalLogout();
-    $this->drupalLogin($new_user);
-
-    // Test again as authenticated user.
     $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
     $this->checkout(array(
       'cc_number' => array_rand(array_flip(self::$test_cards)),
@@ -361,47 +295,34 @@ class UbercartCreditCardTestCase extends UbercartTestHelper {
       'cc_exp_year' => mt_rand(2012, 2022),
     ));
     $this->assertText('Your order is complete!');
-    $this->assertText('While logged in');
-
-    // Test again with generated username and password.
-    $this->drupalLogout();
-    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
-    $this->checkout(array(
-      'cc_number' => array_rand(array_flip(self::$test_cards)),
-      'cc_cvv' => mt_rand(100, 999),
-      'cc_exp_month' => mt_rand(1, 12),
-      'cc_exp_year' => mt_rand(2012, 2022),
-    ));
-    $this->assertText('Your order is complete!');
-    $this->assertText('you are already logged in');
   }
 
   /**
-   * Tests that a payment was received and recorded.
+   * Tests that expiry date validation functions correctly.
    */
-  public function brokentestPaymentReceived() {
+  public function testExpiryDate() {
+    $order = $this->createOrder(array('payment_method' => 'credit'));
 
-    // TODO:  This is all functional, but doesn't do what the function
-    // comment says.  Needs to be fixed to match the comment!
+    $year = date('Y');
+    $month = date('n');
+    for ($y = $year; $y <= $year + 2; $y++) {
+      for ($m = 1; $m <= 12; $m++) {
+        $edit = array(
+          'amount' => 1,
+          'cc_data[cc_number]' => '4111111111111111',
+          'cc_data[cc_cvv]' => '123',
+          'cc_data[cc_exp_month]' => $m,
+          'cc_data[cc_exp_year]' => $y,
+        );
+        $this->drupalPost('admin/store/orders/' . $order->order_id . '/credit', $edit, 'Charge amount');
 
-    // Payment notification is received first.
-    $order_data = array('primary_email' => 'simpletest@ubercart.org');
-    $order = $this->createOrder($order_data);
-    uc_payment_enter($order->order_id, 'SimpleTest', $order->order_total);
-    $output = uc_cart_complete_sale($order);
-
-    // Different user, sees the checkout page first.
-    $order_data = array('primary_email' => 'simpletest2@ubercart.org');
-    $order = $this->createOrder($order_data);
-    $output = uc_cart_complete_sale($order, TRUE);
-    uc_payment_enter($order->order_id, 'SimpleTest', $order->order_total);
-
-    // Same user, new order.
-    $order = $this->createOrder($order_data);
-    $output = uc_cart_complete_sale($order, TRUE);
-    uc_payment_enter($order->order_id, 'SimpleTest', $order->order_total);
-
-    // Check that no new account was created.
-    $this->assertTrue(strpos($output['#message'], 'order has been attached to the account') !== FALSE, 'Checkout message mentions existing account.');
+        if ($y > $year || $m >= $month) {
+          $this->assertText('The credit card was processed successfully.', t('Card with expiry date @month/@year passed validation.', array('@month' => $m, '@year' => $y)));
+        }
+        else {
+          $this->assertNoText('The credit card was processed successfully.', t('Card with expiry date @month/@year correctly failed validation.', array('@month' => $m, '@year' => $y)));
+        }
+      }
+    }
   }
 }

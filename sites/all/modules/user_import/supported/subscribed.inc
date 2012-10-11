@@ -1,5 +1,4 @@
 <?php
-// $Id: subscribed.inc,v 1.5 2009/03/21 22:32:42 MegaGrunt Exp $
 
 /**
  * Implementation of hook_user_import_form_fieldsets().

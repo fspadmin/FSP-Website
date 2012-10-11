@@ -559,20 +559,19 @@ function uc_product_form(&$node) {
     '#size' => 10,
   );
   $form['base']['pkg_qty'] = array(
-    '#type' => 'textfield',
+    '#type' => 'uc_quantity',
     '#title' => t('Package quantity'),
     '#default_value' => isset($node->pkg_qty) ? $node->pkg_qty : 1,
     '#description' => t('At most, how many of these items can fit in your largest box? Orders that exceed this value will be split into multiple packages when retrieving shipping quotes.'),
     '#weight' => 25,
   );
   $form['base']['default_qty'] = array(
-    '#type' => 'textfield',
+    '#type' => 'uc_quantity',
     '#title' => t('Default quantity to add to cart'),
     '#default_value' => isset($node->default_qty) ? $node->default_qty : 1,
     '#description' => t('Use 0 to disable the quantity field next to the add to cart button.'),
     '#weight' => 27,
-    '#size' => 5,
-    '#maxlength' => 6,
+    '#allow_zero' => TRUE,
   );
   $form['base']['ordering'] = array(
     '#type' => 'weight',
@@ -646,14 +645,6 @@ function uc_product_validate($node) {
   foreach (array('weight', 'length', 'width', 'height') as $property) {
     if (!empty($node->$property) && (!is_numeric($node->$property) || $node->$property < 0)) {
       form_set_error($property, t('@property must be a positive number. No commas and only one decimal point.', array('@property' => ucfirst($property))));
-    }
-  }
-  if ($node->default_qty) {
-    if (!is_numeric($node->default_qty)) {
-      form_set_error('default_qty', t('Quantities should be numeric.'));
-    }
-    elseif ($node->default_qty < 0) {
-      form_set_error('default_qty', t("Adding negative items to the cart doesn't make sense, so don't make it easy."));
     }
   }
 }
@@ -1191,10 +1182,9 @@ function uc_product_cart_display($item) {
   $element['#total'] = uc_price($price_info, $context);
   $element['data'] = array('#type' => 'hidden', '#value' => serialize($item->data));
   $element['qty'] = array(
-    '#type' => 'textfield',
+    '#type' => 'uc_quantity',
     '#default_value' => $item->qty,
-    '#size' => 5,
-    '#maxlength' => 6
+    '#allow_zero' => TRUE,
   );
 
   $element['description'] = array('#value' => '');
@@ -1476,7 +1466,6 @@ function theme_uc_product_add_to_cart($node, $teaser = 0, $page = 0) {
  *   A product node.
  *
  * @see uc_product_forms()
- * @see uc_product_add_to_cart_form_validate()
  * @see uc_product_add_to_cart_form_submit()
  * @ingroup forms
  */
@@ -1488,11 +1477,9 @@ function uc_product_add_to_cart_form($form_state, $node) {
 
   if ($node->default_qty > 0 && variable_get('uc_product_add_to_cart_qty', FALSE)) {
     $form['qty'] = array(
-      '#type' => 'textfield',
+      '#type' => 'uc_quantity',
       '#title' => t('Quantity'),
       '#default_value' => $node->default_qty,
-      '#size' => 5,
-      '#maxlength' => 6,
     );
   }
   else {
@@ -1516,17 +1503,6 @@ function uc_product_add_to_cart_form($form_state, $node) {
   uc_form_alter($form, $form_state, __FUNCTION__);
 
   return $form;
-}
-
-/**
- * Allows only positive, numeric quantities.
- *
- * @see uc_product_add_to_cart_form()
- */
-function uc_product_add_to_cart_form_validate($form, &$form_state) {
-  if (!is_numeric($form_state['values']['qty']) || intval($form_state['values']['qty']) <= 0) {
-    form_set_error('qty', t('You have entered an invalid quantity.'));
-  }
 }
 
 /**

@@ -1,6 +1,5 @@
 <?php
 
-// $Id: munin_default.module,v 1.1.2.3 2009/10/14 19:39:02 mcgo Exp $
 
 /**
  * @file
@@ -27,7 +26,7 @@ function munin_default_muninplugin() {
   $plugins['user']['curuser'] = array(
     '#label' => t('Currently logged in user'),
     '#description' => t('This item shows the number of currently logged in users.'),
-    '#type' => 'GAUGE ',
+    '#type' => 'GAUGE',
     '#statement' => 'select count(uid) from {users} where unix_timestamp() - access < (60*5)',
   );
   $plugins['user']['newuser'] = array(

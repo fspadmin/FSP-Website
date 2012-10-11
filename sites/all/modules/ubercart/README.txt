@@ -45,3 +45,11 @@ Releases may be downloaded at http://drupal.org/project/ubercart.
 
 Kind regards,
 The UberDudes
+
+Security note:
++++++++++++++
+Securing an Ubercart site is a big deal. One element to keep in mind inside
+Ubercart is that the permission "administer conditional actions" will allow a
+user to execute arbitrary PHP code. You should only give that permission to
+roles you really trust. For more tips on securing Drupal see
+http://drupal.org/security/secure-configuration

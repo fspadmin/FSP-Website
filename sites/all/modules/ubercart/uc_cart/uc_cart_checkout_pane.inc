@@ -392,16 +392,16 @@ function uc_checkout_pane_billing($op, &$arg1, $arg2) {
       return array('description' => $description, 'contents' => $contents, 'theme' => 'address_pane');
 
     case 'process':
-      $arg1->billing_first_name = $arg2['billing_first_name'];
-      $arg1->billing_last_name = $arg2['billing_last_name'];
-      $arg1->billing_company = $arg2['billing_company'];
-      $arg1->billing_street1 = $arg2['billing_street1'];
-      $arg1->billing_street2 = $arg2['billing_street2'];
-      $arg1->billing_city = $arg2['billing_city'];
-      $arg1->billing_zone = $arg2['billing_zone'];
-      $arg1->billing_postal_code = $arg2['billing_postal_code'];
-      $arg1->billing_country = $arg2['billing_country'];
-      $arg1->billing_phone = $arg2['billing_phone'];
+      $arg1->billing_first_name = isset($arg2['billing_first_name']) ? $arg2['billing_first_name'] : NULL;
+      $arg1->billing_last_name = isset($arg2['billing_last_name']) ? $arg2['billing_last_name'] : NULL;
+      $arg1->billing_company = isset($arg2['billing_company']) ? $arg2['billing_company'] : NULL;
+      $arg1->billing_street1 = isset($arg2['billing_street1']) ? $arg2['billing_street1'] : NULL;
+      $arg1->billing_street2 = isset($arg2['billing_street2']) ? $arg2['billing_street2'] : NULL;
+      $arg1->billing_city = isset($arg2['billing_city']) ? $arg2['billing_city'] : NULL;
+      $arg1->billing_zone = isset($arg2['billing_zone']) ? $arg2['billing_zone'] : NULL;
+      $arg1->billing_postal_code = isset($arg2['billing_postal_code']) ? $arg2['billing_postal_code'] : NULL;
+      $arg1->billing_country = isset($arg2['billing_country']) ? $arg2['billing_country'] : NULL;
+      $arg1->billing_phone = isset($arg2['billing_phone']) ? $arg2['billing_phone'] : NULL;
       return TRUE;
 
     case 'review':
@@ -481,10 +481,12 @@ function theme_address_pane($form) {
         $title = ' ';
       }
       $output .= '<tr><td class="field-label">';
+      $output .= '<label for="'. $form[$field]['#id'] .'">';
       if ($form[$field]['#required']) {
         $output .= $req;
       }
-      $output .= $title .'</td><td>'. drupal_render($form[$field]) .'</td></tr>';
+      $output .= $title .'</label></td>';
+      $output .= '<td>'. drupal_render($form[$field]) .'</td></tr>';
     }
   }
   $output .= '</table></div>';

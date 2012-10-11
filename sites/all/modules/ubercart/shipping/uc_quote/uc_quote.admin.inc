@@ -32,7 +32,12 @@ function uc_quote_overview() {
  */
 function uc_quote_admin_settings() {
   $address = variable_get('uc_quote_store_default_address', new stdClass());
-  $form = array();
+  $fields = array('first_name', 'last_name', 'company', 'street1', 'street2', 'city', 'zone', 'postal_code', 'country', 'phone');
+  foreach ($fields as $field) {
+    if (!isset($address->$field)) {
+      $address->$field = '';
+    }
+  }
 
   $form['uc_quote_log_errors'] = array(
     '#type' => 'checkbox',
@@ -71,7 +76,7 @@ function uc_quote_admin_settings() {
     '#summary callback ' => 'summarize_form',
     '#tree' => TRUE,
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
   );
   $form['uc_quote_pane_description']['text'] = array(
     '#type' => 'textarea',
@@ -87,7 +92,7 @@ function uc_quote_admin_settings() {
     '#summary callback' => 'summarize_form',
     '#tree' => TRUE,
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
   );
   $form['uc_quote_err_msg']['text'] = array(
     '#type' => 'textarea',
@@ -113,7 +118,7 @@ function uc_quote_admin_settings() {
       $address->country
     ))),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
   );
   $form['default_address']['first_name'] = uc_textfield(uc_get_field_name('first_name'), $address->first_name, FALSE);
   $form['default_address']['last_name'] = uc_textfield(uc_get_field_name('last_name'), $address->last_name, FALSE);
@@ -177,8 +182,6 @@ function uc_quote_admin_settings_submit($form, &$form_state) {
  * @ingroup forms
  */
 function uc_quote_method_settings() {
-  $form = array();
-
   $form['methods'] = array(
     '#tree' => TRUE,
     '#summary callback' => 'summarize_form',
@@ -225,14 +228,14 @@ function uc_quote_method_settings() {
     foreach ($shipping_methods as $method) {
       $method_types[$method['quote']['type']][] = $method['title'];
     }
-    if (is_array($method_types['order'])) {
+    if (isset($method_types['order']) && is_array($method_types['order'])) {
       $count = count($method_types['order']);
       $form['uc_quote_type_weight']['#description'] .= format_plural($count, '<br />The %list method is compatible with any shipping type.', '<br />The %list methods are compatible with any shipping type.', array('%list' => implode(', ', $method_types['order'])));
     }
     foreach ($shipping_types as $id => $title) {
       $form['uc_quote_type_weight'][$id] = array(
         '#type' => 'weight',
-        '#title' => $title . (is_array($method_types[$id]) ? ' ('. implode(', ', $method_types[$id]) .')' : ''),
+        '#title' => $title . (isset($method_types[$id]) && is_array($method_types[$id]) ? ' ('. implode(', ', $method_types[$id]) .')' : ''),
         '#delta' => 5,
         '#default_value' => isset($weight[$id]) ? $weight[$id] : 0,
       );

@@ -471,6 +471,7 @@ function uc_order_token_values($type, $object = NULL) {
       $values['order-total-raw'] = uc_price($order->order_total, $context);
 
       $values['order-email'] = check_plain($order->primary_email);
+      $values['order-email-raw'] = $order->primary_email;
       $values['order-shipping-address'] = uc_order_address($order, 'delivery');
       $values['order-shipping-phone'] = check_plain($order->delivery_phone);
       $values['order-shipping-method'] = !isset($ship_method) ? t('Standard delivery') : $ship_method;
@@ -517,7 +518,8 @@ function uc_order_token_list($type = 'all') {
     $tokens['order']['order-subtotal-raw'] = t('The numerical subtotal of products on an order.');
     $tokens['order']['order-total'] = t('The formatted order total.');
     $tokens['order']['order-total-raw'] = t('The numerical order total.');
-    $tokens['order']['order-email'] = t('The primary e-mail address of the order.');
+    $tokens['order']['order-email'] = t('The formatted primary e-mail address of the order.');
+    $tokens['order']['order-email-raw'] = t('The primary e-mail address of the order.');
     $tokens['order']['order-shipping-address'] = t('The order shipping address.');
     $tokens['order']['order-shipping-phone'] = t('The phone number for the shipping address.');
     $tokens['order']['order-billing-address'] = t('The order billing address.');

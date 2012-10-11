@@ -1,5 +1,4 @@
 <?php
-// $Id: content_profile.inc,v 1.1 2009/10/24 21:10:47 MegaGrunt Exp $
 
 // Functionality depends on node_import and CCK.
 if (module_exists('node_import') && module_exists('content')) {

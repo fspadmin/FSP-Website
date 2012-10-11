@@ -55,32 +55,121 @@ class UbercartCartCheckoutTestCase extends UbercartTestHelper {
     return $order;
   }
 
+  function testCartAPI() {
+    // Test the empty cart.
+    $items = uc_cart_get_contents();
+    $this->assertEqual($items, array(), 'Cart is an empty array.');
+
+    // Add an item to the cart.
+    uc_cart_add_item($this->product->nid);
+
+    $items = uc_cart_get_contents();
+    $this->assertEqual(count($items), 1, 'Cart contains one item.');
+    $item = reset($items);
+    $this->assertEqual($item->nid, $this->product->nid, 'Cart item nid is correct.');
+    $this->assertEqual($item->qty, 1, 'Cart item quantity is correct.');
+
+    // Add more of the same item.
+    $qty = mt_rand(1, 100);
+    uc_cart_add_item($this->product->nid, $qty);
+
+    $items = uc_cart_get_contents();
+    $this->assertEqual(count($items), 1, 'Updated cart contains one item.');
+    $item = reset($items);
+    $this->assertEqual($item->qty, $qty + 1, 'Updated cart item quantity is correct.');
+
+    // Set the quantity and data.
+    $qty = mt_rand(1, 100);
+    $item->qty = $qty;
+    $item->data['updated'] = TRUE;
+    uc_cart_update_item($item);
+
+    $item = reset(uc_cart_get_contents());
+    $this->assertEqual($item->qty, $qty, 'Set cart item quantity is correct.');
+    $this->assertTrue($item->data['updated'], 'Set cart item data is correct.');
+
+    // Add an item with different data to the cart.
+    uc_cart_add_item($this->product->nid, 1, array('test' => TRUE));
+
+    $items = uc_cart_get_contents();
+    $this->assertEqual(count($items), 2, 'Updated cart contains two items.');
+
+    // Remove the items.
+    foreach ($items as $item) {
+      uc_cart_remove_item($item->nid, NULL, $item->data);
+    }
+    // @TODO: remove the need for this
+    uc_cart_get_contents(NULL, 'rebuild');
+
+    $items = uc_cart_get_contents();
+    $this->assertEqual(count($items), 0, 'Cart is empty after removal.');
+
+    // Empty the cart.
+    uc_cart_add_item($this->product->nid);
+    // @TODO: default to the current cart
+    uc_cart_empty(uc_cart_get_id());
+
+    $items = uc_cart_get_contents();
+    $this->assertEqual($items, array(), 'Cart is emptied correctly.');
+  }
+
   function testCart() {
-    // Test the empty cart text.
+    // Test the empty cart.
     $this->drupalGet('cart');
     $this->assertText('There are no products in your shopping cart.');
+
+    // Add an item to the cart.
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->assertText($this->product->title . ' added to your shopping cart.');
+
+    // Test the cart page.
+    $this->drupalGet('cart');
+    $this->assertText($this->product->title, t('The product is in the cart.'));
+    $this->assertFieldByName('items[0][qty]', 1, t('The product quantity is 1.'));
+
+    // Add the item again.
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->assertText('Your item(s) have been updated.');
+
+    // Test the cart page again.
+    $this->drupalGet('cart');
+    $this->assertFieldByName('items[0][qty]', 2, t('The product quantity is 2.'));
+
+    // Update the quantity.
+    $qty = mt_rand(3, 100);
+    $this->drupalPost('cart', array('items[0][qty]' => $qty), t('Update cart'));
+    $this->assertText('Your cart has been updated.');
+    $this->assertFieldByName('items[0][qty]', $qty, t('The product quantity was updated.'));
+
+    // Update the quantity to zero.
+    $this->drupalPost('cart', array('items[0][qty]' => 0), t('Update cart'));
+    $this->assertText('Your cart has been updated.');
+    $this->assertText('There are no products in your shopping cart.');
+
+    // Test the remove item button.
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->drupalPost('cart', array(), t('Remove'));
+    $this->assertText($this->product->title . ' removed from your shopping cart.');
+    $this->assertText('There are no products in your shopping cart.');
+    $this->drupalLogout();
+  }
+
+  function testCartMerge() {
+    // Add an item to the cart as an anonymous user.
+    $this->drupalLogin($this->customer);
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->assertText($this->product->title . ' added to your shopping cart.');
+    $this->drupalLogout();
 
     // Add an item to the cart as an anonymous user.
     $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
     $this->assertText($this->product->title . ' added to your shopping cart.');
 
-    // Log in and check the item is still in the cart.
+    // Log in and check the items are merged.
     $this->drupalLogin($this->customer);
     $this->drupalGet('cart');
     $this->assertText($this->product->title, t('The product remains in the cart after logging in.'));
-    $this->assertFieldByName('items[0][qty]', 1, t('The product quantity is 1.'));
-
-    // Update the quantity.
-    $qty = mt_rand(2, 100);
-    $this->drupalPost('cart', array('items[0][qty]' => $qty), t('Update cart'));
-    $this->assertText('Your cart has been updated.');
-    $this->assertFieldByName('items[0][qty]', $qty, t('The product quantity was updated.'));
-
-    // Test the remove item button.
-    $this->drupalPost('cart', array(), t('Remove'));
-    $this->assertText($this->product->title . ' removed from your shopping cart.');
-    $this->assertText('There are no products in your shopping cart.');
-    $this->drupalLogout();
+    $this->assertFieldByName('items[0][qty]', 2, t('The product quantity is 2.'));
   }
 
   function testDeletedCartItem() {
@@ -179,6 +268,13 @@ class UbercartCartCheckoutTestCase extends UbercartTestHelper {
     $this->checkout(array('panes[customer][primary_email]' => $this->customer->mail));
     $this->assertRaw('Your order is complete!');
     $this->assertRaw('order has been attached to the account we found');
+
+    // Test email address with apostrophe.
+    $email = "test'apostrophe@example.com";
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->checkout(array('panes[customer][primary_email]' => $email));
+    $mail = array_pop($this->drupalGetMails());
+    $this->assertEqual($email, $mail['to'], 'Email address containing apostrophe is handled correctly.');
   }
 
   function testCheckoutLogin() {

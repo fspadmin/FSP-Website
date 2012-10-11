@@ -161,16 +161,20 @@ function uc_paypal_payment_gateway() {
  * Implements hook_payment_method().
  */
 function uc_paypal_payment_method() {
-  $path = base_path() . drupal_get_path('module', 'uc_credit');
-  $title1 = '<img src="https://www.paypal.com/en_US/i/logo/PayPal_mark_37x23.gif" style="position: relative; top: 5px; margin-right: 4px;" />'
-         . t('PayPal - pay without sharing your financial information.');
-  $title2 = '<br /><span id="paypal-includes" style="padding-left: 5.5em;">'
-          . t('<b>Includes:</b>');
-  $cc_types = array('visa', 'mastercard', 'discover', 'amex', 'echeck');
-  foreach ($cc_types as $type) {
-    $title2 .= ' <img src="'. $path .'/images/'. $type .'.gif" style="position: relative; top: 5px;" />';
+  $title1 = '<img src="https://www.paypal.com/en_US/i/logo/PayPal_mark_37x23.gif" alt="PayPal" class="uc-credit-cctype" />'
+         . ' ' . t('PayPal - pay without sharing your financial information.');
+  $title2 = '<br /><span id="paypal-includes">' . t('Includes:');
+  $cc_types = array(
+    'visa' => t('Visa'),
+    'mastercard' => t('MasterCard'),
+    'discover' => t('Discover'),
+    'amex' => t('American Express'),
+    'echeck' => t('eCheck'),
+  );
+  foreach ($cc_types as $type => $label) {
+    $title2 .= ' ' . theme('image', drupal_get_path('module', 'uc_credit') . '/images/' . $type . '.gif', $label,  '', array('class' => 'uc-credit-cctype uc-credit-cctype-' . $type));
   }
-  $title2 .= ' <img src="https://www.paypal.com/en_US/i/logo/PayPal_mark_37x23.gif" style="position: relative; top: 5px; margin-right: 4px;" /></span>';
+  $title2 .= ' <img src="https://www.paypal.com/en_US/i/logo/PayPal_mark_37x23.gif" alt="PayPal" class="uc-credit-cctype" /></span>';
 
   $methods[] = array(
     'id' => 'paypal_wps',

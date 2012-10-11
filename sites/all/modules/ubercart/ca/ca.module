@@ -500,7 +500,9 @@ function ca_perform_actions($predicate, $arguments) {
     }
 
     // Add the condition settings to the argument list.
-    $args[] = is_array($action['#settings']) ? $action['#settings'] : array();
+    $args[] = (isset($action['#settings']) && is_array($action['#settings'])) ?
+              $action['#settings'] :
+              array();
 
     // Call the action's function with the appropriate arguments.
     $results[$i] = call_user_func_array($callback, $args);

@@ -433,6 +433,58 @@ function uc_attribute_node_reset($node) {
   uc_attribute_node_insert($node);
 }
 
+/**
+ * Implements hook_locale().
+ */
+function uc_attribute_locale($op = 'groups') {
+  switch ($op) {
+    case 'groups':
+      return array('uc_attribute' => t('Ubercart attributes'));
+    case 'info':
+      $info['uc_attribute']['refresh callback'] = 'uc_attribute_locale_refresh';
+      $info['uc_attribute']['format'] = FALSE;
+      return $info;
+  }
+}
+
+/**
+ * Refreshes translated attribute and option strings.
+ */
+function uc_attribute_locale_refresh() {
+  $attributes = db_query("SELECT aid, name, label, description FROM {uc_attributes}");
+  while ($attribute = db_fetch_object($attributes)) {
+    i18nstrings_update('uc_attribute:attribute:' . $attribute->aid . ':name', $attribute->name);
+    i18nstrings_update('uc_attribute:attribute:' . $attribute->aid . ':label', $attribute->label);
+    i18nstrings_update('uc_attribute:attribute:' . $attribute->aid . ':description', $attribute->description);
+
+    $options = db_query("SELECT oid, name FROM {uc_attribute_options} WHERE aid = %d", array($attribute->aid));
+    while ($option = db_fetch_object($options)) {
+      i18nstrings_update('uc_attribute:option:' . $option->oid . ':name', $option->name);
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Translates an attribute.
+ *
+ * @param &$attribute
+ *   The attribute object to translate.
+ */
+function uc_attribute_translate(&$attribute) {
+  if (function_exists('i18nstrings')) {
+    $attribute->name        = i18nstrings('uc_attribute:attribute:' . $attribute->aid . ':name', $attribute->name);
+    $attribute->label       = i18nstrings('uc_attribute:attribute:' . $attribute->aid . ':label', $attribute->label);
+    $attribute->description = i18nstrings('uc_attribute:attribute:' . $attribute->aid . ':description', $attribute->description);
+
+    foreach ($attribute->options as &$option) {
+      $option->name = i18nstrings('uc_attribute:option:' . $option->oid . ':name', $option->name);
+    }
+  }
+}
+
+
 /******************************************************************************
  * Ubercart Hooks                                                             *
  ******************************************************************************/
@@ -471,14 +523,16 @@ function uc_attribute_order_product_alter(&$product, $order) {
   // Convert the attribute and option ids to their current names. This
   // preserves the important data in case the attributes or options are
   // changed later.
-  $first_key = array_shift(array_keys($product->data['attributes']));
-  if (is_array($product->data['attributes']) && is_numeric($first_key)) {
-    $attributes = array();
-    $options = _uc_cart_product_get_options($product);
-    foreach ($options as $aid => $option) {
-      $attributes[$option['attribute']][$option['oid']] = $option['name'];
+  if (!empty($product->data['attributes'])) {
+    $attributes_keys = array_keys($product->data['attributes']);
+    if (is_numeric(array_shift($attributes_keys))) {
+      $attributes = array();
+      $options = _uc_cart_product_get_options($product);
+      foreach ($options as $aid => $option) {
+        $attributes[$option['attribute']][$option['oid']] = $option['name'];
+      }
+      $product->data['attributes'] = $attributes;
     }
-    $product->data['attributes'] = $attributes;
   }
 }
 
@@ -723,6 +777,8 @@ function uc_attribute_load($aid, $id = NULL, $type = '') {
     while ($option = db_fetch_object($result)) {
       $attribute->options[$option->oid] = $option;
     }
+
+    uc_attribute_translate($attribute);
   }
 
   return $attribute;

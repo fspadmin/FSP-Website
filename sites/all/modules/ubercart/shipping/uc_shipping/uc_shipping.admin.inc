@@ -746,7 +746,6 @@ function uc_shipping_shipment_edit($form_state, $order, $shipment) {
       '#title'         => t('Weight'),
       '#default_value' => isset($package->weight) ? $package->weight : 0,
       '#size'          => 10,
-      '#maxlength'     => 15,
     );
     $pkg_form['weight']['units'] = array(
       '#type'          => 'select',
@@ -821,7 +820,7 @@ function uc_shipping_shipment_edit($form_state, $order, $shipment) {
   if (isset($order->quote['method'])) {
     // Order has a quote attached.
     $method  = $order->quote['method'];
-    $methods = module_invoke_all('uc_shipping_method');
+    $methods = module_invoke_all('shipping_method');
     if (isset($methods[$method])) {
       // Quote is from a currently-active shipping method.
       $services = $methods[$method]['quote']['accessorials'];

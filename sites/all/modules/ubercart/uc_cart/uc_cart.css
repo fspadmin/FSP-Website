@@ -100,6 +100,15 @@
   top: 2px;
 }
 
+.uc-credit-cctype {
+  vertical-align: middle;
+  margin-bottom: 3px;
+}
+
+#paypal-includes {
+  font-weight: bold;
+}
+
 /**
  * CSS rules for the cart form at /cart.
  */
