@@ -1,3 +1,7 @@
+Release #646 10/14/2012, by Louis Calitz
+- Removed sheetnode module
+- Patched uc_orders module to preserve product search order
+
 Release #645 10/11/2012, by Louis Calitz
 - Updated modules: token; ubercart; user_import; munin
 
