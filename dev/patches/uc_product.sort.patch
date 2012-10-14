@@ -1,0 +1,14 @@
+diff --git a/sites/all/modules/ubercart/uc_product/uc_product.module b/sites/all/modules/ubercart/uc_product/uc_product.module
+index d2d5166..5882531 100644
+--- a/sites/all/modules/ubercart/uc_product/uc_product.module
++++ b/sites/all/modules/ubercart/uc_product/uc_product.module
+@@ -1842,6 +1842,9 @@ function uc_product_get_description($product) {
+   // Now allow alterations via hook_product_description_alter()
+   drupal_alter('product_description', $description, $product);
+ 
++  // Keep the sort order. Fixes bug in UC 2.4
++  $description['attributes']['#sorted'] = TRUE;
++
+   return drupal_render($description);
+ }
+ 
