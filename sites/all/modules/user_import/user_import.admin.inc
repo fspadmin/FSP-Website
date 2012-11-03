@@ -32,7 +32,7 @@ function user_import_list($action = NULL, $import_id = NULL) {
 
 	} else {
   
-	  $output =  theme_user_import_list();
+	  $output =  theme('user_import_list');
 	}
 
 	return $output;    
@@ -721,15 +721,18 @@ function  _user_import_incomplete_deletion() {
 
 function user_import_form_field_match(&$form, $import) {
 
-	$delimiter = $import['options']['delimiter'];
+	$delimiter = isset($import['options']['delimiter']) && !empty($import['options']['delimiter']) ? $import['options']['delimiter'] : ',';
   $collapsed = (empty($import['name'])) ? FALSE: TRUE;
   $handle = _user_import_file_open($form['filepath']['#value'], $form['filename']['#value']);
   $data_row = _user_import_file_row($form['filename']['#value'], $handle, $delimiter);
-  
-  $fieldmatch_description = t("Match columns in CSV file to profile fields, leave as '----' if there is no match.");
-  $fieldmatch_description .= '<br /><strong>' . t('Username') . ': </strong>' . t("The Username will be built from CSV columns in the order selected.");
-  $fieldmatch_description .= '<br /><strong>' . t('Abbreviate') . ': </strong>' . t("Use the first letter of a field in uppercase for the Username, e.g. 'john' -> 'J'.");
-  $fieldmatch_description .= '<br />' . t("If no CSV fields are selected, the Username will be randomly generated.");
+
+  $fieldmatch_description_parts = array(
+		'<strong>'. t('Drupal fields') .':</strong> '. t("Match columns in CSV file to drupal user fields, leave as '----' to ignore the column."),
+		'<strong>'. t('Username') .':</strong> '. t("If username is selected for multiple fields, the username will be built in the order selected. Otherwise, the username will be randomly generated."),
+		'<strong>'. t('Abbreviate') .':</strong> '. t("Use the first letter of a field in uppercase for the Username, e.g. 'john' -> 'J'."), 
+  );
+
+  $fieldmatch_description = theme('item_list', $fieldmatch_description_parts);
   
   $form['field_match'] = array(
       '#type' => 'fieldset',
@@ -756,7 +759,7 @@ function user_import_form_field_match(&$form, $import) {
   asort($user_fields);
 
   $row = 0;
-  $sort = array(t('no'), 1, 2, 3, 4);
+  $sort = array(t('--'), 1, 2, 3, 4);
   
   if (empty($data_row)) return; 
     
@@ -813,6 +816,9 @@ function _user_import_file_row($filename, $handle, $delimiter = ',') {
 // set up all necessary variables
 function _user_import_initialise_import($import) {
 
+	//_user_import_process won't work w/o this include
+	module_load_include('inc', 'user_import', 'user_import.import');
+	
 	switch ($import['setting']) {
 	  case 'imported':
 	      drupal_set_message(t('File has already been imported'), 'error');

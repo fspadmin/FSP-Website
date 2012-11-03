@@ -13,6 +13,9 @@ function user_user_import_form_field_match() {
   $options['user']['email'] = t('Email Address*');
   $options['user']['password'] = t('Password'); 
   $options['user']['roles'] = t('Roles');
+	// $options['user']['username'] = t('Username');
+	// $options['user']['uid'] = t('UID');
+	// $options['user']['modified'] = t('Modified');
   return $options;
 }
 

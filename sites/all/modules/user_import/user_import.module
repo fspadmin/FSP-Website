@@ -240,7 +240,7 @@ function theme_user_import_list() {
 
 function theme_user_import_edit($form) {
  
-  $header = array(t('csv column'), t('Drupal fields'), t('username'), t('abbreviate'));
+  $header = array(t('CSV column'), t('Drupal fields'), t('Username'), t('Abbreviate'));
 
   foreach (element_children($form['field_match']) as $key) {
 
@@ -262,7 +262,7 @@ function theme_user_import_edit($form) {
 }
 
 function theme_user_import_errors_display($settings, $data, $total) {
-
+    $output = '';
     $error_count = 0;
     $field_match = _user_import_unconcatenate_field_match($settings['field_match']);
     $header[0] = t('Email Address');
@@ -337,7 +337,7 @@ function _user_import_settings_save($settings) {
 													 'field_match' => array(), 
 													 'roles' => '', 
 													 'options' => array(), 
-													 'settings' => '',
+													 'setting' => '',
 													);												
 
  	// Form elements we never want to save in the options column.
