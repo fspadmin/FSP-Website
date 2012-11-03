@@ -1,3 +1,7 @@
+Release #647 11/3/2012, by Louis Calitz
+- Updated google analytics & user import modules
+- Partly fixed delimiter bug in user upload module via custom patch
+
 Release #646 10/14/2012, by Louis Calitz
 - Removed sheetnode module
 - Patched uc_orders module to preserve product search order
