@@ -1,0 +1,33 @@
+From 835f3d1448d5efd0db834f0129c79af2db1b36a0 Mon Sep 17 00:00:00 2001
+From: Ryan Jacobs <rjacobs@422459.no-reply.drupal.org>
+Date: Mon, 29 Oct 2012 13:25:47 -0500
+Subject: [PATCH] Issue #1803410: Process custom delimiters.
+
+---
+ user_import.import.inc |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/user_import.import.inc b/user_import.import.inc
+index 2f3ed43..ba435fc 100644
+--- a/user_import.import.inc
++++ b/user_import.import.inc
+@@ -14,6 +14,7 @@ function _user_import_process($settings) {
+ 	$username_order = array();
+ 	$username_abbreviate = array();
+ 	$first_line_skip = 0;
++  $delimiter = isset($settings['delimiter']) && !empty($settings['delimiter']) ? $settings['delimiter'] : ',';
+ 
+ 	ini_set('auto_detect_line_endings', TRUE);
+ 	$handle = @fopen($settings['filepath'], "r");
+@@ -24,7 +25,7 @@ function _user_import_process($settings) {
+ 	// start count of imports on this cron run
+ 	$processed_counter = 0;
+    
+-  while ($data = fgetcsv($handle, $line_max, ',')) {
++  while ($data = fgetcsv($handle, $line_max, $delimiter)) {
+     
+ 		$errors = user_import_errors(FALSE, TRUE);
+ 
+-- 
+1.7.7.5 (Apple Git-26)
+
