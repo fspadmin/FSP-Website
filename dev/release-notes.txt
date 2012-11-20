@@ -1,3 +1,7 @@
+Release #647.1 11/18/2012, by Louis Calitz
+- Added xmlsitemap module to collect site map for redirection to 
+  new site (one day)
+
 Release #647 11/3/2012, by Louis Calitz
 - Updated google analytics & user import modules
 - Partly fixed delimiter bug in user upload module via custom patch
