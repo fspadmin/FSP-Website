@@ -79,8 +79,8 @@ function googleanalytics_init() {
 
     // Add link tracking.
     $link_settings = array();
-    if ($track_outgoing = variable_get('googleanalytics_trackoutgoing', 1)) {
-      $link_settings['trackOutgoing'] = $track_outgoing;
+    if ($track_outbound = variable_get('googleanalytics_trackoutgoing', 1)) {
+      $link_settings['trackOutbound'] = $track_outbound;
     }
     if ($track_mailto = variable_get('googleanalytics_trackmailto', 1)) {
       $link_settings['trackMailto'] = $track_mailto;
