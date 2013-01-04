@@ -1,3 +1,7 @@
+Release #648 1/4/2013, by Louis Calitz
+- Core and contrib updates
+- Ubercart not upgraded due to complexity and possible pitfalls
+
 Release #647.1 11/18/2012, by Louis Calitz
 - Added xmlsitemap module to collect site map for redirection to 
   new site (one day)
