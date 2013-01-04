@@ -14,8 +14,7 @@ function _user_import_process($settings) {
 	$username_order = array();
 	$username_abbreviate = array();
 	$first_line_skip = 0;
-
-	$delimiter = isset($settings['delimiter']) && !empty($settings['delimiter']) ? $settings['delimiter'] : ',';
+  $delimiter = isset($settings['delimiter']) && !empty($settings['delimiter']) ? $settings['delimiter'] : ',';
 
 	ini_set('auto_detect_line_endings', TRUE);
 	$handle = @fopen($settings['filepath'], "r");
@@ -27,7 +26,7 @@ function _user_import_process($settings) {
 	$processed_counter = 0;
    
   while ($data = fgetcsv($handle, $line_max, $delimiter)) {
-
+    
 		$errors = user_import_errors(FALSE, TRUE);
 
 		// if importing, check we are not over max number of imports per cron

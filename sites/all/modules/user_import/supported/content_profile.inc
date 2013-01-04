@@ -59,7 +59,7 @@ if (module_exists('node_import') && module_exists('content')) {
    */
   function content_profile_user_import_after_save($settings, $account, $password, $fields, $updated, $update_setting_per_module) {
  
-    if (!is_array($fields['content_profile'])) return;
+    if (!isset($fields['content_profile']) || !is_array($fields['content_profile'])) return;
     
     // check if it's an existing user and if content profile is to be updated 
     if ($updated && $update_setting_per_module['content_profile'] == UPDATE_NONE) return;
