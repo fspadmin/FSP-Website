@@ -327,12 +327,17 @@ function ckeditor_requirements($phase) {
         }
       }
     }
-    if ((($installed_version = _ckeditor_requirements_getinstalledversion()) !== NULL) && (-1==version_compare($installed_version, '3.1 SVN'))) {
+    if ((($installed_version = _ckeditor_requirements_getinstalledversion()) !== NULL) && (-1==version_compare($installed_version, '3.1 SVN')) && $installed_version != '%VERSION%') {
       $requirements['ckeditor']['description'] = t('Some features are disabled because you are using an older version of CKEditor. Please upgrade the editor to CKEditor 3.1 (or higher).');
       $requirements['ckeditor']['severity'] = REQUIREMENT_INFO;
     }
     if (!empty($installed_version)) {
-      $requirements['ckeditor']['value'] = $installed_version;
+      if ($installed_version == '%VERSION%') {
+        $requirements['ckeditor']['value'] = 'GIT version';
+      }
+      else {
+        $requirements['ckeditor']['value'] = $installed_version;
+      }
     }
   }
 
@@ -356,14 +361,14 @@ function ckeditor_requirements($phase) {
 function _ckeditor_requirements_getinstalledversion() {
   module_load_include('module', 'ckeditor');
   $editor_path = ckeditor_path(TRUE, TRUE);
-  $jspath = $editor_path .'/ckeditor_basic.js';
+  $jspath = $editor_path .'/ckeditor.js';
 
   $configcontents = @file_get_contents($jspath);
   if (!$configcontents) {
     return NULL;
   }
   $matches = array();
-  if (preg_match('#,version:\'(.*?)\',#', $configcontents, $matches)) {
+  if (preg_match('#,version:[\'\"]{1}(.*?)[\'\"]{1},#', $configcontents, $matches)) {
     return $matches[1];
   }
   return NULL;

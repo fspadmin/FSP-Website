@@ -138,13 +138,44 @@ function ckeditor_profile_overview() {
   if ($profiles) {
     $access_ckeditor_roles = user_roles(FALSE, 'access ckeditor');
     $header = array(t('Profile'), t('Roles'), t('Operations'));
+    $skins = ckeditor_load_skin_options();
+    $plugins = ckeditor_load_plugins();
+    $disabled_plugins = array();
     foreach ($profiles as $p) {
       $rids = $p->rids;
       if ($p->name !== "CKEditor Global Profile") {
+        if (isset($p->settings['loadPlugins']) && is_array($p->settings['loadPlugins']) && count($p->settings['loadPlugins']) > 0) {
+          $changed = FALSE;
+          foreach ($p->settings['loadPlugins'] as $plugin_name => $plugin_settings) {
+            if (!array_key_exists($plugin_name, $plugins)) {
+              if (isset($plugin_settings['active']) && $plugin_settings['active'] == 0) {
+                continue;
+              }
+              if (!isset($disabled_plugins[$p->name])) {
+                $disabled_plugins[$p->name] = array();
+              }
+              $p->settings['loadPlugins'][$plugin_name]['active'] = 0;
+              $disabled_plugins[$p->name][] = $plugin_name;
+              $changed = TRUE;
+            }
+          }
+          if ($changed === TRUE) {
+            db_query("UPDATE {ckeditor_settings} SET settings = '%s' WHERE name = '%s'", serialize($p->settings), $p->name);
+          }
+        }
         foreach (array_keys($p->rids) as $rid) {
           if (!isset($access_ckeditor_roles[$rid])) {
             unset($rids[$rid]);
           }
+        }
+        if (isset($p->settings['skin']) && !array_key_exists($p->settings['skin'], $skins)) {
+          drupal_set_message(t(
+            'The `!profile` profile is using `!skin` skin which cannot be found. Please !profile_settings.', array(
+              '!profile' => $p->name,
+              '!skin' => $p->settings['skin'],
+              '!profile_settings' => l(t('update your settings'), 'admin/settings/ckeditor/edit/' . urlencode($p->name))
+            )
+          ), 'warning');
         }
         $rows[] = array(
           array('data' => $p->name, 'valign' => 'top'),
@@ -159,6 +190,18 @@ function ckeditor_profile_overview() {
         );
       }
     }
+
+    if (count($disabled_plugins) > 0) {
+      $msg = t("The following plugins could not be found and were automatically disabled in CKEditor profiles:");
+      foreach ($disabled_plugins as $profile_name => $profile_plugins) {
+        $msg .= "<br/><br/>";
+        $msg .= t("<b>Profile</b>: %profile_name", array("%profile_name" => $profile_name));
+        $msg .= "<br/>";
+        $msg .= t("<b>Plugins</b>: %profile_plugins", array("%profile_plugins" => implode(', ', $profile_plugins)));
+      }
+      drupal_set_message($msg, 'warning');
+    }
+
     $output .= '<h3>' . t('Profiles') .'</h3>';
     $output .= theme('table', $header, $rows);
     $output .= '<p>' . l(t('Create a new profile'), 'admin/settings/ckeditor/add') . '</p>';
@@ -240,6 +283,8 @@ function ckeditor_admin_profile_form($form_state, $profile = NULL) {
   }
 
   module_load_include('inc', 'ckeditor', 'includes/ckeditor.lib');
+
+  drupal_add_js(array('ckeditor_version' => ckeditor_get_version()), 'setting');
 
   $skin_options = ckeditor_load_skin_options();
   $lang_options = ckeditor_load_lang_options();
@@ -519,6 +564,20 @@ function ckeditor_admin_profile_form($form_state, $profile = NULL) {
     '#description' => t('If this option is enabled, a link to a popup window will be used instead of a textarea replace.'),
   );
 
+  //if skin is not set or not exists select default skin (moono or skin) or first on the skin list
+  if (empty($profile->settings['skin']) || (!empty($profile->settings['skin']) && !array_key_exists($profile->settings['skin'], $skin_options))) {
+    if (count($skin_options) > 0) {
+      if (array_key_exists('moono', $skin_options)) {
+        $profile->settings['skin'] = 'moono';
+      }
+      else if (array_key_exists('kama', $skin_options)) {
+        $profile->settings['skin'] = 'kama';
+      }
+      else {
+        $profile->settings['skin'] = $skin_options[0];
+      }
+    }
+  }
   $form['appearance']['skin'] = array(
     '#type' => 'select',
     '#title' => t('Skin'),
@@ -591,19 +650,18 @@ function ckeditor_admin_profile_form($form_state, $profile = NULL) {
     '#title' => t('User interface color'),
     '#default_value' => !empty($profile->settings['uicolor']) ? $profile->settings['uicolor'] : 'default',
     '#options' => $ui_colors,
-    '#description' => t(
-      'Works only with the "!skin" skin.',
-      array(
-        '!skin' => 'Kama'
-      )),
     );
-  $form['appearance']['uicolor_textarea'] = array(
-    '#type' => 'textarea',
-    '#title' => '',
-    '#default_value' => 'Click the <strong>UI Color Picker</strong> button to set your color preferences.',
-    '#attributes' => array('style' => 'display:none', 'class' => 'ckeditor_ui_demo'),
-    '#resizable' => FALSE,
-    '#wysiwyg' => FALSE
+  $skinframe_url = url('admin/settings/ckeditor/skinframe', array(
+    'query' => array(
+      'token' => drupal_get_token('ckeditorSkinframeCall'),
+      'skin' => 'kama',
+      'uicolor' => (!empty($profile->settings['uicolor_user']) && $profile->settings['uicolor'] == 'custom') ? ltrim($profile->settings['uicolor_user'], '#') : 'D3D3D3'
+    )
+  ));
+  $form['appearance']['skinframe'] = array(
+    '#type' => 'markup',
+    '#value' => '<iframe frameborder="0" id="skinframe" marginheight="0" marginwidth="0" src="' . $skinframe_url . '" style="height:500px;width:700px;"></iframe><br/>',
+    '#description' => ''
   );
   $form['appearance']['uicolor_user'] = array(
     '#type' => 'hidden',
@@ -670,6 +728,19 @@ function ckeditor_admin_profile_form($form_state, $profile = NULL) {
     ),
     '#description' => t('The toolbar will start in an expanded or collapsed state.'),
   );
+
+  if (file_exists(ckeditor_path(TRUE) . '/plugins/divarea/plugin.js')) {
+    $form['appearance']['use_divarea'] = array(
+      '#type' => 'radios',
+      '#title' => t('"Div-based" editor'),
+      '#default_value' => !empty($profile->settings['use_divarea']) ? $profile->settings['use_divarea'] : 't',
+      '#options' => array(
+        't' => t('Enabled'),
+        'f' => t('Disabled')
+      ),
+      '#description' => t("Loading editor into <code>div</code> instead of <code>iframe</code>.")
+    );
+  }
 
   $form['appearance']['width'] = array(
     '#type' => 'textfield',
@@ -1055,29 +1126,32 @@ function ckeditor_admin_profile_form($form_state, $profile = NULL) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $form['advanced']['ckeditor_load_method'] = array(
-    '#type' => 'select',
-    '#title' => t('Loading method'),
-    '#default_value' => !empty($profile->settings['ckeditor_load_method']) ? $profile->settings['ckeditor_load_method'] : 'ckeditor.js',
-    '#options' => _ckeditor_load_methods(),
-    '#description' => t('Select the loading method of CKEditor. If the !ckeditor_basic_js file is used, only a small file is loaded initially and the rest of the editor is loaded later (see <strong>Loading timeout</strong>). This might be useful if CKEditor is disabled by default.',
-      array(
-        '!ckeditor_basic_js' => '<code>ckeditor_basic.js</code>'
+  if (ckeditor_get_version(TRUE) == 3) {
+    $form['advanced']['ckeditor_load_method'] = array(
+      '#type' => 'select',
+      '#title' => t('Loading method'),
+      '#default_value' => !empty($profile->settings['ckeditor_load_method']) ? $profile->settings['ckeditor_load_method'] : 'ckeditor.js',
+      '#options' => _ckeditor_load_methods(),
+      '#description' => t('Select the loading method of CKEditor. If the !ckeditor_basic_js file is used, only a small file is loaded initially and the rest of the editor is loaded later (see <strong>Loading timeout</strong>). This might be useful if CKEditor is disabled by default.',
+        array(
+          '!ckeditor_basic_js' => '<code>ckeditor_basic.js</code>'
+        )
       )
-    )
-  );
-  $form['advanced']['ckeditor_load_time_out'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Loading timeout'),
-    '#default_value' => !empty($profile->settings['ckeditor_load_time_out']) ? $profile->settings['ckeditor_load_time_out'] : "0",
-    '#size' => 40,
-    '#maxlength' => 255,
-    '#description' => t('The time to wait (in seconds) to load the full editor code after the page is loaded, if the !ckeditor_basic_js file is used. If set to zero, the editor is loaded on demand.',
-      array(
-        '!ckeditor_basic_js' => '<code>ckeditor_basic.js</code>'
+    );
+    $form['advanced']['ckeditor_load_time_out'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Loading timeout'),
+      '#default_value' => !empty($profile->settings['ckeditor_load_time_out']) ? $profile->settings['ckeditor_load_time_out'] : "0",
+      '#size' => 40,
+      '#maxlength' => 255,
+      '#description' => t('The time to wait (in seconds) to load the full editor code after the page is loaded, if the !ckeditor_basic_js file is used. If set to zero, the editor is loaded on demand.',
+        array(
+          '!ckeditor_basic_js' => '<code>ckeditor_basic.js</code>'
+        )
       )
-    )
-  );
+    );
+  }
+
   $form['advanced']['forcePasteAsPlainText'] = array(
     '#type' => 'select',
     '#title' => t('Force pasting as plain text'),
@@ -1137,7 +1211,7 @@ function ckeditor_admin_profile_form($form_state, $profile = NULL) {
         array(
           '!ckeditor_config' => '<code>' . drupal_get_path('module', 'ckeditor') . "/ckeditor.config.js</code>",
           '!docs' => l(t('CKEditor documentation'), 'http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.config.html'),
-          '@code' => "config.fontSize_sizes = '16/16px;24/24px;48/48px;'\nconfig.font_names = 'Arial;Times New Roman;Verdana'"
+          '@code' => "config.fontSize_sizes = '16/16px;24/24px;48/48px;';\nconfig.font_names = 'Arial;Times New Roman;Verdana';"
         )
       ),
     '#wysiwyg' => FALSE
@@ -1237,14 +1311,16 @@ function ckeditor_admin_profile_form_validate($form, &$form_state) {
       form_set_error('UserFilesPath', t('An absolute path to uploaded files is required.'));
     }
   }
-  $load_methods=_ckeditor_load_methods();
-  if (!isset($load_methods[$edit['ckeditor_load_method']])) {
-    form_set_error('ckeditor_load_method', t('Set a valid loading method.'));
-  }
-  if (!preg_match('#\d+#', $edit['ckeditor_load_time_out'])) {
-    form_set_error('ckeditor_load_time_out', t('Enter a valid loading timeout in seconds.'));
-  }
 
+  if (ckeditor_get_version(TRUE) == 3) {
+    $load_methods=_ckeditor_load_methods();
+    if (!isset($load_methods[$edit['ckeditor_load_method']])) {
+      form_set_error('ckeditor_load_method', t('Set a valid loading method.'));
+    }
+    if (!preg_match('#\d+#', $edit['ckeditor_load_time_out'])) {
+      form_set_error('ckeditor_load_time_out', t('Enter a valid loading timeout in seconds.'));
+    }
+  }
   if (!preg_match('#^\s*\[(?:\s*(?:\{\s*[\w:\'" ,]*\s*\[(?:\s*([\'\"\"])(?:\w+|-)\1\s*[,]?\s*)+\]\s*\}|([\'\"\"])\/\2)\s*[,]?\s*)+\]\s*$#U', $edit['toolbar']) && !preg_match('#^\s*\[(?:\s*(?:\[(?:\s*([\'\"\"])(?:\w+|-)\1\s*[,]?\s*)+\]|([\'\"\"])\/\2)\s*[,]?\s*)+\]\s*$#', $edit['toolbar'])) {
     form_set_error('toolbar', t('Enter a valid toolbar configuration.'));
   }
@@ -1668,6 +1744,17 @@ function ckeditor_admin_global_profile_form($form_state, $mode = 'add') {
       )
     );
   }
+
+  $form['ckeditor_advanced_settings']['ckeditor_aggregate'] = array(
+    '#type' => 'radios',
+    '#title' => t('Aggregate <code>ckeditor.js</code>'),
+    '#default_value' => !empty($profile->settings['ckeditor_aggregate']) ? $profile->settings['ckeditor_aggregate'] : 'f',
+    '#options' => array(
+      't' => t('Enabled'),
+      'f' => t('Disabled')
+    ),
+    '#description' => t('When enabled, <code>ckeditor.js</code> will be aggregated if JavaScript aggregation is enabled. <strong>Not recommended</strong>.'),
+  );
 
   $form['ckeditor_advanced_settings']['toolbar_wizard'] = array(
     '#type' => 'radios',
@@ -2114,4 +2201,78 @@ function ckeditor_toolbar_buttons_all($addPlugins = TRUE) {
   }
 
   return $buttons;
+}
+
+function ckeditor_skinframe() {
+  header('Content-Type: text/html; charset=utf-8');
+
+  if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], 'ckeditorSkinframeCall')) {
+    exit;
+  }
+
+  $editor_path = ckeditor_path();
+  $module_drupal_path = base_path() . drupal_get_path('module', 'ckeditor');
+
+  $html = "<!DOCTYPE html>";
+  $html .= "<head>";
+  $html .= "<script src=\"{$editor_path}/ckeditor.js\"></script>";
+  $html .= "</head>";
+  $html .= "<body>";
+  $html .= "<input type=\"hidden\" name=\"uicolor_user\"/>";
+  $html .= "<div id=\"editor\" style=\"height: 200px;\">Click the <strong>UI Color Picker</strong> button to set your color preferences.</div>";
+  $html .= "
+<script>
+var skin = window.location.search.match(/skin=([^&]*)/)[1];
+var uicolor = window.location.search.match(/uicolor=([^&]*)/)[1];
+var ckeditorUiColorOnChange = function() {
+  var color = CKEDITOR.instances['editor'].getUiColor();
+  if (typeof(color) != 'undefined') {
+    document.getElementsByName('uicolor_user').value = parent.document.getElementsByName('uicolor_user')[0].value = color;
+    var edit_uicolor = parent.document.getElementById('edit-uicolor');
+    for (i=0; i<edit_uicolor.options.length; i++) {
+      if (edit_uicolor[i].value == 'custom') {
+        edit_uicolor.selectedIndex = i;
+        edit_uicolor[i].selected = 'selected';
+        break;
+      }
+    }
+  }
+};
+CKEDITOR.on('dialogDefinition', function( ev ) {
+  var dialogName = ev.data.name;
+  var dialogDefinition = ev.data.definition;
+
+  if (dialogName == 'uicolor') {
+    dialogDefinition.getContents('tab1').get('configBox').style = 'display:none';
+  }
+});
+CKEDITOR.replace('editor', {
+  extraPlugins : 'uicolor',
+  height: 400,
+  uiColor: '#' + uicolor,
+  toolbar : [[ 'Bold', 'Italic', '-', 'NumberedList', 'BulletedList'],[ 'UIColor' ]],
+  skin: skin,
+  on: {
+    configLoaded: function(ev) {
+      var ckeditor_ver = CKEDITOR.version.split('.')[0];
+      if (ckeditor_ver == 3) {
+        if (skin != 'kama') {
+          ev.editor.config.toolbar = [[ 'Bold', 'Italic', '-', 'NumberedList', 'BulletedList']];
+        }
+      }
+      else {
+        CKEDITOR.plugins.addExternal('uicolor', '{$module_drupal_path}/includes/uicolor/', 'plugin.js');
+        if (uicolor.length == 0 || uicolor == 'default') {
+          delete ev.editor.config.uiColor;
+        }
+      }
+    },
+    blur: ckeditorUiColorOnChange,
+    focus: ckeditorUiColorOnChange
+  }
+});
+</script>";
+  $html .= "</body>";
+  $html .= "</html>";
+  echo $html;
 }

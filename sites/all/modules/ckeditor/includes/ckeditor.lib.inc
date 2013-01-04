@@ -133,6 +133,23 @@ function ckeditor_load_skin_options() {
   return $arr;
 }
 
+/**
+ * Return default skin for CKEditor
+ *
+ * @return string
+ */
+function ckeditor_default_skin() {
+  $skin_options = ckeditor_load_skin_options();
+  if (array_key_exists('moono', $skin_options)) {
+    return 'moono';
+  }
+  if (array_key_exists('kama', $skin_options)) {
+    return 'kama';
+  }
+  //if any default theme not exists select first from the list
+  return key(reset($skin_options));
+}
+
 function ckeditor_load_lang_options() {
   $arr = array();
   $editor_local_path = ckeditor_path(TRUE);
@@ -473,9 +490,7 @@ function ckeditor_user_get_setting($user, $profile, $setting) {
     'default' => 't',
     'show_toggle' => 't',
     'popup' => 'f',
-    'skin' => 'kama',
     'toolbar' => 'default',
-    'expand' => 't',
     'width' => '100%',
     'lang' => 'en',
     'auto_lang' => 't',

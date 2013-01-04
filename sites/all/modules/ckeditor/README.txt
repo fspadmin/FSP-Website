@@ -78,7 +78,7 @@ Note: these instructions assume that you install the CKEditor for Drupal module 
             "Installing CKFinder" section.
    5. Adjust CKEditor profiles in the
       "Administer > Site configuration > CKEditor" section.
-      Profiles determine which options are available to users based on the input format system.      
+      Profiles determine which options are available to users based on the input format system.
       NOTE: User 1 must be assigned a system role that corresponds to the privileges required.
       If no role is assigned to User 1, they will have the privileges of "authenticated user".
    6. For the Rich Text Editing to work you also need to configure your filters
@@ -190,7 +190,7 @@ CKFinder is an Ajax-based file manager created by CKEditor developers: http://ck
         require_once '../../../../includes/filemanager.config.php';
 
         - for CKFinder installed in the "sites/all/libraries/ckfinder" directory:
-        require_once '../../../includes/filemanager.config.php';
+        require_once '../../../../../modules/ckeditor/includes/filemanager.config.php';
 
         straight below the following line:
 
@@ -327,7 +327,7 @@ or if you found an issue, please visit the official project page:
 Having problems? Take a look at the list of common problems when installing CKEditor:
   http://docs.cksource.com/CKEditor_for_Drupal/Troubleshooting
 
-Learn how to adjust CKEditor to your theme and configure the spellchecker:  
+Learn how to adjust CKEditor to your theme and configure the spellchecker:
   http://docs.cksource.com/CKEditor_for_Drupal/Tricks
 
 If you would like to help in the development of the module, we encourage you to join our team.
