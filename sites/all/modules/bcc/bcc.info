@@ -3,9 +3,9 @@ description = Add a BCC address to all e-mails sent by the website.
 package = Mail
 core = 6.x
 
-; Information added by drupal.org packaging script on 2011-11-16
-version = "6.x-1.0-beta3"
+; Information added by drupal.org packaging script on 2013-01-02
+version = "6.x-1.0"
 core = "6.x"
 project = "bcc"
-datestamp = "1321413651"
+datestamp = "1357170356"
 
