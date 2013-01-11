@@ -1,8 +1,8 @@
-Release #649 1/11/2013, by Louis Calitz
+Release #648.1 1/11/2013, by Louis Calitz
 - Referrer and Affiliates modules added
 - Contains release 648 contents too (that never went out)
  
-(Cancelled) Release #648 1/4/2013, by Louis Calitz
+Release #648 1/11/2013, by Louis Calitz
 - Core and contrib updates
 - Ubercart not upgraded due to complexity and possible pitfalls
 
