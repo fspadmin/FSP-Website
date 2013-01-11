@@ -1,0 +1,590 @@
+<?php
+
+
+/**
+ * @file
+ *
+ */
+
+// Copyright 2005 Khalid Baheyeldin http://2bits.com
+
+// ported to Drupal 6 by andyceo http://andyceo.ruware.com/
+
+define('REFERRAL_PERM_USE',     'use referral');
+define('REFERRAL_PERM_ADMIN',   'administer referral');
+define('REFERRAL_UID',          'referral_uid');
+define('REFERRAL_TIMESTAMP',    'referral_timestamp');
+define('REFERRAL_IP',           'referral_ip_address');
+define('REFERRAL_REFERER',      'referral_referer');
+define('REFERRAL_PAGE_COUNT',   50);
+define('REFERRAL_BLOCK_COUNT',  5);
+define('REFERRAL_DATE_FORMAT',  'Y-m-d H:i:s');
+define('REFERRAL_HEX_START',    7);
+define('REFERRAL_HEX_LENGTH',   4);
+define('REFERRAL_DISPLAY_MODE', 'referral_display_mode');
+define('REFERRAL_COOKIE',       'referral_data');
+define('REFERRAL_GOTO_PATH',    'referral_goto_path');
+
+
+function referral_help($path, $arg) {
+  switch ($path) {
+    case 'admin/settings/referral':
+      $output = t('Track users referring others to your site');
+      break;
+  }
+  return $output;
+}
+
+function referral_perm() {
+  return array(REFERRAL_PERM_USE, REFERRAL_PERM_ADMIN);
+}
+
+function referral_menu() {
+  $items = array();
+
+  $items['admin/settings/referral'] = array(
+    'title'            => t('User Referral'),
+    'description'      => t('Settings for the User Referral module.'),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('referral_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type'             => MENU_NORMAL_ITEM,
+  );
+
+  $items['referral'] = array(
+    'page callback'    => 'referral_get',
+    'access callback'  => TRUE,
+    'type'             => MENU_CALLBACK,
+  );
+
+  $items['referral/view'] = array(
+    'page callback'    => 'referral_view',
+    'title'            => t('Your Referrals'),
+    'access arguments' => array(REFERRAL_PERM_USE),
+    'type'             => MENU_SUGGESTED_ITEM,
+  );
+
+  $items['admin/reports/referral'] = array(
+    'title'            => t('Referrals summary'),
+    'page callback'    => 'referral_admin_view_summary',
+    'access arguments' => array(REFERRAL_PERM_ADMIN),
+    'type'             => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/reports/referral/summary'] = array(
+    'title'            => t('Referrals summary'),
+    'page callback'    => 'referral_admin_view_summary',
+    'access arguments' => array(REFERRAL_PERM_ADMIN),
+    'weight'           => 1,
+    'type'             => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/reports/referral/details'] = array(
+    'page callback'    => 'referral_admin_view_details',
+    'access arguments' => array(REFERRAL_PERM_ADMIN),
+    'weight'           => 2,
+    'type'             => MENU_CALLBACK,
+  );
+
+  $items['admin/reports/referral/unflagged'] = array(
+    'title'            => t('Unflagged referrals'),
+    'page callback'    => 'referral_admin_view_unflagged',
+    'access arguments' => array(REFERRAL_PERM_ADMIN),
+    'weight'           => 3,
+    'type'             => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/reports/referral/roles'] = array(
+    'title'            => t('Referral roles'),
+    'page callback'    => 'referral_admin_view_roles',
+    'access arguments' => array(REFERRAL_PERM_ADMIN),
+    'type'             => MENU_CALLBACK,
+  );
+
+  $items['admin/referral/flag'] = array(
+    'page callback'    => 'referral_admin_flag',
+    'access arguments' => array(REFERRAL_PERM_ADMIN),
+    'type'             => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+function referral_settings() {
+  $options = array(
+    0 => t('User page'),
+    1 => t('Referrals page'),
+  );
+
+  $form[REFERRAL_DISPLAY_MODE] = array(
+    '#type' => 'radios',
+    '#title' => t('Referral link type'),
+    '#default_value' => variable_get(REFERRAL_DISPLAY_MODE, 0),
+    '#options' => $options,
+    '#description' => t('Select the way you want the referral link to be shown.'),
+  );
+  
+  $form[REFERRAL_GOTO_PATH] = array(
+    '#type' => 'textfield',
+    '#title' => t('Referral goto path'),
+    '#default_value' => variable_get(REFERRAL_GOTO_PATH, 'user/register'),
+    '#description' => t('The path to redirect to after visiting the referral link.'),
+  );
+
+  $form['referral_cookie_lifetime'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Cookie lifetime in days.'),
+    '#default_value' => variable_get('referral_cookie_lifetime', '1'),
+    '#description' => t('How many days should the referral tracking cookie last.'),
+  );
+
+  return system_settings_form($form);
+}
+
+function referral_get() {
+  global $user;
+
+  if (!$user->uid) {
+    // User has not logged in, or registered yet
+    $uid = _referral_ref2uid(arg(1));
+    if (($uid) && is_numeric($uid)) {
+      // Set the referral cookie
+      referral_set_cookie($uid);
+    }
+    drupal_goto(variable_get(REFERRAL_GOTO_PATH, 'user/register'));
+  }
+  drupal_goto();
+}
+
+function referral_get_user($uid) {
+  $referral_uid = FALSE;
+  $result = db_query('SELECT referral_uid FROM {referral} WHERE uid = %d', $uid);
+  while ($data = db_fetch_object($result)) {
+    $referral_uid = $data->referral_uid;
+  }
+  return $referral_uid;
+}
+
+function _referral_user_save($uid) {
+  if (!isset($_COOKIE[REFERRAL_COOKIE])) {
+    return;
+  }
+
+  // Retrieve referral info from the cookie
+  $cookie = unserialize($_COOKIE[REFERRAL_COOKIE]);
+
+  if (empty($cookie)) {
+    // Nothing to do ...
+    return;
+  }
+
+  db_query("INSERT INTO {referral} (uid, referral_uid, created, host, http_referer) VALUES (%d,  %d, %d, '%s', '%s')",
+    $uid,
+    $cookie['uid'],
+    $cookie['timestamp'],
+    $cookie['ip'],
+    $cookie['referer']);
+
+  if (!db_affected_rows()) {
+    watchdog('referral', 'INSERT of referral data failed.', array(), WATCHDOG_ERROR);
+    return;
+  }
+
+  // Invoke other modules hooks ...
+  module_invoke_all('referral', $uid, $cookie['uid']);
+}
+
+function _referral_user_delete($uid) {
+  db_query('DELETE FROM {referral} WHERE uid = %d OR referral_uid = %d', $uid);
+}
+
+function referral_user($op, $array = NULL, $arg_user) {
+  global $user;
+  switch ($op) {
+    case 'insert':
+      // The user is being created, save the complete referral data
+      _referral_user_save($arg_user->uid);
+      break;
+
+    case 'delete':
+      // The user is being deleted
+      _referral_user_delete($arg_user->uid);
+      break;
+      
+    case 'load':
+      // Add user's referral link to user object
+      $arg_user->referral_link = "referral/" . _referral_uid2ref($arg_user->uid);
+      break;      
+
+    case 'view':
+      $referrals = array();
+      $link = "referral/" . _referral_uid2ref($arg_user->uid);
+
+      if (!variable_get(REFERRAL_DISPLAY_MODE, 0)) {
+        if (user_access(REFERRAL_PERM_USE)) {
+          if ($user->uid == $arg_user->uid) {
+            // User is viewing own page, show referrals
+            $referrals[] = array(
+              '#title' => t('Your referral link'),
+              '#value' => url($link, array('query' => NULL, 'fragment' => NULL, 'absolute' => TRUE)),
+              '#type' => 'user_profile_item',
+            );
+            $referrals[] = array(
+              '#title' => t('Referrals'),
+              '#value' => l(t('View users you have referred'), 'referral/view'),
+              '#type' => 'user_profile_item',
+            );
+          }
+        }
+      }
+
+      if (!$user->uid) {
+        $referrals[] = array(
+          '#title' => t('Referral link'),
+          '#value' => l(t('Register to this site using my referral link'), $link),
+          '#type' => 'user_profile_item',
+          );
+
+        referral_set_cookie(arg(1));
+      }
+
+      if ($referrals) {
+        $referrals['#type'] = 'user_profile_category';
+        $referrals['#title'] = t('Referrals');
+        $referrals['#weight'] = 10;
+        $arg_user->content['Referrals'] = $referrals;
+        // return array('Referrals' => $referrals); // obsolete from drupal 5
+      }
+  break;
+  }
+}
+
+function referral_set_cookie($uid) {
+  $cookie = array(
+    'uid'       => $uid,
+    'timestamp' => time(),
+    'ip'        => ip_address(),
+    'referer'   => $_SERVER['HTTP_REFERER'],
+  );
+
+  $cookie_lifetime = variable_get('referral_cookie_lifetime', 1) * 86400;
+  setcookie(REFERRAL_COOKIE, serialize($cookie), time() + $cookie_lifetime, '/');
+}
+
+function referral_block($op = 'list', $delta = 0) {
+  $title[0] = t('Top referring users');
+  switch ($op) {
+    case 'list':
+      $block[0]['info'] = $title[0];
+      return $block;
+
+    case 'view':
+    switch ($delta) {
+      case 0:
+        $block['subject'] = $title[0];
+        $block['content'] = referral_block_content();
+        break;
+    }
+    return $block;
+  }
+}
+
+function referral_block_content() {
+  $header = array();
+  $sql = 'SELECT r.referral_uid, u.name, COUNT(*) AS num_referrals
+    FROM {referral} r INNER JOIN {users} u ON u.uid = r.referral_uid
+    INNER JOIN {users} u2 ON u2.uid = r.uid
+    WHERE u2.status = 1
+    GROUP BY r.referral_uid
+    ORDER BY num_referrals DESC
+    LIMIT %d';
+  $result = db_query($sql, REFERRAL_BLOCK_COUNT);
+  while ($data = db_fetch_object($result)) {
+    $rows[] = array(
+      array('data' => l($data->name, "user/$data->referral_uid")),
+      array('data' => $data->num_referrals),
+    );
+  }
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No data.')));
+  }
+  return theme('table', $header, $rows);
+}
+
+function referral_admin_flag() {
+  $uid = (int)arg(3);
+  db_query('UPDATE {referral}
+    SET flag = 1, flag_timestamp = %d
+    WHERE referral_uid = %d', time(), $uid);
+  $num = db_affected_rows();
+  drupal_set_message(t('Flagged %num user(s).', array('%num' => $num)));
+  drupal_goto('admin/reports/referral/unflagged');
+}
+
+function referral_view() {
+  global $user;
+
+  if (variable_get(REFERRAL_DISPLAY_MODE, 0)) {
+    $output .= '<div class="referral_link">';
+    $output .= t('Your referral link: ');
+    $output .= url('referral/'. _referral_uid2ref($user->uid), array('query' => NULL, 'fragment' => NULL, 'absolute' => TRUE));
+    $output .= '</div>';
+  }
+
+  $header = array(
+    array('data' => t('User'),  'field' => 'u.name'),
+    array('data' => t('Roles')),
+    array('data' => t('Flag'),  'field' => 'r.flag'),
+    array('data' => t('Time'),  'field' => 'r.created', 'sort' => 'desc'),
+    );
+
+  $sql = 'SELECT u.uid, u.name, r.created, r.flag
+    FROM {referral} r INNER JOIN {users} u USING(uid)
+    WHERE referral_uid = %d
+    AND u.status = 1
+    ORDER BY r.created DESC';
+
+  $result = pager_query($sql, REFERRAL_PAGE_COUNT, 0, NULL, $user->uid);
+  while ($data = db_fetch_object($result)) {
+    $rows[] = array(
+      array('data' => l($data->name, "user/$data->uid")),
+      array('data' => implode(',', _referral_get_user_roles($data->uid))),
+      array('data' => ($data->flag ? 'Yes' : 'No')),
+      array('data' => format_date($data->created, 'custom', REFERRAL_DATE_FORMAT)),
+    );
+  }
+
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No data.'), 'colspan' => '4'));
+  }
+
+  $pager = theme('pager', NULL, REFERRAL_PAGE_COUNT, 0);
+  if (!empty($pager)) {
+    $rows[] = array(array('data' => $pager, 'colspan' => '4'));
+  }
+
+
+  $output .= theme('table', $header, $rows);
+  return $output;
+}
+
+function referral_admin_view_details() {
+  $uid = (int)arg(4);
+  $ref_user = user_load(array('uid' => $uid));
+  $header = array(
+    array('data' => t('User'),           'field' => 'u.name'),
+    array('data' => t('Flag'),           'field' => 'r.flag'),
+    array('data' => t('Roles')),
+    array('data' => t('Time'),           'field' => 'r.created', 'sort' => 'desc'),
+    array('data' => t('IP Address'),     'field' => 'r.host'),
+    array('data' => t('Referrer'),       'field' => 'r.http_referer'),
+    );
+
+  $sql = 'SELECT u.uid, r.flag, u.name, r.created, r.host, r.http_referer
+    FROM {referral} r INNER JOIN {users} u USING(uid)
+    WHERE r.referral_uid = %d
+    AND u.status = 1' . tablesort_sql($header);
+  $result = pager_query($sql, REFERRAL_PAGE_COUNT, 0, NULL, $uid);
+  while ($data = db_fetch_object($result)) {
+    $referer = check_plain(_referral_column_width($data->http_referer));
+    $rows[] = array(
+      array('data' => l($data->name, "user/$data->uid")),
+      array('data' => ($data->flag ? 'Yes' : 'No')),
+      array('data' => implode(',', _referral_get_user_roles($data->uid))),
+      array('data' => format_date($data->created, 'custom', REFERRAL_DATE_FORMAT)),
+      array('data' => l($data->host, "http://whois.domaintools.com/$data->host")),
+      array('data' => l($referer, $data->http_referer)),
+    );
+  }
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No data.'), 'colspan' => '6'));
+  }
+  $pager = theme('pager', NULL, REFERRAL_PAGE_COUNT, 0);
+  if (!empty($pager)) {
+    $rows[] = array(array('data' => $pager, 'colspan' => '6'));
+  }
+
+  return theme('table', $header, $rows);
+}
+
+function referral_admin_view_unflagged() {
+
+  $header = array(
+    array('data' => t('Referring User'), 'field' => 'u.name'),
+    array('data' => t('# Unflagged'),    'field' => 'cnt'),
+    array('data' => t('Last'),           'field' => 'last', 'sort' => 'desc'),
+    array('data' => t('Operations')),
+    );
+
+  $sql = 'SELECT r.referral_uid, u.name, COUNT(*) AS cnt, MAX(r.created) AS last
+    FROM {referral} r INNER JOIN {users} u ON(r.referral_uid = u.uid)
+    WHERE r.flag = 0
+    AND r.uid IN
+    ( SELECT u.uid FROM {users} u WHERE status = 1 )
+    GROUP BY r.referral_uid' . tablesort_sql($header);
+  $result = pager_query($sql, REFERRAL_PAGE_COUNT);
+  while ($data = db_fetch_object($result)) {
+    $rows[] = array(
+      array('data' => l($data->name, "user/$data->referral_uid")),
+      array('data' => $data->cnt),
+      array('data' => format_date($data->last, 'custom', REFERRAL_DATE_FORMAT)),
+      array('data' => l(t('details'), "admin/reports/referral/roles/$data->referral_uid") .' | '.
+        l(t('flag'), "admin/referral/flag/$data->referral_uid")),
+    );
+  }
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No data.'), 'colspan' => '4'));
+  }
+  $pager = theme('pager', NULL, REFERRAL_PAGE_COUNT, 0);
+  if (!empty($pager)) {
+    $rows[] = array(array('data' => $pager, 'colspan' => '4'));
+  }
+
+  return theme('table', $header, $rows);
+}
+
+function referral_admin_view_roles() {
+  $uid = (int)arg(4);
+
+  $header = array(
+    array('data' => t('User'),         'field' => 'u.name'),
+    array('data' => t('Roles')),
+    array('data' => t('Time'),         'field' => 'r.created', 'sort' => 'desc'),
+    array('data' => t('IP Address'),   'field' => 'r.host'),
+    array('data' => t('Referrer'),     'field' => 'r.http_referer'),
+    );
+
+  $sql = 'SELECT u.uid, u.name, r.created, r.host, r.http_referer
+    FROM {referral} r INNER JOIN {users} u USING(uid)
+    WHERE r.referral_uid = %d
+    AND r.flag = 0
+    AND r.uid IN
+    ( SELECT u.uid FROM {users} u WHERE status = 1 )' . tablesort_sql($header);
+  $result = pager_query($sql, REFERRAL_PAGE_COUNT, 0, NULL, $uid);
+  while ($data = db_fetch_object($result)) {
+    $referer = check_plain(_referral_column_width($data->http_referer));
+    $rows[] = array(
+      array('data' => l($data->name, "user/$data->uid")),
+      array('data' => implode(',', _referral_get_user_roles($data->uid))),
+      array('data' => format_date($data->created, 'custom', REFERRAL_DATE_FORMAT)),
+      array('data' => l($data->host, "http://whois.domaintools.com/$data->host")),
+      array('data' => l($referer, $data->http_referer)),
+    );
+  }
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No data.'), 'colspan' => '5'));
+  }
+  $pager = theme('pager', NULL, REFERRAL_PAGE_COUNT, 0);
+  if (!empty($pager)) {
+    $rows[] = array(array('data' => $pager, 'colspan' => '5'));
+  }
+  $user = user_load(array('uid' => $uid));
+  $output = t('Unflagged referral users with roles for: @user', array('@user' => l($user->name, "user/$user->uid")));
+  $output .= theme('table', $header, $rows);
+
+  return $output;
+}
+
+function referral_admin_view_summary() {
+  $header = array(
+    array('data' => t('Referring User'), 'field' => 'r.referral_uid'),
+    array('data' => t('# Referred'),     'field' => 'num_referrals', 'sort' => 'desc'),
+    array('data' => t('Last Referral'),  'field' => 'r.created'),
+    array('data' => t('Details')),
+    );
+
+  $sql = 'SELECT r.referral_uid, u.name, COUNT(*) AS num_referrals, MAX(r.created) AS last
+    FROM {referral} r INNER JOIN {users} u ON u.uid = r.referral_uid
+    INNER JOIN {users} u2 ON u2.uid = r.uid
+    WHERE u2.status = 1
+    GROUP BY r.referral_uid' . tablesort_sql($header);
+  $result = pager_query($sql, REFERRAL_PAGE_COUNT);
+  while ($data = db_fetch_object($result)) {
+    $rows[] = array(
+      array('data' => l($data->name, "user/$data->referral_uid")),
+      array('data' => $data->num_referrals),
+      array('data' => format_date($data->last, 'custom', REFERRAL_DATE_FORMAT)),
+      array('data' => l(t('details'), "admin/reports/referral/details/$data->referral_uid")),
+    );
+  }
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No data.'), 'colspan' => '4'));
+  }
+  $pager = theme('pager', NULL, REFERRAL_PAGE_COUNT, 0);
+  if (!empty($pager)) {
+    $rows[] = array(array('data' => $pager, 'colspan' => '4'));
+  }
+
+  return theme('table', $header, $rows);
+}
+
+function _referral_column_width($column, $width = 30) {
+  return (strlen($column) > $width ? substr($column, 0, $width) .'...' : $column);
+}
+
+function _referral_ref2uid($ref) {
+  if ($ref) {
+    if (is_numeric('0x'. $ref)) {
+      $uid = hexdec($ref)  - _referral_hex_seed();
+      return $uid;
+    }
+  }
+  return FALSE;
+}
+
+function _referral_uid2ref($uid) {
+  if ($uid) {
+    if (is_numeric($uid)) {
+      $ref = dechex(_referral_hex_seed() + $uid);
+      return $ref;
+    }
+  }
+  return FALSE;
+}
+
+function _referral_hex_seed() {
+  global $base_url;
+  $seed = hexdec(_referral_asc2hex(substr($base_url, REFERRAL_HEX_START, REFERRAL_HEX_LENGTH)));
+  return $seed;
+}
+
+function _referral_asc2hex($asc_str) {
+  for ($i=0; $i<strlen($asc_str); $i++) {
+    $hex_str .= sprintf("%02x", ord(substr($asc_str, $i, 1)));
+  }
+  return $hex_str;
+}
+
+function _referral_get_user_roles($uid) {
+  $data = array();
+  $result = db_query('SELECT r.name FROM {role} r INNER JOIN {users_roles} ur USING (rid)
+    WHERE ur.uid = %d', $uid);
+  while ($row = db_fetch_object($result)) {
+    $data[] = $row->name;
+  }
+  return $data;
+}
+
+/**
+* Implementation of hook_token_values().
+*/
+function referral_token_values($type, $object = NULL, $options = array()) {
+  if ($type == 'user') {
+    $tokens = array (
+      'referral-link' => url('referral/'. _referral_uid2ref($object->uid), array('absolute' => TRUE)),
+    );
+    return $tokens;
+  }
+}
+
+/**
+* Implementation of hook_token_list().
+*/
+function referral_token_list($type = 'all') {
+  if ($type == 'user' || $type == 'all') {
+    $tokens['user'] = array (
+      'referral-link' => t('The referral link for this user.'),
+    );
+    return $tokens;
+  }
+}
+

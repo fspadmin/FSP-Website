@@ -1,0 +1,70 @@
+<?php
+
+
+define('REFERRAL_USERPOINTS',            'referral_userpoints');
+define('REFERRAL_USERPOINTS_TID',        'referral_userpoints_tid');
+define('REFERRAL_USERPOINTS_MODERATION', 'referral_userpoints_moderation');
+
+/**
+ * Implementation of hook_referral
+ */
+function referral_userpoints_referral($new_uid, $referring_uid) {
+  userpoints_userpointsapi(array(
+    'points'      => variable_get(REFERRAL_USERPOINTS, 0),
+    'uid'         => $referring_uid,
+    'operation'   => 'referral',
+    'entity_id'   => $referring_uid,
+    'entity_type' => 'user',
+    'reference'   => 'referral',
+    'tid'         => variable_get(REFERRAL_USERPOINTS_TID, 0),
+    'moderate'    => variable_get(REFERRAL_USERPOINTS_MODERATION, 0),
+    )
+  );
+}
+
+/**
+ * Implementation of hook_userpoints
+ */
+function referral_userpoints_userpoints($op, $params = array()) {
+  if ($op == 'setting') {
+    $group = 'referral';
+    $form[$group] = array(
+      '#type'          => 'fieldset',
+      '#collapsible'   => TRUE,
+      '#collapsed'     => TRUE,
+      '#title'         => t('!Points for referral', userpoints_translation()),
+    );
+
+    $form[$group][REFERRAL_USERPOINTS] = array(
+      '#type'          => 'textfield',
+      '#title'         => t('!Points for referring a user', userpoints_translation()),
+      '#default_value' => variable_get(REFERRAL_USERPOINTS, 0),
+      '#size'          => 5,
+      '#maxlength'     => 5,
+    );
+    
+    $form[$group][REFERRAL_USERPOINTS_TID] = array(
+      '#type'          => 'select',
+      '#title'         => t('Category'),
+      '#default_value' => variable_get(REFERRAL_USERPOINTS_TID, 0),
+      '#options'       => userpoints_get_categories(),
+      '#description'   => t('Referral points will be assigned to this category. You can modify what categories are available by modifying the <a href="!url">userpoints taxonomy</a>.', 
+        array('!url' => url('admin/content/taxonomy/'. variable_get(USERPOINTS_CATEGORY_DEFAULT_VID, '')))),
+    );
+    
+    $options = array(
+      0 => t('No'),
+      1 => t('Yes'),
+    );
+
+    $form[$group][REFERRAL_USERPOINTS_MODERATION] = array(
+      '#type'          => 'radios',
+      '#title'         => t('Moderation'),
+      '#default_value' => variable_get(REFERRAL_USERPOINTS_MODERATION, 0),
+      '#options'       => $options,
+      '#description'   => t('Referral points can be moderated if moderation is set to "Yes".'),
+    );
+    
+    return $form;
+  }
+}

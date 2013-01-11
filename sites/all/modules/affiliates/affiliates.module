@@ -1,0 +1,1316 @@
+<?php
+// $Id: affiliates.module,v 1.1.4.5.2.21 2009/11/12 11:06:18 paulbooker Exp $
+
+// Portions Copyright 2006 http://2bits.com
+define ('AFFILIATE_BUTTONS_DIRECTORY_RELATIVE_FILES', '/affiliates');
+
+define('AFFILIATE_HOMEPAGE_PROFILE',              'affiliate_homepage_profile');
+define('AFFILIATE_BLOCK_TEXT',                    'affiliate_block_text');
+define('AFFILIATE_STATS_TEXT',                    'affiliate_stats_text');
+define('AFFILIATE_TOP_USERS_PAGE',                'affiliate_top_users_page');
+define('AFFILIATE_TOP_USERS_BLOCK',               'affiliate_top_users_block');
+define('AFFILIATE_TOP_USERS_COUNT_PAGE',          'affiliate_top_users_count_page');
+define('AFFILIATE_TOP_USERS_COUNT_BLOCK',         'affiliate_top_users_count_block');
+define('AFFILIATE_TOP_USERS_PERIOD_INTERVAL',     'affiliate_top_users_period_interval');
+define('AFFILIATE_TOP_CLIMBERS_PAGE',             'affiliate_top_climbers_page');
+define('AFFILIATE_TOP_CLIMBERS_BLOCK',            'affiliate_top_climbers_block');
+define('AFFILIATE_TOP_CLIMBERS_COUNT_PAGE',       'affiliate_top_climbers_count_page');
+define('AFFILIATE_TOP_CLIMBERS_COUNT_BLOCK',      'affiliate_top_climbers_count_block');
+define('AFFILIATE_TOP_CLIMBERS_PERIOD_INTERVAL',  'affiliate_top_climbers_period_interval');
+define('AFFILIATE_CLICK_IGNORE_INTERVAL',         'affiliate_click_ignore_interval');
+define('AFFILIATE_CRON_INTERVAL',                 'affiliate_cron_interval');
+define('AFFILIATE_INTRODUCTION',                  'affiliate_introduction');
+define('AFFILIATE_USERPOINTS_TID',                'affiliate_userpoints_tid');
+define('AFFILIATE_DENIED_URI_REFERRERS',          'affiliate_denied_uri_referrers');
+define('AFFILIATE_DENIED_IPS',                    'affiliate_denied_ips');
+define('AFFILIATE_DENIED_USERS',                  'affiliate_denied_users');
+
+function affiliates_help($section) {
+  switch ($section) {
+    case 'admin/help#affiliates':
+    case 'admin/modules#description':
+      return t('A module that allows affiliate click-throughs to be tracked.');
+  }
+}
+
+function affiliates_perm() {
+//The view own stats permission isn't currently used. Leaving it here for future reference though.
+//  return array('administer affiliates', 'view own affiliate stats', 'affiliate click');
+  return array('administer affiliates', 'affiliate click', 'affiliate view');
+}
+
+function affiliates_menu() {
+    $items['admin/settings/affiliates'] = array(
+      'title' => t('Affiliates'),
+      'description' => t('affiliates settings.'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('affiliates_admin_settings'),
+      'access arguments' => array('administer site configuration'),
+    );
+
+    $items['admin/affiliates'] = array(
+      'title' => 'Affiliates',
+      'access arguments' => array('administer affiliates'),
+      'page callback' => 'affiliates_ad_button_list',
+    );
+
+    $items['admin/affiliates/list/buttons'] = array(
+      'title' => 'List Buttons',
+      'access arguments' => array('administer affiliates'),
+      'page callback' => 'affiliates_ad_button_list',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 1,
+    );
+    
+     $items['admin/affiliates/list/categories'] = array(
+      'title' => 'List Categories',
+      'access arguments' => array('administer affiliates'),
+      'page callback' => 'affiliates_ad_category_list',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 1,
+    );
+
+    $items['admin/affiliates/add/button'] = array(
+      'title' => t('Add Button'),
+      'access arguments' => array('administer affiliates'),
+      'page callback' => 'affiliates_affiliate',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 5,
+    );
+    
+    $items['admin/affiliates/add/category'] = array(
+      'title' => t('Add Category'),
+      'access arguments' => array('administer affiliates'),
+      'page callback' => 'affiliates_affiliate',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 5,
+    );
+
+    $items['admin/affiliates/edit/button'] = array(
+      'title' => 'Edit button',
+      'access arguments' => array('administer affiliates'),
+      'page callback' => 'affiliates_affiliate',
+      'type' => MENU_HIDE,
+    );
+    
+     $items['admin/affiliates/edit/category'] = array(
+      'title' => 'Edit Category',
+      'access arguments' => array('administer affiliates'),
+      'page callback' => 'affiliates_affiliate',
+      'type' => MENU_HIDE,
+    );
+    
+    $items['admin/affiliates/delete/button'] = array(
+      'title' => t('Delete affiliate button'),
+      'access arguments' => array('administer affiliates'),
+      'page callback' => 'affiliates_affiliate',
+      'type' => MENU_HIDE,
+    );
+
+    $items['admin/affiliates/delete/category'] = array(
+      'title' => t('Delete affiliate category'),
+      'access arguments' => array('administer affiliates'),
+      'page callback' => 'affiliates_affiliate',
+      'type' => MENU_HIDE,
+    );
+    
+    $items['aff'] = array(
+      'page callback' => 'affiliates_click',
+      'access arguments' => array('affiliate click'),
+      'type' => MENU_HIDE,
+    );
+
+    $items['affiliates/top_users'] = array(
+      'title' => t('Top Affiliates'),
+      'page callback' => 'affiliates_top_users',
+      'access arguments' => array('affiliate view'),
+      'type' => MENU_HIDE,
+    );
+    
+     $items['affiliates/top_climbers'] = array(
+      'title' => t('Top Affiliate Climbers'),
+      'page callback' => 'affiliates_top_climbers',
+      'access arguments' => array('affiliate view'),
+      'type' => MENU_HIDE,
+    );
+    
+    $items['affiliates'] = array(
+      'title' => t('Affiliates'),
+      'page callback' => 'affiliates_list',
+      'access arguments' => array('affiliate view'),
+    );
+    drupal_add_js(drupal_get_path('module', 'affiliates'). '/affiliates.js');
+  return $items;
+}
+
+function affiliates_admin_settings() {
+ $form['affiliates_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Affiliates settings'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+ 
+  $form['affiliates_settings']['configuration'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Configuration'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );	
+  
+  $form['affiliates_settings']['configuration']['top_users'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Top Users'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );	
+
+  $form['affiliates_settings']['configuration']['top_users'][AFFILIATE_TOP_USERS_COUNT_PAGE] = array(
+    '#type'          => 'select',
+    '#title'         => t('Top Users Count For Page'),
+    '#default_value' => variable_get(AFFILIATE_TOP_USERS_COUNT_PAGE, 5),
+    '#options'       => array(5 => 5, 10 => 10, 25 => 25, 50 => 50, 100 => 100), 
+    '#description'   => t('Number of users to show in top users page.'),
+  );
+
+  $form['affiliates_settings']['configuration']['top_users'][AFFILIATE_TOP_USERS_COUNT_BLOCK] = array(
+    '#type'          => 'select',
+    '#title'         => t('Top Users Count For Block'),
+    '#default_value' => variable_get(AFFILIATE_TOP_USERS_COUNT_BLOCK, 5),
+    '#options'       => array(5 => 5, 10 => 10, 25 => 25, 50 => 50, 100 => 100), 
+    '#description'   => t('Number of users to show in top users block.'),
+  );
+
+  $form['affiliates_settings']['configuration']['top_users'][AFFILIATE_TOP_USERS_PERIOD_INTERVAL] = array(
+    '#type'          => 'select',
+    '#title'         => t('Period for top users block and page'),
+    '#default_value' => variable_get(AFFILIATE_TOP_USERS_PERIOD_INTERVAL, 259200),
+    '#options'       => drupal_map_assoc(
+      array(86400, 172800, 259200, 259200, 432000, 604800, 1209600, 2592000), 'format_interval'),
+    '#description'   => t('How long will the "period" be as shown in the top users page.'),
+  );
+  
+   $form['affiliates_settings']['configuration']['top_climbers'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Top Climbers'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  
+  $form['affiliates_settings']['configuration']['top_climbers'][AFFILIATE_TOP_CLIMBERS_COUNT_PAGE] = array(
+    '#type'          => 'select',
+    '#title'         => t('Top Climbers Count For Page'),
+    '#default_value' => variable_get(AFFILIATE_TOP_CLIMBERS_COUNT_PAGE, 5),
+    '#options'       => array(5 => 5, 10 => 10, 25 => 25, 50 => 50, 100 => 100), 
+    '#description'   => t('Number of users to show in top climbers page.'),
+  );
+
+  $form['affiliates_settings']['configuration']['top_climbers'][AFFILIATE_TOP_CLIMBERS_COUNT_BLOCK] = array(
+    '#type'          => 'select',
+    '#title'         => t('Top Climbers Count For Block'),
+    '#default_value' => variable_get(AFFILIATE_TOP_CLIMBERS_COUNT_BLOCK, 5),
+    '#options'       => array(5 => 5, 10 => 10, 25 => 25, 50 => 50, 100 => 100), 
+    '#description'   => t('Number of users to show in top climbers block.'),
+  );
+
+  $form['affiliates_settings']['configuration']['top_climbers'][AFFILIATE_TOP_CLIMBERS_PERIOD_INTERVAL] = array(
+    '#type'          => 'select',
+    '#title'         => t('Period for top climbers block and page'),
+    '#default_value' => variable_get(AFFILIATE_TOP_CLIMBERS_PERIOD_INTERVAL, 259200),
+    '#options'       => drupal_map_assoc(
+      array(86400, 172800, 259200, 259200, 432000, 604800, 1209600, 2592000), 'format_interval'),
+    '#description'   => t('How long will the "period" be as shown in the top climbers page.'),
+  );
+
+  $form['affiliates_settings']['configuration'][AFFILIATE_CLICK_IGNORE_INTERVAL] = array(
+    '#type'          => 'select',
+    '#title'         => t('IP Click Ignore'),
+    '#default_value' => variable_get(AFFILIATE_CLICK_IGNORE_INTERVAL, 86400),
+    '#options'       => drupal_map_assoc(array(3600, 10800, 21600, 32400, 43200, 86400, 172800, 259200, 604800, 1209600, 2419200), 'format_interval'),
+    '#description'   => t('Ignore clicks from the same IP address for this time interval.'),
+  );
+
+  $form['affiliates_settings']['configuration'][AFFILIATE_CRON_INTERVAL] = array(
+    '#type'          => 'select',
+    '#title'         => t('Top User Refresh Interval'),
+    '#default_value' => variable_get(AFFILIATE_CRON_INTERVAL, 86400),
+    '#options'       => drupal_map_assoc(
+      array(300, 600, 1800, 3600, 10800, 21600, 32400, 43200, 86400, 172800, 259200, 604800), 'format_interval'),
+    '#description'   => t('How often to refresh the top users data. Requires cron to be running at a more frequent rate than this value to really take effect.'),
+  );
+
+  $form['affiliates_settings']['spam'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Spam'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+ 
+  $form['affiliates_settings']['spam'][AFFILIATE_DENIED_URI_REFERRERS] = array(
+    '#type' => 'textarea',
+    '#title' => t('Denied by referrer URI'),
+    '#default_value' => variable_get(AFFILIATE_DENIED_URI_REFERRERS,""),
+    '#size' => 70,
+    '#rows' => 4,
+    '#description' => t('List all referral URI that will not be allocated affiliate points'),
+  );	
+
+  $form['affiliates_settings']['spam'][AFFILIATE_DENIED_IPS] = array(
+    '#type' => 'textarea',
+    '#title' => t('Denied by IP'),
+    '#default_value' => variable_get(AFFILIATE_DENIED_IPS,""),
+    '#size' => 70,
+    '#rows' => 4,
+    '#description' => t('List all IP that will not be allocated affiliate points'),
+  );
+
+  $form['affiliates_settings']['spam'][AFFILIATE_DENIED_USERS] = array(
+    '#type' => 'textarea',
+    '#title' => t('Denied by User'),
+    '#default_value' => variable_get(AFFILIATE_DENIED_USERS,""),
+    '#size' => 70,
+    '#rows' => 4,
+    '#description' => t('List all users that will not be allocated affiliate points'),
+  );
+  
+  $form['affiliates_settings']['content'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Content'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );	
+
+  $form['affiliates_settings']['content'][AFFILIATE_STATS_TEXT] = array(
+    '#type'          => 'textarea',
+    '#title'         => t('User Text'),
+    '#default_value' => variable_get(AFFILIATE_STATS_TEXT, 'Copy and paste the source below to link to us and get affiliate credit.'),
+    '#cols'          => 70,
+    '#rows'          => 4,
+    '#description'   => t('Text to instruct users to copy/paste to earn affiliate credits.'),
+  );
+  
+  $form['affiliates_settings']['content'][AFFILIATE_INTRODUCTION] = array(
+    '#type' => 'textarea',
+    '#title' => t('Affiliates introduction'),
+    '#default_value' => variable_get(AFFILIATE_INTRODUCTION,""),
+    '#size' => 70,
+    '#rows' => 4,
+    '#description' => t('The introduction text on the affiliate page.'),
+  );
+  
+   $form['affiliates_settings']['revenue'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Revenue'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );	
+
+   $form['affiliates_settings']['revenue'][AFFILIATE_HOMEPAGE_PROFILE] = array(
+    '#type'          => 'select',
+    '#title'         => t('Home Page Profile Field'),
+    '#default_value' => variable_get(AFFILIATE_HOMEPAGE_PROFILE, 0),
+    '#options'       => _get_profile_fields(),
+    '#description'   => t('Select the profile field that users put their home page in. This will be displayed in the top users block and page.'),
+  );
+  
+
+  return system_settings_form($form['affiliates_settings']);
+}
+
+function affiliates_cron() {
+  $last_run = variable_get('cron_last', time());
+  $interval = variable_get(AFFILIATE_CRON_INTERVAL, 86400);
+
+  if (time() >= ($last_run + $interval)) {
+    // Refresh the top users data
+    _create_summary_data(variable_get(AFFILIATE_TOP_USERS_COUNT_PAGE, 5));
+
+    // Generate the page 
+    _get_top_users_page();
+    _get_top_climbers_page();
+
+    // Generate the blocks
+    _get_top_users_block('total');
+    _get_top_users_block('period');
+    _get_top_climbers_block();
+
+  }
+}
+
+function affiliates_affiliate() {
+  $affiliate = array();
+  $op = arg(2);
+  $level = arg(3); 
+  $id = (int)arg(4);
+
+  switch($op) {
+    case 'add':
+       if ($level == 'category') {
+        $output = drupal_get_form('affiliate_form_category_add_edit');
+       }
+       else {
+       $output = drupal_get_form('affiliate_form_button_add_edit');
+       }
+      break;
+
+    case 'edit':
+      if ($level == 'category') {
+        $affiliate_category = _get_affiliate_category($id);
+        $output = drupal_get_form('affiliate_form_category_add_edit', $affiliate_category);
+      }
+      else {
+        $affiliate_button = _get_affiliate_button($id);
+        $output = drupal_get_form('affiliate_form_button_add_edit', $affiliate_button);
+      }  
+      break;
+
+    case 'delete':
+      if ($level == 'category') {
+        $output = drupal_get_form('affiliate_form_category_delete', $id);
+      } 
+      else {
+         $output = drupal_get_form('affiliate_form_button_delete', $id);
+      } 
+      break;
+  }
+
+  return $output;
+}
+
+function affiliate_form_button_delete($id) {
+  $form['affiliate']['message'] = array(
+    '#type'  => 'markup',
+    '#value' => t('Are you sure you?'),
+  );
+  $form['affiliate']['delete'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Delete'),
+  );
+  return $form;
+}
+
+function affiliate_form_button_add_edit(&$form_state, $affiliate = array()) {
+
+  $form['affiliate'] = array(
+    '#type'  => 'fieldset',
+    '#title' => t('Add a button'),
+  );
+
+  $form['affiliate']['label'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Label'),
+    '#default_value' => $affiliate->label,
+    '#size'          => 30,
+    '#maxlength'     => 30,
+    '#required' => TRUE,
+  );
+
+  $form['affiliate']['points'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Points'),
+    '#default_value' => $affiliate->points,
+    '#size'          => 3,
+    '#maxlength'     => 3,
+    '#required' => TRUE,
+  );
+
+  $form['affiliate']['type'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Type'),
+    '#default_value' => $affiliate->type,
+    '#options'       => array(
+      'image' => 'Image',
+      'text'  => 'Text',
+      ),
+  );
+     
+  $form['affiliate']['cat_id'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Category'),
+    '#default_value' => $affiliate->cat_id,
+    '#options'       => _get_categories(),
+  );
+  
+   $form['affiliate']['image'] = array(
+  	'#type' => 'file',
+  	'#title' => t('Upload a button'),
+  	'#size' => 40,
+  	'#description' => t('Please upload a button.<br /><br /><b>OR</b> specify the button URL:')
+  );
+
+  $form['affiliate']['anchor'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Hosted button URL'),
+    '#default_value' => $affiliate->anchor,
+    '#size'          => 40,
+    '#maxlength'     => 256,
+    '#description' => t('If your button is hosted elsewhere, enter the URL here.')
+  );
+
+  $form['affiliate']['redirect'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Redirect to URL'),
+    '#default_value' => $affiliate->redirect,
+    '#size'          => 40,
+    '#maxlength'     => 256,
+    '#description' => t('If no redirect is specified, the home page will be used.')
+  );
+
+  $form['affiliate']['order_by'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Order'),
+    '#default_value' => $affiliate->order_by,
+    '#size'          => 10,
+    '#maxlength'     => 5,
+    '#required' => TRUE,
+  );
+
+  $form['affiliate']['status'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Status'),
+    '#default_value' => $affiliate->status,
+    '#options'       =>  _get_status_desc(),
+  );
+
+  $form['affiliate']['submit'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Save'),
+  );
+  $form['#attributes'] = array('enctype' => "multipart/form-data"); 
+  return $form;
+
+}
+
+function affiliate_form_button_add_edit_validate($form, &$form_state) {
+  $form_values = $form_state['values']; 
+  $op = arg(2);
+  if ($op == 'delete') {
+    // no need to validate anything
+    return;
+  }
+
+  if (!$form_values['label']) {
+    form_set_error('', t('You must enter a label'));
+  }
+  if (!is_numeric($form_values['points'])) {
+    form_set_error('', t('You must enter a numeric value for points'));
+  }
+  if (!$form_values['type']) {
+    form_set_error('', t('You must select a type'));
+  }
+  if (!$form_values['cat_id']) {
+    form_set_error('', t('You must select a category'));
+  }
+   if (($form_values['type'] == 'image') && !$form_values['anchor'] && empty($_FILES['files']['name']['image'])) {
+    form_set_error('', t('You must either upload an button or enter the URL of the hosted button '));
+  }
+  if (!is_numeric($form_values['order_by'])) {
+    form_set_error('', t('You must enter a numeric order value'));
+  }
+  if (!$form_values['status']) {
+    form_set_error('', t('You must select a valid status'));
+  }
+}
+
+function affiliate_form_button_add_edit_submit($form, &$form_state) { 
+  global $base_url;
+  $form_values = $form_state['values'];
+  $op = arg(2);
+  $id = arg(4);
+
+  if ($form_values['type'] == 'image') { 	
+    $FILE_DIRECTORY_PATH  = variable_get('file_directory_path', 'files');
+    if (!empty($_FILES['files']['name']['image']) && substr_count($_FILES['files']['type']['image'], "image")) {    
+      $directory = $FILE_DIRECTORY_PATH . AFFILIATE_BUTTONS_DIRECTORY_RELATIVE_FILES;
+      if (file_check_directory($directory, $mode = 1, $form_item = NULL)) {  
+        chmod($directory, 0777) ; 
+      }
+      file_copy($_FILES['files']['tmp_name']['image'], $directory.'/'.$_FILES['files']['name']['image'], $replace = FILE_EXISTS_ERROR) ; 
+    }      
+   $button_url = $_FILES['files']['name']['image'] ? $base_url .'/'. $directory .'/'. $_FILES['files']['name']['image'] : $form_values['anchor'];
+  } 
+  else {
+    $button_url = "";  		
+  }
+  
+  switch($op) {
+    case 'add':    
+      db_query("INSERT INTO {affiliates_ads}
+        (label, points, anchor, type, cat_id, order_by, redirect, status)
+        VALUES
+        ('%s', %d, '%s', '%s', %d, %d, '%s', '%s')",
+        $form_values['label'],
+        $form_values['points'],
+        $button_url,
+        $form_values['type'],
+        $form_values['cat_id'],
+        $form_values['order_by'],
+        $form_values['redirect'],
+        'a');
+    drupal_set_message('Affiliate button has been added.');
+    break;
+
+    case 'edit':
+      $ad_id = (int)arg(4);
+      db_query("UPDATE {affiliates_ads} SET
+        label    = '%s',
+        points   = %d,
+        anchor   = '%s',
+        type     = '%s',
+        cat_id   = %d,
+        order_by = %d,
+        redirect = '%s',
+        status   = '%s'
+        WHERE ad_id = %d",
+        $form_values['label'],
+        $form_values['points'],
+        $button_url,
+        $form_values['type'],
+        $form_values['cat_id'],
+        $form_values['order_by'],
+        $form_values['redirect'],
+        $form_values['status'],
+        $ad_id);
+      drupal_set_message('Affiliate button has been saved.');
+      break;
+  }
+  drupal_goto('admin/affiliates');
+}
+
+function affiliate_form_button_delete_submit($form, &$form_state) {
+  $form_values = $form_state['values'];
+  $op = arg(2);
+  $id = arg(4);
+
+  db_query("DELETE FROM {affiliates_ads} WHERE ad_id = %d", $id);
+  drupal_set_message('Affiliate button has been deleted.');
+  drupal_goto('admin/affiliates/list/buttons');
+}
+
+function affiliate_form_category_add_edit(&$form_state, $affiliate_category = array()) { 
+
+  $form['affiliate'] = array(
+    '#type'  => 'fieldset',
+    '#title' => t('Add a category'),
+  );
+  
+  $form['affiliate']['cat_name'] = array(    
+    '#type' => 'textfield',
+    '#title' => t('Category name'),
+    '#required' => TRUE,
+    '#default_value' => $affiliate_category->cat_name,
+    '#size'          => 30,
+    '#maxlength'     => 30,
+  );
+  $form['affiliate']['weight'] = array(    
+    '#type' => 'textfield',
+    '#title' => t('Relative weight'),
+    '#default_value' => $affiliate_category->weight,
+    '#size'          => 3,
+    '#maxlength'     => 3,
+    '#required' => FALSE,
+    '#description' => t("Relative weight. Higher weights have higher positions on the affiliates page"),
+  );  
+  $form['affiliate']['active'] = array(
+    '#type' => 'select',
+    '#title' => t('Category active'),
+    '#default_value' => $affiliate_category->active,
+    '#options' => array('Y' =>'yes','N' =>'no'),
+  );  
+  $form['affiliate']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Create an affiliate category'),
+  );
+  
+  return $form;
+}
+
+function affiliate_form_category_add_edit_submit($form, &$form_state) {
+  $form_values = $form_state['values'];
+  $op = arg(2);
+
+  switch($op) {
+    case 'add':
+      db_query("INSERT INTO {affiliates_cats}
+        (cat_name, active, weight)
+        VALUES
+        ('%s', '%s', %d)",
+        $form_values['cat_name'],
+        $form_values['active'],
+        $form_values['weight']
+        );
+      drupal_set_message('Affiliate category has been added.');
+      break;
+
+    case 'edit':
+      $cat_id = (int)arg(4);
+      db_query("UPDATE {affiliates_cats} SET
+        cat_name  = '%s',
+        active  = '%s',
+        weight  = %d
+        WHERE cat_id = %d",
+        $form_values['cat_name'],
+        $form_values['active'],
+        $form_values['weight'],
+        $cat_id);
+      drupal_set_message('Affiliate category has been saved.');
+      break;
+  }
+  drupal_goto('admin/affiliates/list/categories');
+}
+
+function affiliate_form_category_delete($id) {
+  $form['affiliate']['message'] = array(
+    '#type'  => 'markup',
+    '#value' => t('Are you sure you want to delete this affiliate category and all of its buttons?'),
+  );
+  $form['affiliate']['delete'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Delete'),
+  );
+  return $form;
+}
+
+function affiliate_form_category_delete_submit($form, &$form_state) {
+  $form_values = $form_state['values'];
+  $op = arg(2);
+  $cat_id = arg(4);
+
+  db_query("DELETE FROM {affiliates_cats}   WHERE cat_id = %d", $cat_id);
+  db_query("DELETE FROM {affiliates_ads} WHERE cat_id = %d", $cat_id);
+  drupal_set_message('Affiliate category has been deleted and all of its buttons.');
+  drupal_goto('admin/affiliates/list/categories');
+}
+
+function affiliates_ad_button_list($cat_id = NULL) {  
+  $header = array(
+    array('data' => t('ID'),       'field' => 'ad_id'),
+    array('data' => t('Label'),    'field' => 'label'),
+    array('data' => t('Points'),   'field' => 'points', 'sort' => 'desc'),
+    array('data' => t('Type'),     'field' => 'type'),
+    array('data' => t('Category'), 'field' => 'cat_name'),
+    array('data' => t('Status'),   'field' => 'status'),
+    array('data' => t('Operations')),
+  );
+
+  $status = _get_status_desc();
+  $sql = "SELECT aa.*, ac.cat_name, ac.cat_id
+    FROM {affiliates_ads} aa, {affiliates_cats} ac
+    WHERE aa.cat_id = ac.cat_id";
+  $sql .=  !is_null($cat_id) ?  " AND ac.cat_id = " . $cat_id : "" ;  
+  $sql .= tablesort_sql($header);
+
+  $result = pager_query($sql, 50);
+  while ($data = db_fetch_object($result)) {
+	if (module_exists('lightbox2') && ($data->type == 'image')) {
+	  $data->label = l($data->label, $data->anchor, array('attributes' => array('rel' => 'lightbox')));
+	} 
+    $rows[] = array(
+            array('data' => $data->ad_id),
+            array('data' => $data->label),
+            array('data' => $data->points),
+            array('data' => $data->type),
+            array('data' => $data->cat_name),
+            array('data' => $status[$data->status]),
+            array('data' => 
+        l('edit',   'admin/affiliates/edit/button/'   . $data->ad_id) . " " .
+        l('delete', 'admin/affiliates/delete/button/' . $data->ad_id)
+        ),
+    );
+  }
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No buttons.'), 'colspan' => '4'));
+  }
+  $pager = theme('pager', NULL, 50, 0);
+  if (!empty($pager)) {
+    $rows[] = array(array('data' => $pager, 'colspan' => '4'));
+  }
+  print theme('page', theme('table', $header, $rows), t('Affiliates'));
+}
+
+function affiliates_ad_category_list() {
+  $header = array(
+    array('data' => t('Name'), 'field' => 'cat_name'),
+    array('data' => t('Active'), 'field' => 'active'),
+    array('data' => t('Weight'), 'field' => 'weight', 'sort' => 'desc'),
+    array('data' => t('Action'), NULL),
+  );
+
+  $status = _get_status_desc();
+  $sql = "SELECT cat_id, cat_name, active, weight FROM {affiliates_cats}" . tablesort_sql($header);
+
+  $result = pager_query($sql, 50);
+  while ($data = db_fetch_object($result)) {
+    $rows[] = array(
+            array('data' => $data->cat_name),
+            array('data' => $data->active),
+            array('data' => $data->weight),
+            array('data' => 
+        l('show buttons',   'admin/affiliates/list/buttons/'   . $data->cat_id) . " " .
+        l('edit', 'admin/affiliates/edit/category/' . $data->cat_id) . " " .
+        l('delete', 'admin/affiliates/delete/category/' . $data->cat_id)
+        ),
+    );
+  }
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No categories.'), 'colspan' => '4'));
+  }
+  $pager = theme('pager', NULL, 50, 0);
+  if (!empty($pager)) {
+    $rows[] = array(array('data' => $pager, 'colspan' => '4'));
+  }
+  print theme('page', theme('table', $header, $rows), t('Affiliates'));
+}
+
+function _get_top_users_page() {
+  $limit = variable_get(AFFILIATE_TOP_USERS_COUNT_PAGE, 5); 
+  $homepage_profile = variable_get(AFFILIATE_HOMEPAGE_PROFILE, ''); 
+
+  $result = db_query("SELECT s.user_id, u.name, s.total_points, s.period_points, pv.value AS homepage
+    FROM {affiliates_summary} s INNER JOIN {users} u ON u.uid = s.user_id
+    LEFT JOIN {profile_values} pv ON (u.uid = pv.uid AND pv.fid = %d)
+    GROUP BY s.user_id
+    ORDER BY total_points DESC LIMIT %d", $homepage_profile, $limit);
+
+  $rank = 1;
+  while ($data = db_fetch_object($result)) {
+    $name = ($data->homepage) ? l($data->name, $data->homepage) : $data->name;
+    $rows[] = array(
+      array('data' => $rank++),
+      array('data' => l($name, 'user/' . $data->user_id)),
+      array('data' => $data->total_points),
+      array('data' => $data->period_points),
+    );
+  }
+
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No clicks yet'), 'colspan' => '2'));
+  }
+
+  $header = array('Rank', 'User', 'Total', 'Period');
+
+  $output = theme('table', $header, $rows);
+
+  cache_set(AFFILIATE_TOP_USERS_PAGE, $output);
+}
+
+
+
+function _get_top_users_block($type = 'total') {
+  $field = 'total_points';
+  if ($type  == 'period') {
+    $field = 'period_points';
+  }
+
+  $limit = variable_get(AFFILIATE_TOP_USERS_COUNT_BLOCK, 5);
+  $homepage_profile = variable_get(AFFILIATE_HOMEPAGE_PROFILE, '');
+
+  $result = db_query("SELECT s.user_id, u.name, s." . $field . " AS points, pv.value AS homepage
+    FROM {affiliates_summary} s INNER JOIN {users} u ON u.uid = s.user_id
+    LEFT JOIN {profile_values} pv ON (u.uid = pv.uid AND pv.fid = %d)
+    GROUP BY s.user_id
+    ORDER BY points DESC LIMIT %d", $homepage_profile, $limit);
+
+  while ($data = db_fetch_object($result)) {
+    $name = ($data->homepage) ? l($data->name, $data->homepage) : $data->name;
+    $rows[] = array(
+      array('data' => $name),
+      array('data' => $data->points),
+      array('data' => l('view', 'user/' . $data->user_id)),
+    );
+  }
+
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No clicks yet'), 'colspan' => '3'));
+  }
+
+  $output = theme('table', array(), $rows); 
+  cache_set(AFFILIATE_TOP_USERS_BLOCK . $type, $output);
+}
+
+function _get_top_climbers_page() {
+
+  $limit = variable_get(AFFILIATE_TOP_CLIMBERS_COUNT_PAGE, 5); 
+  $homepage_profile = variable_get(AFFILIATE_HOMEPAGE_PROFILE, ''); 
+  
+  $result=db_query('SELECT s.user_id, u.name , (s.period_points - s.previous_period_points) AS period_climb, pv.value AS homepage
+    FROM {affiliates_summary} s INNER JOIN {users} u ON u.uid = s.user_id 
+    LEFT JOIN {profile_values} pv ON (u.uid = pv.uid AND pv.fid = %d)
+    GROUP BY s.user_id
+    ORDER BY period_climb DESC LIMIT %d', $homepage_profile, $limit);
+    
+  $rank = 1;
+  while ($data = db_fetch_object($result)) {
+    $name = ($data->homepage) ? l($data->name, $data->homepage) : $data->name;
+    $rows[] = array(
+      array('data' => $rank++),
+      array('data' => $name),
+      array('data' => $data->period_climb),
+      array('data' => l('view profile', 'user/' . $data->user_id)),
+    );
+  }
+
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No clicks yet'), 'colspan' => '2'));
+  }
+
+  $header = array('Rank', 'User', 'Climb', 'Profile');
+
+  $output = theme('table', $header, $rows);
+
+  cache_set(AFFILIATE_TOP_CLIMBERS_PAGE, $output);
+}
+
+function _get_top_climbers_block() {
+
+  $limit = variable_get(AFFILIATE_TOP_CLIMBERS_COUNT_BLOCK, 5);
+  $homepage_profile = variable_get(AFFILIATE_HOMEPAGE_PROFILE, '');
+
+    $result=db_query('SELECT s.user_id, u.name , (s.period_points - s.previous_period_points) AS period_climb, pv.value AS homepage
+    FROM {affiliates_summary} s INNER JOIN {users} u ON u.uid = s.user_id 
+    LEFT JOIN {profile_values} pv ON (u.uid = pv.uid AND pv.fid = %d)
+    GROUP BY s.user_id
+    ORDER BY period_climb DESC LIMIT %d', $homepage_profile, $limit);
+    
+   while ($data = db_fetch_object($result)) {
+    $name = ($data->homepage) ? l($data->name, $data->homepage) : $data->name;
+    $rows[] = array(
+      array('data' => $name),
+      array('data' => $data->period_climb),
+      array('data' => l('view', 'user/' . $data->user_id)),
+    );
+  }
+
+  if (!$rows) {
+    $rows[] = array(array('data' => t('No clicks yet'), 'colspan' => '3'));
+  } 
+
+  $output = theme('table', array(), $rows); 
+  cache_set(AFFILIATE_TOP_CLIMBERS_BLOCK, $output);
+}
+
+
+function _create_summary_data($limit = 5) {
+
+  $period = time() - variable_get(AFFILIATE_TOP_USERS_PERIOD_INTERVAL, 86400);
+  $last_period = time() -  (2 * variable_get(AFFILIATE_TOP_USERS_PERIOD_INTERVAL, 86400));
+
+  // Drop the table
+  db_query("DROP TABLE IF EXISTS {affiliates_summary}");
+
+  // Create it again
+  db_query("CREATE TABLE {affiliates_summary} (
+    user_id       INT(10),
+    total_points  INT(10),
+    period_points INT(10),
+    previous_period_points INT(10),
+    PRIMARY KEY (user_id));");
+
+  // Populate it with the users and total clicks
+  db_query("INSERT INTO {affiliates_summary}
+    SELECT a.user_id, SUM(aa.points) as lp, 0, 0
+    FROM {affiliates} a, {affiliates_ads} aa
+    WHERE aa.ad_id = a.ad_id AND a.user_id != 0
+    GROUP BY a.user_id
+    ORDER BY lp DESC
+    LIMIT %d", $limit);
+
+  // Some SQL wizardry to update the period
+  db_query("UPDATE {affiliates_summary} s,
+    (
+      SELECT a.user_id, SUM(aa.points) AS lp
+      FROM {affiliates} a, {affiliates_ads} aa
+      WHERE a.click_time >= %d
+      AND a.ad_id = aa.ad_id
+      GROUP BY a.user_id
+      LIMIT %d
+      ) q
+    SET s.period_points = lp
+    WHERE q.user_id = s.user_id", $period, $limit);
+    
+    // Additional SQL wizardry to update the previous period
+  db_query("UPDATE {affiliates_summary} s,
+    (
+      SELECT a.user_id, SUM(aa.points) AS lp
+      FROM {affiliates} a, {affiliates_ads} aa
+      WHERE a.click_time >= %d
+      AND a.click_time < %d
+      AND a.ad_id = aa.ad_id
+      GROUP BY a.user_id
+      LIMIT %d
+      ) q
+    SET s.previous_period_points = lp
+    WHERE q.user_id = s.user_id", $last_period,$period, $limit);
+}
+
+function affiliates_user($op, &$edit, &$account, $category = false) {
+  global $user;
+
+  switch ($op) {
+    case 'view':
+      $items = array();
+      $points = db_result(db_query("SELECT SUM(aa.points) AS points
+        FROM {affiliates} a, {affiliates_ads} aa
+        WHERE aa.ad_id = a.ad_id
+        AND a.user_id = %d", $account->uid));
+      $affiliates[] = array(
+	    '#type' => 'user_profile_item',
+	    '#title' => t('Affiliate points'),
+	    '#value' => $account->name . " has earned " . number_format($points) . " points."
+	  );  
+	  if ($affiliates) {
+	    $affiliates['#type'] = 'user_profile_category';
+	    $affiliates['#title'] = t('Affiliates');
+	    $affiliates['#weight'] = 8;
+	    $account->content['Affiliates'] = $affiliates;
+
+        if (user_access('administer affiliates')) {
+	      $result = db_query("SELECT DISTINCT referer 
+		    FROM {affiliates} 
+		    WHERE user_id = %d 
+		    ORDER BY id DESC 
+		    LIMIT 100", $account->uid);
+		  while ($data = db_fetch_object($result)) {
+		    $referrers .= $data->referer . "\n";	
+		  } 
+	      $referrers = array(
+		    '#type' => 'textarea',
+		    '#title' => t('Recent referrers'),
+		    '#value' => $referrers,
+		    '#size' => 70,
+		    '#rows' => 4,
+		  );
+	      $account->content['Affiliates'][] = $referrers;
+        }
+	  }
+	break;
+	case 'form':
+	  if (user_access('administer affiliates')) {
+	    if ($category == 'account') {
+	      $form['affiliates'] = array(
+	        '#type' => 'fieldset',
+	        '#title' => t('Affiliate settings'),
+	        '#collapsible' => FALSE,
+	        '#weight' => 4,
+	        '#tree' => FALSE,
+	      );
+	      $form['affiliates']['delete_affiliate_points'] = array(
+	        '#type' => 'checkbox',
+	        '#title' => t('Delete affiliate points for this user'),
+	        '#description' => t('To delete all affiliate points for this user, click this checkbox and then click the save button at the bottom of this page.'),
+	      );
+	      return $form;
+	    }
+  	  }
+	break;
+	case 'update':
+	  if ($edit['delete_affiliate_points']) {
+		affiliates_delete_points($account->uid);
+      }
+	break;
+	case 'delete':
+	  affiliates_delete_points($account->uid);
+	break;
+  }
+}
+
+function affiliates_delete_points($user_id) {
+  db_query('DELETE FROM {affiliates} WHERE user_id=%d', $user_id);
+  $affiliate_records_deleted = db_affected_rows();
+  if ($affiliate_records_deleted) {
+    //affiliate records deleted
+    $account = user_load(array('uid' => $user_id));
+    drupal_set_message(t("%username's affiliate records has been deleted.", array('%username' => $account->name)));
+  }	
+}
+
+function affiliates_list() {
+  global $user, $base_url;
+  $output = "<br/>" . nl2br(variable_get(AFFILIATE_INTRODUCTION,'')) . "<br/>";
+  
+  if ($user->uid) {
+    $output .= '<br/>' . variable_get(AFFILIATE_STATS_TEXT, 'Copy and paste the source below to link to us and get affiliate credit.');
+    $output .= '<br/>' . "You have " . _get_user_points($user->uid) . " points.";
+  }
+
+  $cat_name = '';
+
+  $result = db_query("SELECT aa.*, ac.cat_name
+    FROM {affiliates_ads} aa INNER JOIN {affiliates_cats} ac
+    ON ac.cat_id = aa.cat_id 
+    WHERE status = 'A'
+    ORDER BY ac.weight ASC, aa.order_by ASC");
+
+  while ($row = db_fetch_object($result)) {
+    if ($row->cat_name != $cat_name) {
+      // If the cat_name is different, we've entered a new category and should print it.
+      $output .= "<h2>" . $row->cat_name . "</h2>";
+      $cat_name = $row->cat_name;
+    }
+
+    if ($row->type == "image") {
+      // If the type specified is an image (rather than a text link), print image so users can preview
+      // what they're going to be adding to their site.
+      $output .= "\n<img src=\"" . $row->anchor . "\"/><br/>";
+    }
+    else {
+      // Print text code.
+      $output .= $row->label . "<br/>";
+    }
+
+    // Now add the textarea for copying the code.
+    $output .= "<textarea rows=\"7\" cols=\"50\">";
+    $output .= "<a href=\"" . $base_url . "/aff/" . $user->uid . "/" . (int)$row->ad_id . "\">";
+
+    if ($row->type == "image") {
+      $output .= "\n<img border=\"0\"";
+      $output .= " alt=\"" . variable_get('site_name', $base_url);
+      $output .= "\" title=\"" . variable_get('site_name', $base_url) . "\" src=\"" . $row->anchor . "\"/>";
+    }
+    else {
+      $output .= $row->label;
+    }
+
+    $output .= "</a></textarea><br/>\n";
+    //Now add the label assigned through the admin interface.
+    $output .= $row->label . " : " . $row->points . " points<br/><br/>";   
+  }
+
+  print theme('page', $output);
+}
+
+function affiliates_top_users() {
+  // This is generated in affiliates_cron() because it stands to be a pretty beefy query and won't scale otherwise.
+  $obj = cache_get(AFFILIATE_TOP_USERS_PAGE);
+  print theme('page', $obj->data);
+}
+
+function affiliates_top_climbers() {
+  // This is generated in affiliates_cron() because it stands to be a pretty beefy query and won't scale otherwise.
+  $obj = cache_get(AFFILIATE_TOP_CLIMBERS_PAGE);
+  print theme('page', $obj->data);
+}
+
+function affiliates_click_denied($uid) {
+  $account = user_load(array('uid' => $uid));
+  $denied_users = explode(",", variable_get(AFFILIATE_DENIED_USERS,''));
+  if (in_array($account->name, $denied_users)) return TRUE;
+  $ip = ip_address();
+  $denied_ips = explode(",",  variable_get(AFFILIATE_DENIED_IPS,''));
+  if (in_array($ip, $denied_ips)) return TRUE;
+  $denied_uri_referrers = explode(",", variable_get(AFFILIATE_DENIED_URI_REFERRERS,''));
+  if (empty($_SERVER['HTTP_REFERER'])) return TRUE;
+  if (count($denied_uri_referrers)) {
+    foreach ($denied_uri_referrers as $referrer) {
+      if (!empty($referrer) && strpos($_SERVER['HTTP_REFERER'], $referrer)) return TRUE;
+    }
+  }
+  $timeout_flag = _check_timeout_query();
+  if ($timeout_flag) return TRUE; 
+  return FALSE;	
+}
+
+function affiliates_click() {
+  $cookie_value = md5(microtime());
+  $timeout_flag = true;
+
+  $uid = (int)arg(1);
+  $ad_id = (int)arg(2);
+
+  $affiliates_click_denied = affiliates_click_denied($uid);  
+  //If there's no cookie, proceed.
+  if (!$_COOKIE['aff']) {
+    setcookie('aff', $cookie_value, time() + 86400);
+  }
+
+  if ((!$affiliates_click_denied) && user_access('affiliate click')) {
+    //Only log the hit if it looks like this isn't a cheater and the user has permissions.
+    db_query("INSERT INTO {affiliates} (
+      user_id, cookie_id, ip, referer, ad_id, click_time)
+      VALUES
+      (%d, '%s', '%s', '%s', %d, %d)",
+      $uid, $cookie_value, ip_address(), filter_xss($_SERVER['HTTP_REFERER']), $ad_id, time());
+      
+    // Record it in the userpoints
+    if (module_exists('userpoints')) {
+      $points = (int)db_result(db_query("SELECT points FROM {affiliates_ads} WHERE ad_id = %d", $ad_id));
+      $params = array(
+    	'points'      => $points,
+        'uid'         => $uid,
+        'operation'   => 'affilate click',
+        'tid'         => variable_get(AFFILIATE_USERPOINTS_TID, 0),
+        'reference'   => 'affiliates'
+      );
+      userpoints_userpointsapi($params);
+    }
+    if (module_exists('referral')) {
+	  referral_set_cookie($uid);
+	}
+  }
+
+  $redirect = db_result(db_query("SELECT redirect FROM {affiliates_ads} WHERE ad_id = %d", $ad_id));
+
+  if ($redirect) {
+    header("Location: " . $redirect);
+  }
+  else {
+    // Redirect to the home page if there is no redirect
+    drupal_goto();
+  }
+}
+
+function affiliates_userpoints($op, $params = array()) {
+  global $base_url;
+  switch($op) {
+    case 'setting':
+      $group = 'affiliates';
+      $form[$group] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#title' => t('!Points for Affiliates', userpoints_translation()),
+      );
+      
+//This form item is commented out as the value does not modify anything currently. It could be used later on as a modifier.
+//      $form[$group][AFFILIATE_USERPOINTS] = array(
+//        '#type' => 'textfield',
+//        '#title' => t('!Points for Affiliates clicks', userpoints_translation()),
+//        '#default_value' => variable_get(AFFILIATE_USERPOINTS, 1),
+//        '#size' => 5,
+//        '#maxlength' => 5,
+//      );
+      
+      $form[$group][AFFILIATE_USERPOINTS_TID] = array(
+        '#type'          => 'select',
+        '#title'         => t('Category'),
+        '#default_value' => variable_get(AFFILIATE_USERPOINTS_TID, 0),
+        '#options'       => userpoints_get_categories(),
+        '#description'   => t('Points for Affilates button click-throughs will be assigned to this category. You can modify what categories are available by modifying the <a href="!url"><b>Userpoints taxonomy</b></a>. Points values are set in the <a href="' . $base_url . '/admin/affiliates"><b>Affiliates Admin</b></a> section on a per button basis.',
+         array('!url' => url('admin/content/taxonomy/'. variable_get(USERPOINTS_CATEGORY_DEFAULT_VID, '')))),
+      );
+      
+      return $form;
+  }
+}
+
+function affiliates_block($op = 'list', $delta = 0) {
+  global $user, $base_url;
+
+  switch($op) {
+    case 'list':
+      $block[0]['info'] = t('Top Affiliates');
+      $block[1]['info'] = t('Top Affiliates For Period');
+      $block[2]['info'] = t('Top Affiliate climbers For Period');
+      break;
+
+    case 'view':
+      switch($delta) {
+        case 0:
+          $block['subject'] = t('Top Affiliates');
+
+          $output .= '<br/>' . t('Check out these leading affiliates!');
+          if ($obj = cache_get(AFFILIATE_TOP_USERS_BLOCK . 'total')) {
+            $output .= '<br/>' . $obj->data;
+          }
+          else {
+            $output .= '<br/>' . t('No clicks yet.');
+          }
+          $output .= "<br/><a href=\"" . $base_url . "/affiliates/top_users\">more &raquo;</a>";
+
+          if ($user->uid) {
+            $output .= "<br/><br/>You have " . _get_user_points($user->uid) . " points.";
+          }   
+
+         $block['content'] = $output;
+         break;
+
+        case 1:
+          $block['subject'] = t('Top Affiliates For Period');
+
+          $output .= '<br/>' . t('Leading affiliates for the last @period', array('@period' => format_interval(variable_get(AFFILIATE_TOP_USERS_PERIOD_INTERVAL, 259200))));
+          if ($obj = cache_get(AFFILIATE_TOP_USERS_BLOCK . 'period')) {
+            $output .= '<br/>' . $obj->data;
+          }
+          else {
+            $output .= '<br/>' . t('No clicks yet.');
+          }
+
+         $block['content'] = $output;
+         break;
+         
+          case 2:
+          $block['subject'] = t('Top Affiliate Climbers For Period');
+
+          $output .= '<br/>' . t('Leading affiliate climbers over the last two  @period periods', array('@period' => format_interval(variable_get(AFFILIATE_TOP_CLIMBERS_PERIOD_INTERVAL, 259200))));
+          if ($obj = cache_get(AFFILIATE_TOP_CLIMBERS_BLOCK)) {
+            $output .= '<br/>' . $obj->data;
+          }
+          else {
+            $output .= '<br/>' . t('No clicks yet.');
+          }
+
+         $block['content'] = $output;
+         break;
+
+      }
+      break;
+  }
+
+  return $block;
+}
+
+function _get_user_points($uid = 0) {
+  $points = 0;
+
+  if ($uid) {
+    $points = (int)db_result(db_query('SELECT SUM(aa.points) AS points FROM {affiliates} a, {affiliates_ads} aa
+    WHERE a.user_id = %d
+    AND aa.ad_id = a.ad_id LIMIT 1', $uid));
+  }
+
+  return $points;
+}
+
+function _check_timeout_query() {
+  // Timeout allows one click per IP per day. Hope there aren't too many people going over a proxy.
+  return (int)db_result(db_query("SELECT count(*) FROM {affiliates} WHERE ip = '%s' AND %d < (click_time + %d)",
+    $_SERVER['REMOTE_ADDR'], time(), variable_get(AFFILIATE_CLICK_IGNORE_INTERVAL, 86400)));
+}
+
+function _get_profile_fields() {
+  $profile = array(0 => 'None');
+
+  $result = db_query("SELECT fid, title FROM {profile_fields} ORDER BY fid");
+  while ($row = db_fetch_object($result)) {
+    $profile[$row->fid] = $row->title;
+  }
+
+  return $profile;
+}
+
+function _get_status_desc() {
+  return array(
+    'a' => 'Active',
+    'i' => 'Inactive',
+    'h' => 'Hidden',
+    );
+}
+
+function _get_categories() {
+  $cats = array();
+
+  $result = db_query("SELECT cat_id, cat_name FROM {affiliates_cats} WHERE active = 'Y' ORDER BY cat_name ASC");
+  while ($row = db_fetch_object($result)) {
+    $cats[$row->cat_id] = $row->cat_name;
+  }
+  return $cats;
+}
+
+function _get_affiliate_button($ad_id = 0) {
+  return db_fetch_object(db_query('SELECT * FROM {affiliates_ads} WHERE ad_id = %d', $ad_id));
+}
+
+function _get_affiliate_category($cat_id = 0) {
+  return db_fetch_object(db_query('SELECT * FROM {affiliates_cats} WHERE cat_id = %d', $cat_id));
+}
+

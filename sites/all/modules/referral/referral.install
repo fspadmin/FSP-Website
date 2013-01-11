@@ -1,0 +1,71 @@
+<?php
+
+/**
+ * Implementation of hook_schema().
+ */
+function referral_schema() {
+  $schema['referral'] = array(
+    'fields' => array(
+      'uid' => array(
+        'description' => t('The {users}.uid of the user who was invited.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'referral_uid' => array(
+        'description' => t('The {users}.uid of the referer.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'created' => array(
+        'description' => t('UNIX timestamp for when the user was registered.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'flag' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0),
+      'flag_timestamp' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'host' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t('Network address.')),
+      'http_referer' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t('URL of referer site.'),),
+    ),
+    'primary key' => array('uid'),
+    'indexes' => array('referral_uid' => array('referral_uid')),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function referral_install() {
+  // Create tables.
+  $result = drupal_install_schema('referral');
+}
+
+/**
+* Implementation of hook_uninstall().
+*/
+function referral_uninstall() {
+  // Remove variables.
+  db_query("DELETE FROM {variable} WHERE name LIKE 'referral_%%'");
+  // Remove tables.
+  drupal_uninstall_schema('referral');
+}

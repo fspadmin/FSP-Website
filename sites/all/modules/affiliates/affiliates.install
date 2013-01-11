@@ -1,0 +1,100 @@
+<?php
+// $Id: affiliates.install,v 1.1.4.2.2.6 2009/03/02 16:18:05 paulbooker Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function affiliates_install() {
+  drupal_install_schema('affiliates');
+  
+  db_query("INSERT INTO {affiliates_cats} VALUES (NULL, 'Email Signature', 'Y', 0);");
+  db_query("INSERT INTO {affiliates_cats} VALUES (NULL, 'Buttons', 'Y', 0);");
+  db_query("INSERT INTO {affiliates_cats} VALUES (NULL, 'Ad Banners', 'Y', 0);");
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function affiliates_uninstall() {
+  drupal_uninstall_schema('affiliates');
+  db_query("DELETE FROM {variable} WHERE name LIKE 'affiliate\_%'");
+}
+
+
+/**
+* Implementation of hook_schema().
+*/
+function affiliates_schema() {
+  $schema['affiliates'] = array(
+    'fields' => array(
+      'id'         => array('type' => 'serial',  'length' => '10', 'unsigned' => TRUE, 'not null' => TRUE ),
+      'user_id'    => array('type' => 'int',     'length' => '10', 'default' => NULL, 'unsigned' => TRUE ),
+      'cookie_id'  => array('type' => 'varchar', 'length' => '56', 'default' => NULL ),
+      'ip'         => array('type' => 'varchar', 'length' => '15', 'default' => NULL ),
+      'referer'    => array('type' => 'varchar', 'length' => '80', 'default' => NULL ),
+      'ad_id'      => array('type' => 'int',     'length' => '5',  'default' => NULL, 'unsigned' => TRUE ),
+      'click_time' => array('type' => 'int',     'length' => '11', 'default' => NULL ),  
+    ),
+    'indexes' => array(
+      'affiliates_user_id'    => array('user_id'),
+      'affiliates_cookie_id'  => array('cookie_id'),
+      'affiliates_ip'         => array('ip'),
+      'affiliates_click_time' => array('click_time'),
+    ),
+    'primary key' => array('id'),
+  );  
+  $schema['affiliates_ads'] = array(
+    'fields' => array(
+      'ad_id'    => array('type' => 'serial',  'length' => '5',   'unsigned' => TRUE, 'not null' => TRUE),
+      'label'    => array('type' => 'varchar', 'length' => '30',  'default' => NULL),
+      'points'   => array('type' => 'int',     'length' => '6',   'default' => NULL),
+      'anchor'   => array('type' => 'varchar', 'length' => '100', 'default' => NULL),
+      'type'     => array('type' => 'varchar', 'length' => '5',   'default' => NULL),
+      'cat_id'   => array('type' => 'int',     'length' => '3',   'default' => NULL, 'unsigned' => TRUE),
+      'order_by' => array('type' => 'int',     'length' => '5',   'default' => NULL),
+      'redirect' => array('type' => 'varchar', 'length' => '100', 'default' => NULL),
+      'status'   => array('type' => 'char',    'length' => '1',   'default' => 'a'),
+     ),
+    'indexes' => array(
+      'affiliates_ads_label'  => array('label'),
+      'affiliates_ads_type'   => array('type'),
+      'affiliates_ads_cat_id' => array('cat_id'),
+      'affiliates_ads_status' => array('status'),
+    ),
+    'primary key' => array('ad_id'),
+  );  
+  $schema['affiliates_cats'] = array(
+    'fields' => array(
+      'cat_id'   => array('type' => 'serial',  'length' => '3',  'unsigned' => TRUE, 'not null' => TRUE ),
+      'cat_name' => array('type' => 'varchar', 'length' => '30', 'default' => NULL ),     
+      'active'   => array('type' => 'char',    'length' => '1',  'default' => NULL ),
+      'weight'   => array('type' => 'int',     'length' => '3',  'default' => 0,     'not null' => TRUE ),
+    ),
+    'primary key' => array('cat_id'),
+  );
+  $schema['affiliates_summary'] = array(
+  	'fields' => array(
+  		'user_id'                => array('type' => 'int', 'length' => '10' ),
+  		'total_points'           => array('type' => 'int', 'length' => '10' ),
+  		'period_points'          => array('type' => 'int', 'length' => '10' ),
+  		'previous_period_points' => array('type' => 'int', 'length' => '10' ),
+  	),
+  	'primary key' => array('user_id'),
+  );
+  
+  return $schema;
+} 
+
+function affiliates_update_6001() { 
+	$ret = array();
+  db_add_field($ret, 'affiliates_cats', 'weight', array('type' => 'int', 'length' => '3', 'not null' => TRUE, 'default' => 0));
+  return $ret;
+}
+
+function affiliates_update_6002() { 
+	$ret = array();
+	db_change_field($ret, 'affiliates', 'referer', 'referer', array('type' => 'varchar', 'length' => '256', 'default' => NULL));
+	db_change_field($ret, 'affiliates_ads', 'anchor', 'anchor', array('type' => 'varchar', 'length' => '256', 'default' => NULL));
+	db_change_field($ret, 'affiliates_ads', 'redirect', 'redirect', array('type' => 'varchar', 'length' => '256', 'default' => NULL));
+  return $ret;
+}

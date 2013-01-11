@@ -1,0 +1,12 @@
+; $Id: affiliates.info,v 1.1.2.3.2.2 2009/01/01 16:30:41 kbahey Exp $
+name = Affiliates
+description = "A module that allows affiliate click-throughs to be tracked."
+dependencies[] = profile
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-11-12
+version = "6.x-1.10"
+core = "6.x"
+project = "affiliates"
+datestamp = "1258024203"
+
