@@ -77,7 +77,6 @@ function uc_stock_uninstall() {
   variable_del('uc_stock_threshold_notification_recipients');
   variable_del('uc_stock_threshold_notification_subject');
   variable_del('uc_stock_threshold_notification_message');
-  variable_del('uc_stock_threshold_notification_format');
 }
 
 function uc_stock_update_6000() {
@@ -86,6 +85,14 @@ function uc_stock_update_6000() {
   db_drop_index($ret, 'uc_product_stock', 'nid');
   db_change_field($ret, 'uc_product_stock', 'nid', 'nid', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0), array('indexes' => array('nid' => array('nid'))));
   db_change_field($ret, 'uc_product_stock', 'active', 'active', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0));
+
+  return $ret;
+}
+
+function uc_stock_update_6001() {
+  $ret = array();
+
+  variable_del('uc_stock_threshold_notification_format');
 
   return $ret;
 }

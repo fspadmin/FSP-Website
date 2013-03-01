@@ -7,9 +7,9 @@ package = Ubercart - core
 core = 6.x
 php = 5.0
 
-; Information added by drupal.org packaging script on 2012-09-10
-version = "6.x-2.10"
+; Information added by drupal.org packaging script on 2012-12-11
+version = "6.x-2.11"
 core = "6.x"
 project = "ubercart"
-datestamp = "1347317359"
+datestamp = "1355247574"
 

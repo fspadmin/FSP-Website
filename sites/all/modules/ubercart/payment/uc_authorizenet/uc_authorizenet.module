@@ -542,7 +542,7 @@ function _uc_authorizenet_charge($order, $amount, $data) {
   curl_setopt($ch, CURLOPT_POST, 1);
   curl_setopt($ch, CURLOPT_POSTFIELDS, implode('&', $post_fields));
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
   curl_setopt($ch, CURLOPT_NOPROGRESS, 1);
   curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
   $result = curl_exec($ch);
@@ -710,7 +710,7 @@ function uc_authorizenet_xml_api($server, $xml) {
   curl_setopt($ch, CURLOPT_HEADER, 1);
   curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
   curl_setopt($ch, CURLOPT_POST, 1);
-  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
   $response = curl_exec($ch);
 
   // Log any errors to the watchdog.

@@ -84,7 +84,8 @@ class UbercartCartCheckoutTestCase extends UbercartTestHelper {
     $item->data['updated'] = TRUE;
     uc_cart_update_item($item);
 
-    $item = reset(uc_cart_get_contents());
+    $items = uc_cart_get_contents();
+    $item = reset($items);
     $this->assertEqual($item->qty, $qty, 'Set cart item quantity is correct.');
     $this->assertTrue($item->data['updated'], 'Set cart item data is correct.');
 
@@ -213,12 +214,14 @@ class UbercartCartCheckoutTestCase extends UbercartTestHelper {
     $this->drupalGet('cart');
     $this->assertText('There are no products in your shopping cart.');
 
-    // New account email is last but two.
-    $mail = array_pop(array_slice($this->drupalGetMails(), -3, 1));
+    // Test new account email.
+    $mail = $this->drupalGetMails(array('id' => 'user_register_no_approval_required'));
+    $mail = array_pop($mail);
     $this->assertTrue(strpos($mail['body'], $new_user->name) !== FALSE, 'Mail body contains username.');
 
-    // Invoice email is last.
-    $mail = array_pop(array_slice($this->drupalGetMails(), -1, 1));
+    // Test invoice email.
+    $mail = $this->drupalGetMails(array('subject' => 'Your Order at [store-name]'));
+    $mail = array_pop($mail);
     $this->assertTrue(strpos($mail['body'], $new_user->name) !== FALSE, 'Invoice body contains username.');
     $this->assertFalse(strpos($mail['body'], $new_user->pass_raw) !== FALSE, 'Invoice body does not contain password.');
 
@@ -238,9 +241,9 @@ class UbercartCartCheckoutTestCase extends UbercartTestHelper {
     $this->checkout();
     $this->assertRaw('Your order is complete!');
 
-    // New account email is last but two.
-    $mail = array_pop(array_slice($this->drupalGetMails(), -3, 1));
-
+    // Test new account email.
+    $mail = $this->drupalGetMails(array('id' => 'user_register_no_approval_required'));
+    $mail = array_pop($mail);
     $new_user = new stdClass;
     $new_user->name = $mail['params']['account']->name;
     $new_user->pass_raw = $mail['params']['account']->password;
@@ -249,8 +252,9 @@ class UbercartCartCheckoutTestCase extends UbercartTestHelper {
     $this->assertTrue(strpos($mail['body'], $new_user->name) !== FALSE, 'Mail body contains username.');
     $this->assertTrue(strpos($mail['body'], $new_user->pass_raw) !== FALSE, 'Mail body contains password.');
 
-    // Invoice email is last.
-    $mail = array_pop(array_slice($this->drupalGetMails(), -1, 1));
+    // Test invoice email.
+    $mail = $this->drupalGetMails(array('subject' => 'Your Order at [store-name]'));
+    $mail = array_pop($mail);
     $this->assertTrue(strpos($mail['body'], $new_user->name) !== FALSE, 'Invoice body contains username.');
     $this->assertTrue(strpos($mail['body'], $new_user->pass_raw) !== FALSE, 'Invoice body contains password.');
 
@@ -273,7 +277,8 @@ class UbercartCartCheckoutTestCase extends UbercartTestHelper {
     $email = "test'apostrophe@example.com";
     $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
     $this->checkout(array('panes[customer][primary_email]' => $email));
-    $mail = array_pop($this->drupalGetMails());
+    $mail = $this->drupalGetMails(array('subject' => 'Your Order at [store-name]'));
+    $mail = array_pop($mail);
     $this->assertEqual($email, $mail['to'], 'Email address containing apostrophe is handled correctly.');
   }
 

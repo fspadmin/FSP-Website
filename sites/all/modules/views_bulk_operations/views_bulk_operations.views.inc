@@ -12,7 +12,6 @@ function views_bulk_operations_views_plugins() {
         'uses fields' => TRUE,
         'uses options' => TRUE,
         'type' => 'normal',
-        'theme' => 'views_view_bulk',
         'even empty' => TRUE,
       ),
     ),

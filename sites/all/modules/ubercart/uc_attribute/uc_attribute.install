@@ -122,6 +122,9 @@ function uc_attribute_schema() {
       ),
     ),
     'primary key' => array('oid'),
+    'indexes' => array(
+      'aid' => array('aid'),
+    ),
   );
 
   $schema['uc_class_attributes'] = array(
@@ -529,6 +532,18 @@ function uc_attribute_update_6005() {
   db_change_field($ret, 'uc_class_attribute_options', 'price', 'price', array('type' => 'numeric', 'precision' => 16, 'scale' => 5, 'not null' => TRUE, 'default' => 0));
   db_change_field($ret, 'uc_product_options', 'cost', 'cost', array('type' => 'numeric', 'precision' => 16, 'scale' => 5, 'not null' => TRUE, 'default' => 0));
   db_change_field($ret, 'uc_product_options', 'price', 'price', array('type' => 'numeric', 'precision' => 16, 'scale' => 5, 'not null' => TRUE, 'default' => 0));
+
+  return $ret;
+}
+
+
+/**
+ * Add index to attribute options table.
+ */
+function uc_attribute_update_6006() {
+  $ret = array();
+
+  db_add_index($ret, 'uc_attribute_options', 'aid', array('aid'));
 
   return $ret;
 }

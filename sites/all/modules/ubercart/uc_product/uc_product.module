@@ -1842,9 +1842,6 @@ function uc_product_get_description($product) {
   // Now allow alterations via hook_product_description_alter()
   drupal_alter('product_description', $description, $product);
 
-  // Keep the sort order. Fixes bug in UC 2.4
-  $description['attributes']['#sorted'] = TRUE;
-
   return drupal_render($description);
 }
 
@@ -2132,19 +2129,26 @@ function uc_product_add_default_image_field($type = NULL) {
     $types = uc_product_types();
   }
   foreach ($types as $type) {
-    $field['type_name'] = $type;
-
     $field_name = variable_get('uc_image_'. $type, '');
     if (empty($field_name)) {
       $field_name = 'field_image_cache';
     }
-    $field['field_name'] = $field_name;
 
+    // Only add the field if it doesn't exist. Don't overwrite any changes.
     $instances = content_field_instance_read(array('field_name' => $field_name, 'type_name' => $type));
-
     if (count($instances) < 1) {
-      // Only add the field if it doesn't exist. Don't overwrite any changes.
-      content_field_instance_create($field);
+      $prior_instances = content_field_instance_read(array('field_name' => $field_name));
+      if ($prior_instances) {
+        // Copy the prior instance.
+        content_field_instance_create(array('field_name' => $field_name, 'type_name' => $type));
+      }
+      else {
+        // Create a new field and instance.
+        $field['field_name'] = $field_name;
+        $field['type_name'] = $type;
+        content_field_instance_create($field);
+      }
+
       variable_set('uc_image_'. $type, $field_name);
     }
   }

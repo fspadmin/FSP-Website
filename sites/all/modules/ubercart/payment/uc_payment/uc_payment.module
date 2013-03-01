@@ -404,13 +404,15 @@ function theme_uc_payment_totals($order) {
 }
 
 function uc_payment_get_details($method_id, $view = 'cart', $order = NULL) {
+  global $user;
+
   if ($view == 'cart') {
-    if (!($order = uc_order_load($_SESSION['cart_order']))) {
+    if (!isset($_SESSION['cart_order']) || !($order = uc_order_load($_SESSION['cart_order']))) {
       $_SESSION['cart_order'] = NULL;
       $order = NULL;
     }
 
-    if ($order->order_status != 0 || ($user->uid && $user->uid != $order->uid)) {
+    if (!empty($order) && ($order->order_status != 0 || (!empty($user->uid) && $user->uid != $order->uid))) {
       $order = NULL;
     }
   }
@@ -630,6 +632,9 @@ function uc_payment_process($method, $order_id, $amount, $data = NULL, $default 
  *   (optional) The comment to enter in the payment log.
  * @param $received
  *   (optional) The timestamp at which the payment was received.
+ *
+ * @return
+ *   A unique ID identifying the payment.
  */
 function uc_payment_enter($order_id, $method, $amount, $uid = 0, $data = NULL, $comment = '', $received = NULL) {
   if ($received == NULL) {
@@ -658,6 +663,7 @@ function uc_payment_enter($order_id, $method, $amount, $uid = 0, $data = NULL, $
 
   db_query("INSERT INTO {uc_payment_receipts} (order_id, method, amount, uid, data, comment, received) VALUES (%d, '%s', %f, %d, '%s', '%s', %d)",
     $order_id, $method_name, $amount, $uid, $data, $comment, $received);
+  $receipt_id = db_last_insert_id('uc_payment_receipts', 'receipt_id');
 
   $order = uc_order_load($order_id);
   $account = user_load($uid);
@@ -667,6 +673,8 @@ function uc_payment_enter($order_id, $method, $amount, $uid = 0, $data = NULL, $
 
   module_invoke_all('uc_payment_entered', $order, $method, $amount, $account, $data, $comment);
   ca_pull_trigger('uc_payment_entered', $order, $account);
+
+  return $receipt_id;
 }
 
 /**

@@ -74,35 +74,31 @@ function uc_quote_admin_settings() {
     '#type' => 'fieldset',
     '#title' => t('Shipping quote pane description'),
     '#summary callback ' => 'summarize_form',
-    '#tree' => TRUE,
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $form['uc_quote_pane_description']['text'] = array(
+  $form['uc_quote_pane_description']['uc_quote_pane_description'] = array(
     '#type' => 'textarea',
     '#title' => t('Message text'),
     '#default_value' => variable_get('uc_quote_pane_description', t('Shipping quotes are generated automatically when you enter your address and may be updated manually with the button below.')),
   );
-  $form['uc_quote_pane_description']['format'] = filter_form(variable_get('uc_quote_desc_format', FILTER_FORMAT_DEFAULT), NULL, array('uc_quote_pane_description', 'format'));
-  $form['uc_quote_pane_description']['format']['#summary callback'] = 'summarize_null';
+  $form['uc_quote_pane_description']['uc_quote_desc_format'] = filter_form(variable_get('uc_quote_desc_format', FILTER_FORMAT_DEFAULT), NULL, array('uc_quote_desc_format'));
 
   $form['uc_quote_err_msg'] = array(
     '#type' => 'fieldset',
     '#title' => t('Shipping quote error message'),
     '#summary callback' => 'summarize_form',
-    '#tree' => TRUE,
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $form['uc_quote_err_msg']['text'] = array(
+  $form['uc_quote_err_msg']['uc_quote_err_msg'] = array(
     '#type' => 'textarea',
     '#title' => t('Message text'),
     '#default_value' => variable_get('uc_quote_err_msg', t("There were problems getting a shipping quote. Please verify the delivery and product information and try again.\nIf this does not resolve the issue, please call in to complete your order.")),
   );
-  $form['uc_quote_err_msg']['format'] = filter_form(variable_get('uc_quote_msg_format', FILTER_FORMAT_DEFAULT), NULL, array('uc_quote_err_msg', 'format'));
-  $form['uc_quote_err_msg']['format']['#summary callback'] = 'summarize_null';
+  $form['uc_quote_err_msg']['uc_quote_msg_format'] = filter_form(variable_get('uc_quote_msg_format', FILTER_FORMAT_DEFAULT), NULL, array('uc_quote_msg_format'));
 
-  $form['default_address'] = array(
+  $form['uc_quote_store_default_address'] = array(
     '#type' => 'fieldset',
     '#title' => t('Default pickup address'),
     '#description' => t("When delivering products to customers, the original location of the product must be known in order to accurately quote the shipping cost and set up a delivery. This form provides the default location for all products in the store. If a product's individual pickup address is blank, Ubercart uses the store's default pickup address specified here."),
@@ -117,28 +113,29 @@ function uc_quote_admin_settings() {
       $address->postal_code,
       $address->country
     ))),
+    '#tree' => TRUE,
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $form['default_address']['first_name'] = uc_textfield(uc_get_field_name('first_name'), $address->first_name, FALSE);
-  $form['default_address']['last_name'] = uc_textfield(uc_get_field_name('last_name'), $address->last_name, FALSE);
-  $form['default_address']['company'] = uc_textfield(uc_get_field_name('company'), $address->company, FALSE);
-  $form['default_address']['phone'] = uc_textfield(uc_get_field_name('phone'), $address->phone, FALSE, NULL, 32, 16);
-  $form['default_address']['street1'] = uc_textfield(uc_get_field_name('street1'), $address->street1, FALSE, NULL, 64);
-  $form['default_address']['street2'] = uc_textfield(uc_get_field_name('street2'), $address->street2, FALSE, NULL, 64);
-  $form['default_address']['city'] = uc_textfield(uc_get_field_name('city'), $address->city, FALSE);
+  $form['uc_quote_store_default_address']['first_name'] = uc_textfield(uc_get_field_name('first_name'), $address->first_name, FALSE);
+  $form['uc_quote_store_default_address']['last_name'] = uc_textfield(uc_get_field_name('last_name'), $address->last_name, FALSE);
+  $form['uc_quote_store_default_address']['company'] = uc_textfield(uc_get_field_name('company'), $address->company, FALSE);
+  $form['uc_quote_store_default_address']['phone'] = uc_textfield(uc_get_field_name('phone'), $address->phone, FALSE, NULL, 32, 16);
+  $form['uc_quote_store_default_address']['street1'] = uc_textfield(uc_get_field_name('street1'), $address->street1, FALSE, NULL, 64);
+  $form['uc_quote_store_default_address']['street2'] = uc_textfield(uc_get_field_name('street2'), $address->street2, FALSE, NULL, 64);
+  $form['uc_quote_store_default_address']['city'] = uc_textfield(uc_get_field_name('city'), $address->city, FALSE);
   if (isset($_POST['country'])) {
     $country = $_POST['country'];
   }
   else {
     $country = $address->country;
   }
-  $form['default_address']['country'] = uc_country_select(uc_get_field_name('country'), $address->country);
-  $form['default_address']['zone'] = uc_zone_select(uc_get_field_name('zone'), $address->zone, NULL, $country);
-  $form['default_address']['postal_code'] = uc_textfield(uc_get_field_name('postal_code'), $address->postal_code, FALSE, NULL, 10, 10);
+  $form['uc_quote_store_default_address']['country'] = uc_country_select(uc_get_field_name('country'), $address->country);
+  $form['uc_quote_store_default_address']['zone'] = uc_zone_select(uc_get_field_name('zone'), $address->zone, NULL, $country);
+  $form['uc_quote_store_default_address']['postal_code'] = uc_textfield(uc_get_field_name('postal_code'), $address->postal_code, FALSE, NULL, 10, 10);
 
-  $form['buttons']['submit'] = array('#type' => 'submit', '#value' => t('Save configuration') );
-  return $form;
+  $form['#submit'][] = 'uc_quote_admin_settings_submit';
+  return system_settings_form($form);
 }
 
 /**
@@ -147,28 +144,7 @@ function uc_quote_admin_settings() {
  * @see uc_quote_admin_settings()
  */
 function uc_quote_admin_settings_submit($form, &$form_state) {
-  $address = new stdClass();
-  $address->first_name = $form_state['values']['first_name'];
-  $address->last_name = $form_state['values']['last_name'];
-  $address->company = $form_state['values']['company'];
-  $address->phone = $form_state['values']['phone'];
-  $address->street1 = $form_state['values']['street1'];
-  $address->street2 = $form_state['values']['street2'];
-  $address->city = $form_state['values']['city'];
-  $address->zone = $form_state['values']['zone'];
-  $address->postal_code = $form_state['values']['postal_code'];
-  $address->country = $form_state['values']['country'];
-
-  variable_set('uc_quote_store_default_address', $address);
-  variable_set('uc_quote_log_errors', $form_state['values']['uc_quote_log_errors']);
-  variable_set('uc_quote_display_debug', $form_state['values']['uc_quote_display_debug']);
-  variable_set('uc_quote_require_quote', $form_state['values']['uc_quote_require_quote']);
-  variable_set('uc_quote_pane_description', $form_state['values']['uc_quote_pane_description']['text']);
-  variable_set('uc_quote_desc_format', $form_state['values']['uc_quote_pane_description']['format']);
-  variable_set('uc_quote_err_msg', $form_state['values']['uc_quote_err_msg']['text']);
-  variable_set('uc_quote_msg_format', $form_state['values']['uc_quote_err_msg']['format']);
-
-  drupal_set_message(t('The configuration options have been saved.'));
+  $form_state['values']['uc_quote_store_default_address'] = (object) $form_state['values']['uc_quote_store_default_address'];
 }
 
 /**

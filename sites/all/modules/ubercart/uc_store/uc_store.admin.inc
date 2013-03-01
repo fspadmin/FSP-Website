@@ -344,7 +344,7 @@ function uc_store_ubercart_help() {
 function uc_store_ubercart_help_tokens() {
   $output = '<p>'. t('Tokens are bracketed phrases you can use in certain text fields and boxes as placeholders for some other text. Tokens represent things like store variables, links to certain pages, order information, etc.  Tokens are used by including the token listed below in a text field that uses them.  The description for the textfields will alert you to which groups of tokens listed below may be used.') .'</p>';
 
-  $output .= theme('token_help', 'ubercart');
+  $output .= theme('token_help', array('ubercart', 'node'));
 
   return $output;
 }

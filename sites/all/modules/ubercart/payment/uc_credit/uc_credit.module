@@ -304,7 +304,7 @@ function uc_credit_store_status() {
  */
 function uc_credit_order($op, $arg1, $arg2) {
   // Set up the encryption key and object for saving and loading.
-  if ($arg1->payment_method == 'credit' && ($op == 'save' || $op == 'load')) {
+  if (isset($arg1->payment_method) && $arg1->payment_method == 'credit' && ($op == 'save' || $op == 'load')) {
     // Log an error if encryption isn't configured properly.
     if (!uc_credit_encryption_key()) {
       watchdog('uc_credit', 'Credit card encryption must be set up to process credit cards.');
@@ -391,10 +391,15 @@ function uc_credit_payment_method() {
 
   $path = base_path() . drupal_get_path('module', 'uc_credit');
   $title = t('Credit card:');
-  $cc_types = array('visa', 'mastercard', 'discover', 'amex');
-  foreach ($cc_types as $type) {
+  $cc_types = array(
+    'visa' => t('Visa'),
+    'mastercard' => t('MasterCard'),
+    'discover' => t('Discover'),
+    'amex' => t('American Express'),
+  );
+  foreach ($cc_types as $type => $label) {
     if (variable_get('uc_credit_'. $type, TRUE)) {
-      $title .= ' ' . theme('image', drupal_get_path('module', 'uc_credit') . '/images/' . $type . '.gif', '',  '', array('class' => 'uc-credit-cctype uc-credit-cctype-' . $type));
+      $title .= ' ' . theme('image', drupal_get_path('module', 'uc_credit') . '/images/' . $type . '.gif', $label,  '', array('class' => 'uc-credit-cctype uc-credit-cctype-' . $type));
     }
   }
   $methods[] = array(
@@ -427,16 +432,16 @@ function uc_payment_method_credit($op, &$arg1, $silent = FALSE) {
     case 'cart-process':
       // Fetch the CC details from the $_POST directly.
       $cc_data = array(
-        'cc_type' => check_plain(isset($_POST['cc_type']) ? $_POST['cc_type'] : ''),
-        'cc_owner' => check_plain(isset($_POST['cc_owner']) ? $_POST['cc_owner'] : ''),
-        'cc_number' => check_plain(str_replace(' ', '',  $_POST['cc_number'])),
-        'cc_start_month' => check_plain(isset($_POST['cc_start_month']) ? $_POST['cc_start_month'] : ''),
-        'cc_start_year' => check_plain(isset($_POST['cc_start_year']) ? $_POST['cc_start_year'] : ''),
-        'cc_exp_month' => check_plain($_POST['cc_exp_month']),
-        'cc_exp_year' => check_plain($_POST['cc_exp_year']),
-        'cc_issue' => check_plain(isset($_POST['cc_issue']) ? $_POST['cc_issue'] : ''),
-        'cc_cvv' => check_plain($_POST['cc_cvv']),
-        'cc_bank' => check_plain(isset($_POST['cc_bank']) ? $_POST['cc_bank'] : ''),
+        'cc_type' => isset($_POST['cc_type']) ? $_POST['cc_type'] : '',
+        'cc_owner' => isset($_POST['cc_owner']) ? $_POST['cc_owner'] : '',
+        'cc_number' => str_replace(' ', '',  $_POST['cc_number']),
+        'cc_start_month' => isset($_POST['cc_start_month']) ? $_POST['cc_start_month'] : '',
+        'cc_start_year' => isset($_POST['cc_start_year']) ? $_POST['cc_start_year'] : '',
+        'cc_exp_month' => $_POST['cc_exp_month'],
+        'cc_exp_year' => $_POST['cc_exp_year'],
+        'cc_issue' => isset($_POST['cc_issue']) ? $_POST['cc_issue'] : '',
+        'cc_cvv' => $_POST['cc_cvv'],
+        'cc_bank' => isset($_POST['cc_bank']) ? $_POST['cc_bank'] : '',
       );
 
       // Recover cached CC data in $_POST if it exists.
@@ -562,15 +567,15 @@ function uc_payment_method_credit($op, &$arg1, $silent = FALSE) {
       }
       $review[] = array('title' => t('Card Number'), 'data' => uc_credit_display_number($arg1->payment_details['cc_number']));
       if (variable_get('uc_credit_start_enabled', FALSE)) {
-        $start = $arg1->payment_details['cc_start_month'] .'/'. $arg1->payment_details['cc_start_year'];
+        $start = check_plain($arg1->payment_details['cc_start_month'] .'/'. $arg1->payment_details['cc_start_year']);
         $review[] = array('title' => t('Start Date'), 'data' => strlen($start) > 1 ? $start : '');
       }
-      $review[] = array('title' => t('Expiration'), 'data' => $arg1->payment_details['cc_exp_month'] .'/'. $arg1->payment_details['cc_exp_year']);
+      $review[] = array('title' => t('Expiration'), 'data' => check_plain($arg1->payment_details['cc_exp_month'] .'/'. $arg1->payment_details['cc_exp_year']));
       if (variable_get('uc_credit_issue_enabled', FALSE)) {
-        $review[] = array('title' => t('Issue Number'), 'data' => user_access('view cc numbers') ? $arg1->payment_details['cc_issue'] : str_repeat('-', strlen($arg1->payment_details['cc_issue'])));
+        $review[] = array('title' => t('Issue Number'), 'data' => user_access('view cc numbers') ? check_plain($arg1->payment_details['cc_issue']) : str_repeat('-', strlen($arg1->payment_details['cc_issue'])));
       }
       if (variable_get('uc_credit_cvv_enabled', TRUE)) {
-        $review[] = array('title' => t('CVV'), 'data' => user_access('view cc numbers') ? $arg1->payment_details['cc_cvv'] : str_repeat('-', strlen($arg1->payment_details['cc_cvv'])));
+        $review[] = array('title' => t('CVV'), 'data' => user_access('view cc numbers') ? check_plain($arg1->payment_details['cc_cvv']) : str_repeat('-', strlen($arg1->payment_details['cc_cvv'])));
       }
       if (variable_get('uc_credit_bank_enabled', FALSE)) {
         $review[] = array('title' => t('Issuing Bank'), 'data' => check_plain($arg1->payment_details['cc_bank']));
@@ -596,7 +601,7 @@ function uc_payment_method_credit($op, &$arg1, $silent = FALSE) {
           }
         }
 
-        if (variable_get('uc_credit_owner_enabled', FALSE)) {
+        if (variable_get('uc_credit_owner_enabled', FALSE) && isset($arg1->payment_details['cc_owner'])) {
           $owner = check_plain($arg1->payment_details['cc_owner']);
           if (strlen($owner) > 0) {
             $output .= '<tr><td>'. t('Card Owner:') .' </td><td>'. $owner .'</td></tr>';
@@ -605,34 +610,34 @@ function uc_payment_method_credit($op, &$arg1, $silent = FALSE) {
 
         $output .= '<tr><td>'. t('Card Number:') .' </td><td>'. uc_credit_display_number($arg1->payment_details['cc_number']) .'</td></tr>';
 
-        $exp = $arg1->payment_details['cc_exp_month'] .'/'. $arg1->payment_details['cc_exp_year'];
+        $exp = check_plain($arg1->payment_details['cc_exp_month'] .'/'. $arg1->payment_details['cc_exp_year']);
         if (strlen($exp) > 1) {
           $output .= '<tr><td>'. t('Expiration:') .' </td><td>'. $exp .'</td></tr>';
         }
 
         if (variable_get('uc_credit_debug', FALSE)) {
-          if (variable_get('uc_credit_start_enabled', FALSE)) {
-            $start = $arg1->payment_details['cc_start_month'] .'/'. $arg1->payment_details['cc_start_year'];
+          if (variable_get('uc_credit_start_enabled', FALSE) && isset($arg1->payment_details['cc_start_month']) && isset($arg1->payment_details['cc_start_year'])) {
+            $start = check_plain($arg1->payment_details['cc_start_month'] .'/'. $arg1->payment_details['cc_start_year']);
             if (strlen($start) > 1) {
               $output .= '<tr><td>'. t('Start Date:') .' </td><td>'. $start .'</td></tr>';
             }
           }
 
-          if (variable_get('uc_credit_issue_enabled', FALSE)) {
-            $issue = $arg1->payment_details['cc_issue'];
+          if (variable_get('uc_credit_issue_enabled', FALSE) && isset($arg1->payment_details['cc_issue'])) {
+            $issue = check_plain($arg1->payment_details['cc_issue']);
             if (strlen($issue) > 0) {
               $output .= '<tr><td>'. t('Issue Number:') .' </td><td>'. $issue .'</td></tr>';
             }
           }
 
-          if (variable_get('uc_credit_cvv_enabled', TRUE)) {
-            $cvv = user_access('view cc numbers') ? $arg1->payment_details['cc_cvv'] : str_repeat('-', strlen($arg1->payment_details['cc_cvv']));
+          if (variable_get('uc_credit_cvv_enabled', TRUE) && isset($arg1->payment_details['cc_cvv'])) {
+            $cvv = user_access('view cc numbers') ? check_plain($arg1->payment_details['cc_cvv']) : str_repeat('-', strlen($arg1->payment_details['cc_cvv']));
             if (strlen($cvv) > 0) {
               $output .= '<tr><td>'. t('CVV:') .' </td><td>'. $cvv .'</td></tr>';
             }
           }
 
-          if (variable_get('uc_credit_bank_enabled', TRUE)) {
+          if (variable_get('uc_credit_bank_enabled', TRUE) && isset($arg1->payment_details['cc_bank'])) {
             $bank = check_plain($arg1->payment_details['cc_bank']);
             if (strlen($bank) > 0) {
               $output .= '<tr><td>'. t('Issuing Bank:') .' </td><td>'. $bank .'</td></tr>';
@@ -665,25 +670,29 @@ function uc_payment_method_credit($op, &$arg1, $silent = FALSE) {
       }
 
     case 'edit-process':
+      if (!variable_get('uc_credit_debug', FALSE)) {
+        return;
+      }
+
       $cache = uc_credit_cache('load');
 
-      $changes['payment_details']['cc_type'] = check_plain($_POST['cc_type']);
-      $changes['payment_details']['cc_owner'] = check_plain($_POST['cc_owner']);
+      $changes['payment_details']['cc_type'] = $_POST['cc_type'];
+      $changes['payment_details']['cc_owner'] = $_POST['cc_owner'];
       if (strpos($_POST['cc_number'], t('(Last 4) ')) !== 0) {
-        $changes['payment_details']['cc_number'] = check_plain($_POST['cc_number']);
+        $changes['payment_details']['cc_number'] = $_POST['cc_number'];
       }
       else {
         $changes['payment_details']['cc_number'] = $cache['cc_number'];
       }
-      $changes['payment_details']['cc_exp_month'] = check_plain($_POST['cc_exp_month']);
-      $changes['payment_details']['cc_exp_year'] = check_plain($_POST['cc_exp_year']);
+      $changes['payment_details']['cc_exp_month'] = $_POST['cc_exp_month'];
+      $changes['payment_details']['cc_exp_year'] = $_POST['cc_exp_year'];
       if ($_POST['cc_cvv'] !== str_repeat('-', strlen($_POST['cc_cvv']))) {
-        $changes['payment_details']['cc_cvv'] = check_plain($_POST['cc_cvv']);
+        $changes['payment_details']['cc_cvv'] = $_POST['cc_cvv'];
       }
       else {
-        $changes['payment_details']['cc_cvv'] = $cache['cc_cvv'];
+        $changes['payment_details']['cc_cvv'] = isset($cache['cc_cvv']) ? $cache['cc_cvv'] : '';
       }
-      $changes['payment_details']['cc_bank'] = check_plain($_POST['cc_bank']);
+      $changes['payment_details']['cc_bank'] = $_POST['cc_bank'];
       return $changes;
 
     case 'settings':
@@ -1516,26 +1525,14 @@ function _valid_card_issue($issue) {
  * @return FALSE if no encryption key is found.
  */
 function uc_credit_encryption_key() {
-  static $key;
+  static $key = FALSE;
 
-  if (!empty($key)) {
-    return $key;
-  }
-
-  $key_dir = variable_get('uc_credit_encryption_path', '');
-  if (is_dir($key_dir)) {
-    $key_file = $key_dir . '/' . UC_CREDIT_KEYFILE_NAME;
-    if (file_exists($key_file)) {
-      if (!$file = @fopen($key_file, 'r')) {
-        return FALSE;
-      }
-
-      $key = fread($file, filesize($key_file));
-      fclose($file);
+  if (empty($key)) {
+    $key_file = variable_get('uc_credit_encryption_path', '') . '/' . UC_CREDIT_KEYFILE_NAME;
+    $contents = @file_get_contents($key_file);
+    if (strlen($contents) == 32) {
+      $key = $contents;
     }
-  }
-  else {
-    return FALSE;
   }
 
   return $key;

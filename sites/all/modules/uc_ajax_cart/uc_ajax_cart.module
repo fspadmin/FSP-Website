@@ -111,11 +111,13 @@ function uc_ajax_cart_callback($op, $nid = NULL, $data = NULL) {
       print uc_cart_view();
     break;
     case 'update':
-      $formValues = array('values' => $_POST);
-      $cart = new UcAjaxCart();
-      $items = $cart->getCartContents();
-      drupal_execute('uc_cart_view_form', $formValues, $items);
-      print theme('status_messages');
+      if ($_POST) {
+        $formValues = array('values' => $_POST);
+        $cart = new UcAjaxCart();
+        $items = $cart->getCartContents();
+        drupal_execute('uc_cart_view_form', $formValues, $items);
+        print theme('status_messages');
+      }
     break;
     case 'link':
       if (module_exists('uc_cart_links')) {
@@ -224,6 +226,13 @@ function uc_ajax_cart_block($op = 'list', $delta = 0, $edit = array()) {
     return $blocks;
   }
   elseif ($op == 'view') {
+    
+    // Add standard JS if we are to enable ajax only when block is visible
+    // Otherwise, _uc_ajax_cart_init() gets called from hook_init().
+    if (variable_get('uc_ajax_cart_enably_only_when_visible', FALSE)) {
+      _uc_ajax_cart_init();
+    }
+
     //Only a wrapper to uc_cart_block
     $cartContent = uc_cart_get_contents();
     if (count($cartContent) > 0) {
@@ -234,24 +243,21 @@ function uc_ajax_cart_block($op = 'list', $delta = 0, $edit = array()) {
 
     global $user;
     $cacheEnabled = variable_get('cache', 0);
+    $loadOnPageView = variable_get(($user->uid ? 'uc_ajax_cart_registered_users_cart_cached_load' : 'uc_ajax_cart_cart_cached_load'), 0);
+    $loadOnPageViewClass = $loadOnPageView ? ' class="load-on-view"' : '';
 
+    // Anonymous users w/ page caching caching get a cached block.
     if (!$user->uid && $cacheEnabled > 0) {
-      $loadOnPageView = variable_get('uc_ajax_cart_cart_cached_load', 0);
-      if ($loadOnPageView != 0) {
-        $content['content'] = '<div id="ajaxCartUpdate" class="load-on-view"><p>' . t('Loading cart') . '</p></div>';
-      }
-      else {
-        $content['content'] = '<div id="ajaxCartUpdate">' . theme('uc_ajax_cart_block_content_cached') . '</div>';
-      }
+      $content['content'] = '<div id="ajaxCartUpdate" ' . $loadOnPageViewClass . '>' . theme('uc_ajax_cart_block_content_cached') . '</div>';
+    }
+    // authenticated users shouldn't have their blocks cached. (authenticated
+    // users AND page caching) OR no page caching [regardless of visitor type]
+    // will get a non-cached block generation. 
+    elseif($hasItems == TRUE) {
+      $content['content'] = '<div id="ajaxCartUpdate" ' . $loadOnPageViewClass . '>' . theme('uc_ajax_cart_block_content', $cartContent) . '</div>';
     }
     else {
-      $load_on_page_view_class = variable_get('uc_ajax_cart_cart_cached_load', 0) ? ' class="load-on-view"' : '';
-      if ($hasItems == TRUE) {
-        $content['content'] = '<div id="ajaxCartUpdate" ' . $load_on_page_view_class . '>' . theme('uc_ajax_cart_block_content', $cartContent) . '</div>';
-      }
-      else {
-        $content['content'] = '<div id="ajaxCartUpdate" ' . $load_on_page_view_class . '>' . theme('uc_ajax_cart_block_content_empty') . '</div>';
-      }
+      $content['content'] = '<div id="ajaxCartUpdate" ' . $loadOnPageViewClass . '>' . theme('uc_ajax_cart_block_content_empty') . '</div>';
     }
     return $content;
    }
@@ -267,30 +273,42 @@ function uc_ajax_cart_block($op = 'list', $delta = 0, $edit = array()) {
 
 function uc_ajax_cart_get_messages() {
   $defaults = array(
-    'ADD_TITLE' => t('Please wait'),
     'ADD_MESSAGES' => array(t('Adding product to cart...')),
-    'REMOVE_TITLE' => t('Please wait'),
+    'ADD_TITLE' => '',
     'REMOVE_MESSAGES' => array(t('Removing product from cart...')),
-    'UPDATE_TITLE' => t('Please wait'),
+    'REMOVE_TITLE' => '',
     'UPDATE_MESSAGES' => array(t('Updating cart...')),
-    'CART_OPERATION' => t('Cart'),
+    'UPDATE_TITLE' => '',
+    'CART_OPERATION' => '',
   );
   $messages = variable_get('uc_ajax_cart_messages', array());
   $messages += $defaults;
   return $messages;
 }
 
+/**
+ * Implements hook_init().
+ */
 function uc_ajax_cart_init() {
+  // Add standard JS if we are to always enable ajax functionality
+  // Otherwise, _uc_ajax_cart_init() gets called from hook_block().
+  if (!variable_get('uc_ajax_cart_enably_only_when_visible', FALSE)) {
+    _uc_ajax_cart_init();
+  }
+}
+
+/**
+ * Contains the initialization logic for uc_ajax_cart. Called upon by either
+ * hook_init() (for always-enabled ajax functionality) or hook_block (for ajax
+ * only when the block is present on the page).
+ */
+function _uc_ajax_cart_init() {
   static $loaded;
-
   if (isset($loaded) && $loaded === TRUE) return;
-
-  /** Add standard js **/
   drupal_add_js('misc/jquery.form.js');
   drupal_add_js(drupal_get_path('module', 'uc_ajax_cart') .'/js/jquery.blockUI.js');
   drupal_add_js(drupal_get_path('module', 'uc_ajax_cart') .'/js/uc_ajax_cart.js');
   drupal_add_js(drupal_get_path('module', 'uc_ajax_cart') .'/js/jquery.cookie.js');
-
   drupal_add_css(drupal_get_path('module', 'uc_ajax_cart') .'/css/uc_ajax_cart.css');
 
   $settings = array(
@@ -377,7 +395,7 @@ function uc_ajax_cart_form_alter(&$form, $form_state , $form_id) {
         drupal_add_js(array('uc_ajax_cart' => array('AJAXIFY_CART_PAGE' => TRUE)), 'setting');
 
         // Hide update cart button?
-        $form['update']['#attributes']['class'] .= ' ' . (variable_get('uc_ajax_cart_hide_update_cart_bt', FALSE) ? 'hidden-update-bt ' : '') . 'ajax-cart-submit-form-button';
+        $form['update']['#attributes']['class'] .= ' ' . (variable_get('uc_ajax_cart_hide_update_cart_bt', 0) ? 'uc-ajax-cart-hidden-update-bt ' : '') . 'ajax-cart-submit-form-button';
 
     }
   }
@@ -432,7 +450,7 @@ function uc_ajax_cart_exit() {
  * Implements hook_add_to_cart().
  */
 function uc_ajax_cart_add_to_cart($nid, $qty, $data) {
-  if (module_exists('uc_cart_links')) {
+  if (module_exists('uc_attribute')) {
     $atts = uc_product_get_attributes($nid);
     if (!is_array($atts) || count($atts) == 0) return;
     if (!is_array($data) || !is_array($data['attributes'])) {

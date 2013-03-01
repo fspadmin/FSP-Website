@@ -1313,6 +1313,12 @@ function uc_order_action_email_invoice($order, $settings) {
     'order' => $order,
   );
 
+  // Apply token replacements to from e-mail address.
+  $from = token_replace_multiple($settings['from'], $settings['replacements']);
+  if (empty($from)) {
+    $from = uc_store_email_from();
+  }
+
   $recipients = array();
   $addresses = token_replace_multiple($settings['addresses'], $settings['replacements']);
 
@@ -1328,7 +1334,7 @@ function uc_order_action_email_invoice($order, $settings) {
   }
 
   foreach ($recipients as $email) {
-    $sent = drupal_mail('uc_order', 'action-mail', $email, uc_store_mail_recipient_language($email), $settings, empty($settings['from']) ? uc_store_email_from() : $settings['from']);
+    $sent = drupal_mail('uc_order', 'action-mail', $email, uc_store_mail_recipient_language($email), $settings, $from);
 
     if (!$sent['result']) {
       watchdog('ca', 'Attempt to e-mail invoice for order @order_id to @email failed.', array('@email' => $email, '@order_id' => $order->order_id), WATCHDOG_ERROR);

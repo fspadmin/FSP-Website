@@ -1,5 +1,15 @@
-
 .growlUI div.messages {
   color : black ;
+}
+
+.uc-ajax-cart-blockui {
+  padding: 10px;
+}
+
+.uc-ajax-cart-blockui .uc-ajax-cart-throbber {
+  padding-left: 17px;
+  background-image: url(../images/throbber.gif);
+  background-repeat: no-repeat;
+  background-position: left -17px;
 }
 

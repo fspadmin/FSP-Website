@@ -666,7 +666,7 @@ function uc_views_views_data() {
     );
     $data[$key]['zone_name'] = array(
       'title' => t($value['prefix'].' zone name'),
-      'help' => t(ereg_replace(' (id|ID) ', ' ', $order_schema['fields'][$value['field']]['description'])),
+      'help' => t(preg_replace('/id|ID/i', ' ', $order_schema['fields'][$value['field']]['description'])),
       'field' => array(
         'handler' => 'views_handler_field',
         'click sortable' => TRUE,

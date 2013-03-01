@@ -11,18 +11,23 @@ function uc_ajax_cart_settings_overview() {
   $form['uc_ajax_cart_cart_cached_load'] = array(
     '#type' => 'checkbox',
     '#default_value' => variable_get('uc_ajax_cart_cart_cached_load', 0),
-    '#title'   => t('Ajax support for anonymous users'),
-    '#description' => t('Normally a link is shown for anonymous users. If this option is enabled, cart is loaded via ajax.')
+    '#title'   => t('Refresh cart contents upon page load (anonymous users)'),
+    '#description' => t('This option is <strong>required</strong> for anonymous users with page caching enabled. Otherwise, only a link is shown for anonymous users.'),
   );
-
 
   $form['uc_ajax_cart_registered_users_cart_cached_load'] = array(
     '#type' => 'checkbox',
     '#default_value' => variable_get('uc_ajax_cart_registered_users_cart_cached_load', 0),
-    '#title'   => t('Ajax update on page load for registered users.'),
-    '#description' => t('Sometimes cart block may be outdated for registered users (for example, user pushes back button). This option forces to load cart content using Ajax when page is loaded, so cart block is never outdated. When enabled, this option may add load to the server.')
+    '#title'   => t('Refresh cart contents upon page load (registered users)'),
+    '#description' => t('Fixes an edge case where users with older browsers pressing the back button see outdated cart contents. Registered users to see a brief message appear in the ajax cart block as the contents are refreshed.'),
   );
 
+  $form['uc_ajax_cart_enably_only_when_visible'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('uc_ajax_cart_enably_only_when_visible', 0),
+    '#title'   => t('Enable ajax cart functionality only when block is enabled'),
+    '#description' => t('Enables ajax cart functionality only when the block is present on the current page (based on its visibility rules, or other modules such as Context). Normally, all products displays are ajaxified regardless of whether or not the ajax cart block is enabled.'),
+  );
 
   $form['cart_page_settings'] = array(
     '#type' => 'fieldset',
@@ -132,7 +137,7 @@ function uc_ajax_cart_settings_overview() {
     'cart_operation' => array(
       '#type' => 'textfield',
       '#title' => t('System message notification title'),
-      '#description' => t('After an operation has completed, a notification with this title appears and displays any of the Drupal system messages (these messages could be something like "The product was added to the cart successfully" or "Option X is required" depending on your site and product configuration). Choose a title that is generic enough to suit both the success or error type system messages.'),
+      '#description' => t('After an operation has completed, a notification with this title appears and displays any of the Drupal system messages (these messages could be something like "The product was added to the cart successfully" or "Option X is required" depending on your site and product configuration). Choose a title that is generic enough to suit both the success or error type system messages, as well as the add/update/remove operations. Leave this field blank for no title (the default).'),
       '#default_value' => $messages['CART_OPERATION'],
     ),
     'add' => array(
@@ -144,9 +149,8 @@ function uc_ajax_cart_settings_overview() {
       'title' => array(
         '#type' => 'textfield',
         '#title' => t('Title'),
-        '#description' => t('Title for the notification.'),
+        '#description' => t('Title for the notification. Leave this field blank for no title (the default).'),
         '#default_value' => $messages['ADD_TITLE'],
-        '#required' => TRUE,
       ),
       'messages' => array(
         '#type' => 'textarea',
@@ -165,9 +169,8 @@ function uc_ajax_cart_settings_overview() {
       'title' => array(
         '#type' => 'textfield',
         '#title' => t('Title'),
-        '#description' => t('Title for the notification.'),
+        '#description' => t('Title for the notification. Leave this field blank for no title (the default).'),
         '#default_value' => $messages['REMOVE_TITLE'],
-        '#required' => TRUE,
       ),
       'messages' => array(
         '#type' => 'textarea',
@@ -186,9 +189,8 @@ function uc_ajax_cart_settings_overview() {
       'title' => array(
         '#type' => 'textfield',
         '#title' => t('Title'),
-        '#description' => t('Title for the notification.'),
+        '#description' => t('Title for the notification. Leave this field blank for no title (the default).'),
         '#default_value' => $messages['UPDATE_TITLE'],
-        '#required' => TRUE,
       ),
       'messages' => array(
         '#type' => 'textarea',
@@ -256,6 +258,7 @@ function uc_ajax_cart_settings_overview_submit($form, $form_state) {
   variable_set('uc_ajax_cart_cart_view', $form_state['values']['cart_view_on']);
   variable_set('uc_ajax_cart_cart_cached_load', $form_state['values']['uc_ajax_cart_cart_cached_load']);
   variable_set('uc_ajax_cart_registered_users_cart_cached_load', $form_state['values']['uc_ajax_cart_registered_users_cart_cached_load']);
+  variable_set('uc_ajax_cart_enably_only_when_visible', $form_state['values']['uc_ajax_cart_enably_only_when_visible']);
   variable_set('uc_ajax_cart_ajaxify_cart_page', $form_state['values']['uc_ajax_cart_ajaxify_cart_page']);
   variable_set('uc_ajax_cart_hide_update_cart_bt', $form_state['values']['uc_ajax_cart_hide_update_cart_bt']);
   variable_set('uc_ajax_cart_closed', $form_state['values']['uc_ajax_cart_closed']);

@@ -21,7 +21,7 @@ function theme_uc_ajax_cart_cart_links() {
 }
 
 function theme_uc_ajax_cart_block_content_cached() {
-  return '<a id="ajax-cart-view-handler" href="/cart">' . t('View cart') . '</a>';
+  return '<div id="ajax-cart-view-handler">' . t('<a href="!url">View</a> your shopping cart.', array('!url' => url('cart'))) . '</div>';
 }
 
 

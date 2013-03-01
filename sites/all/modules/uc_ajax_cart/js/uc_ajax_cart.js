@@ -3,7 +3,6 @@
 Drupal.behaviors.ucAjaxCart = function (context) {
 
   if (!Drupal.uc_ajax_cart) {
-
     // First initialization.
 
     // Set up UC Ajax Cart namespace.
@@ -11,47 +10,16 @@ Drupal.behaviors.ucAjaxCart = function (context) {
 
     // Populate namespace.
     Drupal.uc_ajax_cart.cart_open_state = true;
-    Drupal.uc_ajax_cart.cart_wrapper = jQuery('#block-uc_ajax_cart-0', context);
-    Drupal.uc_ajax_cart.cart_pane = jQuery('#ajaxCartUpdate #cart-block-contents-ajax', context);
-    Drupal.uc_ajax_cart.update_container = jQuery('#ajaxCartUpdate', context);
-    Drupal.uc_ajax_cart.unblock_handler = function () { Drupal.uc_ajax_cart.blockUI_blocked -= 1;}
+    Drupal.uc_ajax_cart.unblock_handler = function () {Drupal.uc_ajax_cart.blockUI_blocked -= 1;}
     Drupal.uc_ajax_cart.blockUI_blocked = 0;
-
+    Drupal.uc_ajax_cart.cart_wrapper = jQuery('#block-uc_ajax_cart-0', context);
+    Drupal.uc_ajax_cart.update_container = jQuery('#ajaxCartUpdate', context);
 
     // BlockUI settings.
     jQuery.blockUI.defaults.growlCSS.opacity = 1;
     jQuery.blockUI.defaults.timeout = Drupal.settings.uc_ajax_cart.TIMEOUT;
     jQuery.blockUI.defaults.onUnblock = Drupal.uc_ajax_cart.unblock_handler;
-
-    // Other one time processes.
-    ///////////////////////////
-
-    // Hide update cart button if needed.
-    jQuery('.hidden-update-bt').hide();
-
-
-    // Add open cart class because initially is opened.
-    Drupal.uc_ajax_cart.cart_wrapper.addClass('cart-open');
-
-    if (Drupal.settings.uc_ajax_cart.COLLAPSIBLE_CART) {
-      // Check open state tracking.
-      if (Drupal.settings.uc_ajax_cart.TRACK_CLOSED_STATE) {
-        ajaxCartCheckCookieCartState();
-      }
-      else if (Drupal.settings.uc_ajax_cart.INITIAL_CLOSED_STATE) {
-        // Close cart block.
-        ajaxCartCloseCart();
-      }
-    }
   }
-
-
-  // Set up ajax-cart-view-handler.
-  $('#ajax-cart-view-handler', context).attr('href', '#')
-  .text(Drupal.t('Load cart content'))
-  .click(ajaxCartUpdateBlockCart);
-
-
 
   // Ubercart Cart links support.
   jQuery('a.ajax-cart-link', context).not('.ajax-cart-processed').each(function () {
@@ -59,10 +27,9 @@ Drupal.behaviors.ucAjaxCart = function (context) {
     // Check for ajaxify class.
     if (_checkAjaxify($elem)) {
       $elem.bind('click', function () {
-        ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.ADD_TITLE,
-                        '<div class="messages status">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.ADD_MESSAGES) + '</div>');
+        Drupal.theme('ajaxCartMessage', Drupal.settings.uc_ajax_cart.ADD_TITLE, '<span class="uc-ajax-cart-throbber">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.ADD_MESSAGES) + '</span>');
         jQuery.get(Drupal.settings.uc_ajax_cart.CART_LINK_CALLBACK,
-                  { href: this.href },
+                  {href: this.href},
                   ajaxCartFormSubmitted);
         return false;
       })
@@ -79,33 +46,31 @@ Drupal.behaviors.ucAjaxCart = function (context) {
         form.ajaxSubmit({
           url : Drupal.settings.uc_ajax_cart.CALLBACK,
           beforeSubmit : function () {
-            ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.ADD_TITLE,
-                            '<div class="messages status">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.ADD_MESSAGES) + '</div>')},
+            Drupal.theme('ajaxCartMessage', Drupal.settings.uc_ajax_cart.ADD_TITLE, '<span class="uc-ajax-cart-throbber">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.ADD_MESSAGES) + '</span>');
+          },
           success : ajaxCartFormSubmitted,
           type : 'post',
-          data: { 'op': $elem.val() }
+          data: {'op': $elem.val()}
         });
         return false;
       });
     }
   }).addClass('ajax-cart-processed');
 
-
-
-
-  // Check for autoupdate cart block.
-  if (jQuery('#ajaxCartUpdate', context).not('.ajax-cart-processed').hasClass('load-on-view')) {
-    jQuery('#ajaxCartUpdate').addClass('ajax-cart-processed');
-    ajaxCartUpdateBlockCart();
-  }
-
-
   // Call behaviors over cart block.
-  ajaxCartCartBlockBehaviors(context);
+  ajaxCartBlockBehaviors(context);
 
   // Call behaviors over cart page.
-  ajaxCartCartPageBehaviors(context);
+  ajaxCartPageBehaviors(context);
 
+  // Check for autoupdate cart block.
+  if (context == document) {
+    if (Drupal.uc_ajax_cart.update_container.not('.ajax-cart-processed').hasClass('load-on-view')) {
+      Drupal.uc_ajax_cart.update_container.html(Drupal.t('Loading cart...'));
+      Drupal.uc_ajax_cart.update_container.addClass('ajax-cart-processed');
+      ajaxCartUpdateBlockCart();
+    }
+  }
 }
 
 
@@ -118,9 +83,9 @@ function ajaxCartSubmit() {
     success: ajaxCartFormSubmitted,
     beforeSubmit: function () {
       jQuery('#uc-cart-view-form input').attr('disabled', 'disabled');
-      ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.UPDATE_TITLE, '<div class="messages status">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.UPDATE_MESSAGES) + '</div>');
+      Drupal.theme('ajaxCartMessage', Drupal.settings.uc_ajax_cart.UPDATE_TITLE, '<span class="uc-ajax-cart-throbber">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.UPDATE_MESSAGES) + '</span>');
     },
-    data: { 'op': button.val() }
+    data: {'op': button.val()}
   });
   return false;
 }
@@ -132,18 +97,26 @@ function triggerCartSubmit() {
 
 
 // Process behaviors for the cart from cart page.
-function ajaxCartCartPageBehaviors(context) {
+function ajaxCartPageBehaviors(context) {
+  // Hide update cart button if needed.
+  jQuery('.uc-ajax-cart-hidden-update-bt', context).hide();
 
   if (Drupal.settings.uc_ajax_cart.AJAXIFY_CART_PAGE) {
 
     // Set handler for cart submit button.
-    jQuery('#uc-cart-view-form #edit-update', context).not('.ajax-cart-processed').bind('click', ajaxCartSubmit)
-    .addClass('ajax-cart-processed');
+    jQuery('#uc-cart-view-form #edit-update', context).not('.ajax-cart-processed').bind('click', ajaxCartSubmit).addClass('ajax-cart-processed');
 
     // Trigger submit button when cart qty form input elements are changed.
     jQuery('#uc-cart-view-form .qty input', context).not('.ajax-cart-processed').bind('change', function (e) {
       triggerCartSubmit();
       return false;
+    })
+    .bind('keypress', function(e) {
+      // Handle <Enter> keypress on some browsers - see #1493398
+      if (e.keyCode && e.keyCode == '13') {
+        triggerCartSubmit();
+        return false;
+      }
     })
     .addClass('ajax-cart-processed');
 
@@ -168,18 +141,41 @@ function ajaxCartCartPageBehaviors(context) {
 
 
 // Process behaviors for the cart block.
-function ajaxCartCartBlockBehaviors(context) {
-   // Is the cart in the receieved context?
-   var cart_pane = jQuery('#ajaxCartUpdate #cart-block-contents-ajax', context);
-   if (cart_pane.length) {
-     Drupal.uc_ajax_cart.cart_pane = cart_pane;
+function ajaxCartBlockBehaviors(context) {
+  // Set up ajax-cart-view-handler if present.
+  var cart_handler = $('#ajax-cart-view-handler', context);
+  if (cart_handler.length) {
+    var link = $('<a></a>');
+    cart_handler.html(link);
+    link.attr('href', '#').click(ajaxCartUpdateBlockCart).text(Drupal.t('Click to load cart contents'));
+  }
+  // Is the cart in the received context?
+  var cart_pane = jQuery('#cart-block-contents-ajax', context);
+  if (cart_pane.length) {
+    // Update internal variables
+    Drupal.uc_ajax_cart.cart_pane = cart_pane;
+    // Rendered HTML results in an open cart by default
+    Drupal.uc_ajax_cart.cart_open_state = true;
+    Drupal.uc_ajax_cart.cart_wrapper.addClass('cart-open');
+    if (Drupal.uc_ajax_cart.cart_wrapper) {
+      if (Drupal.settings.uc_ajax_cart.COLLAPSIBLE_CART) {
+        // Check open state tracking.
+        if (Drupal.settings.uc_ajax_cart.TRACK_CLOSED_STATE) {
+          ajaxCartCheckCookieCartState();
+        }
+        else if (Drupal.settings.uc_ajax_cart.INITIAL_CLOSED_STATE) {
+          // Close cart block.
+          ajaxCartCloseCart(true);
+        }
+      }
+    }
 
-    $('#ajaxCartToggleView', context).not('.ajax-cart-processed').click(function () {
-      ajaxCartToggleView();
-      return false;
-    })
-    .addClass('ajax-cart-processed');
-   }
+  $('#ajaxCartToggleView', context).not('.ajax-cart-processed').click(function () {
+    ajaxCartToggleView();
+    return false;
+  })
+  .addClass('ajax-cart-processed');
+  }
 }
 
 
@@ -197,7 +193,7 @@ function ajaxCartOpenCart(instantly) {
     Drupal.uc_ajax_cart.cart_wrapper.addClass('cart-open');
 
     if (Drupal.settings.uc_ajax_cart.TRACK_CLOSED_STATE) {
-      jQuery.cookie('ajax-cart-visible', '1', { path: '/'});
+      jQuery.cookie('ajax-cart-visible', '1', {path: '/'});
     }
   }
 }
@@ -217,42 +213,10 @@ function ajaxCartCloseCart(instantly) {
     Drupal.uc_ajax_cart.cart_wrapper.removeClass('cart-open');
 
     if (Drupal.settings.uc_ajax_cart.TRACK_CLOSED_STATE && (jQuery.cookie('ajax-cart-visible') != '0')) {
-      jQuery.cookie('ajax-cart-visible', '0', { path: '/'});
+      jQuery.cookie('ajax-cart-visible', '0', {path: '/'});
     }
   }
 }
-
-
-// Initialize cart page ajax update feature.
-// Simply call behaviors for cart page with right context.
-function ajaxCartInitCartView() {
-
-  // Hide update cart button if needed.
-  jQuery('.hidden-update-bt').hide();
-
-  ajaxCartCartPageBehaviors($('#cart-form-pane'));
-}
-
-// Initialize cart block.
-// Simply call behaviors for cart block with right context.
-function ajaxCartInitCartBlock() {
-
-  ajaxCartCartBlockBehaviors(Drupal.uc_ajax_cart.cart_wrapper);
-
-  // Cart has been loaded, so it's shown, change state accordingly.
-  Drupal.uc_ajax_cart.cart_open_state = true;
-
-  if (Drupal.settings.uc_ajax_cart.COLLAPSIBLE_CART) {
-    // Check this is the right state.
-    if (Drupal.settings.uc_ajax_cart.TRACK_CLOSED_STATE) {
-      ajaxCartCheckCookieCartState();
-    } else if (Drupal.settings.uc_ajax_cart.INITIAL_CLOSED_STATE) {
-       ajaxCartCloseCart(true);
-    }
-
-  }
-}
-
 
 // Checks open state cookie and changes cart open state accordingly.
 function ajaxCartCheckCookieCartState() {
@@ -267,64 +231,6 @@ function ajaxCartCheckCookieCartState() {
     }
   }
 }
-
-
-// Show message using BlockUI anc configured layout.
-function ajaxCartShowMessageProxy(title, message) {
-
-  if (Drupal.settings.uc_ajax_cart.HIDE_CART_OPERATIONS) {
-    return;
-  }
-
-  // Check if UI is blocked. Blocked UI implies no fader in to avoid flickering.
-  var fadein = 0;
-  if (!Drupal.uc_ajax_cart.blockUI_blocked) {
-    fadein = 500;
-  }
-
-  Drupal.uc_ajax_cart.blockUI_blocked += 1;
-  if (Drupal.settings.uc_ajax_cart.BLOCK_UI == 1) {
-    jQuery.blockUI({ message : '<h2>' + title + '</h2>' + message, fadeIn: fadein });
-  }
-  else {
-    var $m = $('<div class="growlUI"></div>');
-    if (title) {
-      $m.append('<h1>' + title + '</h1>');
-    }
-
-    if (message) {
-      $m.append('<h2>' + message + '</h2>');
-    }
-
-    jQuery.blockUI({
-      message: $m,
-      fadeIn: fadein,
-      fadeOut: 700,
-      showOverlay: false,
-      centerY: false,
-      css: {
-        width: '350px',
-        top: '10px',
-        left: '',
-        right: '10px',
-        border: 'none',
-        padding: '5px',
-        backgroundColor: '#000',
-        '-webkit-border-radius': '10px',
-        '-moz-border-radius': '10px',
-        'border-radius': '10px',
-        color: '#fff',
-        opacity: 1
-      }
-    });
-  }
-}
-
-
-function ajaxCartShowMessageProxyClose() {
-  jQuery.unblockUI();
-}
-
 
 // Toggle cart block.
 function ajaxCartToggleView() {
@@ -341,19 +247,22 @@ function ajaxCartFormSubmitted(e) {
   ajaxCartUpdateBlockCart();
 
   if (e)
-    ajaxCartBlockUI(Drupal.settings.uc_ajax_cart.CART_OPERATION, e);
+    Drupal.theme('ajaxCartMessage', Drupal.settings.uc_ajax_cart.CART_OPERATION, e);
+
+  // Update the page if we're on it.
   ajaxCartReloadCartView();
 }
 
-
-function ajaxCartBlockUI(title, message) {
-  ajaxCartShowMessageProxy(title, message);
-}
-
-
+/*
+ * This function is used in uc_ajax_cart.theme.inc on an onclick= statement.
+ * @TODO: Remove it from there and add it here. The main problem with it is
+ * that when the products are added, we need to reattach Drupal behaviors
+ * to the added elements. This has proven not to be that easy, we might a bit
+ * of a rework and cleaning to do that.
+ */
 function ajaxCartBlockUIRemove(url) {
   jQuery('#uc-cart-view-form input').attr('disabled', 'disabled');
-  ajaxCartShowMessageProxy(Drupal.settings.uc_ajax_cart.REMOVE_TITLE, ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.REMOVE_MESSAGES));
+  Drupal.theme('ajaxCartMessage', Drupal.settings.uc_ajax_cart.REMOVE_TITLE, '<span class="uc-ajax-cart-throbber">' + ajaxCartPickMessage(Drupal.settings.uc_ajax_cart.REMOVE_MESSAGES) + '</span>');
   jQuery.post(url, ajaxCartFormSubmitted);
   return false;
 }
@@ -361,7 +270,12 @@ function ajaxCartBlockUIRemove(url) {
 
 // Loads cart block contents using ajax.
 function ajaxCartUpdateBlockCart() {
-  Drupal.uc_ajax_cart.update_container.load(Drupal.settings.uc_ajax_cart.SHOW_CALLBACK, '', ajaxCartInitCartBlock);
+  if (jQuery('#block-uc_ajax_cart-0').length) {
+    Drupal.uc_ajax_cart.update_container.load(Drupal.settings.uc_ajax_cart.SHOW_CALLBACK, '', function() {
+      var context = Drupal.uc_ajax_cart.update_container;
+      Drupal.attachBehaviors(context);
+    });
+  }
   return false;
 }
 
@@ -369,32 +283,16 @@ function ajaxCartUpdateBlockCart() {
 // Reloads standard Ubercart cart form from cart page.
 function ajaxCartReloadCartView() {
   if (jQuery('#cart-form-pane').length) {
-    jQuery('#cart-form-pane').parent().load(Drupal.settings.uc_ajax_cart.SHOW_VIEW_CALLBACK, ajaxCartReloadCartViewSuccess);
+    // When we get the new form, it is returned using AJAX callback as the
+    // form's action URL. Workaround by storing and resetting on new DOM element
+    var previous_action = jQuery('#uc-cart-view-form').attr('action');
+    jQuery('#cart-form-pane').parent().load(Drupal.settings.uc_ajax_cart.SHOW_VIEW_CALLBACK, function() {
+      jQuery('#uc-cart-view-form').attr('action', previous_action);
+      var context = jQuery('#cart-form-pane').parent();
+      Drupal.attachBehaviors(context);
+    });
   }
 }
-
-
-// Notify other modules of the DOM change, then run our own init code.
-function ajaxCartReloadCartViewSuccess() {
-  var context = jQuery('#cart-form-pane').parent();
-  Drupal.attachBehaviors(context);
-  
-  ajaxCartInitCartBlock();
-}
-
-function ajaxCartUpdateCartViewUpdated(e) {
-  ajaxCartUpdateBlockCart();
-  ajaxCartInitCartView();
-}
-
-
-function ajaxCartShowMessages(e) {
-  if (e != "") {
-    clearTimeout();
-    ajaxCartShowMessageProxy('Message', e);
-  }
-}
-
 
 /**
  *  Checks if a add to cart input submit button element must be ajaxified.
@@ -406,6 +304,49 @@ function _checkAjaxify($elem) {
     rc = Drupal.settings.uc_ajax_cart.AJAXIFY_CLASS_EXCLUDES ? !rc : rc;
   }
   return rc;
+}
+
+Drupal.theme.prototype.ajaxCartMessage = function (title, message) {
+  if (Drupal.settings.uc_ajax_cart.HIDE_CART_OPERATIONS) {
+    return;
+  }
+  if (title) {
+    title = '<h2 class="uc-ajax-cart-title">' + title + '</div>';
+  }
+
+  // Check if UI is blocked. Blocked UI implies no fader in to avoid flickering.
+  var fadein = 0;
+  if (!Drupal.uc_ajax_cart.blockUI_blocked) {
+    fadein = 500;
+  }
+
+  Drupal.uc_ajax_cart.blockUI_blocked += 1;
+  if (Drupal.settings.uc_ajax_cart.BLOCK_UI == 1) {
+    jQuery.blockUI({message : '<div class="uc-ajax-cart-blockui">' + title + message + '</div>', fadeIn: fadein});
+  }
+  else {
+    jQuery.blockUI({
+      message: '<div class="uc-ajax-cart-blockui-growlui">'+ title + message + '</div>',
+      fadeIn: fadein,
+      fadeOut: 700,
+      showOverlay: false,
+      centerY: false,
+      css: {
+        width: '350px',
+        top: '10px',
+        left: '',
+        right: '10px',
+        border: 'none',
+        padding: '10px',
+        backgroundColor: '#000',
+        '-webkit-border-radius': '10px',
+        '-moz-border-radius': '10px',
+        'border-radius': '10px',
+        color: '#fff',
+        opacity: 1
+      }
+    });
+  }
 }
 
 function ajaxCartPickMessage(messages) {

@@ -159,11 +159,6 @@ function uc_payment_method_2checkout($op, &$arg1) {
         '#title' => t('Payment method title'),
         '#default_value' => variable_get('uc_2checkout_method_title', t('Credit card on a secure server:')),
       );
-      $form['uc_2checkout_method_title_icons'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Show credit card icons beside the payment method title.'),
-        '#default_value' => variable_get('uc_2checkout_method_title_icons', TRUE),
-      );
       $form['uc_2checkout_checkout_button'] = array(
         '#type' => 'textfield',
         '#title' => t('Order review submit button text'),

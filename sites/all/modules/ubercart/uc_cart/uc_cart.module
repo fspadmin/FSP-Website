@@ -966,6 +966,7 @@ function uc_cart_view_form($form_state, $items = NULL) {
     '#type' => 'submit',
     '#name' => 'update-cart',
     '#value' => t('Update cart'),
+    '#submit' => array('uc_cart_view_form_submit', 'uc_cart_view_form_update_message'),
   );
   if (variable_get('uc_checkout_enabled', TRUE)) {
     $form['checkout'] = array(
@@ -998,10 +999,15 @@ function uc_cart_view_form_submit($form, &$form_state) {
 
   // Update the items in the shopping cart based on the form values.
   uc_cart_update_item_object((object)$form_state['values']);
+}
 
-  if ($form_state['clicked_button']['#name'] == 'update-cart') {
-    drupal_set_message(t('Your cart has been updated.'));
-  }
+/**
+ * Displays "cart updated" message for uc_cart_view_form().
+ *
+ * @see uc_cart_view_form()
+ */
+function uc_cart_view_form_update_message($form, &$form_state) {
+  drupal_set_message(t('Your cart has been updated.'));
 }
 
 /**

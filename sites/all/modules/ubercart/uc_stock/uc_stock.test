@@ -66,4 +66,27 @@ class UbercartStockTestCase extends UbercartTestHelper {
 
     $this->assertEqual($stock - $qty, uc_stock_level($this->product->model));
   }
+
+  public function testStockThresholdMail() {
+    $edit = array('uc_stock_threshold_notification' => 1);
+    $this->drupalPost('admin/store/settings/stock', $edit, 'Save configuration');
+
+    $qty = rand(10, 100);
+    $edit = array(
+      'stock[0][active]' => 1,
+      'stock[0][stock]' => $qty + 1,
+      'stock[0][threshold]' => $qty,
+    );
+    $this->drupalPost('node/' . $this->product->nid . '/edit/stock', $edit, 'Save changes');
+
+    $this->drupalPost('node/' . $this->product->nid, array(), 'Add to cart');
+    $this->checkout();
+
+    $mail = $this->drupalGetMails(array('id' => 'uc_stock_threshold'));
+    $mail = array_pop($mail);
+    $this->assertTrue(strpos($mail['subject'], 'Stock threshold limit reached') !== FALSE, 'Threshold mail subject is correct.');
+    $this->assertTrue(strpos($mail['body'], $this->product->title) !== FALSE, 'Mail body contains product title.');
+    $this->assertTrue(strpos($mail['body'], $this->product->model) !== FALSE, 'Mail body contains SKU.');
+    $this->assertTrue(strpos($mail['body'], 'has reached ' . $qty) !== FALSE, 'Mail body contains quantity.');
+  }
 }

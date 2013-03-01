@@ -610,7 +610,6 @@ function uc_order_mail($key, &$message, $params) {
     case 'action-mail':
       // Assemble an email message from the conditional actions settings.
       $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
-      $message['from'] = $params['from'];
 
       // Perform token replacement on the subject and body.
       $subject = token_replace_multiple($params['subject'], $params['replacements']);
@@ -872,7 +871,7 @@ function _uc_order_panes_summarize($form, $panes, $parent_name, $parent_id) {
   $items = array();
 
   foreach ($panes as $name => $pane) {
-    $item[] = t('!title is !enabled.', array('!title' => $pane['title']['#value'], '!enabled' => $pane['uc_order_pane_'. $name .'_show_'. $parent_id]['#default_value'] ? t('enabled') : t('disabled')));
+    $item[] = t('!title is !enabled.', array('!title' => $pane['uc_order_pane_'. $name .'_show_'. $parent_id]['#title'], '!enabled' => $pane['uc_order_pane_'. $name .'_show_'. $parent_id]['#default_value'] ? t('enabled') : t('disabled')));
   }
 
   $items[] = array(

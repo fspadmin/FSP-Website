@@ -162,7 +162,7 @@ function uc_stock_token_values($type, $object = NULL) {
  */
 function uc_stock_uc_message() {
   $messages['uc_stock_threshold_notification_subject'] = t('[store-name]: Stock threshold limit reached');
-  $messages['uc_stock_threshold_notification_message'] = t("This message has been sent to let you know that the stock level for the model [stock-model] has reached [stock-level]. There may not be enough units in stock to fulfill order #[order-link].");
+  $messages['uc_stock_threshold_notification_message'] = t('This message has been sent to let you know that the stock level for "[title]" with SKU [stock-model] has reached [stock-level]. There may not be enough units in stock to fulfill order #[order-link].');
   return $messages;
 }
 
@@ -241,17 +241,17 @@ function uc_stock_is_active($sku) {
  *
  * @param $order
  *   The order object that tripped the threshold limit.
- * @param $product
- *   The product object that is associated with the SKU.
+ * @param $node
+ *   The node object that is associated with the SKU/model.
  * @param $stock
  *   The stock level object that contains the stock level and SKU.
  *
  * @return
  *   The result of drupal_mail().
  */
-function _uc_stock_send_mail($order, $stock) {
+function _uc_stock_send_mail($order, $node, $stock) {
   $account = uc_order_user_load($order);
-  $token_filters = array('global' => NULL, 'order' => $order, 'user' => $account, 'stock' => $stock);
+  $token_filters = array('global' => NULL, 'order' => $order, 'user' => $account, 'stock' => $stock, 'node' => $node);
 
   $to = variable_get('uc_stock_threshold_notification_recipients', uc_store_email());
   $to = explode(',', $to);
@@ -330,7 +330,8 @@ function uc_stock_adjust_product_stock($product, $key, $order) {
 
   // Should we notify?
   if (variable_get('uc_stock_threshold_notification', FALSE) && $stock->stock <= $stock->threshold) {
-    _uc_stock_send_mail($order, $stock);
+    $node = node_load($product->nid);
+    _uc_stock_send_mail($order, $node, $stock);
   }
 
   // Save a comment about the stock level.

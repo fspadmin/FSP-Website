@@ -38,8 +38,8 @@ class uc_views_handler_field_order_fullname extends views_handler_field {
 
   function render($values) {
     $prefix = $this->definition['prefix'];
-    $first = $values->{$this->aliases[$prefix . '_first_name']};
-    $last = $values->{$this->aliases[$prefix . '_last_name']};
+    $first = check_plain($values->{$this->aliases[$prefix . '_first_name']});
+    $last = check_plain($values->{$this->aliases[$prefix . '_last_name']});
     switch ($this->options['format']) {
       case 'last_first':
         return "$last $first";

@@ -37,8 +37,16 @@ function uc_roles_help($path, $arg) {
 function uc_roles_cron() {
   $reminder_granularity = variable_get('uc_roles_reminder_granularity', 'never');
   $reminder_qty = variable_get('uc_roles_reminder_length', NULL);
+  $time = time();
 
-  $result = db_query("SELECT * FROM {uc_roles_expirations}");
+  $sql = 'SELECT * FROM {uc_roles_expirations} WHERE expiration <= %d';
+  $args = array($time);
+  if ($reminder_granularity != 'never') {
+    $sql .= ' OR (notified IS NULL AND expiration <= %d)';
+    $args[] = _uc_roles_get_expiration($reminder_qty, $reminder_granularity, $time);
+  }
+  $result = db_query($sql, $args);
+
   while ($expiration = db_fetch_object($result)) {
     $account = user_load($expiration->uid);
 
@@ -48,24 +56,15 @@ function uc_roles_cron() {
     }
 
     // Role expired.
-    elseif ($expiration->expiration <= time()) {
+    elseif ($expiration->expiration <= $time) {
       ca_pull_trigger('uc_roles_notify_revoke', $account, $expiration);
       uc_roles_revoke($account, $expiration->rid);
     }
 
     // Remind the user about an upcoming expiration.
     elseif ($reminder_granularity != 'never') {
-      // Only if not already notified.
-      if (intval($expiration->notified) >= 1) {
-        continue;
-      }
-
-      // If we're past the expiration time minus the reminder time.
-      $threshold = _uc_roles_get_expiration(-$reminder_qty, $reminder_granularity, $expiration->expiration);
-      if ($threshold <= time()) {
-        ca_pull_trigger('uc_roles_notify_reminder', $account, $expiration);
-        db_query("UPDATE {uc_roles_expirations} SET notified = 1 WHERE uid = %d AND rid = %d", $account->uid, $expiration->rid);
-      }
+      ca_pull_trigger('uc_roles_notify_reminder', $account, $expiration);
+      db_query('UPDATE {uc_roles_expirations} SET notified = 1 WHERE uid = %d AND rid = %d', $account->uid, $expiration->rid);
     }
   }
 }

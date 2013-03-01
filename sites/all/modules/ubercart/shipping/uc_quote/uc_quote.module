@@ -537,6 +537,12 @@ function uc_quote_order($op, $order, $arg2) {
 
     case 'save':
       if (isset($order->quote['method'])) {
+        if (!isset($order->quote['rate'])) {
+          $order->quote['rate'] = 0;
+        }
+        if (!isset($order->quote['quote_form'])) {
+          $order->quote['quote_form'] = NULL;
+        }
         db_query("DELETE FROM {uc_order_quotes} WHERE order_id = %d", $order->order_id);
         db_query("INSERT INTO {uc_order_quotes} (order_id, method, accessorials, rate, quote_form) VALUES (%d, '%s', '%s', %f, '%s')",
         $order->order_id, $order->quote['method'], $order->quote['accessorials'], $order->quote['rate'], $order->quote['quote_form']);

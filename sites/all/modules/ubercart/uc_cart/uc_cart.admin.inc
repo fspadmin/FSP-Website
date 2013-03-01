@@ -155,7 +155,7 @@ function uc_cart_cart_settings_form() {
     '#type' => 'fieldset',
     '#title' => t('Continue shopping element'),
     '#description' => t('Ubercart will add a continue shopping to the cart page based on the settings below.'),
-    '#summary' => t('Continue shopping !type is: <br />!link', array('!type' => variable_get('uc_continue_shopping_type', 'link') == 'link' ? t('link') : t('button'), '!link' => l(variable_get('uc_continue_shopping_text', t('Continue shopping')), variable_get('uc_cart_continue_shopping', '')))),
+    '#summary' => t('Continue shopping !type is: <br />!link', array('!type' => variable_get('uc_continue_shopping_type', 'link') == 'link' ? t('link') : t('button'), '!link' => l(variable_get('uc_continue_shopping_text', '') ? variable_get('uc_continue_shopping_text', '') : t('Continue shopping'), variable_get('uc_continue_shopping_url', '')))),
   );
   $form['continue_shopping']['uc_continue_shopping_type'] = array(
     '#type' => 'radios',
