@@ -291,7 +291,7 @@ function filefield_field_sanitize($node, $field, &$items, $teaser, $page) {
     }
 
     // Add nid so formatters can create a link to the node.
-    $items[$delta]['nid'] = $node->nid;
+    $items[$delta]['nid'] = isset($node->nid) ? $node->nid : NULL;
 
     // Get the 'data' column stored by CCK into an array. This is necessary
     // for Views, which doesn't call the "load" $op and to fix an issue with
