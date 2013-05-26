@@ -4,9 +4,9 @@ dependencies[] = referral
 dependencies[] = trigger
 core = 6.x
 
-; Information added by drupal.org packaging script on 2011-02-25
+; Information added by drupal.org packaging script on 2013-05-25
 version = "6.x-1.x-dev"
 core = "6.x"
 project = "referral"
-datestamp = "1298620054"
+datestamp = "1369451704"
 
