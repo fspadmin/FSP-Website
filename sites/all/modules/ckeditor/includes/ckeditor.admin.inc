@@ -1,7 +1,7 @@
 <?php
 /**
  * CKEditor - The text editor for the Internet - http://ckeditor.com
- * Copyright (c) 2003-2012, CKSource - Frederico Knabben. All rights reserved.
+ * Copyright (c) 2003-2013, CKSource - Frederico Knabben. All rights reserved.
  *
  * == BEGIN LICENSE ==
  *
@@ -733,7 +733,7 @@ function ckeditor_admin_profile_form($form_state, $profile = NULL) {
     $form['appearance']['use_divarea'] = array(
       '#type' => 'radios',
       '#title' => t('"Div-based" editor'),
-      '#default_value' => !empty($profile->settings['use_divarea']) ? $profile->settings['use_divarea'] : 't',
+      '#default_value' => !empty($profile->settings['use_divarea']) ? $profile->settings['use_divarea'] : 'f',
       '#options' => array(
         't' => t('Enabled'),
         'f' => t('Disabled')
@@ -976,7 +976,7 @@ function ckeditor_admin_profile_form($form_state, $profile = NULL) {
         '!imce' => l(t('IMCE'), 'http://drupal.org/project/imce'),
         '!ib' => l(t('Image Browser'), 'http://drupal.org/project/imagebrowser'),
         '!webfm' => l(t('Web File Manager'), 'http://drupal.org/project/webfm'),
-        '!ckfinder' => l(t('CKFinder'), 'http://ckfinder.com'),
+        '!ckfinder' => l(t('CKFinder'), 'http://cksource.com/ckfinder'),
         '!elfinder' => l(t('elFinder'), 'http://drupal.org/project/elfinder')
       )
     )
@@ -1650,7 +1650,7 @@ function ckeditor_admin_global_profile_form($form_state, $mode = 'add') {
     '#description' => t(
         'The path to CKFinder (AJAX based file manager downloaded from !ckfindercom) relative to the document root.',
         array(
-          '!ckfindercom' => l(t('ckdiner.com'), 'http://ckfinder.com/download')
+          '!ckfindercom' => l(t('ckfinder.com'), 'http://cksource.com/ckfinder')
         )
       ) .
       '<br />' .
@@ -2214,14 +2214,15 @@ function ckeditor_skinframe() {
   $module_drupal_path = base_path() . drupal_get_path('module', 'ckeditor');
 
   $html = "<!DOCTYPE html>";
+  $html .= "<html>";
   $html .= "<head>";
-  $html .= "<script src=\"{$editor_path}/ckeditor.js\"></script>";
+  $html .= '<title>CKEditor UI Color Picker</title>';
+  $html .= "<script type=\"text/javascript\" src=\"{$editor_path}/ckeditor.js\"></script>";
   $html .= "</head>";
   $html .= "<body>";
   $html .= "<input type=\"hidden\" name=\"uicolor_user\"/>";
   $html .= "<div id=\"editor\" style=\"height: 200px;\">Click the <strong>UI Color Picker</strong> button to set your color preferences.</div>";
-  $html .= "
-<script>
+  $html .= "<script type=\"text/javascript\">
 var skin = window.location.search.match(/skin=([^&]*)/)[1];
 var uicolor = window.location.search.match(/uicolor=([^&]*)/)[1];
 var ckeditorUiColorOnChange = function() {

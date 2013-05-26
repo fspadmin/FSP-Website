@@ -1,7 +1,7 @@
 <?php
 /**
  * CKEditor - The text editor for the Internet - http://ckeditor.com
- * Copyright (c) 2003-2012, CKSource - Frederico Knabben. All rights reserved.
+ * Copyright (c) 2003-2013, CKSource - Frederico Knabben. All rights reserved.
  *
  * == BEGIN LICENSE ==
  *
@@ -654,15 +654,15 @@ function ckeditor_process_textarea($element) {
           }
         }
         else {
-          drupal_add_js($editor_local_path . '/ckeditor.js?I', 'module', 'header', FALSE, TRUE, $preprocess);
+          drupal_add_js($editor_local_path . '/ckeditor.js', 'module', 'header', FALSE, TRUE, $preprocess);
         }
       }
       else {
         if (file_exists($editor_local_path . '/ckeditor_basic.js')) {
-          drupal_add_js($editor_local_path . '/ckeditor_basic.js?I', 'module', 'header', FALSE, TRUE, $preprocess);
+          drupal_add_js($editor_local_path . '/ckeditor_basic.js', 'module', 'header', FALSE, TRUE, $preprocess);
         }
         else {
-          drupal_add_js($editor_local_path . '/ckeditor.js?I', 'module', 'header', FALSE, TRUE, $preprocess);
+          drupal_add_js($editor_local_path . '/ckeditor.js', 'module', 'header', FALSE, TRUE, $preprocess);
         }
       }
       drupal_add_js(array('ckeditor' => array('module_path' => $module_full_path, 'editor_path' => $editor_path)), 'setting');
@@ -735,8 +735,8 @@ function ckeditor_process_textarea($element) {
     }
 
     //add support for divarea plugin from CKE4
-    if (((isset($conf['use_divarea']) && $conf['use_divarea'] == 't') || !isset($conf['use_divarea'])) && file_exists($editor_local_path . '/plugins/divarea/plugin.js')) {
-      $settings[$textarea_id]['loadPlugins']['divarea'] = array('name' => 'divarea', 'path' => $editor_path . '/plugins/divarea/', 'buttons' => FALSE, 'default' => 't');
+    if (isset($conf['use_divarea']) && $conf['use_divarea'] == 't' && file_exists($editor_local_path . '/plugins/divarea/plugin.js')) {
+      $settings[$textarea_id]['loadPlugins']['divarea'] = array('name' => 'divarea', 'path' => $editor_path . '/plugins/divarea/', 'buttons' => FALSE, 'default' => 'f');
     }
 
     if (isset($conf['html_entities']) && $conf['html_entities'] == 'f') {
@@ -1400,6 +1400,7 @@ function ckeditor_features_api() {
   return array(
     'ckeditor_profile' => array(
       'name' => t('CKEditor profiles'),
+      'feature_source' => TRUE,
       'default_hook' => 'ckeditor_profile_defaults',
       'default_file' => FEATURES_DEFAULTS_INCLUDED,
       'file' => drupal_get_path('module', 'ckeditor') .'/includes/ckeditor.features.inc',
@@ -1477,3 +1478,4 @@ function ckeditor_get_settings() {
   echo  json_encode($_SESSION['cke_get_settings'][$_POST['id']]);
   die();
 }
+

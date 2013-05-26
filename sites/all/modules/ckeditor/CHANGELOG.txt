@@ -1,4 +1,17 @@
 -----------------------------
+ 2013-04-12
+ New stable release: 6.x-1.14
+-----------------------------
+
+[#1908980] by wwalc: Moono should be set as the default skin on install.
+[#1961596] by jcisio: Added 'feature_source()' option so that ckeditor_profile() component is visible in drush.
+[#1959754] by wwalc: CKFinder is not installed correctly - improve information in the status report
+[#1898642] by Elaman, bahaik: Fixed warning: file_get_contents()(./sites/all/libraries/ckeditor/ckeditor.js?I) [function.file-get-contents]: failed to open stream
+[#1829574] by bdlangton: Fixed Notice: Trying to get property of non-object in ckeditor_user_delegate().
+[#1885952] by michal_cksource: Fix HTML validation for iframe in profile configuration.
+[#1885940] by michal_cksource: Disable div based editor on default
+
+-----------------------------
  2012-12-22
  New stable release: 6.x-1.13
 -----------------------------

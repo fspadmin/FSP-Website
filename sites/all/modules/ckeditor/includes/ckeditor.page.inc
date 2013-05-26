@@ -1,7 +1,7 @@
 <?php
 /**
  * CKEditor - The text editor for the Internet - http://ckeditor.com
- * Copyright (c) 2003-2012, CKSource - Frederico Knabben. All rights reserved.
+ * Copyright (c) 2003-2013, CKSource - Frederico Knabben. All rights reserved.
  *
  * == BEGIN LICENSE ==
  *
@@ -253,7 +253,7 @@ function ckeditor_help_delegate($path, $arg) {
       '<li>' .
       t('By using !ckfinder (commercial), an advanced Ajax file manager.',
         array(
-          '!ckfinder' => l(t('CKFinder'), 'http://ckfinder.com'),
+          '!ckfinder' => l(t('CKFinder'), 'http://cksource.com/ckfinder'),
         )
       ) .
       '</li>' .

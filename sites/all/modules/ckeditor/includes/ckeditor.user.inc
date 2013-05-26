@@ -1,7 +1,7 @@
 <?php
 /**
  * CKEditor - The text editor for the Internet - http://ckeditor.com
- * Copyright (c) 2003-2012, CKSource - Frederico Knabben. All rights reserved.
+ * Copyright (c) 2003-2013, CKSource - Frederico Knabben. All rights reserved.
  *
  * == BEGIN LICENSE ==
  *
@@ -47,7 +47,7 @@ function ckeditor_user_delegate($type, $edit, &$user, $category = NULL) {
     $lang_options = ckeditor_load_lang_options();
 
     // because the settings are saved as strings we need to test for the string 'true'
-    if ($profile->settings['allow_user_conf'] == 't') {
+    if (isset($profile->settings['allow_user_conf']) && $profile->settings['allow_user_conf'] == 't') {
       $form['ckeditor'] = array(
         '#type' => 'fieldset',
         '#title' => t('Rich text editor settings'),
